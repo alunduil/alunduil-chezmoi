@@ -59,4 +59,4 @@ Only projects, tasks, and subtasks are synced — sessions, worktrees, PIDs, and
 ## Layout
 
 - `dot_bashrc`, `dot_profile`, `dot_gitconfig` — managed shell + git config.
-- `run_once_before_install-packages.sh.tmpl` — idempotent bootstrap: apt packages (`zellij gh zsh ripgrep fd-find jq unzip age`), nvm + Node LTS, `@anthropic-ai/claude-code`, rustup + `claustre` from git, and the `~/.config/zellij/plugins/` directory that zellaude auto-populates on first Zellij load. Re-runs whenever its content hash changes.
+- `run_once_before_install-packages.sh.tmpl` — idempotent bootstrap: apt packages (`gh zsh ripgrep fd-find jq unzip age`), zellij from the upstream GitHub release (pinned, sha256-verified; Debian bookworm doesn't package it), nvm + Node LTS, `@anthropic-ai/claude-code`, rustup + `claustre` from git, and the `~/.config/zellij/plugins/` directory that zellaude auto-populates on first Zellij load. Re-runs whenever its content hash changes.
