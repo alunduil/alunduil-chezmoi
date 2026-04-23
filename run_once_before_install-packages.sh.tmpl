@@ -1,0 +1,77 @@
+#!/usr/bin/env bash
+# Bootstrap script run by chezmoi on first apply (and again whenever this file's
+# hash changes). Installs the toolchain for the Claude Code + Claustre + Zellij
+# workflow. Must be idempotent — safe to re-run on an already-bootstrapped host.
+#
+# Canonical installers only: rustup.rs for Rust, nvm for Node. Debian apt Node
+# and apt chezmoi/rustc are avoided by design (they lag upstream).
+
+set -euo pipefail
+
+log() { printf '==> %s\n' "$*" >&2; }
+
+# -------------------------------------------------------------------- apt pkgs
+APT_PACKAGES=(zellij gh zsh ripgrep fd-find jq unzip age)
+missing=()
+for pkg in "${APT_PACKAGES[@]}"; do
+  dpkg -s "$pkg" >/dev/null 2>&1 || missing+=("$pkg")
+done
+if (( ${#missing[@]} > 0 )); then
+  log "apt: installing ${missing[*]}"
+  sudo apt-get update
+  sudo apt-get install -y "${missing[@]}"
+else
+  log "apt: all packages present"
+fi
+
+# ----------------------------------------------------------------- nvm + Node
+NVM_VERSION="v0.40.1"
+if [ ! -d "$HOME/.nvm" ]; then
+  log "nvm: installing $NVM_VERSION"
+  curl -fsSL "https://raw.githubusercontent.com/nvm-sh/nvm/${NVM_VERSION}/install.sh" | bash
+else
+  log "nvm: already installed"
+fi
+
+export NVM_DIR="$HOME/.nvm"
+# shellcheck disable=SC1091
+[ -s "$NVM_DIR/nvm.sh" ] && . "$NVM_DIR/nvm.sh"
+
+if ! command -v node >/dev/null 2>&1; then
+  log "node: installing LTS via nvm"
+  nvm install --lts
+  nvm alias default 'lts/*'
+else
+  log "node: $(node --version) already on PATH"
+fi
+
+# ---------------------------------------------------------------- Claude Code
+if ! command -v claude >/dev/null 2>&1; then
+  log "claude-code: npm install -g @anthropic-ai/claude-code"
+  npm install -g @anthropic-ai/claude-code
+else
+  log "claude-code: already installed"
+fi
+
+# ---------------------------------------------------------- rustup + claustre
+if ! command -v cargo >/dev/null 2>&1; then
+  log "rustup: installing stable toolchain"
+  curl -fsSL https://sh.rustup.rs | sh -s -- -y --default-toolchain stable --no-modify-path
+fi
+
+# shellcheck disable=SC1091
+[ -f "$HOME/.cargo/env" ] && . "$HOME/.cargo/env"
+
+if ! command -v claustre >/dev/null 2>&1; then
+  log "claustre: cargo install --git https://github.com/pmbrull/claustre.git"
+  cargo install --git https://github.com/pmbrull/claustre.git
+else
+  log "claustre: already installed"
+fi
+
+# ---------------------------------------------------------------- zellij dirs
+# zellaude (the Claude Code session status-bar plugin) auto-downloads its WASM
+# into this dir on first Zellij load.
+mkdir -p "$HOME/.config/zellij/plugins"
+
+log "bootstrap complete"
