@@ -3,7 +3,7 @@
   "hooks": {
     "PreToolUse": [
       {
-        "matcher": "mcp__github__create_pull_request(_with_copilot)?",
+        "matcher": "mcp__github__create_pull_request(_with_copilot)?|Bash",
         "hooks": [
           {
             "type": "command",

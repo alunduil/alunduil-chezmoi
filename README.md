@@ -71,7 +71,7 @@ Follows Martin Fowler's [harness-engineering](https://martinfowler.com/articles/
 
 - `dot_claude/CLAUDE.md` — cross-machine guide (PR defaults, feedback preference, scope discipline). Per-project `CLAUDE.md` overrides.
 - `dot_claude/settings.json` — hook wiring. No permission allowlist yet; add entries with the `fewer-permission-prompts` skill once prompts become repetitive.
-- `dot_claude/hooks/pr-draft-guard.sh` — `PreToolUse` hook blocking `mcp__github__create_pull_request` calls that omit `draft=true`. Deterministic backstop for the CLAUDE.md rule.
+- `dot_claude/hooks/pr-draft-guard.sh` — `PreToolUse` hook blocking PR-creation calls that don't request a draft. Covers `mcp__github__create_pull_request` (and the copilot variant) when `draft` isn't `true`, and `gh pr create` via `Bash` when `--draft`/`-d` isn't passed.
 
 Prefer a hook over a CLAUDE.md bullet when the rule must not be forgotten mid-session; prefer the bullet when the rule is preference, not policy.
 

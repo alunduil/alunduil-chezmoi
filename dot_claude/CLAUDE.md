@@ -12,9 +12,9 @@ reliable enough.
 ## Pull requests
 
 - Open every PR as a draft. The user promotes to ready after reviewing.
-  Enforced by `~/.claude/hooks/pr-draft-guard.sh`; this bullet is the
-  backup for code paths the hook does not cover (e.g. `gh pr create`
-  invoked through Bash).
+  Enforced by `~/.claude/hooks/pr-draft-guard.sh` for both the GitHub
+  MCP tools and `gh pr create` via Bash. This bullet stays as the
+  reminder for any future path the hook doesn't yet cover.
 
 ## Feedback preference
 

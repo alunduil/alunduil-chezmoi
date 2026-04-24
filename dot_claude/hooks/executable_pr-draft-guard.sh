@@ -24,5 +24,23 @@ EOF
       exit 2
     fi
     ;;
+  Bash)
+    command="$(jq -r '.tool_input.command // empty' <<<"$input")"
+    # `gh pr create` as a standalone invocation -- word-ish boundaries so
+    # quoted/echoed forms and unrelated gh subcommands (gh pr view, gh
+    # pr-create-foo) don't match.
+    if printf '%s' "$command" | grep -qE '(^|[^[:alnum:]_])gh[[:space:]]+pr[[:space:]]+create([^[:alnum:]_]|$)'; then
+      # Allow `--draft` or `-d` as a whole token (not a substring of another
+      # flag). gh's `-d` is the short form for `--draft`; no conflict on
+      # `gh pr create`.
+      if ! printf '%s' "$command" | grep -qE '(^|[[:space:]])(--draft|-d)([[:space:]=]|$)'; then
+        cat >&2 <<'EOF'
+Blocked by ~/.claude/hooks/pr-draft-guard.sh: `gh pr create` must include --draft.
+Retry the command with --draft (or -d). The user will mark it ready after reviewing.
+EOF
+        exit 2
+      fi
+    fi
+    ;;
 esac
 exit 0
