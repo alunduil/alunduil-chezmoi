@@ -1,12 +1,12 @@
 #!/usr/bin/env bash
-# PreToolUse hook: require PRs to be opened as drafts.
+# PreToolUse hook: require PRs from the GitHub MCP tools to be drafts.
 #
-# User-level harness rule: every PR starts as a draft so the human can
-# review before it advertises itself as ready. Deterministic enforcement
-# because a CLAUDE.md bullet is easy to forget mid-session.
+# The `gh pr create` path is enforced separately by ~/.local/bin/gh
+# (a PATH shim), so this hook only has to cover the MCP tools that
+# call GitHub's API directly and never touch the gh binary.
 #
 # Input: Claude Code PreToolUse JSON on stdin.
-# Exit 0 = allow; exit 2 = block and send stderr back to Claude as feedback.
+# Exit 0 = allow; exit 2 = block and send stderr back to Claude.
 
 set -euo pipefail
 
@@ -22,24 +22,6 @@ Blocked by ~/.claude/hooks/pr-draft-guard.sh: PRs must be opened as drafts.
 Retry the same call with draft=true. The user will mark it ready after reviewing.
 EOF
       exit 2
-    fi
-    ;;
-  Bash)
-    command="$(jq -r '.tool_input.command // empty' <<<"$input")"
-    # `gh pr create` as a standalone invocation -- word-ish boundaries so
-    # quoted/echoed forms and unrelated gh subcommands (gh pr view, gh
-    # pr-create-foo) don't match.
-    if printf '%s' "$command" | grep -qE '(^|[^[:alnum:]_])gh[[:space:]]+pr[[:space:]]+create([^[:alnum:]_]|$)'; then
-      # Allow `--draft` or `-d` as a whole token (not a substring of another
-      # flag). gh's `-d` is the short form for `--draft`; no conflict on
-      # `gh pr create`.
-      if ! printf '%s' "$command" | grep -qE '(^|[[:space:]])(--draft|-d)([[:space:]=]|$)'; then
-        cat >&2 <<'EOF'
-Blocked by ~/.claude/hooks/pr-draft-guard.sh: `gh pr create` must include --draft.
-Retry the command with --draft (or -d). The user will mark it ready after reviewing.
-EOF
-        exit 2
-      fi
     fi
     ;;
 esac

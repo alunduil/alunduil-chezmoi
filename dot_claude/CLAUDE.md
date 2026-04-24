@@ -12,9 +12,12 @@ reliable enough.
 ## Pull requests
 
 - Open every PR as a draft. The user promotes to ready after reviewing.
-  Enforced by `~/.claude/hooks/pr-draft-guard.sh` for both the GitHub
-  MCP tools and `gh pr create` via Bash. This bullet stays as the
-  reminder for any future path the hook doesn't yet cover.
+  Two deterministic enforcers cover the paths the model can take:
+  `~/.claude/hooks/pr-draft-guard.sh` blocks the GitHub MCP tools
+  (`mcp__github__create_pull_request` and its copilot variant) when
+  `draft=true` is missing, and `~/.local/bin/gh` shadows the apt `gh`
+  binary to require `--draft`/`-d` on `gh pr create`. Override
+  intentionally with `GH_DRAFT_GUARD=off gh pr create ...`.
 
 ## Feedback preference
 

@@ -64,6 +64,7 @@ Only projects, tasks, and subtasks are synced — sessions, worktrees, PIDs, and
 - `dot_bashrc`, `dot_profile`, `dot_bash_profile`, `dot_gitconfig` — managed shell + git config.
 - `dot_claude/` — user-level Claude Code harness (see below). Runtime state (`.credentials.json`, session history, project scratch) stays machine-local.
 - `dot_claustre/config.toml` — Claustre's user config. Currently sets `sync.auto_push = true` so task/project state pushes to the companion `alunduil-claustre-state` repo automatically. Runtime state (DB, sockets, worktrees) stays machine-local.
+- `dot_local/bin/gh` — wrapper that shadows apt's `/usr/bin/gh` to enforce `--draft` on `gh pr create`. See below.
 
 ## Claude Code harness
 
@@ -71,9 +72,10 @@ Follows Martin Fowler's [harness-engineering](https://martinfowler.com/articles/
 
 - `dot_claude/CLAUDE.md` — cross-machine guide (PR defaults, feedback preference, scope discipline). Per-project `CLAUDE.md` overrides.
 - `dot_claude/settings.json` — hook wiring. No permission allowlist yet; add entries with the `fewer-permission-prompts` skill once prompts become repetitive.
-- `dot_claude/hooks/pr-draft-guard.sh` — `PreToolUse` hook blocking PR-creation calls that don't request a draft. Covers `mcp__github__create_pull_request` (and the copilot variant) when `draft` isn't `true`, and `gh pr create` via `Bash` when `--draft`/`-d` isn't passed.
+- `dot_claude/hooks/pr-draft-guard.sh` — `PreToolUse` hook blocking `mcp__github__create_pull_request` (and the copilot variant) when `draft=true` is missing. Pure JSON-field check; no shell-string parsing.
+- `dot_local/bin/gh` — PATH shim covering the `gh pr create` path. Intercepts the actual invocation, so nothing reaches the real binary without `--draft` unless `GH_DRAFT_GUARD=off` is set. The wrapper approach sidesteps the false-positive risk of string-matching `Bash` commands in a hook.
 
-Prefer a hook over a CLAUDE.md bullet when the rule must not be forgotten mid-session; prefer the bullet when the rule is preference, not policy.
+Prefer a hook over a CLAUDE.md bullet when the rule must not be forgotten mid-session; prefer the bullet when the rule is preference, not policy. Prefer a PATH shim over a hook when the rule can be enforced by intercepting the binary itself — it covers any way the model reaches for the tool.
 
 ## Bootstrap script
 
