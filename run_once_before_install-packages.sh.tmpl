@@ -117,8 +117,9 @@ else
 fi
 
 # ---------------------------------------------------------------- zellij dirs
-# zellaude (the Claude Code session status-bar plugin) auto-downloads its WASM
-# into this dir on first Zellij load.
+# URL-loaded plugins (see ~/.config/zellij/config.kdl) cache under
+# ~/.cache/zellij/. This dir is kept for any locally-staged WASM loaded via
+# `file:~/.config/zellij/plugins/<name>.wasm` (e.g. cosign-verified installs).
 mkdir -p "$HOME/.config/zellij/plugins"
 
 log "bootstrap complete"

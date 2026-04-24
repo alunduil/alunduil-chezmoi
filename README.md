@@ -1,6 +1,6 @@
 # alunduil-chezmoi
 
-Dotfiles for Alex Brandt's Crostini / Chromebook workstation, managed by [chezmoi](https://chezmoi.io). Bootstraps a Claude Code + [Claustre](https://github.com/pmbrull/claustre) + [Zellij](https://zellij.dev) multi-session workflow on a fresh Debian/Crostini host.
+Dotfiles for Alex Brandt's Crostini / Chromebook workstation, managed by [chezmoi](https://chezmoi.io). Bootstraps a Claude Code + [Claustre](https://github.com/pmbrull/claustre) + [Zellij](https://zellij.dev) workflow on a fresh Debian/Crostini host — Claustre multiplexes day-to-day Claude Code sessions; Zellij (with a `pair` layout and zellaude/zjstatus/ghost/notepad plugins) is reserved for deep pairing sessions.
 
 ## Disaster recovery — fresh machine bootstrap
 
@@ -63,4 +63,6 @@ Only projects, tasks, and subtasks are synced — sessions, worktrees, PIDs, and
 
 - `dot_bashrc`, `dot_profile`, `dot_bash_profile`, `dot_gitconfig` — managed shell + git config.
 - `dot_claustre/config.toml` — Claustre's user config. Currently sets `sync.auto_push = true` so task/project state pushes to the companion `alunduil-claustre-state` repo automatically. Runtime state (DB, sockets, worktrees) stays machine-local.
-- `run_once_before_install-packages.sh.tmpl` — idempotent bootstrap: apt packages (`gh zsh ripgrep fd-find jq unzip age`), Tailscale via its official installer (system daemon, enables `tailscaled.service`), zellij from the upstream GitHub release (pinned, sha256-verified; Debian bookworm doesn't package it), nvm + Node LTS, `@anthropic-ai/claude-code`, rustup + `claustre` from git, and the `~/.config/zellij/plugins/` directory that zellaude auto-populates on first Zellij load. Re-runs whenever its content hash changes.
+- `dot_config/zellij/config.kdl` — Zellij config for deep-pairing sessions (Claustre handles the multi-session axis). Pins four plugins by release tag and loads them by URL (Zellij caches under `~/.cache/zellij/`): **zellaude** (per-tab Claude Code activity, top bar), **zjstatus** (mode/session/tabs/clock, bottom bar), **ghost** (floating ad-hoc terminal, `Alt+g`), **zellij-notepad** (floating timestamped `$EDITOR` notepad, `Alt+m`). `Alt+p` opens the pair layout in a new tab.
+- `dot_config/zellij/layouts/pair.kdl` — three-pane pairing layout (editor | claude / logs). Invoke with `zellij --layout pair` for a fresh session or `Alt+p` / `zellij action new-tab --layout pair` from inside a running session.
+- `run_once_before_install-packages.sh.tmpl` — idempotent bootstrap: apt packages (`gh zsh ripgrep fd-find jq unzip age`), Tailscale via its official installer (system daemon, enables `tailscaled.service`), zellij from the upstream GitHub release (pinned, sha256-verified; Debian bookworm doesn't package it), nvm + Node LTS, `@anthropic-ai/claude-code`, rustup + `claustre` from git, and the `~/.config/zellij/plugins/` dir for any locally-staged WASM. Re-runs whenever its content hash changes.

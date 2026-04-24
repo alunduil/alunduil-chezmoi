@@ -1,0 +1,20 @@
+// Deep-pairing layout: editor on the left, Claude Code top-right, logs/tests
+// bottom-right. The global default_tab_template in ../config.kdl wraps this
+// with the zellaude + zjstatus bars.
+//
+// Invoke:
+//   zellij --layout pair                         # fresh session
+//   zellij action new-tab --layout pair          # new tab in current session
+//   Alt+p                                        # keybind, same as above
+
+layout {
+    tab name="pair" focus=true {
+        pane split_direction="vertical" {
+            pane size="60%" name="editor"
+            pane split_direction="horizontal" {
+                pane size="60%" name="claude"
+                pane name="logs"
+            }
+        }
+    }
+}
