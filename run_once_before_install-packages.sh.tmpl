@@ -116,9 +116,40 @@ else
   log "claustre: already installed"
 fi
 
+# ------------------------------------------------------------------- lazygit
+# Bookworm apt has lazygit only via backports; take the upstream release for
+# parity with zellij. Verified against the per-release checksums.txt.
+LAZYGIT_VERSION="v0.61.1"
+LAZYGIT_BIN="$HOME/.local/bin/lazygit"
+if [ -x "$LAZYGIT_BIN" ] && "$LAZYGIT_BIN" --version 2>/dev/null | grep -qF "${LAZYGIT_VERSION#v}"; then
+  log "lazygit: $LAZYGIT_VERSION already installed"
+else
+  log "lazygit: downloading $LAZYGIT_VERSION"
+  tmp="$(mktemp -d)"
+  base="https://github.com/jesseduffield/lazygit/releases/download/${LAZYGIT_VERSION}"
+  asset="lazygit_${LAZYGIT_VERSION#v}_linux_x86_64.tar.gz"
+  curl -fsSL -o "$tmp/$asset" "$base/$asset"
+  curl -fsSL -o "$tmp/checksums.txt" "$base/checksums.txt"
+  expected="$(awk -v f="$asset" '$2 == f {print $1}' "$tmp/checksums.txt")"
+  if [ -z "$expected" ]; then
+    printf 'lazygit: no checksum entry for %s in checksums.txt\n' "$asset" >&2
+    exit 1
+  fi
+  actual="$(sha256sum "$tmp/$asset" | awk '{print $1}')"
+  if [ "$expected" != "$actual" ]; then
+    printf 'lazygit: sha256 mismatch -- expected %s, got %s\n' "$expected" "$actual" >&2
+    exit 1
+  fi
+  tar -xzf "$tmp/$asset" -C "$tmp" lazygit
+  mkdir -p "$HOME/.local/bin"
+  install -m 0755 "$tmp/lazygit" "$LAZYGIT_BIN"
+  rm -rf "$tmp"
+fi
+
 # ---------------------------------------------------------------- zellij dirs
-# zellaude (the Claude Code session status-bar plugin) auto-downloads its WASM
-# into this dir on first Zellij load.
+# URL-loaded plugins (see ~/.config/zellij/config.kdl) cache under
+# ~/.cache/zellij/. This dir is kept for any locally-staged WASM loaded via
+# `file:~/.config/zellij/plugins/<name>.wasm` (e.g. cosign-verified installs).
 mkdir -p "$HOME/.config/zellij/plugins"
 
 log "bootstrap complete"
