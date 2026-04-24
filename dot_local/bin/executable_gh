@@ -1,0 +1,49 @@
+#!/usr/bin/env bash
+# Shim for `gh` that enforces --draft on `gh pr create`. Shadows the apt-
+# installed /usr/bin/gh because ~/.local/bin sits ahead of /usr/bin on PATH
+# (see ~/.profile). Everything other than `gh pr create` is a plain exec
+# passthrough, so there is no behavioural surprise for other subcommands.
+#
+# Bypass (for when the human genuinely wants a ready PR):
+#   GH_DRAFT_GUARD=off gh pr create ...
+# or invoke the real binary directly:
+#   /usr/bin/gh pr create ...
+#   command -p gh pr create ...
+#
+# Intentional limitation: the draft-detector is a whole-token scan, not a
+# full parse of gh's flag grammar. If someone passes `-d` as the *value* of
+# another flag (e.g. `--title -d`) the wrapper would mistake it for --draft.
+# Nobody writes that; correctness here isn't worth embedding a gh parser.
+
+set -euo pipefail
+
+if [ "${1:-}" = "pr" ] && [ "${2:-}" = "create" ] && [ "${GH_DRAFT_GUARD:-}" != "off" ]; then
+  has_draft=0
+  for arg in "${@:3}"; do
+    case "$arg" in
+      --draft|-d) has_draft=1; break ;;
+    esac
+  done
+  if [ "$has_draft" -eq 0 ]; then
+    cat >&2 <<'EOF'
+gh wrapper (~/.local/bin/gh): `gh pr create` must include --draft (or -d).
+Retry with the flag, or, to open a ready PR on purpose:
+  GH_DRAFT_GUARD=off gh pr create ...
+EOF
+    exit 1
+  fi
+fi
+
+# Find the real gh: first executable `gh` in PATH that isn't this script.
+self="$(readlink -f "$0")"
+IFS=':' read -r -a path_dirs <<<"${PATH:-}"
+for dir in "${path_dirs[@]}"; do
+  [ -n "$dir" ] || continue
+  candidate="$dir/gh"
+  [ -x "$candidate" ] || continue
+  [ "$(readlink -f "$candidate" 2>/dev/null)" = "$self" ] && continue
+  exec "$candidate" "$@"
+done
+
+printf 'gh wrapper: real gh not found on PATH\n' >&2
+exit 127
