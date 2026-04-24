@@ -26,6 +26,18 @@ else
   log "apt: all packages present"
 fi
 
+# ---------------------------------------------------------------- tailscale
+# System daemon. The official installer is idempotent and handles apt
+# signing key + repo + package in one go. `tailscale up` (interactive
+# browser auth) is a separate per-machine manual step -- see README.
+if ! command -v tailscale >/dev/null 2>&1; then
+  log "tailscale: running official installer"
+  curl -fsSL https://tailscale.com/install.sh | sh
+else
+  log "tailscale: already installed"
+fi
+sudo systemctl enable --now tailscaled
+
 # ------------------------------------------------------------------- zellij
 ZELLIJ_VERSION="v0.44.1"
 ZELLIJ_BIN="$HOME/.local/bin/zellij"

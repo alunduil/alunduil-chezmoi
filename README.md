@@ -22,6 +22,7 @@ chmod 600 ~/.config/chezmoi/key.txt
 # 4. Log in to remote services (interactive — not managed by chezmoi)
 gh auth login
 claude                 # first launch prompts for the Anthropic login
+sudo tailscale up      # opens a browser to join the tailnet
 claustre configure     # checks prereqs, wires up Claude Code permissions
 ```
 
@@ -35,6 +36,7 @@ By design — none of these should ever enter the repo:
 - **GitHub CLI login** — `gh auth login`, stored under `~/.config/gh/`
 - **age key** — `~/.config/chezmoi/key.txt`, restored from password manager. The key that decrypts this repo cannot live inside it.
 - **SSH keys** — generated per machine, public half uploaded to GitHub
+- **Tailscale auth** — `sudo tailscale up` opens a browser for tailnet auth. Per-machine, not syncable (auth keys are bound to the node identity).
 
 ## Companion repo
 
@@ -59,4 +61,4 @@ Only projects, tasks, and subtasks are synced — sessions, worktrees, PIDs, and
 ## Layout
 
 - `dot_bashrc`, `dot_profile`, `dot_gitconfig` — managed shell + git config.
-- `run_once_before_install-packages.sh.tmpl` — idempotent bootstrap: apt packages (`gh zsh ripgrep fd-find jq unzip age`), zellij from the upstream GitHub release (pinned, sha256-verified; Debian bookworm doesn't package it), nvm + Node LTS, `@anthropic-ai/claude-code`, rustup + `claustre` from git, and the `~/.config/zellij/plugins/` directory that zellaude auto-populates on first Zellij load. Re-runs whenever its content hash changes.
+- `run_once_before_install-packages.sh.tmpl` — idempotent bootstrap: apt packages (`gh zsh ripgrep fd-find jq unzip age`), Tailscale via its official installer (system daemon, enables `tailscaled.service`), zellij from the upstream GitHub release (pinned, sha256-verified; Debian bookworm doesn't package it), nvm + Node LTS, `@anthropic-ai/claude-code`, rustup + `claustre` from git, and the `~/.config/zellij/plugins/` directory that zellaude auto-populates on first Zellij load. Re-runs whenever its content hash changes.
