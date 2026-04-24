@@ -1,8 +1,10 @@
 # alunduil-chezmoi
 
+[![CI](https://github.com/alunduil/alunduil-chezmoi/actions/workflows/ci.yml/badge.svg)](https://github.com/alunduil/alunduil-chezmoi/actions/workflows/ci.yml)
+
 Personal dotfiles for [@alunduil](https://github.com/alunduil), managed by [chezmoi](https://chezmoi.io). Bootstraps a Claude Code + [Claustre](https://github.com/pmbrull/claustre) + [Zellij](https://zellij.dev) workflow on a fresh Debian/Crostini host. Source: <https://github.com/alunduil/alunduil-chezmoi>.
 
-Personal config — no warranty, no support, fork freely.
+Personal config — no warranty, no support. [0BSD licensed](LICENSE).
 
 ## Bootstrap
 
