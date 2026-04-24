@@ -56,9 +56,11 @@ Only projects, tasks, and subtasks are synced — sessions, worktrees, PIDs, and
 - `~/.claustre/db/` or other Claustre runtime state
 - The age private key (password manager only)
 - Node, Rust, or chezmoi binaries (install script uses canonical installers)
-- `~/.claude/` and `~/.claustre/` configs (deferred — will be added once real usage informs what's worth syncing)
+- `~/.claude/` configs (deferred — will be added once real usage informs what's worth syncing)
+- `~/.claustre/` runtime state (`claustre.db`, `sockets/`, `pids/`, `worktrees/`, `tmp/`, `hooks/`, `sync/`) — machine-local by design; only `config.toml` is managed
 
 ## Layout
 
-- `dot_bashrc`, `dot_profile`, `dot_gitconfig` — managed shell + git config.
+- `dot_bashrc`, `dot_profile`, `dot_bash_profile`, `dot_gitconfig` — managed shell + git config.
+- `dot_claustre/config.toml` — Claustre's user config. Currently sets `sync.auto_push = true` so task/project state pushes to the companion `alunduil-claustre-state` repo automatically. Runtime state (DB, sockets, worktrees) stays machine-local.
 - `run_once_before_install-packages.sh.tmpl` — idempotent bootstrap: apt packages (`gh zsh ripgrep fd-find jq unzip age`), Tailscale via its official installer (system daemon, enables `tailscaled.service`), zellij from the upstream GitHub release (pinned, sha256-verified; Debian bookworm doesn't package it), nvm + Node LTS, `@anthropic-ai/claude-code`, rustup + `claustre` from git, and the `~/.config/zellij/plugins/` directory that zellaude auto-populates on first Zellij load. Re-runs whenever its content hash changes.
