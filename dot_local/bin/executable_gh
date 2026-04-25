@@ -42,6 +42,7 @@ for dir in "${path_dirs[@]}"; do
   candidate="$dir/gh"
   [ -x "$candidate" ] || continue
   [ "$(readlink -f "$candidate" 2>/dev/null)" = "$self" ] && continue
+  # shellcheck disable=SC2093
   exec "$candidate" "$@"
 done
 
