@@ -37,9 +37,15 @@ default_tab_template {
 
 keybinds {
     shared_except "locked" {
-        // Deep-pairing layout in a new tab.
+        // Deep-pairing picker: floating fzf chooser over local clones,
+        // GitHub repos, and "create new" -- it then opens the pair layout
+        // in a new tab with the chosen cwd. See ~/.local/bin/pair-start.
         bind "Alt p" {
-            NewTab { layout "pair"; }
+            Run "pair-start" {
+                floating true
+                close_on_exit true
+                name "pair-picker"
+            }
         }
         // Floating ad-hoc terminal (gh, chezmoi diff, rg, etc.).
         bind "Alt g" {

@@ -1,0 +1,103 @@
+#!/usr/bin/env bash
+# pair-start: pick the working directory for the Zellij `pair` layout.
+#
+# Bound to Alt+p (~/.config/zellij/config.kdl) so the picker pops up
+# regardless of zellij's current cwd -- typical entry is from claustre
+# in $HOME, where the bare layout would otherwise open in $HOME.
+#
+# Three sources, unified into one fzf prompt:
+#   1. local      directories directly under $PAIR_BASE_DIR (default ~/pair)
+#   2. github     repos visible to `gh repo list`
+#   3. (no match) the typed query, treated as $PAIR_BASE_DIR/<name>; if it
+#                 contains "/" it is treated as `owner/repo` and cloned via
+#                 `gh repo clone` into $PAIR_BASE_DIR/<repo>
+#
+# After resolving the cwd, opens the pair layout in a new tab there.
+
+set -euo pipefail
+
+PAIR_BASE_DIR="${PAIR_BASE_DIR:-$HOME/pair}"
+mkdir -p "$PAIR_BASE_DIR"
+
+# Floating panes auto-close on exit, so a silent failure would vanish before
+# it could be read. Pause on error so the human can see what happened.
+on_error() {
+  local code=$?
+  printf '\n[pair-start] aborted (exit %d). Press Enter to close...\n' "$code" >&2
+  read -r _ || true
+  exit "$code"
+}
+trap on_error ERR
+
+# --- collect entries -------------------------------------------------------
+# Tab-separated:  <kind>\t<label>\t<value>
+# fzf shows columns 1,2 (--with-nth) and matches across all of them.
+entries=()
+
+while IFS= read -r -d '' dir; do
+  entries+=("$(printf 'local\t%s\t%s' "$(basename "$dir")" "$dir")")
+done < <(find "$PAIR_BASE_DIR" -mindepth 1 -maxdepth 1 -type d -print0 2>/dev/null | sort -z)
+
+if command -v gh >/dev/null 2>&1 && gh auth status >/dev/null 2>&1; then
+  while IFS= read -r repo; do
+    [ -n "$repo" ] || continue
+    entries+=("$(printf 'github\t%s\t%s' "$repo" "$repo")")
+  done < <(gh repo list --limit 200 --json nameWithOwner -q '.[].nameWithOwner' 2>/dev/null || true)
+fi
+
+# --- pick ------------------------------------------------------------------
+if (( ${#entries[@]} > 0 )); then
+  list=$(printf '%s\n' "${entries[@]}")
+else
+  list=""
+fi
+
+output=$(
+  printf '%s\n' "$list" \
+  | fzf --print-query \
+        --prompt='pair> ' \
+        --header='Enter to open; type a name (no match) to create; owner/repo to clone' \
+        --delimiter=$'\t' \
+        --with-nth=1,2 \
+        --no-sort \
+        --tiebreak=begin \
+  || true
+)
+
+query=$(printf '%s' "$output" | sed -n '1p')
+selected=$(printf '%s' "$output" | sed -n '2p')
+
+cwd=""
+
+if [ -n "$selected" ]; then
+  IFS=$'\t' read -r kind _label value <<<"$selected"
+  case "$kind" in
+    local)
+      cwd="$value"
+      ;;
+    github)
+      target="$PAIR_BASE_DIR/$(basename "$value")"
+      [ -d "$target/.git" ] || gh repo clone "$value" "$target"
+      cwd="$target"
+      ;;
+  esac
+elif [ -n "$query" ]; then
+  trimmed=$(printf '%s' "$query" | awk '{$1=$1};1')
+  if [ -z "$trimmed" ]; then
+    exit 0
+  fi
+  if [[ "$trimmed" == */* ]]; then
+    target="$PAIR_BASE_DIR/$(basename "$trimmed")"
+    [ -d "$target/.git" ] || gh repo clone "$trimmed" "$target"
+    cwd="$target"
+  else
+    cwd="$PAIR_BASE_DIR/$trimmed"
+    mkdir -p "$cwd"
+  fi
+else
+  exit 0
+fi
+
+[ -n "$cwd" ] || exit 0
+
+zellij action new-tab --layout pair --cwd "$cwd"

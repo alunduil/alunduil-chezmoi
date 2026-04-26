@@ -7,7 +7,8 @@
 // Invoke:
 //   zellij --layout pair                         # fresh session
 //   zellij action new-tab --layout pair          # new tab in current session
-//   Alt+p                                        # keybind, same as above
+//   Alt+p                                        # floating picker (pair-start)
+//                                                # then `new-tab --layout pair --cwd <chosen>`
 
 layout {
     tab name="pair" focus=true {

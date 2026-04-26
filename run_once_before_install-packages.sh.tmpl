@@ -13,7 +13,7 @@ log() { printf '==> %s\n' "$*" >&2; }
 # -------------------------------------------------------------------- apt pkgs
 # zellij is intentionally not here: not in Debian bookworm. Installed below
 # from GitHub releases (pre-built musl binary).
-APT_PACKAGES=(gh zsh ripgrep fd-find jq unzip age)
+APT_PACKAGES=(gh zsh ripgrep fd-find jq unzip age fzf)
 missing=()
 for pkg in "${APT_PACKAGES[@]}"; do
   dpkg -s "$pkg" >/dev/null 2>&1 || missing+=("$pkg")
