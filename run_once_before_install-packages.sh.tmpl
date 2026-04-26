@@ -98,6 +98,14 @@ else
   log "claude-code: already installed"
 fi
 
+# ----------------------------------------------------------- Readwise CLI
+if ! command -v readwise >/dev/null 2>&1; then
+  log "readwise-cli: npm install -g @readwise/cli"
+  npm install -g @readwise/cli
+else
+  log "readwise-cli: already installed"
+fi
+
 # ---------------------------------------------------------- rustup + claustre
 if ! command -v cargo >/dev/null 2>&1; then
   log "rustup: installing stable toolchain"
