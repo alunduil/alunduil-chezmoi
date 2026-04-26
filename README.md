@@ -47,7 +47,7 @@ Only projects, tasks, and subtasks sync; sessions, worktrees, PIDs, and rate-lim
 - `dot_config/zellij/config.kdl` — Zellij config: plugin aliases (zellaude, zjstatus, ghost, notepad — all pinned to release tags), status bars, and `Alt+p`/`Alt+g`/`Alt+m` keybinds.
 - `dot_config/zellij/layouts/pair.kdl` — deep-pairing layout: Claude Code (40%) alongside lazygit (60%). VS Code handles editing in its own window; ghost (`Alt+g`) handles on-demand shells.
 - `dot_local/bin/gh` — wrapper that shadows `/usr/bin/gh` to require `--draft` on `gh pr create`. Bypass with `GH_DRAFT_GUARD=off`.
-- `dot_local/bin/pair-start` — floating fzf picker bound to `Alt+p`. Unifies git checkouts in `~/*`, `gh repo list`, and a "create new" fallback (typed name, or `owner/repo` to clone — both placed in `~`), then opens the pair layout in a new tab with the chosen cwd.
+- `dot_local/bin/pair-start` — floating fzf picker bound to `Alt+p`. Unifies git checkouts in `~/*` and `gh repo list`; a no-match query creates `~/<query>` (the list already covers everything cloneable, so a miss means "new directory"). Then opens the pair layout in a new tab with the chosen cwd.
 - `run_once_before_install-packages.sh.tmpl` — idempotent bootstrap (apt packages, Tailscale, Zellij, lazygit, nvm/Node, `@anthropic-ai/claude-code`, rustup/Claustre).
 
 ## Never in the repo

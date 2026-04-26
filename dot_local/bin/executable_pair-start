@@ -11,9 +11,9 @@
 #                 entry. $XDG_RUNTIME_DIR is deliberately not used -- it is
 #                 tmpfs and wiped on logout, which would lose uncommitted work.
 #   2. github     repos visible to `gh repo list`
-#   3. (no match) the typed query, treated as $PAIR_BASE_DIR/<name>; if it
-#                 contains "/" it is treated as `owner/repo` and cloned via
-#                 `gh repo clone` into $PAIR_BASE_DIR/<repo>
+#   3. (no match) the typed query, created as $PAIR_BASE_DIR/<query>. The
+#                 list already enumerates every repo you can clone, so a
+#                 miss means "new directory" -- no foreign-clone heuristic.
 #
 # After resolving the cwd, opens the pair layout in a new tab there.
 
@@ -63,7 +63,7 @@ output=$(
   printf '%s\n' "$list" \
   | fzf --print-query \
         --prompt='pair> ' \
-        --header='Enter to open; type a name (no match) to create; owner/repo to clone' \
+        --header='Enter to open; type a name with no match + Enter to create' \
         --delimiter=$'\t' \
         --with-nth=1,2 \
         --no-sort \
@@ -93,14 +93,8 @@ elif [ -n "$query" ]; then
   if [ -z "$trimmed" ]; then
     exit 0
   fi
-  if [[ "$trimmed" == */* ]]; then
-    target="$PAIR_BASE_DIR/$(basename "$trimmed")"
-    [ -d "$target/.git" ] || gh repo clone "$trimmed" "$target"
-    cwd="$target"
-  else
-    cwd="$PAIR_BASE_DIR/$trimmed"
-    mkdir -p "$cwd"
-  fi
+  cwd="$PAIR_BASE_DIR/$trimmed"
+  mkdir -p "$cwd"
 else
   exit 0
 fi
