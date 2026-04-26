@@ -6,7 +6,10 @@
 # in $HOME, where the bare layout would otherwise open in $HOME.
 #
 # Three sources, unified into one fzf prompt:
-#   1. local      directories directly under $PAIR_BASE_DIR (default ~/pair)
+#   1. local      git checkouts directly under $PAIR_BASE_DIR (default $HOME):
+#                 visible (non-dot) top-level dirs that contain a `.git`
+#                 entry. $XDG_RUNTIME_DIR is deliberately not used -- it is
+#                 tmpfs and wiped on logout, which would lose uncommitted work.
 #   2. github     repos visible to `gh repo list`
 #   3. (no match) the typed query, treated as $PAIR_BASE_DIR/<name>; if it
 #                 contains "/" it is treated as `owner/repo` and cloned via
@@ -16,7 +19,7 @@
 
 set -euo pipefail
 
-PAIR_BASE_DIR="${PAIR_BASE_DIR:-$HOME/pair}"
+PAIR_BASE_DIR="${PAIR_BASE_DIR:-$HOME}"
 mkdir -p "$PAIR_BASE_DIR"
 
 # Floating panes auto-close on exit, so a silent failure would vanish before
@@ -35,8 +38,12 @@ trap on_error ERR
 entries=()
 
 while IFS= read -r -d '' dir; do
+  # `.git` is a directory in normal clones and a file in worktrees; -e covers
+  # both. Filtering to actual checkouts keeps $HOME's many non-repo dirs out
+  # of the picker.
+  [ -e "$dir/.git" ] || continue
   entries+=("$(printf 'local\t%s\t%s' "$(basename "$dir")" "$dir")")
-done < <(find "$PAIR_BASE_DIR" -mindepth 1 -maxdepth 1 -type d -print0 2>/dev/null | sort -z)
+done < <(find "$PAIR_BASE_DIR" -mindepth 1 -maxdepth 1 -type d -not -name '.*' -print0 2>/dev/null | sort -z)
 
 if command -v gh >/dev/null 2>&1 && gh auth status >/dev/null 2>&1; then
   while IFS= read -r repo; do
