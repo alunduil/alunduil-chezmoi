@@ -5,7 +5,7 @@
 [![Managed with chezmoi](https://img.shields.io/badge/managed%20with-chezmoi-blue)](https://chezmoi.io)
 [![Platform: Debian / Crostini](https://img.shields.io/badge/platform-Debian%20%2F%20Crostini-A81D33?logo=debian&logoColor=white)](https://www.debian.org)
 
-Personal dotfiles for [@alunduil](https://github.com/alunduil), managed by [chezmoi](https://chezmoi.io). Bootstraps a Claude Code + [Claustre](https://github.com/pmbrull/claustre) + [Zellij](https://zellij.dev) workflow on a fresh Debian/Crostini host. Source: <https://github.com/alunduil/alunduil-chezmoi>.
+Personal [chezmoi](https://chezmoi.io)-managed dotfiles for [@alunduil](https://github.com/alunduil). Run one command on a fresh Debian/Crostini host to go from bare OS to a fully configured development environment with AI pair programming, terminal multiplexing, and git integration — layouts, keybinds, and guardrails included. Source: <https://github.com/alunduil/alunduil-chezmoi>.
 
 Personal config — no warranty, no support. [0BSD licensed](LICENSE).
 
@@ -30,6 +30,14 @@ claustre configure                         # wires up Claude Code permissions
 ```
 
 If SSH to GitHub isn't set up yet, clone over HTTPS first and swap remotes once keys are in place.
+
+### Verify
+
+After bootstrap, confirm the key tools are on PATH:
+
+```bash
+claude --version && claustre --version && zellij --version && lazygit --version
+```
 
 ## Companion repo
 
@@ -60,3 +68,7 @@ Only projects, tasks, and subtasks sync; sessions, worktrees, PIDs, and rate-lim
 ## Never in the repo
 
 Credentials of any kind, runtime state (`.credentials.json`, session history, `~/.claustre/db/`), the age private key, SSH private keys, and toolchain binaries (chezmoi/Node/Rust install via canonical installers).
+
+## Contributing
+
+Personal configuration — not accepting contributions. Fork freely under [0BSD](LICENSE).
