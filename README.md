@@ -1,6 +1,9 @@
 # alunduil-chezmoi
 
 [![CI](https://github.com/alunduil/alunduil-chezmoi/actions/workflows/ci.yml/badge.svg)](https://github.com/alunduil/alunduil-chezmoi/actions/workflows/ci.yml)
+[![License: 0BSD](https://img.shields.io/github/license/alunduil/alunduil-chezmoi)](LICENSE)
+[![Managed with chezmoi](https://img.shields.io/badge/managed%20with-chezmoi-blue)](https://chezmoi.io)
+[![Platform: Debian / Crostini](https://img.shields.io/badge/platform-Debian%20%2F%20Crostini-A81D33?logo=debian&logoColor=white)](https://www.debian.org)
 
 Personal dotfiles for [@alunduil](https://github.com/alunduil), managed by [chezmoi](https://chezmoi.io). Bootstraps a Claude Code + [Claustre](https://github.com/pmbrull/claustre) + [Zellij](https://zellij.dev) workflow on a fresh Debian/Crostini host. Source: <https://github.com/alunduil/alunduil-chezmoi>.
 
