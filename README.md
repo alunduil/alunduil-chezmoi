@@ -2,7 +2,7 @@
 
 [![CI](https://github.com/alunduil/alunduil-chezmoi/actions/workflows/ci.yml/badge.svg)](https://github.com/alunduil/alunduil-chezmoi/actions/workflows/ci.yml)
 
-Personal dotfiles for [@alunduil](https://github.com/alunduil), managed by [chezmoi](https://chezmoi.io). Bootstraps a Claude Code + [Claustre](https://github.com/pmbrull/claustre) + [Zellij](https://zellij.dev) workflow on a fresh Debian/Crostini host. Source: <https://github.com/alunduil/alunduil-chezmoi>.
+Personal dotfiles for [@alunduil](https://github.com/alunduil), managed by [chezmoi](https://chezmoi.io). One command on a fresh Debian/Crostini host sets up a complete AI-assisted development environment: [Claude Code](https://claude.com/claude-code) for coding, [Claustre](https://github.com/pmbrull/claustre) for task orchestration, [Zellij](https://zellij.dev) for terminal multiplexing, and [lazygit](https://github.com/jesseduffield/lazygit) for git — all pre-wired with layouts, keybinds, and guardrails. Source: <https://github.com/alunduil/alunduil-chezmoi>.
 
 Personal config — no warranty, no support. [0BSD licensed](LICENSE).
 
@@ -28,6 +28,14 @@ claustre configure                         # wires up Claude Code permissions
 
 If SSH to GitHub isn't set up yet, clone over HTTPS first and swap remotes once keys are in place.
 
+### Verify
+
+After bootstrap, confirm the key tools are on PATH:
+
+```bash
+claude --version && claustre --version && zellij --version && lazygit --version
+```
+
 ## Companion repo
 
 `alunduil-claustre-state` (planned, private) holds Claustre's cross-machine task/project state:
@@ -52,3 +60,7 @@ Only projects, tasks, and subtasks sync; sessions, worktrees, PIDs, and rate-lim
 ## Never in the repo
 
 Credentials of any kind, runtime state (`.credentials.json`, session history, `~/.claustre/db/`), the age private key, SSH private keys, and toolchain binaries (chezmoi/Node/Rust install via canonical installers).
+
+## Contributing
+
+Personal configuration — not accepting contributions. Fork freely under [0BSD](LICENSE).
