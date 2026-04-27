@@ -81,32 +81,24 @@ fi
 
 # shellcheck disable=SC1091
 [ -s "$NVM_DIR/nvm.sh" ] && . "$NVM_DIR/nvm.sh"
-# Non-interactive shells may not auto-activate the default node.
-# Without this, npm global installs fall through to the system prefix
-# (/usr/lib/node_modules) which requires root.
-nvm use default >/dev/null 2>&1 || true
 
-if ! command -v node >/dev/null 2>&1; then
+# Ensure an nvm-managed node exists. The `command -v node` check that was
+# here before could find a system /usr/bin/node and skip installation,
+# leaving nvm with zero versions and npm pointed at /usr/lib.
+if ! nvm ls default >/dev/null 2>&1; then
   log "node: installing LTS via nvm"
   nvm install --lts
   nvm alias default 'lts/*'
-else
-  log "node: $(node --version) already on PATH"
 fi
+nvm use default >/dev/null 2>&1
+log "node: $(node --version) via nvm"
 
-# Verify npm global prefix is writable (not the system /usr/lib/node_modules).
-# Even after sourcing nvm.sh and `nvm use default`, a stale PATH or missing
-# default alias can leave the system npm active.
-npm_prefix="$(npm config get prefix 2>/dev/null || echo /usr)"
-if [[ "$npm_prefix" == /usr* ]]; then
-  log "npm: prefix is $npm_prefix (system); re-activating nvm"
-  nvm use default 2>/dev/null || nvm use node 2>/dev/null || true
-  npm_prefix="$(npm config get prefix 2>/dev/null || echo /usr)"
-  if [[ "$npm_prefix" == /usr* ]]; then
-    log "FATAL: npm global prefix is $npm_prefix — cannot install packages without root"
-    exit 1
-  fi
-fi
+# Pin npm's global prefix to the nvm-managed node directory so that
+# `npm install -g` never falls through to /usr/lib/node_modules (which
+# requires root). This is more reliable than `nvm use default` alone
+# which can fail silently in non-interactive chezmoi runs.
+NPM_CONFIG_PREFIX="$NVM_DIR/versions/node/$(node --version)"
+export NPM_CONFIG_PREFIX
 
 # ---------------------------------------------------------------- Claude Code
 if ! command -v claude >/dev/null 2>&1; then
