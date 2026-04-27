@@ -14,7 +14,7 @@ input="$(cat)"
 tool_name="$(jq -r '.tool_name // empty' <<<"$input")"
 
 case "$tool_name" in
-  mcp__github__create_pull_request|mcp__github__create_pull_request_with_copilot)
+  mcp__github__create_pull_request | mcp__github__create_pull_request_with_copilot)
     draft="$(jq -r '.tool_input.draft // false' <<<"$input")"
     if [ "$draft" != "true" ]; then
       cat >&2 <<'EOF'

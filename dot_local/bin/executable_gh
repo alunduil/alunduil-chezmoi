@@ -21,7 +21,10 @@ if [ "${1:-}" = "pr" ] && [ "${2:-}" = "create" ] && [ "${GH_DRAFT_GUARD:-}" != 
   has_draft=0
   for arg in "${@:3}"; do
     case "$arg" in
-      --draft|-d) has_draft=1; break ;;
+      --draft | -d)
+        has_draft=1
+        break
+        ;;
     esac
   done
   if [ "$has_draft" -eq 0 ]; then

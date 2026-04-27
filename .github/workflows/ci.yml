@@ -20,20 +20,31 @@ jobs:
           mkdir -p ~/.config/chezmoi
           age-keygen -o ~/.config/chezmoi/key.txt 2>/dev/null
 
-      - name: Shellcheck
+      - name: Render bootstrap script
         run: |
           chezmoi execute-template --source="$GITHUB_WORKSPACE" \
             < run_once_before_install-packages.sh.tmpl > /tmp/bootstrap.sh
+
+      - name: Shellcheck
+        run: |
           shellcheck /tmp/bootstrap.sh
           shellcheck dot_local/bin/executable_gh
           shellcheck dot_claude/hooks/executable_pr-draft-guard.sh
 
-      - name: chezmoi dry-run
-        run: chezmoi apply --dry-run --verbose --source="$GITHUB_WORKSPACE"
+      - name: shfmt
+        env:
+          SHFMT_VERSION: v3.10.0
+        run: |
+          curl -fsSL -o /usr/local/bin/shfmt \
+            "https://github.com/mvdan/sh/releases/download/${SHFMT_VERSION}/shfmt_${SHFMT_VERSION}_linux_amd64"
+          chmod +x /usr/local/bin/shfmt
+          shfmt -i 2 -ci -d /tmp/bootstrap.sh
+          shfmt -i 2 -ci -d dot_local/bin/executable_gh
+          shfmt -i 2 -ci -d dot_claude/hooks/executable_pr-draft-guard.sh
 
       - name: KDL syntax
         run: |
-          pip install --quiet kdl-py
+          pip install --quiet 'kdl-py==1.2.0'
           python3 -c "
           import kdl, sys
           for path in sys.argv[1:]:
@@ -46,4 +57,102 @@ jobs:
         run: jq empty dot_claude/settings.json
 
       - name: Markdown links
-        run: npx --yes markdown-link-check README.md
+        run: npx --yes markdown-link-check@3.14.2 README.md
+
+  validate:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Install chezmoi
+        run: sh -c "$(curl -fsLS get.chezmoi.io)" -- -b /usr/local/bin
+
+      - name: Set up test age key
+        run: |
+          sudo apt-get update -qq
+          sudo apt-get install -y -qq age
+          mkdir -p ~/.config/chezmoi
+          age-keygen -o ~/.config/chezmoi/key.txt 2>/dev/null
+
+      - name: Install pinned zellij
+        env:
+          ZELLIJ_VERSION: v0.44.1
+        run: |
+          arch="x86_64-unknown-linux-musl"
+          base="https://github.com/zellij-org/zellij/releases/download/${ZELLIJ_VERSION}"
+          curl -fsSL -o /tmp/zellij.tar.gz "$base/zellij-${arch}.tar.gz"
+          tar -xzf /tmp/zellij.tar.gz -C /tmp
+          sudo install -m 0755 /tmp/zellij /usr/local/bin/zellij
+
+      - name: Zellij config check
+        run: |
+          mkdir -p ~/.config/zellij/layouts
+          cp dot_config/zellij/config.kdl ~/.config/zellij/config.kdl
+          cp dot_config/zellij/layouts/pair.kdl ~/.config/zellij/layouts/pair.kdl
+          zellij setup --check
+
+      - name: Plugin URLs reachable
+        run: |
+          fail=0
+          while IFS= read -r url; do
+            printf 'Checking https://%s ... ' "$url"
+            status=$(curl -sS -o /dev/null -w '%{http_code}' -L --head "https://$url" || true)
+            printf '%s\n' "$status"
+            if [ "$status" -lt 200 ] || [ "$status" -ge 400 ]; then
+              printf 'FAIL: https://%s returned %s\n' "$url" "$status" >&2
+              fail=1
+            fi
+          done < <(grep -oP 'location="https://\K[^"]+' dot_config/zellij/config.kdl)
+          exit "$fail"
+
+      - name: Chezmoi apply + assertions
+        run: |
+          dest="$(mktemp -d)"
+          chezmoi apply --destination="$dest" --source="$GITHUB_WORKSPACE" --exclude=scripts
+
+          fail=0
+
+          # Every executable_* source lands with correct mode
+          for f in "$dest/.local/bin/gh" "$dest/.claude/hooks/pr-draft-guard.sh"; do
+            if [ ! -x "$f" ]; then
+              printf 'FAIL: %s is not executable\n' "$f" >&2
+              fail=1
+            else
+              printf 'OK: %s is executable\n' "$f"
+            fi
+          done
+
+          # No chezmoi naming prefixes leaked into destination
+          leaked=$(find "$dest" \( -name 'dot_*' -o -name 'executable_*' -o -name 'run_once_*' \) -print -quit)
+          if [ -n "$leaked" ]; then
+            printf 'FAIL: chezmoi prefix leaked: %s\n' "$leaked" >&2
+            fail=1
+          else
+            printf 'OK: no chezmoi prefixes in destination\n'
+          fi
+
+          # Hook scripts referenced in settings.json exist in the applied tree
+          while IFS= read -r cmd; do
+            resolved="${cmd/\$HOME/$dest}"
+            if [ ! -f "$resolved" ]; then
+              printf 'FAIL: hook command %s not found at %s\n' "$cmd" "$resolved" >&2
+              fail=1
+            else
+              printf 'OK: hook %s resolves to %s\n' "$cmd" "$resolved"
+            fi
+          done < <(jq -r '.. | .command? // empty' "$dest/.claude/settings.json")
+
+          exit "$fail"
+
+  test:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Install bats
+        run: |
+          sudo apt-get update -qq
+          sudo apt-get install -y -qq bats
+
+      - name: Run tests
+        run: bats test/
