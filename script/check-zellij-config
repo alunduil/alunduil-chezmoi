@@ -1,0 +1,11 @@
+#!/usr/bin/env bash
+set -euo pipefail
+
+config_dir="$(mktemp -d)"
+trap 'rm -rf "$config_dir"' EXIT
+
+mkdir -p "$config_dir/zellij/layouts"
+cp dot_config/zellij/config.kdl "$config_dir/zellij/config.kdl"
+cp dot_config/zellij/layouts/*.kdl "$config_dir/zellij/layouts/"
+
+XDG_CONFIG_HOME="$config_dir" zellij setup --check

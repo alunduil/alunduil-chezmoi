@@ -1,0 +1,39 @@
+repos:
+  - repo: https://github.com/shellcheck-py/shellcheck-py
+    rev: v0.11.0.1
+    hooks:
+      - id: shellcheck
+        files: (executable_|\.sh\.tmpl$)
+        types: [text]
+
+  - repo: https://github.com/scop/pre-commit-shfmt
+    rev: v3.12.0-2
+    hooks:
+      - id: shfmt
+        args: ['-i', '2', '-ci']
+        files: (executable_|\.sh\.tmpl$)
+        types: [text]
+
+  - repo: https://github.com/pre-commit/pre-commit-hooks
+    rev: v6.0.0
+    hooks:
+      - id: check-json
+        files: settings\.json$
+
+  - repo: local
+    hooks:
+      - id: kdl-syntax
+        name: KDL syntax
+        entry: python3 -c "import kdl,sys;[kdl.parse(open(f).read()) for f in sys.argv[1:]]"
+        language: python
+        additional_dependencies: ['kdl-py==1.2.0']
+        files: \.kdl$
+        types: [file]
+
+      - id: markdown-link-check
+        name: Markdown links
+        entry: markdown-link-check
+        language: node
+        additional_dependencies: ['markdown-link-check@3.14.2']
+        files: README\.md$
+        types: [file]

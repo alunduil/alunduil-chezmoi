@@ -1,0 +1,14 @@
+#!/usr/bin/env bash
+set -euo pipefail
+
+fail=0
+while IFS= read -r url; do
+  printf 'Checking https://%s ... ' "$url"
+  status=$(curl -sS -o /dev/null -w '%{http_code}' -L --head "https://$url" || true)
+  printf '%s\n' "$status"
+  if [ "$status" -lt 200 ] || [ "$status" -ge 400 ]; then
+    printf 'FAIL: https://%s returned %s\n' "$url" "$status" >&2
+    fail=1
+  fi
+done < <(grep -oP 'location="https://\K[^"]+' dot_config/zellij/config.kdl)
+exit "$fail"
