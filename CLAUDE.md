@@ -11,8 +11,8 @@ software project — naming conventions and file structure follow chezmoi rules.
 - `.tmpl` suffix → expanded as a Go template before deployment
 - `run_once_before_` prefix → script executed once on `chezmoi apply`; re-runs
   only when the file's content hash changes
-- `.chezmoiignore` → lists source files excluded from deployment (README.md,
-  LICENSE)
+- `.chezmoiignore` → lists source files excluded from deployment (CLAUDE.md,
+  LICENSE, README.md, renovate.json, script/, test/)
 
 ## Layout
 
@@ -24,9 +24,9 @@ software project — naming conventions and file structure follow chezmoi rules.
 - `dot_config/zellij/` — Zellij config and layouts (pair.kdl for deep-pairing)
 - `dot_local/bin/executable_gh` — wrapper shadowing system `gh` to enforce
   `--draft` on PR creation
-- `run_once_before_install-packages.sh.tmpl` — idempotent bootstrap script
-  (apt packages, Tailscale, Zellij, lazygit, nvm/Node, Claude Code, Readwise
-  CLI, rtk, rustup/Claustre)
+- `run_once_before_*.sh.tmpl` — idempotent bootstrap scripts, split by concern:
+  01 system packages, 02 binary tools, 03 Node ecosystem, 04 Rust ecosystem,
+  05 standalone tools
 
 ## Previewing and testing changes
 
@@ -36,8 +36,17 @@ chezmoi apply -n      # dry-run: same as diff but in apply format
 chezmoi apply -v      # apply with verbose output
 ```
 
-No test suite or linter — verification is `chezmoi diff` and manual review.
-The bootstrap script is idempotent; re-running it is safe.
+CI runs pre-commit (shellcheck, shfmt, check-json), bats tests, zellij config
+validation, chezmoi apply validation, and lychee link checking. Run locally:
+
+```bash
+pre-commit run --all-files   # lint
+bats test/                   # unit tests
+script/check-zellij-config   # requires zellij on PATH
+script/check-chezmoi-apply   # requires chezmoi + age
+```
+
+The bootstrap scripts are idempotent; re-running them is safe.
 
 ## Never commit
 
