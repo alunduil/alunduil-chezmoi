@@ -1,10 +1,5 @@
 # alunduil-chezmoi
 
-[![Pre-commit](https://img.shields.io/github/actions/workflow/status/alunduil/alunduil-chezmoi/pre-commit.yml?label=pre-commit)](https://github.com/alunduil/alunduil-chezmoi/actions/workflows/pre-commit.yml)
-[![Zellij](https://img.shields.io/github/actions/workflow/status/alunduil/alunduil-chezmoi/zellij.yml?label=zellij)](https://github.com/alunduil/alunduil-chezmoi/actions/workflows/zellij.yml)
-[![Chezmoi](https://img.shields.io/github/actions/workflow/status/alunduil/alunduil-chezmoi/chezmoi.yml?label=chezmoi)](https://github.com/alunduil/alunduil-chezmoi/actions/workflows/chezmoi.yml)
-[![Lychee](https://img.shields.io/github/actions/workflow/status/alunduil/alunduil-chezmoi/lychee.yml?label=lychee)](https://github.com/alunduil/alunduil-chezmoi/actions/workflows/lychee.yml)
-[![Bats](https://img.shields.io/github/actions/workflow/status/alunduil/alunduil-chezmoi/bats.yml?label=bats)](https://github.com/alunduil/alunduil-chezmoi/actions/workflows/bats.yml)
 [![License: 0BSD](https://img.shields.io/github/license/alunduil/alunduil-chezmoi)](LICENSE)
 [![Managed with chezmoi](https://img.shields.io/badge/managed%20with-chezmoi-blue)](https://chezmoi.io)
 [![Platform: Debian / Crostini](https://img.shields.io/badge/platform-Debian%20%2F%20Crostini-A81D33?logo=debian&logoColor=white)](https://www.debian.org)
