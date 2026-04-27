@@ -1,5 +1,2 @@
 [sync]
 auto_push = true
-
-[rtk]
-enabled = false

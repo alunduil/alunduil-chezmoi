@@ -106,6 +106,16 @@ else
   log "readwise-cli: already installed"
 fi
 
+# ------------------------------------------------------------------- rtk
+# Token-compressor for AI coding assistants — sits between Claude Code and
+# shell commands, reducing context-window consumption by 60-90 %.
+if ! command -v rtk >/dev/null 2>&1; then
+  log "rtk: installing from https://github.com/rtk-ai/rtk"
+  curl -fsSL https://raw.githubusercontent.com/rtk-ai/rtk/refs/heads/master/install.sh | sh
+else
+  log "rtk: already installed"
+fi
+
 # ---------------------------------------------------------- rustup + claustre
 if ! command -v cargo >/dev/null 2>&1; then
   log "rustup: installing stable toolchain"
