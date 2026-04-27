@@ -1,0 +1,45 @@
+#!/usr/bin/env bash
+# Installs system-level packages via apt and adds third-party apt repos as
+# needed. Must run before other bootstrap scripts so that system tools (curl,
+# jq, gpg, etc.) are available.
+
+set -euo pipefail
+
+log() { printf '==> %s\n' "$*" >&2; }
+
+# ----------------------------------------------------------- hashicorp repo
+if [ ! -f /usr/share/keyrings/hashicorp-archive-keyring.gpg ]; then
+  log "hashicorp: adding apt repository"
+  curl -fsSL https://apt.releases.hashicorp.com/gpg |
+    sudo gpg --dearmor -o /usr/share/keyrings/hashicorp-archive-keyring.gpg
+  printf 'deb [signed-by=/usr/share/keyrings/hashicorp-archive-keyring.gpg] https://apt.releases.hashicorp.com %s main\n' \
+    "$(lsb_release -cs)" | sudo tee /etc/apt/sources.list.d/hashicorp.list >/dev/null
+fi
+
+# -------------------------------------------------------------------- apt pkgs
+APT_PACKAGES=(gh zsh ripgrep fd-find jq unzip age terraform)
+missing=()
+for pkg in "${APT_PACKAGES[@]}"; do
+  dpkg -s "$pkg" >/dev/null 2>&1 || missing+=("$pkg")
+done
+if ((${#missing[@]} > 0)); then
+  log "apt: installing ${missing[*]}"
+  sudo apt-get update
+  sudo apt-get install -y "${missing[@]}"
+else
+  log "apt: all packages present"
+fi
+
+# ---------------------------------------------------------------- tailscale
+# System daemon. The official installer is idempotent and handles apt
+# signing key + repo + package in one go. `tailscale up` (interactive
+# browser auth) is a separate per-machine manual step -- see README.
+if ! command -v tailscale >/dev/null 2>&1; then
+  log "tailscale: running official installer"
+  curl -fsSL https://tailscale.com/install.sh | sh
+else
+  log "tailscale: already installed"
+fi
+sudo systemctl enable --now tailscaled
+
+log "system packages complete"

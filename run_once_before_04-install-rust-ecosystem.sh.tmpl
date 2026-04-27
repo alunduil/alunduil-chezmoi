@@ -1,0 +1,27 @@
+#!/usr/bin/env bash
+# Installs rustup and cargo-based tools. Canonical installer only: rustup.rs
+# for Rust. Debian apt rustc is avoided by design (it lags upstream).
+
+set -euo pipefail
+
+log() { printf '==> %s\n' "$*" >&2; }
+
+# ---------------------------------------------------------- rustup + claustre
+if ! command -v cargo >/dev/null 2>&1; then
+  log "rustup: installing stable toolchain"
+  curl -fsSL https://sh.rustup.rs | sh -s -- -y --default-toolchain stable --no-modify-path
+fi
+
+# shellcheck disable=SC1091
+[ -f "$HOME/.cargo/env" ] && . "$HOME/.cargo/env"
+
+if ! command -v claustre >/dev/null 2>&1; then
+  # The repo ships two packages (claustre TUI and claustre-app); cargo requires
+  # an explicit package name when installing from a multi-package git source.
+  log "claustre: cargo install --git https://github.com/pmbrull/claustre.git claustre"
+  cargo install --git https://github.com/pmbrull/claustre.git claustre
+else
+  log "claustre: already installed"
+fi
+
+log "rust ecosystem complete"

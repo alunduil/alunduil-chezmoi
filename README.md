@@ -1,8 +1,11 @@
 # alunduil-chezmoi
 
-[![CI](https://github.com/alunduil/alunduil-chezmoi/actions/workflows/ci.yml/badge.svg)](https://github.com/alunduil/alunduil-chezmoi/actions/workflows/ci.yml)
+[![CI](https://img.shields.io/github/actions/workflow/status/alunduil/alunduil-chezmoi/ci.yml)](https://github.com/alunduil/alunduil-chezmoi/actions/workflows/ci.yml)
+[![License: 0BSD](https://img.shields.io/github/license/alunduil/alunduil-chezmoi)](LICENSE)
+[![Managed with chezmoi](https://img.shields.io/badge/managed%20with-chezmoi-blue)](https://chezmoi.io)
+[![Platform: Debian / Crostini](https://img.shields.io/badge/platform-Debian%20%2F%20Crostini-A81D33?logo=debian&logoColor=white)](https://www.debian.org)
 
-Personal dotfiles for [@alunduil](https://github.com/alunduil), managed by [chezmoi](https://chezmoi.io). Bootstraps a Claude Code + [Claustre](https://github.com/pmbrull/claustre) + [Zellij](https://zellij.dev) workflow on a fresh Debian/Crostini host. Source: <https://github.com/alunduil/alunduil-chezmoi>.
+Personal [chezmoi](https://chezmoi.io)-managed dotfiles for [@alunduil](https://github.com/alunduil). Run one command on a fresh Debian/Crostini host to go from bare OS to a fully configured development environment with AI pair programming, terminal multiplexing, and git integration — layouts, keybinds, and guardrails included. Source: <https://github.com/alunduil/alunduil-chezmoi>.
 
 Personal config — no warranty, no support. [0BSD licensed](LICENSE).
 
@@ -28,6 +31,14 @@ claustre configure                         # wires up Claude Code permissions
 
 If SSH to GitHub isn't set up yet, clone over HTTPS first and swap remotes once keys are in place.
 
+### Verify
+
+After bootstrap, confirm the key tools are on PATH:
+
+```bash
+claude --version && claustre --version && zellij --version && lazygit --version
+```
+
 ## Companion repo
 
 `alunduil-claustre-state` (planned, private) holds Claustre's cross-machine task/project state:
@@ -47,8 +58,17 @@ Only projects, tasks, and subtasks sync; sessions, worktrees, PIDs, and rate-lim
 - `dot_config/zellij/config.kdl` — Zellij config: plugin aliases (zellaude, zjstatus, ghost, notepad — all pinned to release tags), status bars, and `Alt+p`/`Alt+g`/`Alt+m` keybinds.
 - `dot_config/zellij/layouts/pair.kdl` — deep-pairing layout: Claude Code (40%) alongside lazygit (60%). VS Code handles editing in its own window; ghost (`Alt+g`) handles on-demand shells.
 - `dot_local/bin/gh` — wrapper that shadows `/usr/bin/gh` to require `--draft` on `gh pr create`. Bypass with `GH_DRAFT_GUARD=off`.
-- `run_once_before_install-packages.sh.tmpl` — idempotent bootstrap (apt packages, Tailscale, Zellij, lazygit, nvm/Node, `@anthropic-ai/claude-code`, rustup/Claustre).
+- `run_once_before_*.sh.tmpl` — idempotent bootstrap scripts, split by concern:
+  - `01-install-system-packages` — apt packages, HashiCorp repo, Tailscale.
+  - `02-install-binary-tools` — Zellij, lazygit (GitHub release binaries).
+  - `03-install-node-ecosystem` — nvm, Node LTS, `@anthropic-ai/claude-code`, `@readwise/cli`.
+  - `04-install-rust-ecosystem` — rustup, Claustre.
+  - `05-install-standalone-tools` — rtk.
 
 ## Never in the repo
 
 Credentials of any kind, runtime state (`.credentials.json`, session history, `~/.claustre/db/`), the age private key, SSH private keys, and toolchain binaries (chezmoi/Node/Rust install via canonical installers).
+
+## Contributing
+
+Personal configuration — not accepting contributions. Fork freely under [0BSD](LICENSE).
