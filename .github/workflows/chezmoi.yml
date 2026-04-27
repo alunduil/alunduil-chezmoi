@@ -1,0 +1,22 @@
+name: Chezmoi
+
+on:
+  push:
+  pull_request:
+
+jobs:
+  run:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Install
+        run: |
+          sh -c "$(curl -fsLS get.chezmoi.io)" -- -b /usr/local/bin
+          sudo apt-get update -qq
+          sudo apt-get install -y -qq age
+          mkdir -p ~/.config/chezmoi
+          age-keygen -o ~/.config/chezmoi/key.txt 2>/dev/null
+
+      - name: Apply
+        run: script/check-chezmoi-apply

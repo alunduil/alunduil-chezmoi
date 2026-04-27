@@ -1,7 +1,8 @@
 # alunduil-chezmoi
 
 [![Pre-commit](https://img.shields.io/github/actions/workflow/status/alunduil/alunduil-chezmoi/pre-commit.yml?label=pre-commit)](https://github.com/alunduil/alunduil-chezmoi/actions/workflows/pre-commit.yml)
-[![Validate](https://img.shields.io/github/actions/workflow/status/alunduil/alunduil-chezmoi/validate.yml?label=validate)](https://github.com/alunduil/alunduil-chezmoi/actions/workflows/validate.yml)
+[![Zellij](https://img.shields.io/github/actions/workflow/status/alunduil/alunduil-chezmoi/zellij.yml?label=zellij)](https://github.com/alunduil/alunduil-chezmoi/actions/workflows/zellij.yml)
+[![Chezmoi](https://img.shields.io/github/actions/workflow/status/alunduil/alunduil-chezmoi/chezmoi.yml?label=chezmoi)](https://github.com/alunduil/alunduil-chezmoi/actions/workflows/chezmoi.yml)
 [![Bats](https://img.shields.io/github/actions/workflow/status/alunduil/alunduil-chezmoi/bats.yml?label=bats)](https://github.com/alunduil/alunduil-chezmoi/actions/workflows/bats.yml)
 [![License: 0BSD](https://img.shields.io/github/license/alunduil/alunduil-chezmoi)](LICENSE)
 [![Managed with chezmoi](https://img.shields.io/badge/managed%20with-chezmoi-blue)](https://chezmoi.io)

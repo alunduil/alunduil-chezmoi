@@ -1,0 +1,27 @@
+name: Zellij
+
+on:
+  push:
+  pull_request:
+
+jobs:
+  run:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Install
+        env:
+          ZELLIJ_VERSION: v0.44.1
+        run: |
+          arch="x86_64-unknown-linux-musl"
+          base="https://github.com/zellij-org/zellij/releases/download/${ZELLIJ_VERSION}"
+          curl -fsSL -o /tmp/zellij.tar.gz "$base/zellij-${arch}.tar.gz"
+          tar -xzf /tmp/zellij.tar.gz -C /tmp
+          sudo install -m 0755 /tmp/zellij /usr/local/bin/zellij
+
+      - name: Config
+        run: script/check-zellij-config
+
+      - name: Plugin URLs
+        run: script/check-plugin-urls
