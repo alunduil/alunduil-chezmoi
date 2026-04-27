@@ -22,6 +22,3 @@ jobs:
 
       - name: Config
         run: script/check-zellij-config
-
-      - name: Plugin URLs
-        run: script/check-plugin-urls

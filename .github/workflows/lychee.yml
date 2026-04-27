@@ -1,0 +1,14 @@
+name: Lychee
+
+on:
+  push:
+  pull_request:
+
+jobs:
+  run:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: lycheeverse/lychee-action@v2.8.0
+        with:
+          args: '--retry-wait-time 5 README.md dot_config/zellij/config.kdl'

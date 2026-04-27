@@ -19,21 +19,3 @@ repos:
     hooks:
       - id: check-json
         files: settings\.json$
-
-  - repo: local
-    hooks:
-      - id: kdl-syntax
-        name: KDL syntax
-        entry: python3 -c "import kdl,sys;[kdl.parse(open(f).read()) for f in sys.argv[1:]]"
-        language: python
-        additional_dependencies: ['kdl-py==1.2.0']
-        files: \.kdl$
-        types: [file]
-
-      - id: markdown-link-check
-        name: Markdown links
-        entry: bash -c 'markdown-link-check "$@" || { sleep 5; markdown-link-check "$@"; }' --
-        language: node
-        additional_dependencies: ['markdown-link-check@3.14.2']
-        files: README\.md$
-        types: [file]
