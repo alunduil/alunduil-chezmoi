@@ -25,6 +25,13 @@
     },
     {
       "customType": "regex",
+      "fileMatch": ["\\.github/workflows/zellij\\.yml$"],
+      "matchStrings": ["ZELLIJ_VERSION: (?<currentValue>v[\\d.]+)"],
+      "depNameTemplate": "zellij-org/zellij",
+      "datasourceTemplate": "github-releases"
+    },
+    {
+      "customType": "regex",
       "fileMatch": ["dot_config/zellij/config\\.kdl$"],
       "matchStrings": ["https://github\\.com/(?<depName>[^/]+/[^/]+)/releases/download/(?<currentValue>v[\\d.]+)/"],
       "datasourceTemplate": "github-releases"
