@@ -1,0 +1,23 @@
+name: Validate
+
+on:
+  push:
+  pull_request:
+
+jobs:
+  run:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Setup
+        run: script/ci-setup-validate
+
+      - name: Zellij config
+        run: script/check-zellij-config
+
+      - name: Plugin URLs
+        run: script/check-plugin-urls
+
+      - name: Chezmoi apply
+        run: script/check-chezmoi-apply
