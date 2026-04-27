@@ -10,10 +10,19 @@ set -euo pipefail
 
 log() { printf '==> %s\n' "$*" >&2; }
 
+# ----------------------------------------------------------- hashicorp repo
+if [ ! -f /usr/share/keyrings/hashicorp-archive-keyring.gpg ]; then
+  log "hashicorp: adding apt repository"
+  curl -fsSL https://apt.releases.hashicorp.com/gpg \
+    | sudo gpg --dearmor -o /usr/share/keyrings/hashicorp-archive-keyring.gpg
+  printf 'deb [signed-by=/usr/share/keyrings/hashicorp-archive-keyring.gpg] https://apt.releases.hashicorp.com %s main\n' \
+    "$(lsb_release -cs)" | sudo tee /etc/apt/sources.list.d/hashicorp.list >/dev/null
+fi
+
 # -------------------------------------------------------------------- apt pkgs
 # zellij is intentionally not here: not in Debian bookworm. Installed below
 # from GitHub releases (pre-built musl binary).
-APT_PACKAGES=(gh zsh ripgrep fd-find jq unzip age)
+APT_PACKAGES=(gh zsh ripgrep fd-find jq unzip age terraform)
 missing=()
 for pkg in "${APT_PACKAGES[@]}"; do
   dpkg -s "$pkg" >/dev/null 2>&1 || missing+=("$pkg")
@@ -151,34 +160,6 @@ else
   tar -xzf "$tmp/$asset" -C "$tmp" lazygit
   mkdir -p "$HOME/.local/bin"
   install -m 0755 "$tmp/lazygit" "$LAZYGIT_BIN"
-  rm -rf "$tmp"
-fi
-
-# ---------------------------------------------------------------- terraform
-TERRAFORM_VERSION="1.14.9"
-TERRAFORM_BIN="$HOME/.local/bin/terraform"
-if [ -x "$TERRAFORM_BIN" ] && "$TERRAFORM_BIN" --version 2>/dev/null | grep -qF "$TERRAFORM_VERSION"; then
-  log "terraform: $TERRAFORM_VERSION already installed"
-else
-  log "terraform: downloading $TERRAFORM_VERSION"
-  tmp="$(mktemp -d)"
-  base="https://releases.hashicorp.com/terraform/${TERRAFORM_VERSION}"
-  asset="terraform_${TERRAFORM_VERSION}_linux_amd64.zip"
-  curl -fsSL -o "$tmp/$asset" "$base/$asset"
-  curl -fsSL -o "$tmp/SHA256SUMS" "$base/terraform_${TERRAFORM_VERSION}_SHA256SUMS"
-  expected="$(awk -v f="$asset" '$2 == f {print $1}' "$tmp/SHA256SUMS")"
-  if [ -z "$expected" ]; then
-    printf 'terraform: no checksum entry for %s in SHA256SUMS\n' "$asset" >&2
-    exit 1
-  fi
-  actual="$(sha256sum "$tmp/$asset" | awk '{print $1}')"
-  if [ "$expected" != "$actual" ]; then
-    printf 'terraform: sha256 mismatch -- expected %s, got %s\n' "$expected" "$actual" >&2
-    exit 1
-  fi
-  unzip -o "$tmp/$asset" -d "$tmp"
-  mkdir -p "$HOME/.local/bin"
-  install -m 0755 "$tmp/terraform" "$TERRAFORM_BIN"
   rm -rf "$tmp"
 fi
 
