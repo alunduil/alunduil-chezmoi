@@ -22,9 +22,11 @@ jobs:
 
       - name: Shellcheck
         run: |
-          chezmoi execute-template --source="$GITHUB_WORKSPACE" \
-            < run_once_before_install-packages.sh.tmpl > /tmp/bootstrap.sh
-          shellcheck /tmp/bootstrap.sh
+          for f in run_once_before_*.sh.tmpl; do
+            chezmoi execute-template --source="$GITHUB_WORKSPACE" \
+              < "$f" > /tmp/bootstrap.sh
+            shellcheck /tmp/bootstrap.sh
+          done
           shellcheck dot_local/bin/executable_gh
           shellcheck dot_claude/hooks/executable_pr-draft-guard.sh
 

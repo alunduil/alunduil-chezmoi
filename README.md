@@ -50,7 +50,12 @@ Only projects, tasks, and subtasks sync; sessions, worktrees, PIDs, and rate-lim
 - `dot_config/zellij/config.kdl` — Zellij config: plugin aliases (zellaude, zjstatus, ghost, notepad — all pinned to release tags), status bars, and `Alt+p`/`Alt+g`/`Alt+m` keybinds.
 - `dot_config/zellij/layouts/pair.kdl` — deep-pairing layout: Claude Code (40%) alongside lazygit (60%). VS Code handles editing in its own window; ghost (`Alt+g`) handles on-demand shells.
 - `dot_local/bin/gh` — wrapper that shadows `/usr/bin/gh` to require `--draft` on `gh pr create`. Bypass with `GH_DRAFT_GUARD=off`.
-- `run_once_before_install-packages.sh.tmpl` — idempotent bootstrap (apt packages, Tailscale, Zellij, lazygit, nvm/Node, `@anthropic-ai/claude-code`, rustup/Claustre).
+- `run_once_before_*.sh.tmpl` — idempotent bootstrap scripts, split by concern:
+  - `01-install-system-packages` — apt packages, HashiCorp repo, Tailscale.
+  - `02-install-binary-tools` — Zellij, lazygit (GitHub release binaries).
+  - `03-install-node-ecosystem` — nvm, Node LTS, `@anthropic-ai/claude-code`, `@readwise/cli`.
+  - `04-install-rust-ecosystem` — rustup, Claustre.
+  - `05-install-standalone-tools` — rtk.
 
 ## Never in the repo
 
