@@ -10,10 +10,19 @@ set -euo pipefail
 
 log() { printf '==> %s\n' "$*" >&2; }
 
+# ----------------------------------------------------------- hashicorp repo
+if [ ! -f /usr/share/keyrings/hashicorp-archive-keyring.gpg ]; then
+  log "hashicorp: adding apt repository"
+  curl -fsSL https://apt.releases.hashicorp.com/gpg \
+    | sudo gpg --dearmor -o /usr/share/keyrings/hashicorp-archive-keyring.gpg
+  printf 'deb [signed-by=/usr/share/keyrings/hashicorp-archive-keyring.gpg] https://apt.releases.hashicorp.com %s main\n' \
+    "$(lsb_release -cs)" | sudo tee /etc/apt/sources.list.d/hashicorp.list >/dev/null
+fi
+
 # -------------------------------------------------------------------- apt pkgs
 # zellij is intentionally not here: not in Debian bookworm. Installed below
 # from GitHub releases (pre-built musl binary).
-APT_PACKAGES=(gh zsh ripgrep fd-find jq unzip age)
+APT_PACKAGES=(gh zsh ripgrep fd-find jq unzip age terraform)
 missing=()
 for pkg in "${APT_PACKAGES[@]}"; do
   dpkg -s "$pkg" >/dev/null 2>&1 || missing+=("$pkg")
