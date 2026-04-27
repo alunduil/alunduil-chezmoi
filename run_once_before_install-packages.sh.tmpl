@@ -82,13 +82,14 @@ fi
 # shellcheck disable=SC1091
 [ -s "$NVM_DIR/nvm.sh" ] && . "$NVM_DIR/nvm.sh"
 
-if ! command -v node >/dev/null 2>&1; then
+if nvm which default >/dev/null 2>&1; then
+  log "node: $(nvm version default) already managed by nvm"
+else
   log "node: installing LTS via nvm"
   nvm install --lts
   nvm alias default 'lts/*'
-else
-  log "node: $(node --version) already on PATH"
 fi
+nvm use default >/dev/null 2>&1
 
 # ---------------------------------------------------------------- Claude Code
 if ! command -v claude >/dev/null 2>&1; then
