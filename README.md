@@ -2,7 +2,7 @@
 
 [![CI](https://github.com/alunduil/alunduil-chezmoi/actions/workflows/ci.yml/badge.svg)](https://github.com/alunduil/alunduil-chezmoi/actions/workflows/ci.yml)
 
-Personal dotfiles for [@alunduil](https://github.com/alunduil), managed by [chezmoi](https://chezmoi.io). One command on a fresh Debian/Crostini host sets up a complete AI-assisted development environment: [Claude Code](https://claude.com/claude-code) for coding, [Claustre](https://github.com/pmbrull/claustre) for task orchestration, [Zellij](https://zellij.dev) for terminal multiplexing, and [lazygit](https://github.com/jesseduffield/lazygit) for git — all pre-wired with layouts, keybinds, and guardrails. Source: <https://github.com/alunduil/alunduil-chezmoi>.
+Personal [chezmoi](https://chezmoi.io)-managed dotfiles for [@alunduil](https://github.com/alunduil). Run one command on a fresh Debian/Crostini host to go from bare OS to a fully configured development environment with AI pair programming, terminal multiplexing, and git integration — layouts, keybinds, and guardrails included. Source: <https://github.com/alunduil/alunduil-chezmoi>.
 
 Personal config — no warranty, no support. [0BSD licensed](LICENSE).
 
