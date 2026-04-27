@@ -4,23 +4,30 @@
   "customManagers": [
     {
       "customType": "regex",
-      "fileMatch": ["run_once_before_install-packages\\.sh\\.tmpl$"],
+      "fileMatch": ["run_once_before_.*\\.sh\\.tmpl$"],
       "matchStrings": ["ZELLIJ_VERSION=\"(?<currentValue>v[\\d.]+)\""],
       "depNameTemplate": "zellij-org/zellij",
       "datasourceTemplate": "github-releases"
     },
     {
       "customType": "regex",
-      "fileMatch": ["run_once_before_install-packages\\.sh\\.tmpl$"],
+      "fileMatch": ["run_once_before_.*\\.sh\\.tmpl$"],
       "matchStrings": ["NVM_VERSION=\"(?<currentValue>v[\\d.]+)\""],
       "depNameTemplate": "nvm-sh/nvm",
       "datasourceTemplate": "github-releases"
     },
     {
       "customType": "regex",
-      "fileMatch": ["run_once_before_install-packages\\.sh\\.tmpl$"],
+      "fileMatch": ["run_once_before_.*\\.sh\\.tmpl$"],
       "matchStrings": ["LAZYGIT_VERSION=\"(?<currentValue>v[\\d.]+)\""],
       "depNameTemplate": "jesseduffield/lazygit",
+      "datasourceTemplate": "github-releases"
+    },
+    {
+      "customType": "regex",
+      "fileMatch": ["\\.github/workflows/zellij\\.yml$"],
+      "matchStrings": ["ZELLIJ_VERSION: (?<currentValue>v[\\d.]+)"],
+      "depNameTemplate": "zellij-org/zellij",
       "datasourceTemplate": "github-releases"
     },
     {

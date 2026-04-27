@@ -1,0 +1,39 @@
+#!/usr/bin/env bash
+set -euo pipefail
+
+source_dir="${1:-.}"
+dest="$(mktemp -d)"
+trap 'rm -rf "$dest"' EXIT
+
+chezmoi apply --destination="$dest" --source="$source_dir" --exclude=scripts
+
+fail=0
+
+for f in "$dest/.local/bin/gh" "$dest/.claude/hooks/pr-draft-guard.sh"; do
+  if [ ! -x "$f" ]; then
+    printf 'FAIL: %s is not executable\n' "$f" >&2
+    fail=1
+  else
+    printf 'OK: %s is executable\n' "$f"
+  fi
+done
+
+leaked=$(find "$dest" \( -name 'dot_*' -o -name 'executable_*' -o -name 'run_once_*' \) -print -quit)
+if [ -n "$leaked" ]; then
+  printf 'FAIL: chezmoi prefix leaked: %s\n' "$leaked" >&2
+  fail=1
+else
+  printf 'OK: no chezmoi prefixes in destination\n'
+fi
+
+while IFS= read -r cmd; do
+  resolved="${cmd/\$HOME/$dest}"
+  if [ ! -f "$resolved" ]; then
+    printf 'FAIL: hook command %s not found at %s\n' "$cmd" "$resolved" >&2
+    fail=1
+  else
+    printf 'OK: hook %s resolves to %s\n' "$cmd" "$resolved"
+  fi
+done < <(jq -r '.. | .command? // empty' "$dest/.claude/settings.json")
+
+exit "$fail"

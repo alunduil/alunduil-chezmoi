@@ -1,6 +1,5 @@
 # alunduil-chezmoi
 
-[![CI](https://img.shields.io/github/actions/workflow/status/alunduil/alunduil-chezmoi/ci.yml)](https://github.com/alunduil/alunduil-chezmoi/actions/workflows/ci.yml)
 [![License: 0BSD](https://img.shields.io/github/license/alunduil/alunduil-chezmoi)](LICENSE)
 [![Managed with chezmoi](https://img.shields.io/badge/managed%20with-chezmoi-blue)](https://chezmoi.io)
 [![Platform: Debian / Crostini](https://img.shields.io/badge/platform-Debian%20%2F%20Crostini-A81D33?logo=debian&logoColor=white)](https://www.debian.org)
