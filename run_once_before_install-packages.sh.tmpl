@@ -94,6 +94,20 @@ else
   log "node: $(node --version) already on PATH"
 fi
 
+# Verify npm global prefix is writable (not the system /usr/lib/node_modules).
+# Even after sourcing nvm.sh and `nvm use default`, a stale PATH or missing
+# default alias can leave the system npm active.
+npm_prefix="$(npm config get prefix 2>/dev/null || echo /usr)"
+if [[ "$npm_prefix" == /usr* ]]; then
+  log "npm: prefix is $npm_prefix (system); re-activating nvm"
+  nvm use default 2>/dev/null || nvm use node 2>/dev/null || true
+  npm_prefix="$(npm config get prefix 2>/dev/null || echo /usr)"
+  if [[ "$npm_prefix" == /usr* ]]; then
+    log "FATAL: npm global prefix is $npm_prefix — cannot install packages without root"
+    exit 1
+  fi
+fi
+
 # ---------------------------------------------------------------- Claude Code
 if ! command -v claude >/dev/null 2>&1; then
   log "claude-code: npm install -g @anthropic-ai/claude-code"
