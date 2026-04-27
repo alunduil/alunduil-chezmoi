@@ -81,6 +81,10 @@ fi
 
 # shellcheck disable=SC1091
 [ -s "$NVM_DIR/nvm.sh" ] && . "$NVM_DIR/nvm.sh"
+# Non-interactive shells may not auto-activate the default node.
+# Without this, npm global installs fall through to the system prefix
+# (/usr/lib/node_modules) which requires root.
+nvm use default >/dev/null 2>&1 || true
 
 if ! command -v node >/dev/null 2>&1; then
   log "node: installing LTS via nvm"
