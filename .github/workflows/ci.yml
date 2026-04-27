@@ -6,6 +6,7 @@ on:
 
 jobs:
   lint:
+    name: Lint
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
@@ -15,40 +16,37 @@ jobs:
       - uses: pre-commit/action@v3.0.1
 
   validate:
+    name: Validate
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
 
-      - name: Install chezmoi
-        run: sh -c "$(curl -fsLS get.chezmoi.io)" -- -b /usr/local/bin
-
-      - name: Set up test age key
+      - name: Setup
+        env:
+          ZELLIJ_VERSION: v0.44.1
         run: |
+          sh -c "$(curl -fsLS get.chezmoi.io)" -- -b /usr/local/bin
           sudo apt-get update -qq
           sudo apt-get install -y -qq age
           mkdir -p ~/.config/chezmoi
           age-keygen -o ~/.config/chezmoi/key.txt 2>/dev/null
-
-      - name: Install pinned zellij
-        env:
-          ZELLIJ_VERSION: v0.44.1
-        run: |
           arch="x86_64-unknown-linux-musl"
           base="https://github.com/zellij-org/zellij/releases/download/${ZELLIJ_VERSION}"
           curl -fsSL -o /tmp/zellij.tar.gz "$base/zellij-${arch}.tar.gz"
           tar -xzf /tmp/zellij.tar.gz -C /tmp
           sudo install -m 0755 /tmp/zellij /usr/local/bin/zellij
 
-      - name: Zellij config check
+      - name: Zellij config
         run: script/check-zellij-config
 
-      - name: Plugin URLs reachable
+      - name: Plugin URLs
         run: script/check-plugin-urls
 
-      - name: Chezmoi apply assertions
+      - name: Chezmoi apply
         run: script/check-chezmoi-apply
 
   test:
+    name: Test
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
@@ -58,5 +56,5 @@ jobs:
           sudo apt-get update -qq
           sudo apt-get install -y -qq bats
 
-      - name: Run tests
+      - name: Bats
         run: bats test/
