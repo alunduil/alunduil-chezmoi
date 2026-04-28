@@ -1,0 +1,57 @@
+#!/usr/bin/env bash
+set -euo pipefail
+
+if [[ "${1:-}" == "--list" ]]; then
+    query="${2:-}"
+    if [[ -n "${GIT_REPO_PICKER_CACHE:-}" && -f "$GIT_REPO_PICKER_CACHE" ]]; then
+        cat "$GIT_REPO_PICKER_CACHE"
+    fi
+    if [[ "$query" == */* ]]; then
+        gh search repos "$query" --limit 30 --json fullName -q '.[].fullName' 2>/dev/null \
+            | while IFS= read -r repo; do
+                if [[ -n "${GIT_REPO_PICKER_CACHE:-}" ]] \
+                    && grep -qxF "$repo" "$GIT_REPO_PICKER_CACHE" 2>/dev/null; then
+                    continue
+                fi
+                printf 'remote:%s\n' "$repo"
+            done
+    fi
+    exit 0
+fi
+
+for cmd in fzf zellij; do
+    if ! command -v "$cmd" >/dev/null 2>&1; then
+        printf 'git-repo-picker: %s required but not found\n' "$cmd" >&2
+        exit 1
+    fi
+done
+
+cache=$(mktemp)
+trap 'rm -f "$cache"' EXIT
+export GIT_REPO_PICKER_CACHE="$cache"
+
+find "$HOME" -maxdepth 4 -name .git -type d 2>/dev/null \
+    | sed 's|/\.git$||' \
+    | sed "s|^$HOME/||" \
+    | sort > "$cache"
+
+selection=$(fzf \
+    --bind "change:reload:$0 --list {q}" \
+    --prompt "repo> " \
+    --header "type to search local repos · include / for GitHub" \
+    < "$cache") || exit 0
+
+[[ -z "$selection" ]] && exit 0
+
+if [[ "$selection" == remote:* ]]; then
+    repo="${selection#remote:}"
+    repo_name="${repo##*/}"
+    dir="$HOME/$repo_name"
+    if [[ ! -d "$dir" ]]; then
+        gh repo clone "$repo" "$dir"
+    fi
+else
+    dir="$HOME/$selection"
+fi
+
+zellij action new-tab --layout pair --cwd "$dir"
