@@ -37,9 +37,12 @@ default_tab_template {
 
 keybinds {
     shared_except "locked" {
-        // Deep-pairing layout in a new tab.
+        // Searchable git-repo picker → pair layout in the chosen repo.
         bind "Alt p" {
-            NewTab { layout "pair"; }
+            Run "git-repo-picker" {
+                floating true
+                close_on_exit true
+            }
         }
         // Floating ad-hoc terminal (gh, chezmoi diff, rg, etc.).
         bind "Alt g" {

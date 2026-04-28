@@ -17,7 +17,7 @@ if [ ! -f /usr/share/keyrings/hashicorp-archive-keyring.gpg ]; then
 fi
 
 # -------------------------------------------------------------------- apt pkgs
-APT_PACKAGES=(gh zsh ripgrep fd-find jq unzip age terraform)
+APT_PACKAGES=(gh zsh ripgrep fd-find fzf jq unzip age terraform)
 missing=()
 for pkg in "${APT_PACKAGES[@]}"; do
   dpkg -s "$pkg" >/dev/null 2>&1 || missing+=("$pkg")
