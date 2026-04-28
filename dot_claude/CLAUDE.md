@@ -20,13 +20,12 @@ reliable enough.
   intentionally with `GH_DRAFT_GUARD=off gh pr create ...`.
 - PR body structure (assumes the PR will be squash-merged, so the body
   is the surviving commit context):
-  - **Context** — why this change exists. Link the motivating issue or
-    describe the problem. The diff already shows *what* changed; the body
-    explains *why*.
-  - **Gotchas** — anything a reviewer should watch for: non-obvious side
-    effects, temporary trade-offs, migrations, breaking changes, or
-    areas that need extra scrutiny. Omit the heading when there is
-    nothing to flag.
+  - **Context** — one or two sentences on why this change exists. If an
+    issue exists, link it and state the PR's approach to it; do not
+    re-explain the issue.
+  - **Gotchas** — direct the reviewer: "focus on X because Y." Tell
+    them where to spend time, not just what is risky. Omit the heading
+    when there is nothing to flag.
   - **Verification** — what was checked beyond CI (which is already
     visible in the PR). Describe manual or exploratory testing that was
     performed, using past tense ("ran X, confirmed Y"). Do not
@@ -39,10 +38,9 @@ reliable enough.
   - **Why** — the motivation: what problem exists, what opportunity is
     being missed, or what user need is unmet. Lead with outcomes, not
     implementation.
-  - **Suggested approach** — a lightweight sketch of how to address it.
-    Focus on the desired end state and key constraints rather than
-    step-by-step instructions. Include enough detail to reduce ambiguity
-    without over-prescribing the solution.
+  - **Done when** — one or two concrete acceptance criteria that define
+    the exit condition. State the desired end state without prescribing
+    the implementation path.
 - Before filing, check the repo's milestones and labels. Assign the
   issue to the most relevant milestone (or leave it unset if none fits)
   and apply labels that match the issue's type and area.
