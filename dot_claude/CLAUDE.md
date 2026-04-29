@@ -45,12 +45,34 @@ reliable enough.
   issue to the most relevant milestone (or leave it unset if none fits)
   and apply labels that match the issue's type and area.
 
+## Issue workflow
+
+- Before implementing a GitHub issue, read its comments and scan recent
+  commits in the relevant area to confirm the work is still relevant
+  given the current state of the repo. Surface a go/no-go before
+  writing code if anything looks stale (e.g., the tooling the issue
+  assumes has since been replaced).
+- For multi-step tasks, commit incrementally rather than batching all
+  changes for the end. Usage limits or interruptions then leave a
+  recoverable branch instead of lost work.
+
 ## Feedback preference
 
 - Run the project's computational sensors (tests, linters, type checker,
   formatter) before claiming a task is done. Use inferential review
   (another LLM reading the diff) to catch what those miss, not as a
   substitute for them.
+
+## Approach
+
+- Prefer the simplest solution that meets the requirement. Before
+  writing custom scripts, guards, or wrappers, check whether a standard
+  mechanism (env var, official package repo, existing repo pattern)
+  already covers it. When the proposed change is more complex than
+  precedent in the repo, justify the divergence in one sentence or
+  pick the precedent.
+- Propose the minimal fix first. Add complexity only when the minimal
+  version is shown to be insufficient -- not pre-emptively.
 
 ## Scope
 
