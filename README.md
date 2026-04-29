@@ -54,7 +54,8 @@ Only projects, tasks, and subtasks sync; sessions, worktrees, PIDs, and rate-lim
 - `dot_bashrc`, `dot_profile`, `dot_bash_profile`, `dot_gitconfig` — shell + git config.
 - `dot_claude/` — user-level Claude Code harness: `CLAUDE.md` rules, `settings.json` hook wiring, `hooks/pr-draft-guard.sh` blocking non-draft PRs over the GitHub MCP tools. Per-project sensors (tests/linters/types) stay with the project.
 - `dot_claustre/config.toml` — Claustre user config (`sync.auto_push = true`).
-- `dot_config/zellij/config.kdl` — Zellij config: plugin aliases (zellaude, zjstatus, ghost, notepad — all pinned to release tags), status bars, and `Alt+p`/`Alt+g`/`Alt+m` keybinds.
+- `dot_config/zellij/config.kdl` — Zellij config: plugin aliases (zellaude, ghost, notepad — all pinned to release tags) and `Alt+p`/`Alt+g`/`Alt+m` keybinds.
+- `dot_config/zellij/layouts/default.kdl` — initial-tab layout: zellaude top strip + built-in `tab-bar` + `status-bar`.
 - `dot_config/zellij/layouts/pair.kdl` — deep-pairing layout: Claude Code (40%) alongside lazygit (60%). VS Code handles editing in its own window; ghost (`Alt+g`) handles on-demand shells.
 - `dot_local/bin/gh` — wrapper that shadows `/usr/bin/gh` to require `--draft` on `gh pr create`. Bypass with `GH_DRAFT_GUARD=off`.
 - `run_once_before_*.sh.tmpl` — idempotent bootstrap scripts, split by concern:
