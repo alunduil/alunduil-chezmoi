@@ -52,7 +52,7 @@ Only projects, tasks, and subtasks sync; sessions, worktrees, PIDs, and rate-lim
 ## Layout
 
 - `dot_bashrc`, `dot_profile`, `dot_bash_profile`, `dot_gitconfig` — shell + git config.
-- `dot_claude/` — user-level Claude Code harness: `CLAUDE.md` rules, `settings.json` hook wiring, `hooks/pr-draft-guard.sh` blocking non-draft PRs over the GitHub MCP tools. Per-project sensors (tests/linters/types) stay with the project.
+- `dot_claude/` — user-level Claude Code harness: `CLAUDE.md` rules, `settings.json` hook wiring (pr-draft-guard for the GitHub MCP tools, zellaude across every Claude Code lifecycle event), `hooks/pr-draft-guard.sh` blocking non-draft PRs. Per-project sensors (tests/linters/types) stay with the project.
 - `dot_claustre/config.toml` — Claustre user config (`sync.auto_push = true`).
 - `dot_config/zellij/config.kdl` — Zellij config: plugin aliases (zellaude, ghost, notepad — all pinned to release tags) and `Alt+p`/`Alt+g`/`Alt+m` keybinds.
 - `dot_config/zellij/layouts/default.kdl` — initial-tab layout: zellaude top strip + built-in `tab-bar` + `status-bar`.

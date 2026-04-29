@@ -26,6 +26,10 @@ else
   printf 'OK: no chezmoi prefixes in destination\n'
 fi
 
+# Scoped to $HOME/.claude/* — paths under that subtree are chezmoi-managed
+# and must resolve. Hooks pointing outside (e.g. zellaude-hook.sh under
+# ~/.config/zellij/plugins/, auto-installed by the zellaude WASM) are
+# external integrations and not chezmoi's responsibility to verify.
 while IFS= read -r cmd; do
   resolved="${cmd/\$HOME/$dest}"
   if [ ! -f "$resolved" ]; then
@@ -34,6 +38,6 @@ while IFS= read -r cmd; do
   else
     printf 'OK: hook %s resolves to %s\n' "$cmd" "$resolved"
   fi
-done < <(jq -r '.. | .command? // empty' "$dest/.claude/settings.json")
+done < <(jq -r '.. | .command? // empty | select(startswith("$HOME/.claude/"))' "$dest/.claude/settings.json")
 
 exit "$fail"
