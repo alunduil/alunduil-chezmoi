@@ -1,0 +1,113 @@
+{{- /*
+  zellaude-hook.sh fires on every Claude Code lifecycle event so the
+  zellij plugin can reflect session state. Define the hook entry once;
+  PreToolUse adds it alongside pr-draft-guard, the rest add it solo via
+  the range below. Keep the events list in sync with what the plugin
+  consumes upstream.
+*/ -}}
+{{- $zellaude := `{ "hooks": [{ "type": "command", "command": "$HOME/.config/zellij/plugins/zellaude-hook.sh", "timeout": 5, "async": true }] }` -}}
+{{- $zellaudeOnly := list "PostToolUse" "PostToolUseFailure" "UserPromptSubmit" "PermissionRequest" "Notification" "Stop" "SubagentStop" "SessionStart" "SessionEnd" -}}
+{
+  "$schema": "https://json.schemastore.org/claude-code-settings.json",
+  "hooks": {
+    "PreToolUse": [
+      {
+        "hooks": [
+          {
+            "command": "$HOME/.claude/hooks/pr-draft-guard.sh",
+            "type": "command"
+          }
+        ],
+        "matcher": "mcp__github__create_pull_request(_with_copilot)?"
+      },
+      {{ $zellaude }}
+    ]{{ range $event := $zellaudeOnly }},
+    "{{ $event }}": [{{ $zellaude }}]{{ end }}
+  },
+  "permissions": {
+    "allow": [
+      "BashOutput(*)",
+      "Edit(*)",
+      "Glob(*)",
+      "Grep(*)",
+      "MultiEdit(*)",
+      "NotebookEdit(*)",
+      "Read(*)",
+      "TodoWrite(*)",
+      "Write(*)",
+
+      "Bash(awk:*)",
+      "Bash(basename:*)",
+      "Bash(bats:*)",
+      "Bash(bun:*)",
+      "Bash(cargo:*)",
+      "Bash(cat:*)",
+      "Bash(chezmoi:*)",
+      "Bash(cmp:*)",
+      "Bash(cut:*)",
+      "Bash(date:*)",
+      "Bash(devcontainer:*)",
+      "Bash(diff:*)",
+      "Bash(dirname:*)",
+      "Bash(docker:*)",
+      "Bash(echo:*)",
+      "Bash(env)",
+      "Bash(file:*)",
+      "Bash(find:*)",
+      "Bash(gh:*)",
+      "Bash(git:*)",
+      "Bash(go:*)",
+      "Bash(grep:*)",
+      "Bash(head:*)",
+      "Bash(jq:*)",
+      "Bash(less:*)",
+      "Bash(ls:*)",
+      "Bash(make:*)",
+      "Bash(mkdir:*)",
+      "Bash(node:*)",
+      "Bash(npm:*)",
+      "Bash(npx:*)",
+      "Bash(pip:*)",
+      "Bash(pipx:*)",
+      "Bash(pnpm:*)",
+      "Bash(pre-commit:*)",
+      "Bash(printf:*)",
+      "Bash(pwd)",
+      "Bash(python:*)",
+      "Bash(python3:*)",
+      "Bash(rg:*)",
+      "Bash(rustc:*)",
+      "Bash(rustup:*)",
+      "Bash(sed:*)",
+      "Bash(sha256sum:*)",
+      "Bash(shellcheck:*)",
+      "Bash(shfmt:*)",
+      "Bash(sort:*)",
+      "Bash(stat:*)",
+      "Bash(tail:*)",
+      "Bash(tee:*)",
+      "Bash(terraform:*)",
+      "Bash(test:*)",
+      "Bash(touch:*)",
+      "Bash(tr:*)",
+      "Bash(tree:*)",
+      "Bash(uniq:*)",
+      "Bash(uv:*)",
+      "Bash(wc:*)",
+      "Bash(which:*)",
+      "Bash(whoami)",
+      "Bash(xargs:*)",
+      "Bash(yarn:*)",
+      "Bash(yq:*)",
+      "Bash(zellij:*)"
+    ],
+    "ask": [
+      "Bash(rm:*)",
+      "Bash(sudo:*)"
+    ],
+    "deny": [
+      "Bash(git push --force*)",
+      "Bash(git push*--force*)"
+    ]
+  }
+}
