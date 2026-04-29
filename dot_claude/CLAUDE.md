@@ -79,6 +79,16 @@ reliable enough.
 - Fix the task that was asked. Don't refactor, rename, or tidy adjacent
   code in the same change unless explicitly requested.
 
+## Verify before claiming
+
+- Don't assert behaviour you haven't checked. Claims like "this script
+  isn't bundled in the WASM", "the schema doesn't include this field",
+  "tests can't run in this environment", or "the issue is obsolete" need
+  a quick `grep`/`find`/`unzip -l`/WebFetch/devcontainer-exec first. When
+  verifying is too expensive, say "I haven't checked, but I think..."
+  rather than picking a side. A confident wrong answer costs more than
+  one round of "let me confirm".
+
 ## Growing this file
 
 Add a rule here once the same friction shows up in more than one project.
