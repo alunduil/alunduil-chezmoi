@@ -9,7 +9,7 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
-      - uses: actions/cache@v4
+      - uses: actions/cache@v5
         with:
           path: .lycheecache
           key: lychee-cache-${{ hashFiles('README.md', 'dot_config/zellij/config.kdl') }}
