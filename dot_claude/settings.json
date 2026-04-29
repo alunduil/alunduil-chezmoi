@@ -3,14 +3,36 @@
   "hooks": {
     "PreToolUse": [
       {
-        "matcher": "mcp__github__create_pull_request(_with_copilot)?",
         "hooks": [
           {
-            "type": "command",
-            "command": "$HOME/.claude/hooks/pr-draft-guard.sh"
+            "command": "$HOME/.claude/hooks/pr-draft-guard.sh",
+            "type": "command"
           }
-        ]
+        ],
+        "matcher": "mcp__github__create_pull_request(_with_copilot)?"
       }
+    ]
+  },
+  "permissions": {
+    "allow": [
+      "Bash",
+      "BashOutput(*)",
+      "Edit(*)",
+      "Glob(*)",
+      "Grep(*)",
+      "MultiEdit(*)",
+      "NotebookEdit(*)",
+      "Read(*)",
+      "TodoWrite(*)",
+      "Write(*)"
+    ],
+    "ask": [
+      "Bash(rm:*)"
+    ],
+    "deny": [
+      "Bash(git push --force*)",
+      "Bash(git push*--force*)",
+      "Bash(git push*main*)"
     ]
   }
 }
