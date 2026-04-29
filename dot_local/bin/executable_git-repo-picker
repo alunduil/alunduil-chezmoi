@@ -30,7 +30,7 @@ cache=$(mktemp)
 trap 'rm -f "$cache"' EXIT
 export GIT_REPO_PICKER_CACHE="$cache"
 
-find "$HOME" -maxdepth 4 -name .git -type d 2>/dev/null \
+find "$HOME" -maxdepth 4 \( -name '.*' ! -name '.git' -prune \) -o \( -name .git -type d -print \) 2>/dev/null \
     | sed 's|/\.git$||' \
     | sed "s|^$HOME/||" \
     | sort > "$cache"
