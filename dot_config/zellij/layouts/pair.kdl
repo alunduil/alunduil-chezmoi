@@ -6,10 +6,9 @@
 // Template shape mirrors default.kdl — zellij does not propagate config-level
 // templates into layout-spawned tabs, so each layout carries its own copy.
 // Keep this in sync with ../layouts/default.kdl:
-//   zellaude   (1 line) — per-tab Claude Code activity
-//   tab-bar    (1 line) — tab list
+//   zellaude   (1 line) — per-tab Claude Code activity + tab list
 //   children   (the panes)
-//   status-bar (2 lines) — mode indicator + keybinding hints
+//   status-bar (1 line, clipped) — mode indicator only; tips suppressed
 //
 // Invoke:
 //   zellij --layout pair                         # fresh session
@@ -23,11 +22,8 @@ layout {
         pane size=1 borderless=true {
             plugin location="zellaude"
         }
-        pane size=1 borderless=true {
-            plugin location="tab-bar"
-        }
         children
-        pane size=2 borderless=true {
+        pane size=1 borderless=true {
             plugin location="status-bar"
         }
     }

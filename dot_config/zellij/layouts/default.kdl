@@ -4,21 +4,17 @@
 // missing the per-tab Claude Code activity strip.
 //
 // Template shape mirrors pair.kdl. Keep them in sync:
-//   zellaude   (1 line) — per-tab Claude Code activity
-//   tab-bar    (1 line) — tab list
+//   zellaude   (1 line) — per-tab Claude Code activity + tab list
 //   children   (the panes)
-//   status-bar (2 lines) — mode indicator + keybinding hints
+//   status-bar (1 line, clipped) — mode indicator only; tips suppressed
 
 layout {
     default_tab_template {
         pane size=1 borderless=true {
             plugin location="zellaude"
         }
-        pane size=1 borderless=true {
-            plugin location="tab-bar"
-        }
         children
-        pane size=2 borderless=true {
+        pane size=1 borderless=true {
             plugin location="status-bar"
         }
     }
