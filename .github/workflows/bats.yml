@@ -16,6 +16,7 @@ jobs:
           assert-install: false
           detik-install: false
           file-install: false
+          github-token: ${{ secrets.GITHUB_TOKEN }}
 
       - name: Run
         run: bats test/
