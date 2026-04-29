@@ -1,8 +1,13 @@
 // Deep-pairing layout: Claude Code (40%) alongside lazygit (60%). The editing
 // surface is VS Code in its own window; this layout is for the "watch the
 // changes, drive Claude" side of pairing. On-demand shells come from ghost
-// (Alt+g) so no fixed terminal strip is reserved. The global
-// default_tab_template in ../config.kdl wraps this with zellaude + zjstatus.
+// (Alt+g) so no fixed terminal strip is reserved.
+//
+// The default_tab_template below mirrors the one in ../config.kdl. Zellij
+// does not apply config-level templates to layout-spawned tabs, so without
+// this duplication, tabs created via `--layout pair` lose the zellaude top
+// bar and the zjstatus bottom bar (and with them the mode indicator that
+// makes zellij controllable). Keep this template in sync with ../config.kdl.
 //
 // Invoke:
 //   zellij --layout pair                         # fresh session
@@ -10,6 +15,20 @@
 //   Alt+p                                        # keybind, same as above
 
 layout {
+    default_tab_template {
+        pane size=1 borderless=true {
+            plugin location="zellaude"
+        }
+        children
+        pane size=2 borderless=true {
+            plugin location="zjstatus" {
+                format_left   "#[fg=green,bold]{mode} #[fg=white]{session}"
+                format_center "{tabs}"
+                format_right  "#[fg=cyan]{datetime}"
+                datetime_format "%Y-%m-%d %H:%M"
+            }
+        }
+    }
     tab name="pair" focus=true {
         pane split_direction="vertical" {
             pane size="40%" name="claude" command="claude"
