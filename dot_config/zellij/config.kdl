@@ -4,10 +4,12 @@
 //
 // Plugins are pinned by release tag -- Zellij fetches and caches them in
 // ~/.cache/zellij/ on first use. Aliases (below) keep references short.
+// Per-tab UI (zellaude top strip, tab-bar, status-bar) lives in the layouts
+// (layouts/default.kdl, layouts/pair.kdl); a default_tab_template here
+// would not propagate into layout-spawned tabs anyway.
 
 plugins {
     zellaude location="https://github.com/ishefi/zellaude/releases/download/v0.5.0/zellaude.wasm"
-    zjstatus location="https://github.com/dj95/zjstatus/releases/download/v0.23.0/zjstatus.wasm"
     ghost    location="https://github.com/vdbulcke/ghost/releases/download/v0.7.1/ghost.wasm"
     notepad  location="https://github.com/0xble/zellij-notepad/releases/download/v0.2.1/notepad.wasm"
 }
@@ -15,24 +17,6 @@ plugins {
 // notepad uses MessagePlugin "toggle" semantics, so it must be preloaded.
 load_plugins {
     "notepad"
-}
-
-// zellaude on top (per-tab Claude Code activity), zjstatus on the bottom
-// (mode, session, tabs, clock). Applies to every tab, including those opened
-// from layouts like pair.kdl.
-default_tab_template {
-    pane size=1 borderless=true {
-        plugin location="zellaude"
-    }
-    children
-    pane size=2 borderless=true {
-        plugin location="zjstatus" {
-            format_left   "#[fg=green,bold]{mode} #[fg=white]{session}"
-            format_center "{tabs}"
-            format_right  "#[fg=cyan]{datetime}"
-            datetime_format "%Y-%m-%d %H:%M"
-        }
-    }
 }
 
 keybinds {

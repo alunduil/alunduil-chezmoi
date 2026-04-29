@@ -55,3 +55,6 @@ else
 fi
 
 zellij action new-tab --layout pair --cwd "$dir"
+# pair.kdl hardcodes the tab name to "pair"; rename to the repo basename so
+# the tab-bar reflects which repo this pairing session is for.
+zellij action rename-tab "$(basename "$dir")"
