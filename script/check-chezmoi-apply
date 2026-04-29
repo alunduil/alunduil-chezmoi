@@ -9,7 +9,7 @@ chezmoi apply --destination="$dest" --source="$source_dir" --exclude=scripts
 
 fail=0
 
-for f in "$dest/.local/bin/gh" "$dest/.claude/hooks/pr-draft-guard.sh"; do
+for f in "$dest/.local/bin/gh" "$dest/.claude/hooks/pr-draft-guard.sh" "$dest/.config/zellij/plugins/zellaude-hook.sh"; do
   if [ ! -x "$f" ]; then
     printf 'FAIL: %s is not executable\n' "$f" >&2
     fail=1
