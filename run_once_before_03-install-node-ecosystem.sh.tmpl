@@ -11,7 +11,7 @@ log() { printf '==> %s\n' "$*" >&2; }
 # Mirror nvm's own install-location logic: $XDG_CONFIG_HOME/nvm if XDG is set,
 # else $HOME/.nvm. Set PROFILE=/dev/null so the installer does NOT append to
 # any rc file -- the managed .bashrc sources nvm itself.
-NVM_VERSION="v0.40.1"
+NVM_VERSION="v0.40.4"
 export NVM_DIR="${XDG_CONFIG_HOME:-$HOME/.config}/nvm"
 if [ ! -s "$NVM_DIR/nvm.sh" ]; then
   log "nvm: installing $NVM_VERSION to $NVM_DIR"
