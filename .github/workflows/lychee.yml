@@ -10,6 +10,7 @@ permissions:
 
 concurrency:
   group: ${{ github.workflow }}-${{ github.ref }}
+  # Cancel superseded PR runs; never cancel main so each commit completes.
   cancel-in-progress: ${{ github.ref != 'refs/heads/main' }}
 
 jobs:
