@@ -2,18 +2,33 @@ name: Bats
 
 on:
   push:
+    branches: [main]
   pull_request:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  # Cancel superseded PR runs; never cancel main so each commit completes.
+  cancel-in-progress: ${{ github.ref != 'refs/heads/main' }}
 
 jobs:
   run:
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04
+    timeout-minutes: 10
     steps:
       - uses: actions/checkout@v4
 
-      - name: Install bats
-        run: |
-          sudo apt-get update -qq
-          sudo apt-get install -y -qq bats
+      - uses: bats-core/bats-action@4.0.0
+        with:
+          # Override defaults of true; tests in test/ don't load helper libs.
+          support-install: false
+          assert-install: false
+          detik-install: false
+          file-install: false
+          # bats-action curls api.github.com; auth raises the anonymous rate limit.
+          github-token: ${{ secrets.GITHUB_TOKEN }}
 
-      - name: Run
+      - name: Test
         run: bats test/
