@@ -8,4 +8,4 @@ mkdir -p "$config_dir/zellij/layouts"
 cp dot_config/zellij/config.kdl "$config_dir/zellij/config.kdl"
 cp dot_config/zellij/layouts/*.kdl "$config_dir/zellij/layouts/"
 
-XDG_CONFIG_HOME="$config_dir" zellij setup --check
+ZELLIJ_CONFIG_DIR="$config_dir/zellij" zellij setup --check
