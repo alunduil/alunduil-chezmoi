@@ -18,5 +18,5 @@ jobs:
           file-install: false
           github-token: ${{ secrets.GITHUB_TOKEN }}
 
-      - name: Run
+      - name: Test
         run: bats test/
