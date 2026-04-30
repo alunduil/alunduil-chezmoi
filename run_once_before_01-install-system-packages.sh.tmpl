@@ -17,12 +17,6 @@ if [ ! -f /usr/share/keyrings/hashicorp-archive-keyring.gpg ]; then
 fi
 
 # ---------------------------------------------------------------- github cli
-# Debian's gh package is too stale (2.23, Feb 2023) — `gh pr edit` errors
-# on the deprecated `projectCards` GraphQL field. Pull from the official
-# cli.github.com repo so fresh installs get a current version. Existing
-# hosts need a one-time `sudo apt-get install --only-upgrade -y gh` after
-# this repo is in place; the APT_PACKAGES block below only installs
-# missing packages, not upgrades.
 if [ ! -f /usr/share/keyrings/githubcli-archive-keyring.gpg ]; then
   log "github-cli: adding apt repository"
   curl -fsSL https://cli.github.com/packages/githubcli-archive-keyring.gpg |
