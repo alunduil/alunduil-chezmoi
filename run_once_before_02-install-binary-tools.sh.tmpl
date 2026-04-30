@@ -2,6 +2,7 @@
 # install-zellij content:  {{ include "script/install-zellij" | sha256sum }}
 # install-lazygit content: {{ include "script/install-lazygit" | sha256sum }}
 # install-act content:     {{ include "script/install-act" | sha256sum }}
+# lib.sh content:          {{ include "script/lib.sh" | sha256sum }}
 # The hashes above embed the install scripts' content into this file's
 # rendered output so chezmoi re-runs this script when any of them change
 # (e.g. version bumps). Without them, run_once would not re-fire.

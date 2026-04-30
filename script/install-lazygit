@@ -4,29 +4,12 @@ set -euo pipefail
 LAZYGIT_VERSION="v0.61.1"
 ARCH="linux_x86_64"
 
-bin_dir=""
-while [ $# -gt 0 ]; do
-  case "$1" in
-    --bin-dir)
-      [ $# -ge 2 ] || {
-        echo "install-lazygit: --bin-dir requires an argument" >&2
-        exit 2
-      }
-      bin_dir="$2"
-      shift 2
-      ;;
-    *)
-      echo "install-lazygit: unknown argument: $1" >&2
-      exit 2
-      ;;
-  esac
-done
-[ -n "$bin_dir" ] || {
-  echo "install-lazygit: --bin-dir DIR required" >&2
-  exit 2
-}
+# shellcheck source-path=SCRIPTDIR source=lib.sh
+. "$(dirname "$0")/lib.sh"
 
-bin="$bin_dir/lazygit"
+parse_bin_dir "$@"
+
+bin="$BIN_DIR/lazygit"
 if [ -x "$bin" ] && "$bin" --version 2>/dev/null | grep -qF "${LAZYGIT_VERSION#v}"; then
   printf '==> lazygit: %s already installed at %s\n' "$LAZYGIT_VERSION" "$bin" >&2
   exit 0
@@ -41,17 +24,9 @@ asset="lazygit_${LAZYGIT_VERSION#v}_${ARCH}.tar.gz"
 curl -fsSL -o "$tmp/$asset" "$base/$asset"
 curl -fsSL -o "$tmp/checksums.txt" "$base/checksums.txt"
 
-expected="$(awk -v f="$asset" '$2 == f {print $1}' "$tmp/checksums.txt")"
-if [ -z "$expected" ]; then
-  printf 'install-lazygit: no checksum entry for %s in checksums.txt\n' "$asset" >&2
-  exit 1
-fi
-actual="$(sha256sum "$tmp/$asset" | awk '{print $1}')"
-if [ "$expected" != "$actual" ]; then
-  printf 'install-lazygit: sha256 mismatch -- expected %s, got %s\n' "$expected" "$actual" >&2
-  exit 1
-fi
+expected="$(expected_from_checksums "$tmp/checksums.txt" "$asset")"
+verify_sha256 "$tmp/$asset" "$expected"
 
 tar -xzf "$tmp/$asset" -C "$tmp" lazygit
-mkdir -p "$bin_dir"
+mkdir -p "$BIN_DIR"
 install -m 0755 "$tmp/lazygit" "$bin"

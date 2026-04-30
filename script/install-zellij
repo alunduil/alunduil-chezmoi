@@ -4,29 +4,12 @@ set -euo pipefail
 ZELLIJ_VERSION="v0.44.1"
 ARCH="x86_64-unknown-linux-musl"
 
-bin_dir=""
-while [ $# -gt 0 ]; do
-  case "$1" in
-    --bin-dir)
-      [ $# -ge 2 ] || {
-        echo "install-zellij: --bin-dir requires an argument" >&2
-        exit 2
-      }
-      bin_dir="$2"
-      shift 2
-      ;;
-    *)
-      echo "install-zellij: unknown argument: $1" >&2
-      exit 2
-      ;;
-  esac
-done
-[ -n "$bin_dir" ] || {
-  echo "install-zellij: --bin-dir DIR required" >&2
-  exit 2
-}
+# shellcheck source-path=SCRIPTDIR source=lib.sh
+. "$(dirname "$0")/lib.sh"
 
-bin="$bin_dir/zellij"
+parse_bin_dir "$@"
+
+bin="$BIN_DIR/zellij"
 if [ -x "$bin" ] && "$bin" --version 2>/dev/null | grep -qF "${ZELLIJ_VERSION#v}"; then
   printf '==> zellij: %s already installed at %s\n' "$ZELLIJ_VERSION" "$bin" >&2
   exit 0
@@ -45,11 +28,7 @@ curl -fsSL -o "$tmp/zellij.sha256sum" "$base/zellij-${ARCH}.sha256sum"
 # Extract the expected hash and verify the unpacked binary explicitly.
 expected="$(awk '{print $1}' "$tmp/zellij.sha256sum")"
 tar -xzf "$tmp/zellij.tar.gz" -C "$tmp"
-actual="$(sha256sum "$tmp/zellij" | awk '{print $1}')"
-if [ "$expected" != "$actual" ]; then
-  printf 'install-zellij: sha256 mismatch -- expected %s, got %s\n' "$expected" "$actual" >&2
-  exit 1
-fi
+verify_sha256 "$tmp/zellij" "$expected"
 
-mkdir -p "$bin_dir"
+mkdir -p "$BIN_DIR"
 install -m 0755 "$tmp/zellij" "$bin"
