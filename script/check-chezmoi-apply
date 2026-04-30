@@ -1,42 +1,30 @@
 #!/usr/bin/env bash
+# Apply this chezmoi source tree to a throwaway destination and verify
+# that every $HOME/.claude/* hook command referenced in the rendered
+# settings.json actually exists. Catches typos in the template that
+# point at hooks we haven't written yet.
+#
+# Scoped to $HOME/.claude/* — paths under that subtree are chezmoi-
+# managed and must resolve. Hooks pointing outside (e.g. zellaude-hook.sh
+# under ~/.config/zellij/plugins/, auto-installed by the zellaude WASM)
+# are external integrations and not chezmoi's responsibility to verify.
+#
+# We trust chezmoi for prefix translation (dot_*, executable_*, etc.)
+# and permission bits — those are upstream behaviour, not ours to test.
+
 set -euo pipefail
 
-source_dir="${1:-.}"
 dest="$(mktemp -d)"
 trap 'rm -rf "$dest"' EXIT
 
-chezmoi apply --destination="$dest" --source="$source_dir" --exclude=scripts
+chezmoi apply --destination="$dest" --exclude=scripts
 
 fail=0
-
-for f in "$dest/.local/bin/gh" "$dest/.claude/hooks/pr-draft-guard.sh"; do
-  if [ ! -x "$f" ]; then
-    printf 'FAIL: %s is not executable\n' "$f" >&2
-    fail=1
-  else
-    printf 'OK: %s is executable\n' "$f"
-  fi
-done
-
-leaked=$(find "$dest" \( -name 'dot_*' -o -name 'executable_*' -o -name 'run_once_*' \) -print -quit)
-if [ -n "$leaked" ]; then
-  printf 'FAIL: chezmoi prefix leaked: %s\n' "$leaked" >&2
-  fail=1
-else
-  printf 'OK: no chezmoi prefixes in destination\n'
-fi
-
-# Scoped to $HOME/.claude/* — paths under that subtree are chezmoi-managed
-# and must resolve. Hooks pointing outside (e.g. zellaude-hook.sh under
-# ~/.config/zellij/plugins/, auto-installed by the zellaude WASM) are
-# external integrations and not chezmoi's responsibility to verify.
 while IFS= read -r cmd; do
   resolved="${cmd/\$HOME/$dest}"
   if [ ! -f "$resolved" ]; then
     printf 'FAIL: hook command %s not found at %s\n' "$cmd" "$resolved" >&2
     fail=1
-  else
-    printf 'OK: hook %s resolves to %s\n' "$cmd" "$resolved"
   fi
 done < <(jq -r '.. | .command? // empty | select(startswith("$HOME/.claude/"))' "$dest/.claude/settings.json")
 

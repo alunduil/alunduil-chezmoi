@@ -18,4 +18,15 @@ repos:
     rev: v6.0.0
     hooks:
       - id: check-json
-        files: settings\.json$
+        # malformed.json is intentionally invalid — a fixture for the
+        # pr-draft-guard hook's fail-closed-on-bad-input test.
+        exclude: ^test/fixtures/pr_draft_guard/malformed\.json$
+
+  - repo: local
+    hooks:
+      - id: check-settings-template
+        name: settings.json.tmpl expands to valid JSON
+        entry: bash -c 'chezmoi execute-template < dot_claude/settings.json.tmpl | jq -e . > /dev/null'
+        language: system
+        files: ^dot_claude/settings\.json\.tmpl$
+        pass_filenames: false
