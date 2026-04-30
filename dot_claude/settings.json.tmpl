@@ -36,6 +36,14 @@
       "TodoWrite(*)",
       "Write(*)",
 
+      "mcp__claude_ai_Readwise__reader_get_*",
+      "mcp__claude_ai_Readwise__reader_list_*",
+      "mcp__claude_ai_Readwise__reader_search_*",
+      "mcp__claude_ai_Readwise__reader_export_*",
+      "mcp__claude_ai_Readwise__readwise_get_*",
+      "mcp__claude_ai_Readwise__readwise_list_*",
+      "mcp__claude_ai_Readwise__readwise_search_*",
+
       "Bash(awk:*)",
       "Bash(basename:*)",
       "Bash(bats:*)",
@@ -102,12 +110,26 @@
       "Bash(zellij:*)"
     ],
     "ask": [
+      "Bash(chezmoi apply*)",
+      "Bash(docker system prune*)",
+      "Bash(docker volume rm*)",
+      "Bash(find* -delete*)",
+      "Bash(find* -exec*)",
+      "Bash(find* -ok*)",
       "Bash(rm:*)",
-      "Bash(sudo:*)"
+      "Bash(sudo:*)",
+      "Bash(terraform apply*)",
+      "Bash(terraform destroy*)",
+      "Bash(xargs rm*)",
+      "Bash(xargs* rm*)",
+      "Bash(xargs sudo*)",
+      "Bash(xargs* sudo*)"
     ],
     "deny": [
       "Bash(git push --force*)",
-      "Bash(git push*--force*)"
+      "Bash(git push*--force*)",
+      "Bash(git push -f*)",
+      "Bash(git push* -f*)"
     ]
   }
 }
