@@ -1,8 +1,8 @@
 #!/usr/bin/env bash
-# Run every verification this repo defines. Missing tools are reported
-# as failures (not silently skipped) so a green run means every check
-# actually ran. CI runs these as separate workflows for parallel
-# execution; this is the local one-stop equivalent.
+# Run every verification this repo defines against the local
+# environment. Missing tools count as failures (not silent skips) so a
+# green run means every check actually ran. Not a CI parity check —
+# CI runs in isolated per-workflow environments and may diverge.
 #
 # Exit 0 = everything passed and every required tool was installed.
 # Exit 1 = at least one check failed or one tool was missing.
@@ -36,7 +36,7 @@ run 'bats'                bats       'apt install bats' \
 run 'check-zellij-config' zellij     'see run_once_02_*.sh.tmpl' \
   script/check-zellij-config
 
-run 'check-chezmoi-apply' chezmoi    'see run_once_02_*.sh.tmpl' \
+run 'check-chezmoi-apply' chezmoi    'sh -c "$(curl -fsLS get.chezmoi.io)" -- -b ~/.local/bin' \
   script/check-chezmoi-apply
 
 run 'lychee'              lychee     'cargo install lychee' \
