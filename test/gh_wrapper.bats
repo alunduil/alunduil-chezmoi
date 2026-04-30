@@ -57,6 +57,13 @@ teardown() {
   [ "$status" -eq 0 ]
 }
 
+# Locks in the `-d`-as-flag-value limitation documented in the wrapper.
+# Flip when fixed; update the wrapper's docstring too.
+@test "documented limitation: '-d' as a flag value is mistakenly accepted" {
+  run "$WRAPPER_DIR/gh" pr create --title -d --body "body"
+  [ "$status" -eq 0 ]
+}
+
 @test "exits 127 when no real gh is on PATH" {
   EMPTY_DIR="$(mktemp -d)"
   for bin in readlink printf bash cat; do

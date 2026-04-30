@@ -38,6 +38,7 @@ EOF
 fi
 
 # Find the real gh: first executable `gh` in PATH that isn't this script.
+# `readlink -f` is GNU-only; fine on Linux.
 self="$(readlink -f "$0")"
 IFS=':' read -r -a path_dirs <<<"${PATH:-}"
 for dir in "${path_dirs[@]}"; do
