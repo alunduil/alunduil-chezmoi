@@ -22,8 +22,8 @@ jobs:
       - uses: actions/cache@v4
         with:
           path: .lycheecache
-          key: lychee-cache-${{ hashFiles('README.md', 'dot_config/zellij/config.kdl') }}
+          key: lychee-cache-${{ hashFiles('lychee.toml', 'README.md', 'dot_config/zellij/config.kdl') }}
           restore-keys: lychee-cache-
       - uses: lycheeverse/lychee-action@v2.8.0
         with:
-          args: '--cache --retry-wait-time 5 README.md dot_config/zellij/config.kdl'
+          args: 'README.md dot_config/zellij/config.kdl'

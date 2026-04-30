@@ -1,6 +1,8 @@
+.lycheecache
 CLAUDE.md
 LICENSE
 README.md
+lychee.toml
 renovate.json
 script
 test
