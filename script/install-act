@@ -1,0 +1,57 @@
+#!/usr/bin/env bash
+set -euo pipefail
+
+ACT_VERSION="v0.2.87"
+ARCH="Linux_x86_64"
+
+bin_dir=""
+while [ $# -gt 0 ]; do
+  case "$1" in
+    --bin-dir)
+      [ $# -ge 2 ] || {
+        echo "install-act: --bin-dir requires an argument" >&2
+        exit 2
+      }
+      bin_dir="$2"
+      shift 2
+      ;;
+    *)
+      echo "install-act: unknown argument: $1" >&2
+      exit 2
+      ;;
+  esac
+done
+[ -n "$bin_dir" ] || {
+  echo "install-act: --bin-dir DIR required" >&2
+  exit 2
+}
+
+bin="$bin_dir/act"
+if [ -x "$bin" ] && "$bin" --version 2>/dev/null | grep -qF "${ACT_VERSION#v}"; then
+  printf '==> act: %s already installed at %s\n' "$ACT_VERSION" "$bin" >&2
+  exit 0
+fi
+
+printf '==> act: downloading %s\n' "$ACT_VERSION" >&2
+tmp="$(mktemp -d)"
+trap 'rm -rf "$tmp"' EXIT
+
+base="https://github.com/nektos/act/releases/download/${ACT_VERSION}"
+asset="act_${ARCH}.tar.gz"
+curl -fsSL -o "$tmp/$asset" "$base/$asset"
+curl -fsSL -o "$tmp/checksums.txt" "$base/checksums.txt"
+
+expected="$(awk -v f="$asset" '$2 == f {print $1}' "$tmp/checksums.txt")"
+if [ -z "$expected" ]; then
+  printf 'install-act: no checksum entry for %s in checksums.txt\n' "$asset" >&2
+  exit 1
+fi
+actual="$(sha256sum "$tmp/$asset" | awk '{print $1}')"
+if [ "$expected" != "$actual" ]; then
+  printf 'install-act: sha256 mismatch -- expected %s, got %s\n' "$expected" "$actual" >&2
+  exit 1
+fi
+
+tar -xzf "$tmp/$asset" -C "$tmp" act
+mkdir -p "$bin_dir"
+install -m 0755 "$tmp/act" "$bin"
