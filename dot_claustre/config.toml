@@ -1,2 +1,14 @@
+# Schema: https://github.com/pmbrull/claustre/blob/main/src/config/mod.rs
+# `claustre init` rewrites this file; expect drift after running the wizard.
+
+[claude]
+# Alias tracks latest Opus; otherwise claustre's pinned default (claude-opus-4-6) wins.
+model = "opus"
+
 [sync]
 auto_push = true
+
+[notifications]
+command = "notify-send"
+system  = false  # macOS-only path
+# Linux templates only see {task}; pr_url is system-path-only.
