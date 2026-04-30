@@ -22,8 +22,8 @@ jobs:
 
       - name: Install zellij
         run: |
-          script/install-zellij --bin-dir "$HOME/.local/bin"
+          script/install/zellij --bin-dir "$HOME/.local/bin"
           echo "$HOME/.local/bin" >> "$GITHUB_PATH"
 
       - name: Check config
-        run: script/check-zellij-config
+        run: script/checks/zellij-config

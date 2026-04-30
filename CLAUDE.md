@@ -27,9 +27,12 @@ software project — naming conventions and file structure follow chezmoi rules.
 - `run_once_before_*.sh.tmpl` — idempotent bootstrap scripts, split by concern:
   01 system packages, 02 binary tools, 03 Node ecosystem, 04 Rust ecosystem,
   05 standalone tools
-- `script/install-{zellij,lazygit,act}` — per-tool installers (version pinned
-  inside, `--bin-dir DIR` required, SHA256-verified). Invoked by the 02
-  bootstrap script and reused by CI workflows so versions live in one place.
+- `script/install/{zellij,lazygit,act}` — per-tool installers (version
+  pinned inside, `--bin-dir DIR` required, SHA256-verified). Invoked by
+  the 02 bootstrap script and reused by CI workflows so versions live in
+  one place. Shared helpers in `script/install/lib.sh`.
+- `script/checks/{zellij-config,chezmoi-apply}` — repo sanity checks run
+  in CI and locally.
 
 ## Previewing and testing changes
 
@@ -45,8 +48,8 @@ validation, chezmoi apply validation, and lychee link checking. Run locally:
 ```bash
 pre-commit run --all-files   # lint
 bats test/                   # unit tests
-script/check-zellij-config   # requires zellij on PATH
-script/check-chezmoi-apply   # requires chezmoi + age
+script/checks/zellij-config  # requires zellij on PATH
+script/checks/chezmoi-apply  # requires chezmoi + age
 ```
 
 The bootstrap scripts are idempotent; re-running them is safe.

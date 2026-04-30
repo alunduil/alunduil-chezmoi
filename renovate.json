@@ -4,7 +4,7 @@
   "customManagers": [
     {
       "customType": "regex",
-      "fileMatch": ["^script/install-zellij$"],
+      "fileMatch": ["^script/install/zellij$"],
       "matchStrings": ["ZELLIJ_VERSION=\"(?<currentValue>v[\\d.]+)\""],
       "depNameTemplate": "zellij-org/zellij",
       "datasourceTemplate": "github-releases"
@@ -18,14 +18,14 @@
     },
     {
       "customType": "regex",
-      "fileMatch": ["^script/install-lazygit$"],
+      "fileMatch": ["^script/install/lazygit$"],
       "matchStrings": ["LAZYGIT_VERSION=\"(?<currentValue>v[\\d.]+)\""],
       "depNameTemplate": "jesseduffield/lazygit",
       "datasourceTemplate": "github-releases"
     },
     {
       "customType": "regex",
-      "fileMatch": ["^script/install-act$"],
+      "fileMatch": ["^script/install/act$"],
       "matchStrings": ["ACT_VERSION=\"(?<currentValue>v[\\d.]+)\""],
       "depNameTemplate": "nektos/act",
       "datasourceTemplate": "github-releases"
