@@ -1,13 +1,7 @@
 # Claude Code -- user-level guide
 
-Cross-machine defaults for every Claude Code session on this host. A per-repo
-`CLAUDE.md` overrides anything here.
-
-Framed on Martin Fowler's harness-engineering model: this file is a *guide*
-(feedforward -- steers behaviour before an action). Deterministic *sensors*
-(tests, linters, type-checkers) live per-project, not here. Hooks in
-`settings.json` enforce the rules below for the cases where text alone is not
-reliable enough.
+Cross-machine defaults for every Claude Code session on this host.
+A per-repo `CLAUDE.md` overrides anything here.
 
 ## Pull requests
 
@@ -107,9 +101,17 @@ reliable enough.
   code's invariants, your config's cross-references, your wrappers'
   added behaviour.
 
-## Growing this file
+## Where rules live
 
-Add a rule here once the same friction shows up in more than one project.
-If a rule needs to be deterministic (Claude must not be able to forget it),
-pair it with a hook in `settings.json` instead of -- or in addition to --
-a bullet here.
+When a new rule is needed, choose the mechanism by how it must
+behave:
+
+- **CLAUDE.md text** — for behaviour Claude can be trusted to follow
+  consistently after reading. Default choice. Add here once friction
+  shows up in more than one project.
+- **`settings.json` hooks** — for behaviour Claude must not be able
+  to forget. Pair with text in CLAUDE.md when both reinforcement and
+  enforcement are wanted.
+- **Per-project sensors** (tests, linters, type-checkers) — for
+  detecting violations after the fact. Live with the project, not
+  here.
