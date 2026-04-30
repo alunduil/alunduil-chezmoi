@@ -34,4 +34,4 @@ jobs:
           age-keygen -o ~/.config/chezmoi/key.txt
 
       - name: Check apply
-        run: script/check-chezmoi-apply
+        run: script/checks/chezmoi-apply
