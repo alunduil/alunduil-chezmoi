@@ -33,10 +33,8 @@ teardown() {
   [ "$status" -eq 2 ]
 }
 
-# A string "true" is not the same as boolean true in the MCP schema, but
-# `jq -r` collapses both to the literal string "true", so the wrapper
-# accepts it. Locked in via test so any future tightening (e.g. `jq -e
-# 'type == "boolean"'`) has to flip this assertion deliberately.
+# `jq -r` collapses string "true" and boolean true to "true". Locked in
+# so a future tightening (e.g. `jq -e 'type == "boolean"'`) has to flip this.
 @test "allows create_pull_request with draft=\"true\" string" {
   run "$HOOK" <"$FIXTURES/create_pr_draft_string_true.json"
   [ "$status" -eq 0 ]
@@ -62,9 +60,8 @@ teardown() {
   [ "$status" -eq 0 ]
 }
 
-# Fail-closed on malformed input: if jq cannot parse the payload the
-# hook exits 2 (block), not 1 (non-blocking warning). This protects
-# against schema drift silently letting PRs through.
+# Locks in fail-closed on malformed input: exits 2 (block), not 1
+# (warning). Guards against schema drift letting PRs through.
 @test "blocks on malformed JSON" {
   run "$HOOK" <"$FIXTURES/malformed.json"
   [ "$status" -eq 2 ]

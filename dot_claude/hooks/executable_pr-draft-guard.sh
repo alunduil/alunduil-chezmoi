@@ -1,19 +1,15 @@
 #!/usr/bin/env bash
 # PreToolUse hook: require PRs from the GitHub MCP tools to be drafts.
+# The `gh pr create` path is enforced separately by ~/.local/bin/gh;
+# this only covers the MCP tools.
 #
-# The `gh pr create` path is enforced separately by ~/.local/bin/gh
-# (a PATH shim), so this hook only has to cover the MCP tools that
-# call GitHub's API directly and never touch the gh binary.
+# Exit 0 = allow; exit 2 = block (per Claude Code's hook protocol).
+# Other non-zero is non-blocking, so parse failures exit 2 explicitly
+# to fail closed.
 #
-# Exit 0 = allow; exit 2 = block and send stderr back to Claude.
-# Any other non-zero is treated by Claude Code as a non-blocking
-# warning, so this script explicitly exits 2 on parse failure to
-# fail closed rather than silently letting the PR through.
-#
-# settings.json filters which calls reach this hook via a `matcher`
-# regex; the case statement below is the authoritative gate. The
-# matcher is a perf filter, not a guard — keep them in sync, but
-# never delete the case in favor of the matcher alone.
+# settings.json's `matcher` regex pre-filters; the case statement
+# below is the authoritative gate (don't delete it in favor of the
+# matcher).
 
 set -euo pipefail
 
