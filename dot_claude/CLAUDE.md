@@ -89,6 +89,24 @@ reliable enough.
   rather than picking a side. A confident wrong answer costs more than
   one round of "let me confirm".
 
+## Comments
+
+- Default to no comment. Earn each one by asking "would this be true
+  and useful 18 months from now to a stranger?" Drop procedural
+  restatements, parentheticals describing what standard tools do,
+  commit-message framing ("we used to test X but stopped"), and
+  versions/dates that rot. Keep timeless WHY, non-obvious patterns,
+  and protocol details not visible in code. Match the precedent in
+  the surrounding file.
+
+## Don't test upstream
+
+- If the language, library, or tool is responsible for a behaviour,
+  don't add a check for it — upstream's tests cover that better than
+  yours can. Project tests cover project-specific logic only: your
+  code's invariants, your config's cross-references, your wrappers'
+  added behaviour.
+
 ## Growing this file
 
 Add a rule here once the same friction shows up in more than one project.
