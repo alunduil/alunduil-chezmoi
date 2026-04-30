@@ -5,7 +5,6 @@
 # (a PATH shim), so this hook only has to cover the MCP tools that
 # call GitHub's API directly and never touch the gh binary.
 #
-# Input: Claude Code PreToolUse JSON on stdin.
 # Exit 0 = allow; exit 2 = block and send stderr back to Claude.
 # Any other non-zero is treated by Claude Code as a non-blocking
 # warning, so this script explicitly exits 2 on parse failure to
