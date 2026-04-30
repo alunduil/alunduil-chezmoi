@@ -1,7 +1,9 @@
 #!/usr/bin/env bats
+bats_require_minimum_version 1.5.0
 
 setup() {
   REPO_ROOT="$(cd "$BATS_TEST_DIRNAME/.." && pwd)"
+  FIXTURES="$BATS_TEST_DIRNAME/fixtures/pr_draft_guard"
   HOOK="$(mktemp)"
   install -m 0755 "$REPO_ROOT/dot_claude/hooks/executable_pr-draft-guard.sh" "$HOOK"
 }
@@ -11,37 +13,59 @@ teardown() {
 }
 
 @test "allows create_pull_request with draft=true" {
-  run bash -c 'echo "{\"tool_name\":\"mcp__github__create_pull_request\",\"tool_input\":{\"draft\":true}}" | "$1"' -- "$HOOK"
+  run "$HOOK" <"$FIXTURES/create_pr_draft_true.json"
   [ "$status" -eq 0 ]
 }
 
 @test "blocks create_pull_request with draft=false" {
-  run bash -c 'echo "{\"tool_name\":\"mcp__github__create_pull_request\",\"tool_input\":{\"draft\":false}}" | "$1"' -- "$HOOK"
+  run "$HOOK" <"$FIXTURES/create_pr_draft_false.json"
   [ "$status" -eq 2 ]
   [[ "$output" == *"must be opened as drafts"* ]]
 }
 
 @test "blocks create_pull_request without draft field" {
-  run bash -c 'echo "{\"tool_name\":\"mcp__github__create_pull_request\",\"tool_input\":{\"title\":\"test\"}}" | "$1"' -- "$HOOK"
+  run "$HOOK" <"$FIXTURES/create_pr_no_draft.json"
   [ "$status" -eq 2 ]
 }
 
+@test "blocks create_pull_request with draft=null" {
+  run "$HOOK" <"$FIXTURES/create_pr_draft_null.json"
+  [ "$status" -eq 2 ]
+}
+
+# A string "true" is not the same as boolean true in the MCP schema, but
+# `jq -r` collapses both to the literal string "true", so the wrapper
+# accepts it. Locked in via test so any future tightening (e.g. `jq -e
+# 'type == "boolean"'`) has to flip this assertion deliberately.
+@test "allows create_pull_request with draft=\"true\" string" {
+  run "$HOOK" <"$FIXTURES/create_pr_draft_string_true.json"
+  [ "$status" -eq 0 ]
+}
+
 @test "allows copilot variant with draft=true" {
-  run bash -c 'echo "{\"tool_name\":\"mcp__github__create_pull_request_with_copilot\",\"tool_input\":{\"draft\":true}}" | "$1"' -- "$HOOK"
+  run "$HOOK" <"$FIXTURES/copilot_draft_true.json"
   [ "$status" -eq 0 ]
 }
 
 @test "blocks copilot variant with draft=false" {
-  run bash -c 'echo "{\"tool_name\":\"mcp__github__create_pull_request_with_copilot\",\"tool_input\":{\"draft\":false}}" | "$1"' -- "$HOOK"
+  run "$HOOK" <"$FIXTURES/copilot_draft_false.json"
   [ "$status" -eq 2 ]
 }
 
 @test "allows unrelated tool calls" {
-  run bash -c 'echo "{\"tool_name\":\"mcp__github__list_issues\",\"tool_input\":{}}" | "$1"' -- "$HOOK"
+  run "$HOOK" <"$FIXTURES/unrelated_tool.json"
   [ "$status" -eq 0 ]
 }
 
 @test "allows empty input gracefully" {
-  run bash -c 'echo "{}" | "$1"' -- "$HOOK"
+  run "$HOOK" <"$FIXTURES/empty_object.json"
   [ "$status" -eq 0 ]
+}
+
+# Fail-closed on malformed input: if jq cannot parse the payload the
+# hook exits 2 (block), not 1 (non-blocking warning). This protects
+# against schema drift silently letting PRs through.
+@test "blocks on malformed JSON" {
+  run "$HOOK" <"$FIXTURES/malformed.json"
+  [ "$status" -eq 2 ]
 }

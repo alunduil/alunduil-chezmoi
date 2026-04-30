@@ -1,0 +1,17 @@
+{
+  "session_id": "0193abcd-1234-7890-abcd-ef0123456789",
+  "transcript_path": "/home/alunduil/.claude/projects/-home-alunduil-alunduil-chezmoi/0193abcd.jsonl",
+  "cwd": "/home/alunduil/alunduil-chezmoi",
+  "hook_event_name": "PreToolUse",
+  "tool_use_id": "toolu_01ABCDEF",
+  "tool_name": "mcp__github__create_pull_request",
+  "tool_input": {
+    "owner": "alunduil",
+    "repo": "alunduil-chezmoi",
+    "title": "test PR",
+    "head": "feature-branch",
+    "base": "main",
+    "body": "test body",
+    "draft": false
+  }
+}

@@ -38,6 +38,8 @@ EOF
 fi
 
 # Find the real gh: first executable `gh` in PATH that isn't this script.
+# `readlink -f` is GNU-specific (recursive resolve, no error if path missing);
+# fine on Linux, would need adjustment for BSD/macOS without coreutils.
 self="$(readlink -f "$0")"
 IFS=':' read -r -a path_dirs <<<"${PATH:-}"
 for dir in "${path_dirs[@]}"; do

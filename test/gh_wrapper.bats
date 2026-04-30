@@ -57,6 +57,16 @@ teardown() {
   [ "$status" -eq 0 ]
 }
 
+# Documents the limitation called out in the wrapper: the draft-detector
+# is a whole-token scan, so `-d` appearing as the *value* of another flag
+# is mistaken for --draft and the call is allowed. Encoded as a passing
+# test (rather than a code comment alone) so any future fix has to flip
+# this assertion deliberately and update the wrapper's docstring.
+@test "documented limitation: '-d' as a flag value is mistakenly accepted" {
+  run "$WRAPPER_DIR/gh" pr create --title -d --body "body"
+  [ "$status" -eq 0 ]
+}
+
 @test "exits 127 when no real gh is on PATH" {
   EMPTY_DIR="$(mktemp -d)"
   for bin in readlink printf bash cat; do
