@@ -7,10 +7,11 @@
 
 set -euo pipefail
 
+SOURCE_DIR="$(git -C "$(dirname "${BASH_SOURCE[0]}")" rev-parse --show-toplevel)"
 dest="$(mktemp -d)"
 trap 'rm -rf "$dest"' EXIT
 
-chezmoi apply --source=. --destination="$dest" --exclude=scripts
+chezmoi apply --source="$SOURCE_DIR" --destination="$dest" --exclude=scripts
 
 fail=0
 while IFS= read -r cmd; do
