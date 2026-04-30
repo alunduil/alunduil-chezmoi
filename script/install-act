@@ -1,0 +1,32 @@
+#!/usr/bin/env bash
+set -euo pipefail
+
+ACT_VERSION="v0.2.87"
+ARCH="Linux_x86_64"
+
+# shellcheck source-path=SCRIPTDIR source=lib.sh
+. "$(dirname "$0")/lib.sh"
+
+parse_bin_dir "$@"
+
+bin="$BIN_DIR/act"
+if [ -x "$bin" ] && "$bin" --version 2>/dev/null | grep -qF "${ACT_VERSION#v}"; then
+  printf '==> act: %s already installed at %s\n' "$ACT_VERSION" "$bin" >&2
+  exit 0
+fi
+
+printf '==> act: downloading %s\n' "$ACT_VERSION" >&2
+tmp="$(mktemp -d)"
+trap 'rm -rf "$tmp"' EXIT
+
+base="https://github.com/nektos/act/releases/download/${ACT_VERSION}"
+asset="act_${ARCH}.tar.gz"
+curl -fsSL -o "$tmp/$asset" "$base/$asset"
+curl -fsSL -o "$tmp/checksums.txt" "$base/checksums.txt"
+
+expected="$(expected_from_checksums "$tmp/checksums.txt" "$asset")"
+verify_sha256 "$tmp/$asset" "$expected"
+
+tar -xzf "$tmp/$asset" -C "$tmp" act
+mkdir -p "$BIN_DIR"
+install -m 0755 "$tmp/act" "$bin"

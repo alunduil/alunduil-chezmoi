@@ -27,6 +27,9 @@ software project — naming conventions and file structure follow chezmoi rules.
 - `run_once_before_*.sh.tmpl` — idempotent bootstrap scripts, split by concern:
   01 system packages, 02 binary tools, 03 Node ecosystem, 04 Rust ecosystem,
   05 standalone tools
+- `script/install-{zellij,lazygit,act}` — per-tool installers (version pinned
+  inside, `--bin-dir DIR` required, SHA256-verified). Invoked by the 02
+  bootstrap script and reused by CI workflows so versions live in one place.
 
 ## Previewing and testing changes
 

@@ -1,0 +1,34 @@
+#!/usr/bin/env bash
+set -euo pipefail
+
+ZELLIJ_VERSION="v0.44.1"
+ARCH="x86_64-unknown-linux-musl"
+
+# shellcheck source-path=SCRIPTDIR source=lib.sh
+. "$(dirname "$0")/lib.sh"
+
+parse_bin_dir "$@"
+
+bin="$BIN_DIR/zellij"
+if [ -x "$bin" ] && "$bin" --version 2>/dev/null | grep -qF "${ZELLIJ_VERSION#v}"; then
+  printf '==> zellij: %s already installed at %s\n' "$ZELLIJ_VERSION" "$bin" >&2
+  exit 0
+fi
+
+printf '==> zellij: downloading %s\n' "$ZELLIJ_VERSION" >&2
+tmp="$(mktemp -d)"
+trap 'rm -rf "$tmp"' EXIT
+
+base="https://github.com/zellij-org/zellij/releases/download/${ZELLIJ_VERSION}"
+curl -fsSL -o "$tmp/zellij.tar.gz" "$base/zellij-${ARCH}.tar.gz"
+curl -fsSL -o "$tmp/zellij.sha256sum" "$base/zellij-${ARCH}.sha256sum"
+
+# zellij's published .sha256sum labels the binary by its CI build path
+# (target/.../zellij), not the tarball name -- so `sha256sum -c` fails.
+# Extract the expected hash and verify the unpacked binary explicitly.
+expected="$(awk '{print $1}' "$tmp/zellij.sha256sum")"
+tar -xzf "$tmp/zellij.tar.gz" -C "$tmp"
+verify_sha256 "$tmp/zellij" "$expected"
+
+mkdir -p "$BIN_DIR"
+install -m 0755 "$tmp/zellij" "$bin"
