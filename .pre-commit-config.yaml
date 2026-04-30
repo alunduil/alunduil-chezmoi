@@ -18,4 +18,6 @@ repos:
     rev: v6.0.0
     hooks:
       - id: check-json
-        files: settings\.json$
+        # malformed.json is intentionally invalid — a fixture for the
+        # pr-draft-guard hook's fail-closed-on-bad-input test.
+        exclude: ^test/fixtures/pr_draft_guard/malformed\.json$

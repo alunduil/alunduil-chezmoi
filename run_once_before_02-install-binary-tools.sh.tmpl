@@ -63,6 +63,34 @@ else
   rm -rf "$tmp"
 fi
 
+# ----------------------------------------------------------------------- act
+ACT_VERSION="v0.2.87"
+ACT_BIN="$HOME/.local/bin/act"
+if [ -x "$ACT_BIN" ] && "$ACT_BIN" --version 2>/dev/null | grep -qF "${ACT_VERSION#v}"; then
+  log "act: $ACT_VERSION already installed"
+else
+  log "act: downloading $ACT_VERSION"
+  tmp="$(mktemp -d)"
+  base="https://github.com/nektos/act/releases/download/${ACT_VERSION}"
+  asset="act_Linux_x86_64.tar.gz"
+  curl -fsSL -o "$tmp/$asset" "$base/$asset"
+  curl -fsSL -o "$tmp/checksums.txt" "$base/checksums.txt"
+  expected="$(awk -v f="$asset" '$2 == f {print $1}' "$tmp/checksums.txt")"
+  if [ -z "$expected" ]; then
+    printf 'act: no checksum entry for %s in checksums.txt\n' "$asset" >&2
+    exit 1
+  fi
+  actual="$(sha256sum "$tmp/$asset" | awk '{print $1}')"
+  if [ "$expected" != "$actual" ]; then
+    printf 'act: sha256 mismatch -- expected %s, got %s\n' "$expected" "$actual" >&2
+    exit 1
+  fi
+  tar -xzf "$tmp/$asset" -C "$tmp" act
+  mkdir -p "$HOME/.local/bin"
+  install -m 0755 "$tmp/act" "$ACT_BIN"
+  rm -rf "$tmp"
+fi
+
 # ---------------------------------------------------------------- zellij dirs
 mkdir -p "$HOME/.config/zellij/plugins"
 
