@@ -1,16 +1,9 @@
 #!/usr/bin/env bash
-# Apply this chezmoi source tree to a throwaway destination and verify
-# that every $HOME/.claude/* hook command referenced in the rendered
-# settings.json actually exists. Catches typos in the template that
-# point at hooks we haven't written yet.
-#
-# Scoped to $HOME/.claude/* — paths under that subtree are chezmoi-
-# managed and must resolve. Hooks pointing outside (e.g. zellaude-hook.sh
-# under ~/.config/zellij/plugins/, auto-installed by the zellaude WASM)
-# are external integrations and not chezmoi's responsibility to verify.
-#
-# We trust chezmoi for prefix translation (dot_*, executable_*, etc.)
-# and permission bits — those are upstream behaviour, not ours to test.
+# Verify $HOME/.claude/* hook commands in the rendered settings.json
+# exist. Catches template typos pointing at hooks we haven't written.
+# Out of scope: external integrations (e.g. zellaude under
+# ~/.config/zellij/plugins/), prefix-translation, permission bits —
+# those are chezmoi's job.
 
 set -euo pipefail
 
