@@ -25,6 +25,13 @@
     },
     {
       "customType": "regex",
+      "fileMatch": ["run_once_before_.*\\.sh\\.tmpl$"],
+      "matchStrings": ["ACT_VERSION=\"(?<currentValue>v[\\d.]+)\""],
+      "depNameTemplate": "nektos/act",
+      "datasourceTemplate": "github-releases"
+    },
+    {
+      "customType": "regex",
       "fileMatch": ["\\.github/workflows/zellij\\.yml$"],
       "matchStrings": ["ZELLIJ_VERSION: (?<currentValue>v[\\d.]+)"],
       "depNameTemplate": "zellij-org/zellij",
