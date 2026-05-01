@@ -23,8 +23,8 @@ layout {
         }
         pane size=1 borderless=true {
             plugin location="zjstatus" {
-                format_left  ""
-                format_right "{command_prs}"
+                format_left  "{command_prs}"
+                format_right ""
                 command_prs_command  "bash -lc zellij-pr-status"
                 command_prs_format   "#[fg=green]{stdout}"
                 command_prs_interval "60"
