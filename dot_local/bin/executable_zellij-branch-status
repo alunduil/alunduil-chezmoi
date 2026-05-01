@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 # Render the zjstatus branch widget for ~/.config/zellij/layouts/pair.kdl.
-# Emits a cyan zjstatus segment showing the current git branch -- the
-# leftmost element in the bar, so only an exit chevron, no entry.
+# Emits a zjstatus segment showing the current git branch -- the leftmost
+# element in the bar.
 #
 # zjstatus consumes this with `command_branch_rendermode "dynamic"` so the
 # `#[...]` directives render rather than print as literal text.
@@ -10,8 +10,11 @@
 #   [bg=bright_black]  <branch>     (always shown; "?" when not in a git repo)
 #
 # Colours match zellaude's prefix segment aesthetic (dark gray + white text).
-# Rendered shape:
-#   main ▶
+# No exit chevron -- the segment ends square so the first PR (or nothing,
+# when there are no open PRs) sits flush against it. When the first PR is
+# active (mauve), the colour change provides the visual transition; when
+# inactive (also bright_black), branch and first PR visually merge into one
+# block, which conveys "the PRs in this widget are not for this branch."
 #
 # This script assumes zjstatus's command runner inherits the tab's cwd so
 # that `git rev-parse` finds the right repository. If it doesn't, the
@@ -21,8 +24,6 @@
 
 set -euo pipefail
 
-ARROW=$'\uE0B0' # powerline right arrow
-
 branch=$(git rev-parse --abbrev-ref HEAD 2>/dev/null) || branch="?"
 
-printf '#[bg=bright_black,fg=white] %s #[bg=default,fg=bright_black]%s' "$branch" "$ARROW"
+printf '#[bg=bright_black,fg=white] %s ' "$branch"
