@@ -28,8 +28,6 @@ while IFS=$'\t' read -r number url branch; do
     fg=cyan
   fi
 
-  printf '#[bg=%s,fg=default]%s' "$bg" "$ARROW"
-
   # shellcheck disable=SC1003 # \\ in the printf format is the OSC 8 ST.
   printf '#[bg=%s,fg=%s] \033]8;;%s\033\\#%s\033]8;;\033\\ #[bg=default,fg=%s]%s' \
     "$bg" "$fg" "$url" "$number" "$bg" "$ARROW"
