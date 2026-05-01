@@ -3,14 +3,14 @@
 # `command_prs_rendermode "dynamic"` in pair.kdl so the #[...] directives
 # render rather than printing as literal text.
 #
-# Active PR (head branch matches current local branch) renders in mauve;
-# the hex is hardcoded because Catppuccin Mocha's named `magenta` is pink,
-# not purple. Same cwd assumption as zellij-branch-status.
+# Active PR (head branch matches current local branch) renders in magenta;
+# in Catppuccin Mocha that's pink, but staying in named-palette colours
+# keeps the widget theme-portable. Same cwd assumption as
+# zellij-branch-status.
 
 set -euo pipefail
 
 ARROW=$'\uE0B0'
-ACTIVE_BG="#CBA6F7"
 
 current_branch=$(git rev-parse --abbrev-ref HEAD 2>/dev/null) || current_branch=""
 
@@ -19,21 +19,16 @@ prs=$(gh pr list --author=@me --state=open --json number,url,headRefName 2>/dev/
 
 [ -z "$prs" ] && exit 0
 
-first=1
 while IFS=$'\t' read -r number url branch; do
   if [ "$branch" = "$current_branch" ]; then
-    bg="$ACTIVE_BG"
-    fg=white
+    bg=magenta
+    fg=black
   else
-    bg=bright_black
+    bg=black
     fg=cyan
   fi
 
-  if [ "$first" -eq 1 ]; then
-    first=0
-  else
-    printf '#[bg=%s,fg=default]%s' "$bg" "$ARROW"
-  fi
+  printf '#[bg=%s,fg=default]%s' "$bg" "$ARROW"
 
   # shellcheck disable=SC1003 # \\ in the printf format is the OSC 8 ST.
   printf '#[bg=%s,fg=%s] \033]8;;%s\033\\#%s\033]8;;\033\\ #[bg=default,fg=%s]%s' \

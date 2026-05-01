@@ -9,6 +9,8 @@
 
 set -euo pipefail
 
+ARROW=$'\uE0B0'
+
 branch=$(git rev-parse --abbrev-ref HEAD 2>/dev/null) || branch="?"
 
-printf '#[bg=bright_black,fg=white] %s ' "$branch"
+printf '#[bg=bright_black,fg=white] %s #[bg=default,fg=bright_black]%s' "$branch" "$ARROW"
