@@ -3,10 +3,9 @@
 // changes, drive Claude" side of pairing. On-demand shells come from ghost
 // (Alt+g) so no fixed terminal strip is reserved.
 //
-// Template shape mirrors default.kdl — zellij does not propagate config-level
-// templates into layout-spawned tabs, so each layout carries its own copy.
-// Keep this in sync with ../layouts/default.kdl:
+// Template:
 //   zellaude   (1 line) — per-tab Claude Code activity + tab list
+//   zjstatus   (1 line) — open-PR list (gh pr list, refreshed every 60s)
 //   children   (the panes)
 //   status-bar (1 line, clipped) — mode indicator only; tips suppressed
 //
@@ -21,6 +20,15 @@ layout {
     default_tab_template {
         pane size=1 borderless=true {
             plugin location="zellaude"
+        }
+        pane size=1 borderless=true {
+            plugin location="zjstatus" {
+                format_left  ""
+                format_right "{command_prs}"
+                command_prs_command  "bash -lc zellij-pr-status"
+                command_prs_format   "#[fg=green]{stdout}"
+                command_prs_interval "60"
+            }
         }
         children
         pane size=1 borderless=true {
