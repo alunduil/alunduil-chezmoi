@@ -14,37 +14,38 @@
 #   [bg=bright_black]  ∅      (shown only when there are no open PRs or gh
 #                              fails -- offline, rate-limited, not authed)
 #
-# Each non-leftmost segment has a U+E0B2 left arrow on entry and a U+E0B0
-# right arrow on exit so it reads as a "tab" tapered on both sides.
+# Each non-leftmost segment has a U+E0B0 right arrow on both entry and exit
+# (the entry arrow's triangle "carves" the segment's left edge into a chevron
+# pointing into it; the exit arrow tapers it back to default). All arrows
+# face the same way, giving the segment list a flowing rightward chevron.
 #
 # Rendered shape:
-#   PR ▶◀ #42 ▶◀ #57 ▶◀ #58 ▶    (with PRs)
-#   PR ▶◀ ∅ ▶                    (empty)
+#   PR ▶▶ #42 ▶▶ #57 ▶▶ #58 ▶    (with PRs)
+#   PR ▶▶ ∅ ▶                    (empty)
 
 set -euo pipefail
 
-ARROW_R=$'\uE0B0' # powerline right arrow (closes a segment)
-ARROW_L=$'\uE0B2' # powerline left arrow  (opens a non-leftmost segment)
-NULL=$'\u2205'    # empty set / null
+ARROW=$'\uE0B0' # powerline right arrow (used at every segment boundary)
+NULL=$'\u2205'  # empty set / null
 
 prs=$(gh pr list --author=@me --state=open --json number,url 2>/dev/null \
   | jq -r '.[] | "\(.number)\t\(.url)"') || prs=""
 
 # Header is unconditional.
-printf '#[bg=blue,fg=white] PR #[bg=default,fg=blue]%s' "$ARROW_R"
+printf '#[bg=blue,fg=white] PR #[bg=default,fg=blue]%s' "$ARROW"
 
 if [ -z "$prs" ]; then
   # Null: bg=black would collide with fg=default ≈ bar bg; use bright_black
-  # so the left arrow's triangle has visible contrast.
-  printf '#[bg=bright_black,fg=default]%s' "$ARROW_L"
+  # so the entry chevron's triangle has visible contrast.
+  printf '#[bg=bright_black,fg=default]%s' "$ARROW"
   printf '#[bg=bright_black,fg=white] %s ' "$NULL"
-  printf '#[bg=default,fg=bright_black]%s' "$ARROW_R"
+  printf '#[bg=default,fg=bright_black]%s' "$ARROW"
   exit 0
 fi
 
 while IFS=$'\t' read -r number url; do
-  printf '#[bg=green,fg=default]%s' "$ARROW_L"
+  printf '#[bg=green,fg=default]%s' "$ARROW"
   # shellcheck disable=SC1003 # \\ inside the single-quoted printf format is the OSC 8 ST.
   printf '#[bg=green,fg=black] \033]8;;%s\033\\#%s\033]8;;\033\\ #[bg=default,fg=green]%s' \
-    "$url" "$number" "$ARROW_R"
+    "$url" "$number" "$ARROW"
 done <<<"$prs"
