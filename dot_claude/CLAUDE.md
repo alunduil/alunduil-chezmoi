@@ -14,6 +14,12 @@ A per-repo `CLAUDE.md` overrides anything here.
 - Mark uncertainty plainly ("I think", "haven't checked, but..."). When
   confident and pushed back on, cite proof — file path, command
   output, source.
+- Don't fuse exposition with edits. When a change embeds a non-obvious
+  decision (architecture, naming, tradeoff, scope), present the option
+  and pause — don't narrate context and immediately write files.
+- End multi-step work with a 1-2 line summary naming any non-obvious
+  choices made. "Revisit if you don't like it" doesn't substitute for
+  surfacing the choice.
 
 ## Pull requests
 
@@ -26,13 +32,16 @@ A per-repo `CLAUDE.md` overrides anything here.
 - Use the repo's PR template when one exists. Otherwise, structure
   the body (squash-merged, so this becomes the commit context):
   - **Summary** — 1-2 sentences on what this PR delivers. Surface
-    the approach if the choice isn't obvious from the diff. Link the
-    issue if any; don't re-explain it.
+    the approach only if the choice isn't obvious from the diff.
+    Don't restate commit messages (squash collapses them) or
+    reproduce content visible in the diff (diagrams, snippets,
+    before/after). Link the issue; don't re-explain it.
   - **Gotchas** — direct the reviewer: "focus on X because Y." Where
     to spend time, not just what's risky. Omit when nothing to flag.
-  - **Verification** — what was checked beyond CI. Manual or
-    exploratory testing in past tense ("ran X, confirmed Y"). Don't
-    re-list CI checks.
+  - **Verification** — material checks beyond CI in past tense ("ran
+    X, confirmed Y"). Skip trivial steps (file reads, listings) unless
+    load-bearing. Omit the section when CI covers everything.
+    Unverified items belong in Gotchas, not here.
 
 ## Commits
 
