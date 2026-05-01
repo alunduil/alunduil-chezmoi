@@ -3,50 +3,61 @@
 # zjstatus `#[...]` style directives interleaved with OSC 8 hyperlinks, so
 # the pair.kdl entry must set `command_prs_rendermode "dynamic"`.
 #
-# Each segment mirrors zellij's status-bar mode-indicator pattern: a coloured
-# block tapering to default via a right-pointing powerline arrow (U+E0B0).
-# Colours are named (blue/green/black) so they track the user's zellij theme
-# palette rather than being hard-coded RGB.
+# One segment per open PR authored by the current user. The PR whose head
+# branch matches the current local branch is highlighted in mauve (the
+# Catppuccin "purple"; named `magenta` in this theme is pink, so the active
+# colour is the one hex value in this widget). All other PRs render in
+# bright_black with cyan text -- the same dark-gray-purple zellaude uses for
+# inactive tabs.
 #
-# Layout (preceded by zellij-branch-status, so the header is non-leftmost):
-#   [bg=blue]          PR     (header)
-#   [bg=green]         #N     (one segment per open PR; #N is an OSC 8 link)
-#   [bg=bright_black]  ∅      (shown only when there are no open PRs or gh
-#                              fails -- offline, rate-limited, not authed)
+# Layout (preceded by zellij-branch-status):
+#   [bg=#CBA6F7]       #N    (active PR -- head branch matches current)
+#   [bg=bright_black]  #N    (inactive PRs; #N is an OSC 8 link)
 #
-# Every segment has a U+E0B0 right arrow on both entry and exit (the entry
-# arrow's triangle "carves" the segment's left edge into a chevron pointing
-# into it; the exit arrow tapers it back to default). All arrows face the
-# same way, giving the segment list a flowing rightward chevron.
+# The first PR in the list has no entry chevron so it sits flush against
+# the branch widget's exit chevron. Subsequent PRs each open with their
+# own entry chevron.
 #
-# Rendered shape (in combination with zellij-branch-status):
-#   main ▶▶ PR ▶▶ #42 ▶▶ #57 ▶▶ #58 ▶    (with PRs)
-#   main ▶▶ PR ▶▶ ∅ ▶                    (empty)
+# When there are no open PRs (or gh fails -- offline, rate-limited, not
+# authed), the script exits silent; the bar then shows only the branch
+# widget, which is enough signal that the widget is alive.
+#
+# Rendered shape (with branch widget on the left):
+#   main ▶ #42 ▶▶ #57 ▶▶ #58 ▶    (with PRs)
+#   main ▶                        (empty -- no PR segment, just branch)
 
 set -euo pipefail
 
-ARROW=$'\uE0B0' # powerline right arrow (used at every segment boundary)
-NULL=$'\u2205'  # empty set / null
+ARROW=$'\uE0B0' # powerline right arrow
+ACTIVE_BG="#CBA6F7" # Catppuccin Mocha mauve
 
-prs=$(gh pr list --author=@me --state=open --json number,url 2>/dev/null \
-  | jq -r '.[] | "\(.number)\t\(.url)"') || prs=""
+current_branch=$(git rev-parse --abbrev-ref HEAD 2>/dev/null) || current_branch=""
 
-# Header is unconditional. Entry chevron first, since branch widget precedes.
-printf '#[bg=blue,fg=default]%s' "$ARROW"
-printf '#[bg=blue,fg=white] PR #[bg=default,fg=blue]%s' "$ARROW"
+prs=$(gh pr list --author=@me --state=open --json number,url,headRefName 2>/dev/null \
+  | jq -r '.[] | "\(.number)\t\(.url)\t\(.headRefName)"') || prs=""
 
-if [ -z "$prs" ]; then
-  # Null: bg=black would collide with fg=default ≈ bar bg; use bright_black
-  # so the entry chevron's triangle has visible contrast.
-  printf '#[bg=bright_black,fg=default]%s' "$ARROW"
-  printf '#[bg=bright_black,fg=white] %s ' "$NULL"
-  printf '#[bg=default,fg=bright_black]%s' "$ARROW"
-  exit 0
-fi
+[ -z "$prs" ] && exit 0
 
-while IFS=$'\t' read -r number url; do
-  printf '#[bg=green,fg=default]%s' "$ARROW"
+first=1
+while IFS=$'\t' read -r number url branch; do
+  if [ "$branch" = "$current_branch" ]; then
+    bg="$ACTIVE_BG"
+    fg=white
+  else
+    bg=bright_black
+    fg=cyan
+  fi
+
+  # Entry chevron on every PR except the first (which sits flush against
+  # the branch widget's exit chevron).
+  if [ "$first" -eq 1 ]; then
+    first=0
+  else
+    printf '#[bg=%s,fg=default]%s' "$bg" "$ARROW"
+  fi
+
+  # PR body + exit chevron.
   # shellcheck disable=SC1003 # \\ inside the single-quoted printf format is the OSC 8 ST.
-  printf '#[bg=green,fg=black] \033]8;;%s\033\\#%s\033]8;;\033\\ #[bg=default,fg=green]%s' \
-    "$url" "$number" "$ARROW"
+  printf '#[bg=%s,fg=%s] \033]8;;%s\033\\#%s\033]8;;\033\\ #[bg=default,fg=%s]%s' \
+    "$bg" "$fg" "$url" "$number" "$bg" "$ARROW"
 done <<<"$prs"

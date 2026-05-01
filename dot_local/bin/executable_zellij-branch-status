@@ -7,8 +7,9 @@
 # `#[...]` directives render rather than print as literal text.
 #
 # Layout:
-#   [bg=cyan]  <branch>     (always shown; "?" when not in a git repo)
+#   [bg=bright_black]  <branch>     (always shown; "?" when not in a git repo)
 #
+# Colours match zellaude's prefix segment aesthetic (dark gray + white text).
 # Rendered shape:
 #   main ▶
 #
@@ -24,4 +25,4 @@ ARROW=$'\uE0B0' # powerline right arrow
 
 branch=$(git rev-parse --abbrev-ref HEAD 2>/dev/null) || branch="?"
 
-printf '#[bg=cyan,fg=black] %s #[bg=default,fg=cyan]%s' "$branch" "$ARROW"
+printf '#[bg=bright_black,fg=white] %s #[bg=default,fg=bright_black]%s' "$branch" "$ARROW"
