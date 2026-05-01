@@ -8,20 +8,20 @@
 # Colours are named (blue/green/black) so they track the user's zellij theme
 # palette rather than being hard-coded RGB.
 #
-# Layout:
-#   [bg=blue]          PR     (header, leftmost -- right arrow only)
+# Layout (preceded by zellij-branch-status, so the header is non-leftmost):
+#   [bg=blue]          PR     (header)
 #   [bg=green]         #N     (one segment per open PR; #N is an OSC 8 link)
 #   [bg=bright_black]  ∅      (shown only when there are no open PRs or gh
 #                              fails -- offline, rate-limited, not authed)
 #
-# Each non-leftmost segment has a U+E0B0 right arrow on both entry and exit
-# (the entry arrow's triangle "carves" the segment's left edge into a chevron
-# pointing into it; the exit arrow tapers it back to default). All arrows
-# face the same way, giving the segment list a flowing rightward chevron.
+# Every segment has a U+E0B0 right arrow on both entry and exit (the entry
+# arrow's triangle "carves" the segment's left edge into a chevron pointing
+# into it; the exit arrow tapers it back to default). All arrows face the
+# same way, giving the segment list a flowing rightward chevron.
 #
-# Rendered shape:
-#   PR ▶▶ #42 ▶▶ #57 ▶▶ #58 ▶    (with PRs)
-#   PR ▶▶ ∅ ▶                    (empty)
+# Rendered shape (in combination with zellij-branch-status):
+#   main ▶▶ PR ▶▶ #42 ▶▶ #57 ▶▶ #58 ▶    (with PRs)
+#   main ▶▶ PR ▶▶ ∅ ▶                    (empty)
 
 set -euo pipefail
 
@@ -31,7 +31,8 @@ NULL=$'\u2205'  # empty set / null
 prs=$(gh pr list --author=@me --state=open --json number,url 2>/dev/null \
   | jq -r '.[] | "\(.number)\t\(.url)"') || prs=""
 
-# Header is unconditional.
+# Header is unconditional. Entry chevron first, since branch widget precedes.
+printf '#[bg=blue,fg=default]%s' "$ARROW"
 printf '#[bg=blue,fg=white] PR #[bg=default,fg=blue]%s' "$ARROW"
 
 if [ -z "$prs" ]; then
