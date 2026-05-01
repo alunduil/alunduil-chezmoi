@@ -3,7 +3,7 @@
 // bundled tab-bar/status-bar but not zellaude — so the initial tab would be
 // missing the per-tab Claude Code activity strip.
 //
-// Template shape mirrors pair.kdl. Keep them in sync:
+// Template:
 //   zellaude   (1 line) — per-tab Claude Code activity + tab list
 //   children   (the panes)
 //   status-bar (1 line, clipped) — mode indicator only; tips suppressed
