@@ -9,8 +9,6 @@
 // anyway. The pair layout adds a zjstatus line for PR-aware status; default
 // stays minimal.
 
-theme "catppuccin-mocha"
-
 plugins {
     zellaude location="https://github.com/ishefi/zellaude/releases/download/v0.5.0/zellaude.wasm"
     ghost    location="https://github.com/vdbulcke/ghost/releases/download/v0.7.1/ghost.wasm"
