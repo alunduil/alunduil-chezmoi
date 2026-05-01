@@ -1,51 +1,42 @@
 #!/usr/bin/env bash
-# Render the zjstatus PR widget for ~/.config/zellij/layouts/pair.kdl. The
-# script emits zjstatus `#[...]` style directives interleaved with OSC 8
-# hyperlinks, so the pair.kdl entry must set `command_prs_rendermode
-# "dynamic"` -- otherwise the directives render as literal text.
+# Render the zjstatus PR widget for ~/.config/zellij/layouts/pair.kdl. Emits
+# zjstatus `#[...]` style directives interleaved with OSC 8 hyperlinks, so
+# the pair.kdl entry must set `command_prs_rendermode "dynamic"`.
+#
+# Each segment mirrors zellij's status-bar mode-indicator pattern: a coloured
+# block tapering to default via a right-pointing powerline arrow (U+E0B0).
+# Colours are named (blue/green/black) so they track the user's zellij theme
+# palette rather than being hard-coded RGB.
 #
 # Layout:
-#   [bg=blue]   PR        (header, always shown)
-#   [bg=green]  #N #N #N  (one segment, PRs separated by thin powerline
-#                          arrows; each #N is an OSC 8 link to the PR url)
-#   [bg=black]  ∅         (shown only when there are no open PRs or gh
-#                          fails -- offline, rate-limited, not authed)
+#   [bg=blue]   PR     (header, always shown)
+#   [bg=green]  #N     (one segment per open PR; #N is an OSC 8 link)
+#   [bg=black]  ∅      (shown only when there are no open PRs or gh fails
+#                       -- offline, rate-limited, not authed)
 #
-# Outer boundaries use a solid powerline arrow (U+E0B0); inter-PR separators
-# inside the green block use the thin powerline arrow (U+E0B1).
+# Rendered shape:
+#   PR ▶ #42 ▶ #57 ▶ #58 ▶    (with PRs)
+#   PR ▶ ∅ ▶                  (empty)
 
 set -euo pipefail
 
-ARROW=$'\uE0B0' # powerline right arrow -- segment boundary
-THIN=$'\uE0B1'  # powerline thin arrow  -- within-segment separator
+ARROW=$'\uE0B0' # powerline right arrow
 NULL=$'\u2205'  # empty set / null
 
 prs=$(gh pr list --author=@me --state=open --json number,url 2>/dev/null \
   | jq -r '.[] | "\(.number)\t\(.url)"') || prs=""
 
 # Header is unconditional.
-printf '#[bg=blue,fg=white] PR '
+printf '#[bg=blue,fg=white] PR #[bg=default,fg=blue]%s' "$ARROW"
 
 if [ -z "$prs" ]; then
-  printf '#[bg=black,fg=blue]%s#[bg=black,fg=white] %s #[bg=default,fg=black]%s' \
-    "$ARROW" "$NULL" "$ARROW"
+  printf '#[bg=black,fg=white] %s #[bg=default,fg=black]%s' \
+    "$NULL" "$ARROW"
   exit 0
 fi
 
-# Header (blue) -> PR block (green) transition.
-printf '#[bg=green,fg=blue]%s' "$ARROW"
-
-first=1
 while IFS=$'\t' read -r number url; do
-  if [ "$first" -eq 1 ]; then
-    first=0
-  else
-    printf '#[bg=green,fg=black] %s' "$THIN"
-  fi
   # shellcheck disable=SC1003 # \\ inside the single-quoted printf format is the OSC 8 ST.
-  printf '#[bg=green,fg=black] \033]8;;%s\033\\#%s\033]8;;\033\\ ' \
-    "$url" "$number"
+  printf '#[bg=green,fg=black] \033]8;;%s\033\\#%s\033]8;;\033\\ #[bg=default,fg=green]%s' \
+    "$url" "$number" "$ARROW"
 done <<<"$prs"
-
-# Closing arrow back to default.
-printf '#[bg=default,fg=green]%s' "$ARROW"
