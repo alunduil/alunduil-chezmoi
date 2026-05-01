@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 set -euo pipefail
 
-ACT_VERSION="v0.2.87"
+ACT_VERSION="v0.2.88"
 ARCH="Linux_x86_64"
 
 # shellcheck source-path=SCRIPTDIR source=lib.sh
