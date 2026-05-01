@@ -5,7 +5,7 @@
 //
 // Template:
 //   zellaude   (1 line) — per-tab Claude Code activity + tab list
-//   zjstatus   (1 line) — open-PR list (gh pr list, refreshed every 60s)
+//   zjstatus   (1 line) — current branch (5s) + open-PR list (60s)
 //   children   (the panes)
 //   status-bar (1 line, clipped) — mode indicator only; tips suppressed
 //
@@ -23,12 +23,16 @@ layout {
         }
         pane size=1 borderless=true {
             plugin location="zjstatus" {
-                format_left  "{command_prs}"
+                format_left  "{command_branch}{command_prs}"
                 format_right ""
-                command_prs_command    "bash -lc zellij-pr-status"
-                command_prs_format     "{stdout}"
-                command_prs_rendermode "dynamic"
-                command_prs_interval   "60"
+                command_branch_command    "bash -lc zellij-branch-status"
+                command_branch_format     "{stdout}"
+                command_branch_rendermode "dynamic"
+                command_branch_interval   "5"
+                command_prs_command       "bash -lc zellij-pr-status"
+                command_prs_format        "{stdout}"
+                command_prs_rendermode    "dynamic"
+                command_prs_interval      "60"
             }
         }
         children
