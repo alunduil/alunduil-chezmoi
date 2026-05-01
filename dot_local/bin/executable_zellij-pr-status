@@ -1,20 +1,51 @@
 #!/usr/bin/env bash
-# Emit "PRs: #123  #456" where each #N is an OSC 8 hyperlink to the PR. The
-# zjstatus command_prs widget in ~/.config/zellij/layouts/pair.kdl invokes
-# this every 60s and renders {stdout} in the status line. Output is empty
-# when there are no open PRs or when gh fails (offline, rate-limited, not
-# authed) -- zjstatus then renders an empty segment, which is the right
-# silent-failure behaviour for a status widget.
+# Render the zjstatus PR widget for ~/.config/zellij/layouts/pair.kdl. The
+# script emits zjstatus `#[...]` style directives interleaved with OSC 8
+# hyperlinks, so the pair.kdl entry must set `command_prs_rendermode
+# "dynamic"` -- otherwise the directives render as literal text.
+#
+# Layout:
+#   [bg=blue]   PR        (header, always shown)
+#   [bg=green]  #N #N #N  (one segment, PRs separated by thin powerline
+#                          arrows; each #N is an OSC 8 link to the PR url)
+#   [bg=black]  ∅         (shown only when there are no open PRs or gh
+#                          fails -- offline, rate-limited, not authed)
+#
+# Outer boundaries use a solid powerline arrow (U+E0B0); inter-PR separators
+# inside the green block use the thin powerline arrow (U+E0B1).
 
 set -euo pipefail
 
+ARROW=$'\uE0B0' # powerline right arrow -- segment boundary
+THIN=$'\uE0B1'  # powerline thin arrow  -- within-segment separator
+NULL=$'\u2205'  # empty set / null
+
 prs=$(gh pr list --author=@me --state=open --json number,url 2>/dev/null \
-        | jq -r '.[] | "\(.number)\t\(.url)"') || exit 0
+  | jq -r '.[] | "\(.number)\t\(.url)"') || prs=""
 
-[ -z "$prs" ] && exit 0
+# Header is unconditional.
+printf '#[bg=blue,fg=white] PR '
 
-printf 'PRs:'
+if [ -z "$prs" ]; then
+  printf '#[bg=black,fg=blue]%s#[bg=black,fg=white] %s #[bg=default,fg=black]%s' \
+    "$ARROW" "$NULL" "$ARROW"
+  exit 0
+fi
+
+# Header (blue) -> PR block (green) transition.
+printf '#[bg=green,fg=blue]%s' "$ARROW"
+
+first=1
 while IFS=$'\t' read -r number url; do
+  if [ "$first" -eq 1 ]; then
+    first=0
+  else
+    printf '#[bg=green,fg=black] %s' "$THIN"
+  fi
   # shellcheck disable=SC1003 # \\ inside the single-quoted printf format is the OSC 8 ST.
-  printf '  \033]8;;%s\033\\#%s\033]8;;\033\\' "$url" "$number"
+  printf '#[bg=green,fg=black] \033]8;;%s\033\\#%s\033]8;;\033\\ ' \
+    "$url" "$number"
 done <<<"$prs"
+
+# Closing arrow back to default.
+printf '#[bg=default,fg=green]%s' "$ARROW"
