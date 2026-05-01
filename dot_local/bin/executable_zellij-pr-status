@@ -3,10 +3,9 @@
 # `command_prs_rendermode "dynamic"` in pair.kdl so the #[...] directives
 # render rather than printing as literal text.
 #
-# Active PR (head branch matches current local branch) renders in magenta;
-# in Catppuccin Mocha that's pink, but staying in named-palette colours
-# keeps the widget theme-portable. Same cwd assumption as
-# zellij-branch-status.
+# Active PR (head branch matches current local branch) renders in green
+# matching zellij's status-bar mode pill; inactive PRs in white. Same cwd
+# assumption as zellij-branch-status.
 
 set -euo pipefail
 
@@ -21,11 +20,11 @@ prs=$(gh pr list --author=@me --state=open --json number,url,headRefName 2>/dev/
 
 while IFS=$'\t' read -r number url branch; do
   if [ "$branch" = "$current_branch" ]; then
-    bg=magenta
+    bg=green
     fg=black
   else
-    bg=black
-    fg=cyan
+    bg=white
+    fg=black
   fi
 
   # shellcheck disable=SC1003 # \\ in the printf format is the OSC 8 ST.
