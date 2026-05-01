@@ -9,8 +9,7 @@
 
 set -euo pipefail
 
-ARROW_R=$'\uE0B0'
-ARROW_L=$'\uE0B2'
+ARROW=$'\uE0B0'
 
 current_branch=$(git rev-parse --abbrev-ref HEAD 2>/dev/null) || current_branch=""
 
@@ -29,9 +28,9 @@ while IFS=$'\t' read -r number url branch; do
   fi
 
   # Prefix arrow: black triangle carves the segment from the black bar bg.
-  printf '#[bg=%s,fg=black]%s' "$bg" "$ARROW_L"
+  printf '#[bg=%s,fg=black]%s' "$bg" "$ARROW"
 
   # shellcheck disable=SC1003 # \\ in the printf format is the OSC 8 ST.
   printf '#[bg=%s,fg=%s] \033]8;;%s\033\\#%s\033]8;;\033\\ #[bg=black,fg=%s]%s' \
-    "$bg" "$fg" "$url" "$number" "$bg" "$ARROW_R"
+    "$bg" "$fg" "$url" "$number" "$bg" "$ARROW"
 done <<<"$prs"
