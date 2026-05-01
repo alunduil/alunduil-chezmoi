@@ -1,26 +1,11 @@
 #!/usr/bin/env bash
-# Render the zjstatus branch widget for ~/.config/zellij/layouts/pair.kdl.
-# Emits a zjstatus segment showing the current git branch -- the leftmost
-# element in the bar.
+# zjstatus branch widget for ~/.config/zellij/layouts/pair.kdl. Requires
+# `command_branch_rendermode "dynamic"` in pair.kdl so the #[...] directive
+# renders rather than printing as literal text.
 #
-# zjstatus consumes this with `command_branch_rendermode "dynamic"` so the
-# `#[...]` directives render rather than print as literal text.
-#
-# Layout:
-#   [bg=bright_black]  <branch>     (always shown; "?" when not in a git repo)
-#
-# Colours match zellaude's prefix segment aesthetic (dark gray + white text).
-# No exit chevron -- the segment ends square so the first PR (or nothing,
-# when there are no open PRs) sits flush against it. When the first PR is
-# active (mauve), the colour change provides the visual transition; when
-# inactive (also bright_black), branch and first PR visually merge into one
-# block, which conveys "the PRs in this widget are not for this branch."
-#
-# This script assumes zjstatus's command runner inherits the tab's cwd so
-# that `git rev-parse` finds the right repository. If it doesn't, the
-# branch will always render as "?" and we'll need a wrapper that finds
-# the cwd through another path (e.g., $ZJ_PANE_CWD if zjstatus exposes
-# one, or by reading from a sentinel file).
+# Assumes zjstatus's command runner inherits the tab's cwd. If branch
+# renders as "?", that assumption broke and we need a wrapper that locates
+# cwd another way.
 
 set -euo pipefail
 

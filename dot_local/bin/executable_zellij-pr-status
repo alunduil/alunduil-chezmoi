@@ -1,35 +1,16 @@
 #!/usr/bin/env bash
-# Render the zjstatus PR widget for ~/.config/zellij/layouts/pair.kdl. Emits
-# zjstatus `#[...]` style directives interleaved with OSC 8 hyperlinks, so
-# the pair.kdl entry must set `command_prs_rendermode "dynamic"`.
+# zjstatus PR widget for ~/.config/zellij/layouts/pair.kdl. Requires
+# `command_prs_rendermode "dynamic"` in pair.kdl so the #[...] directives
+# render rather than printing as literal text.
 #
-# One segment per open PR authored by the current user. The PR whose head
-# branch matches the current local branch is highlighted in mauve (the
-# Catppuccin "purple"; named `magenta` in this theme is pink, so the active
-# colour is the one hex value in this widget). All other PRs render in
-# bright_black with cyan text -- the same dark-gray-purple zellaude uses for
-# inactive tabs.
-#
-# Layout (preceded by zellij-branch-status):
-#   [bg=#CBA6F7]       #N    (active PR -- head branch matches current)
-#   [bg=bright_black]  #N    (inactive PRs; #N is an OSC 8 link)
-#
-# The first PR in the list has no entry chevron so it sits flush against
-# the branch widget's exit chevron. Subsequent PRs each open with their
-# own entry chevron.
-#
-# When there are no open PRs (or gh fails -- offline, rate-limited, not
-# authed), the script exits silent; the bar then shows only the branch
-# widget, which is enough signal that the widget is alive.
-#
-# Rendered shape (with branch widget on the left):
-#   main ▶ #42 ▶▶ #57 ▶▶ #58 ▶    (with PRs)
-#   main ▶                        (empty -- no PR segment, just branch)
+# Active PR (head branch matches current local branch) renders in mauve;
+# the hex is hardcoded because Catppuccin Mocha's named `magenta` is pink,
+# not purple. Same cwd assumption as zellij-branch-status.
 
 set -euo pipefail
 
-ARROW=$'\uE0B0' # powerline right arrow
-ACTIVE_BG="#CBA6F7" # Catppuccin Mocha mauve
+ARROW=$'\uE0B0'
+ACTIVE_BG="#CBA6F7"
 
 current_branch=$(git rev-parse --abbrev-ref HEAD 2>/dev/null) || current_branch=""
 
@@ -48,16 +29,13 @@ while IFS=$'\t' read -r number url branch; do
     fg=cyan
   fi
 
-  # Entry chevron on every PR except the first (which sits flush against
-  # the branch widget's exit chevron).
   if [ "$first" -eq 1 ]; then
     first=0
   else
     printf '#[bg=%s,fg=default]%s' "$bg" "$ARROW"
   fi
 
-  # PR body + exit chevron.
-  # shellcheck disable=SC1003 # \\ inside the single-quoted printf format is the OSC 8 ST.
+  # shellcheck disable=SC1003 # \\ in the printf format is the OSC 8 ST.
   printf '#[bg=%s,fg=%s] \033]8;;%s\033\\#%s\033]8;;\033\\ #[bg=default,fg=%s]%s' \
     "$bg" "$fg" "$url" "$number" "$bg" "$ARROW"
 done <<<"$prs"
