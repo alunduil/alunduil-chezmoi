@@ -26,7 +26,7 @@ layout {
                 format_left  "{command_prs}"
                 format_right ""
                 command_prs_command  "bash -lc zellij-pr-status"
-                command_prs_format   "#[fg=green]{stdout}"
+                command_prs_format   "#[bg=green,fg=black] {stdout} #[bg=default,fg=green]\u{E0B0}"
                 command_prs_interval "60"
             }
         }
