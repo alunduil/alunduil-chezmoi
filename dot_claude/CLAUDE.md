@@ -159,6 +159,12 @@ and examples that don't disambiguate.
 - CONTRIBUTING work, including the warranted/not decision:
   `contributing` skill.
 
+## Renovate
+
+- `renovate.json` work (audit, write, troubleshoot dashboard, regex
+  managers): `renovate` skill. Default preset is
+  `config:best-practices`; pre-commit manager is opt-in.
+
 ## Tests
 
 - Don't test upstream. If a behaviour belongs to the language,
