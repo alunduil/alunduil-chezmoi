@@ -2,6 +2,7 @@
 # zellij content:  {{ include "script/install/zellij" | sha256sum }}
 # lazygit content: {{ include "script/install/lazygit" | sha256sum }}
 # act content:     {{ include "script/install/act" | sha256sum }}
+# gcx content:     {{ include "script/install/gcx" | sha256sum }}
 # lib.sh content:  {{ include "script/install/lib.sh" | sha256sum }}
 # The hashes above embed the install scripts' content into this file's
 # rendered output so chezmoi re-runs this script when any of them change
@@ -13,5 +14,12 @@ INSTALL_DIR="{{ .chezmoi.sourceDir }}/script/install"
 "$INSTALL_DIR/zellij" --bin-dir "$HOME/.local/bin"
 "$INSTALL_DIR/lazygit" --bin-dir "$HOME/.local/bin"
 "$INSTALL_DIR/act" --bin-dir "$HOME/.local/bin"
+"$INSTALL_DIR/gcx" --bin-dir "$HOME/.local/bin"
+
+# gcx ships its skill bundle inside the binary; `skills install --all`
+# extracts it to ~/.agents/skills (the cross-harness convention read by
+# Claude Code, Cursor, Copilot). --force re-syncs gcx-managed files on
+# version bumps without touching anything outside the bundle.
+"$HOME/.local/bin/gcx" skills install --all --force >/dev/null
 
 mkdir -p "$HOME/.config/zellij/plugins"

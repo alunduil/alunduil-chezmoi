@@ -39,6 +39,13 @@
     },
     {
       "customType": "regex",
+      "managerFilePatterns": ["/^script/install/gcx$/"],
+      "matchStrings": ["GCX_VERSION=\"(?<currentValue>v[\\d.]+)\""],
+      "depNameTemplate": "grafana/gcx",
+      "datasourceTemplate": "github-releases"
+    },
+    {
+      "customType": "regex",
       "managerFilePatterns": ["/dot_config/zellij/config\\.kdl$/"],
       "matchStrings": ["https://github\\.com/(?<depName>[^/]+/[^/]+)/releases/download/(?<currentValue>v[\\d.]+)/"],
       "datasourceTemplate": "github-releases"

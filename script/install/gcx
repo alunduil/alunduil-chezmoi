@@ -1,0 +1,33 @@
+#!/usr/bin/env bash
+set -euo pipefail
+
+GCX_VERSION="v0.2.11"
+ARCH="linux_amd64"
+
+# shellcheck source-path=SCRIPTDIR source=lib.sh
+. "$(dirname "$0")/lib.sh"
+
+parse_bin_dir "$@"
+
+bin="$BIN_DIR/gcx"
+if [ -x "$bin" ] && "$bin" --version 2>/dev/null | grep -qF "${GCX_VERSION#v}"; then
+  printf '==> gcx: %s already installed at %s\n' "$GCX_VERSION" "$bin" >&2
+  exit 0
+fi
+
+printf '==> gcx: downloading %s\n' "$GCX_VERSION" >&2
+tmp="$(mktemp -d)"
+trap 'rm -rf "$tmp"' EXIT
+
+base="https://github.com/grafana/gcx/releases/download/${GCX_VERSION}"
+asset="gcx_${GCX_VERSION#v}_${ARCH}.tar.gz"
+checksums="gcx_${GCX_VERSION#v}_checksums.txt"
+curl -fsSL -o "$tmp/$asset" "$base/$asset"
+curl -fsSL -o "$tmp/$checksums" "$base/$checksums"
+
+expected="$(expected_from_checksums "$tmp/$checksums" "$asset")"
+verify_sha256 "$tmp/$asset" "$expected"
+
+tar -xzf "$tmp/$asset" -C "$tmp" gcx
+mkdir -p "$BIN_DIR"
+install -m 0755 "$tmp/gcx" "$bin"
