@@ -5,7 +5,7 @@
   the range below. Keep the events list in sync with what the plugin
   consumes upstream.
 */ -}}
-{{- $zellaude := `{ "hooks": [{ "type": "command", "command": "$HOME/.config/zellij/plugins/zellaude-hook.sh", "timeout": 5, "async": true }] }` -}}
+{{- $zellaude := printf `{ "hooks": [{ "type": "command", "command": "%s/.config/zellij/plugins/zellaude-hook.sh", "timeout": 5, "async": true }] }` .chezmoi.homeDir -}}
 {{- $zellaudeOnly := list "PostToolUse" "PostToolUseFailure" "UserPromptSubmit" "PermissionRequest" "Notification" "Stop" "SubagentStop" "SessionStart" "SessionEnd" -}}
 {
   "$schema": "https://json.schemastore.org/claude-code-settings.json",
@@ -14,7 +14,7 @@
       {
         "hooks": [
           {
-            "command": "$HOME/.claude/hooks/pr-draft-guard.sh",
+            "command": "{{ .chezmoi.homeDir }}/.claude/hooks/pr-draft-guard.sh",
             "type": "command"
           }
         ],
@@ -110,14 +110,22 @@
       "Bash(zellij:*)"
     ],
     "ask": [
-      "Bash",
+      "Bash(bash -c*)",
       "Bash(chezmoi apply*)",
       "Bash(docker system prune*)",
       "Bash(docker volume rm*)",
       "Bash(find* -delete*)",
       "Bash(find* -exec*)",
       "Bash(find* -ok*)",
+      "Bash(gh api*)",
+      "Bash(git config*)",
+      "Bash(git remote add*)",
+      "Bash(node -e*)",
+      "Bash(perl -e*)",
+      "Bash(python -c*)",
+      "Bash(python3 -c*)",
       "Bash(rm:*)",
+      "Bash(sh -c*)",
       "Bash(sudo:*)",
       "Bash(terraform apply*)",
       "Bash(terraform destroy*)",
@@ -131,7 +139,11 @@
       "Bash(git push*--force*)",
       "Bash(git push -f*)",
       "Bash(git push* -f*)",
-      "Bash(git push*main*)"
+      "Bash(git push*main*)",
+      "Read({{ .chezmoi.homeDir }}/.claude/.credentials.json)",
+      "Read({{ .chezmoi.homeDir }}/.claustre/claustre.db*)",
+      "Read({{ .chezmoi.homeDir }}/.gnupg/**)",
+      "Read({{ .chezmoi.homeDir }}/.ssh/**)"
     ]
   },
   "theme": "auto"
