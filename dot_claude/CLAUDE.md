@@ -46,6 +46,9 @@ A per-repo `CLAUDE.md` overrides anything here.
     X, confirmed Y"). Skip trivial steps (file reads, listings) unless
     load-bearing. Omit the section when CI covers everything.
     Unverified items belong in Gotchas, not here.
+- When adding commits to an open PR, regenerate the body from scratch.
+  The body describes the merge state, not the commit log; appending
+  each round drifts toward changelog narration.
 
 ## Commits
 

@@ -21,3 +21,4 @@ repos:
         # malformed.json is intentionally invalid — a fixture for the
         # pr-draft-guard hook's fail-closed-on-bad-input test.
         exclude: ^test/fixtures/pr_draft_guard/malformed\.json$
+      - id: detect-private-key

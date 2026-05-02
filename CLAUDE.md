@@ -3,7 +3,7 @@
 Chezmoi source directory. Files deploy to `$HOME` via `chezmoi apply`;
 names follow chezmoi rules (`dot_` → `.`, `executable_` → +x, `.tmpl` →
 Go template, `run_once_before_NN-…` → ordered idempotent bootstrap).
-README.md has the user-facing layout and bootstrap walkthrough.
+README.md has the bootstrap walkthrough.
 
 ## Source vs. apply path
 
@@ -17,7 +17,9 @@ effect on `apply` until committed and pulled into the apply clone. Use
 - Bootstrap scripts (`run_once_before_NN-*.sh.tmpl`) are idempotent;
   re-running is safe. Numeric prefix orders them.
 - Tool versions live in `script/install/{zellij,lazygit,act}` and are
-  reused by both bootstrap and CI. Bump in one place.
+  reused by both bootstrap and CI. Bump in one place. Zellij *plugins*
+  (`zellaude`, `zjstatus`) are pinned separately as alias tags in
+  `dot_config/zellij/config.kdl`.
 - `dot_local/bin/executable_gh` shadows system `gh` to enforce `--draft`
   on `gh pr create`. PRs Claude opens go through this wrapper.
 
