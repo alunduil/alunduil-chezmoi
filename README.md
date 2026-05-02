@@ -27,11 +27,12 @@ chmod 600 ~/.config/chezmoi/key.txt
 # Interactive logins (per-machine, never managed):
 gh auth login                              # ~/.config/gh/
 claude                                     # ~/.claude/.credentials.json
+gcx login                                  # ~/.config/gcx/
 sudo tailscale up                          # tailnet auth
 claustre configure                         # wires up Claude Code permissions
 
 # PATH check for chezmoi-installed binaries:
-zellij --version && lazygit --version && gcx --version
+zellij --version && lazygit --version
 ```
 
 If SSH to GitHub isn't set up yet, clone over HTTPS first and swap remotes once keys are in place.
