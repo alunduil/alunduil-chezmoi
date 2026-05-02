@@ -33,6 +33,7 @@ claustre configure                         # wires up Claude Code permissions
 
 # PATH check for chezmoi-installed binaries:
 zellij --version && lazygit --version
+gh extension list                          # confirms gh-poi (squash-merge pruner)
 ```
 
 If SSH to GitHub isn't set up yet, clone over HTTPS first and swap remotes once keys are in place.

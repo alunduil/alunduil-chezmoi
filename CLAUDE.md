@@ -20,6 +20,10 @@ effect on `apply` until committed and pulled into the apply clone. Use
   reused by both bootstrap and CI. Bump in one place. Zellij *plugins*
   (`zellaude`, `zjstatus`) are pinned separately as alias tags in
   `dot_config/zellij/config.kdl`.
+- `gh` extensions install in script 05 alongside other bespoke
+  installers, not script 02 — they're managed by `gh extension`, not
+  the `script/install/` download-and-verify pattern. Version pin lives
+  inline in the script (e.g. `GH_POI_VERSION`).
 - `dot_local/bin/executable_gh` shadows system `gh` to enforce `--draft`
   on `gh pr create`. PRs Claude opens go through this wrapper.
 
