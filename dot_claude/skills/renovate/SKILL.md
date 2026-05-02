@@ -13,16 +13,16 @@ Schema: <https://docs.renovatebot.com/renovate-schema.json>
 {
   "$schema": "https://docs.renovatebot.com/renovate-schema.json",
   "extends": ["config:best-practices"],
-  "baseBranches": ["main"],
+  "baseBranches": ["<default-branch>"],
   "reviewers": ["<owner>"],
   "pre-commit": { "enabled": true }
 }
 ```
 
 - `config:best-practices` — adds `helpers:pinGitHubActionDigests` (action SHA pinning) and OpenSSF scorecard alerts on top of `config:recommended`. Default for all repos.
-- `baseBranches` — auto-detected if omitted; explicit is more portable across repos and forks.
+- `baseBranches` — set to the repo's actual default branch (`main`, `master`, `trunk`, …), not a hard-coded value. Auto-detected if omitted; explicit is more portable across forks.
 - `reviewers` — without it, Renovate PRs land silent. Use `assignees` instead if you only want a creation-time ping (no rebase notifications).
-- `pre-commit: { enabled: true }` — opt-in manager. Add when `.pre-commit-config.yaml` exists; replaces the need for pre-commit.ci.
+- `pre-commit: { enabled: true }` — opt-in manager, enabled unconditionally. No-op when `.pre-commit-config.yaml` is absent (manager only acts on that file pattern); replaces the need for pre-commit.ci where the file does exist.
 
 ## Custom regex managers
 
@@ -53,7 +53,7 @@ Renovate opens a "Dependency Dashboard" issue. Read it before assuming a bug:
 
 ## Procedure
 
-1. Read `renovate.json` if present. Note the repo's default branch and whether `.pre-commit-config.yaml` exists.
-2. **Greenfield** — write the Defaults block; fill `<owner>` and the actual default branch. Add custom regex managers for shell-script `*_VERSION=` pins or hard-coded release URLs.
-3. **Audit existing** — walk the Defaults block and the custom-managers conventions; flag drift (still on `config:recommended`, missing `reviewers`, leftover `fileMatch`, ungoverned `*_VERSION=` pins).
+1. Read `renovate.json` if present. Note the repo's default branch (`git symbolic-ref refs/remotes/origin/HEAD` or the GitHub setting).
+2. **Greenfield** — write the Defaults block; fill `<owner>` and `<default-branch>`. Add custom regex managers for shell-script `*_VERSION=` pins or hard-coded release URLs.
+3. **Audit existing** — walk the Defaults block and the custom-managers conventions; flag drift (still on `config:recommended`, missing `reviewers`, hard-coded `baseBranches` not matching the actual default, leftover `fileMatch`, ungoverned `*_VERSION=` pins).
 4. Surface findings before editing. Apply only after scope is agreed.

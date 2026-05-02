@@ -163,7 +163,8 @@ and examples that don't disambiguate.
 
 - `renovate.json` work (audit, write, troubleshoot dashboard, regex
   managers): `renovate` skill. Default preset is
-  `config:best-practices`; pre-commit manager is opt-in.
+  `config:best-practices` with the pre-commit manager enabled
+  unconditionally.
 
 ## Tests
 
