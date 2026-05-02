@@ -1,12 +1,3 @@
-{{- /*
-  zellaude-hook.sh fires on every Claude Code lifecycle event so the
-  zellij plugin can reflect session state. Define the hook entry once;
-  PreToolUse adds it alongside pr-draft-guard, the rest add it solo via
-  the range below. Keep the events list in sync with what the plugin
-  consumes upstream.
-*/ -}}
-{{- $zellaude := printf `{ "hooks": [{ "type": "command", "command": "%s/.config/zellij/plugins/zellaude-hook.sh", "timeout": 5, "async": true }] }` .chezmoi.homeDir -}}
-{{- $zellaudeOnly := list "PostToolUse" "PostToolUseFailure" "UserPromptSubmit" "PermissionRequest" "Notification" "Stop" "SubagentStop" "SessionStart" "SessionEnd" -}}
 {
   "$schema": "https://json.schemastore.org/claude-code-settings.json",
   "hooks": {
@@ -14,15 +5,131 @@
       {
         "hooks": [
           {
-            "command": "{{ .chezmoi.homeDir }}/.claude/hooks/pr-draft-guard.sh",
+            "command": "/home/alunduil/.claude/hooks/pr-draft-guard.sh",
             "type": "command"
           }
         ],
         "matcher": "mcp__github__create_pull_request(_with_copilot)?"
       },
-      {{ $zellaude }}
-    ]{{ range $event := $zellaudeOnly }},
-    "{{ $event }}": [{{ $zellaude }}]{{ end }}
+      {
+        "hooks": [
+          {
+            "type": "command",
+            "command": "/home/alunduil/.config/zellij/plugins/zellaude-hook.sh",
+            "timeout": 5,
+            "async": true
+          }
+        ]
+      }
+    ],
+    "PostToolUse": [
+      {
+        "hooks": [
+          {
+            "type": "command",
+            "command": "/home/alunduil/.config/zellij/plugins/zellaude-hook.sh",
+            "timeout": 5,
+            "async": true
+          }
+        ]
+      }
+    ],
+    "PostToolUseFailure": [
+      {
+        "hooks": [
+          {
+            "type": "command",
+            "command": "/home/alunduil/.config/zellij/plugins/zellaude-hook.sh",
+            "timeout": 5,
+            "async": true
+          }
+        ]
+      }
+    ],
+    "UserPromptSubmit": [
+      {
+        "hooks": [
+          {
+            "type": "command",
+            "command": "/home/alunduil/.config/zellij/plugins/zellaude-hook.sh",
+            "timeout": 5,
+            "async": true
+          }
+        ]
+      }
+    ],
+    "PermissionRequest": [
+      {
+        "hooks": [
+          {
+            "type": "command",
+            "command": "/home/alunduil/.config/zellij/plugins/zellaude-hook.sh",
+            "timeout": 5,
+            "async": true
+          }
+        ]
+      }
+    ],
+    "Notification": [
+      {
+        "hooks": [
+          {
+            "type": "command",
+            "command": "/home/alunduil/.config/zellij/plugins/zellaude-hook.sh",
+            "timeout": 5,
+            "async": true
+          }
+        ]
+      }
+    ],
+    "Stop": [
+      {
+        "hooks": [
+          {
+            "type": "command",
+            "command": "/home/alunduil/.config/zellij/plugins/zellaude-hook.sh",
+            "timeout": 5,
+            "async": true
+          }
+        ]
+      }
+    ],
+    "SubagentStop": [
+      {
+        "hooks": [
+          {
+            "type": "command",
+            "command": "/home/alunduil/.config/zellij/plugins/zellaude-hook.sh",
+            "timeout": 5,
+            "async": true
+          }
+        ]
+      }
+    ],
+    "SessionStart": [
+      {
+        "hooks": [
+          {
+            "type": "command",
+            "command": "/home/alunduil/.config/zellij/plugins/zellaude-hook.sh",
+            "timeout": 5,
+            "async": true
+          }
+        ]
+      }
+    ],
+    "SessionEnd": [
+      {
+        "hooks": [
+          {
+            "type": "command",
+            "command": "/home/alunduil/.config/zellij/plugins/zellaude-hook.sh",
+            "timeout": 5,
+            "async": true
+          }
+        ]
+      }
+    ]
   },
   "permissions": {
     "allow": [
@@ -35,7 +142,6 @@
       "Read(*)",
       "TodoWrite(*)",
       "Write(*)",
-
       "mcp__claude_ai_Readwise__reader_get_*",
       "mcp__claude_ai_Readwise__reader_list_*",
       "mcp__claude_ai_Readwise__reader_search_*",
@@ -43,7 +149,6 @@
       "mcp__claude_ai_Readwise__readwise_get_*",
       "mcp__claude_ai_Readwise__readwise_list_*",
       "mcp__claude_ai_Readwise__readwise_search_*",
-
       "Bash(awk:*)",
       "Bash(basename:*)",
       "Bash(bats:*)",
@@ -140,10 +245,10 @@
       "Bash(git push -f*)",
       "Bash(git push* -f*)",
       "Bash(git push*main*)",
-      "Read({{ .chezmoi.homeDir }}/.claude/.credentials.json)",
-      "Read({{ .chezmoi.homeDir }}/.claustre/claustre.db*)",
-      "Read({{ .chezmoi.homeDir }}/.gnupg/**)",
-      "Read({{ .chezmoi.homeDir }}/.ssh/**)"
+      "Read(/home/alunduil/.claude/.credentials.json)",
+      "Read(/home/alunduil/.claustre/claustre.db*)",
+      "Read(/home/alunduil/.gnupg/**)",
+      "Read(/home/alunduil/.ssh/**)"
     ]
   },
   "theme": "auto"
