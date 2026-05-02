@@ -16,7 +16,10 @@ current_branch=$(git rev-parse --abbrev-ref HEAD 2>/dev/null) || current_branch=
 prs=$(gh pr list --author=@me --state=open --json number,url,headRefName 2>/dev/null \
   | jq -r '.[] | "\(.number)\t\(.url)\t\(.headRefName)"') || prs=""
 
-[ -z "$prs" ] && exit 0
+if [ -z "$prs" ]; then
+  printf '#[bg=16,fg=245]%s' "$ARROW"
+  exit 0
+fi
 
 while IFS=$'\t' read -r number url branch; do
   if [ "$branch" = "$current_branch" ]; then
