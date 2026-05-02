@@ -39,6 +39,13 @@
     },
     {
       "customType": "regex",
+      "managerFilePatterns": ["/^run_once_before_05-install-standalone-tools\\.sh\\.tmpl$/"],
+      "matchStrings": ["GH_POI_VERSION=\"(?<currentValue>v[\\d.]+)\""],
+      "depNameTemplate": "seachicken/gh-poi",
+      "datasourceTemplate": "github-releases"
+    },
+    {
+      "customType": "regex",
       "managerFilePatterns": ["/dot_config/zellij/config\\.kdl$/"],
       "matchStrings": ["https://github\\.com/(?<depName>[^/]+/[^/]+)/releases/download/(?<currentValue>v[\\d.]+)/"],
       "datasourceTemplate": "github-releases"

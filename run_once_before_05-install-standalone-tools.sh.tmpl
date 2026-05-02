@@ -1,6 +1,9 @@
 #!/usr/bin/env bash
-# Installs tools that have their own bespoke curl installers and don't
-# belong to the apt, npm, or cargo ecosystems.
+# Installs tools whose canonical installer is bespoke -- curl scripts,
+# `gh extension install`, etc. -- and not part of the apt, npm, or cargo
+# ecosystems. `gh` extensions in particular live here, not in script 02
+# (binary tools), since they're managed by `gh` rather than downloaded
+# and sha256-verified per the script/install/ pattern.
 
 set -euo pipefail
 
@@ -14,6 +17,25 @@ if ! command -v rtk >/dev/null 2>&1; then
   curl -fsSL https://raw.githubusercontent.com/rtk-ai/rtk/refs/heads/master/install.sh | sh
 else
   log "rtk: already installed"
+fi
+
+# --------------------------------------------------------------- gh-poi
+# Prunes squash-merged local branches by consulting GitHub PR state --
+# `git branch --merged` can't see them. `gh poi` requires `gh` (apt,
+# script 01). Pin enforced: if a different version is already
+# installed, replace it so renovate-tracked bumps actually take effect.
+GH_POI_VERSION="v0.17.0"
+installed="$(gh extension list 2>/dev/null | awk -F'\t' '$2 == "seachicken/gh-poi" {print $3; exit}')"
+if [ "$installed" != "$GH_POI_VERSION" ]; then
+  if [ -n "$installed" ]; then
+    log "gh-poi: replacing $installed with $GH_POI_VERSION"
+    gh extension remove poi
+  else
+    log "gh-poi: installing $GH_POI_VERSION"
+  fi
+  gh extension install seachicken/gh-poi --pin "$GH_POI_VERSION"
+else
+  log "gh-poi: $GH_POI_VERSION already installed"
 fi
 
 log "standalone tools complete"
