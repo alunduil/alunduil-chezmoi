@@ -28,11 +28,12 @@ chmod 600 ~/.config/chezmoi/key.txt
 gh auth login                              # ~/.config/gh/
 claude                                     # ~/.claude/.credentials.json
 gcx login                                  # ~/.config/gcx/
+readwise login                             # ~/.readwise-cli.json
 sudo tailscale up                          # tailnet auth
 claustre configure                         # wires up Claude Code permissions
 
 # PATH check for chezmoi-installed binaries:
-zellij --version && lazygit --version
+zellij --version && lazygit --version && act --version && rtk --version
 gh extension list                          # confirms gh-poi (squash-merge pruner)
 ```
 

@@ -27,6 +27,27 @@ effect on `apply` until committed and pulled into the apply clone. Use
 - `dot_local/bin/executable_gh` shadows system `gh` to enforce `--draft`
   on `gh pr create`. PRs Claude opens go through this wrapper.
 
+## Adding a new tool
+
+Decide first: does the tool need interactive auth (login, browser
+flow, API token) to do real work?
+
+- **Yes** (gh, claude, gcx, readwise, tailscale): list in README
+  "Interactive logins" with a config-path comment so a fresh-host
+  bootstrap surfaces where state lands. No PATH-check line — running
+  the login command itself proves reachability. Auth state is
+  runtime, never managed by chezmoi.
+- **No** (zellij, lazygit, act, rtk, gh-poi): list in README "PATH
+  check". If the tool isn't in apt/npm/cargo, follow the
+  `script/install/<tool>` pattern: pinned version, SHA-256 verified
+  via `lib.sh`, `--bin-dir DIR` interface, idempotent on `--version`
+  match. Add a `{{ include "script/install/<tool>" | sha256sum }}`
+  line in `run_once_before_02` so version bumps re-fire bootstrap.
+
+Auth and install mechanism are independent: `gcx` uses
+`script/install/` *and* lands in interactive logins; `gh-poi` uses
+`gh extension install` *and* lands in PATH check.
+
 ## Sensors
 
 CI is authoritative. Run locally before claiming done:
