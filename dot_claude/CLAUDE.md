@@ -169,6 +169,15 @@ and examples that don't disambiguate.
   `config:best-practices` with the pre-commit manager enabled
   unconditionally.
 
+## Changelogs
+
+- `CHANGELOG.md` work (bootstrap, review against commits) following
+  Keep a Changelog 1.1.0: `changelog` skill. Defers to auto-managed
+  setups (changesets, release-please, git-cliff, semantic-release,
+  towncrier); semver 2.0.0 by default, PVP for Haskell projects.
+  Manual maintenance only — never proposes adopting tooling, and
+  cutting a release (tagging, version-file edits) is out of scope.
+
 ## Tests
 
 - Don't test upstream. If a behaviour belongs to the language,
