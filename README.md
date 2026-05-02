@@ -36,10 +36,6 @@ zellij --version && lazygit --version
 
 If SSH to GitHub isn't set up yet, clone over HTTPS first and swap remotes once keys are in place.
 
-## Never in the repo
-
-Credentials of any kind, runtime state (`.credentials.json`, session history, `~/.claustre/db/`), the age private key, SSH private keys, and toolchain binaries (chezmoi/Node/Rust install via canonical installers).
-
 ## Contributing
 
 Personal configuration — not accepting contributions. Fork freely under [0BSD](LICENSE).
