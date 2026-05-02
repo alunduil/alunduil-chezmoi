@@ -150,6 +150,12 @@ templates) is loaded every relevant turn. Optimise for tokens, not
 readability: cut filler, decorative connectors, restated headings,
 and examples that don't disambiguate.
 
+## READMEs and CONTRIBUTING
+
+- README work (audit, write, revise, badges): `readme` skill.
+- CONTRIBUTING work, including the warranted/not decision:
+  `contributing` skill.
+
 ## Tests
 
 - Don't test upstream. If a behaviour belongs to the language,
