@@ -3,9 +3,9 @@
 # `command_prs_rendermode "dynamic"` in pair.kdl so the #[...] directives
 # render rather than printing as literal text.
 #
-# Active PR (head branch matches current local branch) renders in green
-# matching zellij's status-bar mode pill; inactive PRs in white. Same cwd
-# assumption as zellij-branch-status.
+# Active PR (head branch matches current local branch) renders in green and
+# inactive PRs in gray, matching zellij's bundled status-bar ribbons. Same
+# cwd assumption as zellij-branch-status.
 
 set -euo pipefail
 
@@ -20,17 +20,15 @@ prs=$(gh pr list --author=@me --state=open --json number,url,headRefName 2>/dev/
 
 while IFS=$'\t' read -r number url branch; do
   if [ "$branch" = "$current_branch" ]; then
-    bg=green
-    fg=black
+    bg=154
   else
-    bg=white
-    fg=black
+    bg=245
   fi
 
-  # Prefix arrow: black triangle carves the segment from the black bar bg.
-  printf '#[bg=%s,fg=black]%s' "$bg" "$ARROW"
+  # Prefix arrow: bar-coloured triangle carves the segment from the bar bg.
+  printf '#[bg=%s,fg=16]%s' "$bg" "$ARROW"
 
   # shellcheck disable=SC1003 # \\ in the printf format is the OSC 8 ST.
-  printf '#[bg=%s,fg=%s] \033]8;;%s\033\\#%s\033]8;;\033\\ #[bg=black,fg=%s]%s' \
-    "$bg" "$fg" "$url" "$number" "$bg" "$ARROW"
+  printf '#[bg=%s,fg=16] \033]8;;%s\033\\#%s\033]8;;\033\\ #[bg=16,fg=%s]%s' \
+    "$bg" "$url" "$number" "$bg" "$ARROW"
 done <<<"$prs"
