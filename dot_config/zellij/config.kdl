@@ -11,7 +11,6 @@
 
 plugins {
     zellaude location="https://github.com/ishefi/zellaude/releases/download/v0.5.0/zellaude.wasm"
-    ghost    location="https://github.com/vdbulcke/ghost/releases/download/v0.7.1/ghost.wasm"
     zjstatus location="https://github.com/dj95/zjstatus/releases/download/v0.23.0/zjstatus.wasm"
 }
 
@@ -22,14 +21,6 @@ keybinds {
             Run "git-repo-picker" {
                 floating true
                 close_on_exit true
-            }
-        }
-        // Floating ad-hoc terminal (gh, chezmoi diff, rg, etc.).
-        bind "Alt g" {
-            LaunchOrFocusPlugin "ghost" {
-                floating true
-                shell "bash"
-                shell_flag "-ic"
             }
         }
     }
