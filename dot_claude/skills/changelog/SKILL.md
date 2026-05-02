@@ -31,10 +31,20 @@ Skip: typos, comment-only changes, internal refactors, test changes, build/CI tw
 
 The test: "would a user of this project notice or care?" If no, skip.
 
+Ruling-out heuristic: if removing the entry would leave the eventual release notes equally accurate, it doesn't belong. This catches both the user-impact failures above and pre-release deltas-of-deltas (see Pre-first-release mode).
+
+## Pre-first-release mode
+
+Detect: `git tag` is empty AND no version sections appear below `[Unreleased]`. The project has never shipped — surface this explicitly and switch behavior.
+
+Pre-first-release entries are not deltas; they're the inaugural feature set. Collapse to a single `### Added` bucket — every change is "added" from a future user's perspective. Don't author Changed / Removed / Fixed / Deprecated / Security entries: they describe deltas no user will witness. Fold runtime, dependency, or platform requirements into the matching Added line (e.g. "CLI tool, requires Node.js 20+" — not a separate Changed line).
+
+Pivot when the first release lands (v0.1.0, or PVP equivalent): subsequent `[Unreleased]` sections split by bucket because they're now deltas against a shipped artifact. Spell this out at bootstrap so the future cutover is expected.
+
 ## Format invariants
 
 - `## [Unreleased]` at the top; releases below as `## [X.Y.Z] - YYYY-MM-DD`, newest first.
-- Section order: Added → Changed → Deprecated → Removed → Fixed → Security. Omit empty sections unless the file already keeps them.
+- Section order (post-first-release): Added → Changed → Deprecated → Removed → Fixed → Security. Omit empty sections unless the file already keeps them. Don't pre-seed empty subsection headers — add a header only when its first entry lands. Pre-first-release uses `### Added` only.
 - Comparison links at the bottom (`[X.Y.Z]: https://.../compare/...`).
 - Released versions are immutable. If a PR merged after its target tag, move the entry from the released section back to `[Unreleased]` rather than editing the released section.
 
@@ -58,15 +68,18 @@ If a change is real and user-visible but its KAC category isn't clear from the d
 
 ## Modes
 
-**Bootstrap** (no CHANGELOG.md): seed a minimal KAC 1.1.0 skeleton — `## [Unreleased]`, a header link to keepachangelog.com, and a note naming the versioning scheme (semver or PVP). Optionally backfill `## [X.Y.Z]` sections from existing git tags — ask first, never unsolicited. Do not propose adopting tooling.
+**Bootstrap** (no CHANGELOG.md): seed a minimal KAC 1.1.0 skeleton — `## [Unreleased]`, a header link to keepachangelog.com, and a note naming the versioning scheme (semver or PVP). No empty subsection headers under `[Unreleased]`. If pre-first-release (no git tags), note in the seed that entries collect under a single `### Added` until the first release cuts. Optionally backfill `## [X.Y.Z]` sections from existing git tags — ask first, never unsolicited. Do not propose adopting tooling.
 
-**Review** (CHANGELOG exists): walk commits since the last release tag (or since the last `[Unreleased]` update), apply the user-impact filter, classify each kept change into one of the six sections, and update `[Unreleased]` so it reflects user-visible work-in-progress. Used both during work as discoveries land and at release-prep time.
+**Review** (CHANGELOG exists): walk commits since the last release tag (or since the last `[Unreleased]` update), apply the user-impact filter and the ruling-out heuristic, classify each kept change, and update `[Unreleased]`. Pre-first-release: single `### Added` bucket, fold runtime/dependency requirements into their feature lines. Post-first-release: classify into one of the six KAC sections. Used both during work as discoveries land and at release-prep time.
 
 ## Procedure
 
 1. Detect auto-tooling. If present, surface and stop unless overridden.
 2. Determine versioning scheme (PVP if Haskell, else semver).
-3. Pick the mode: bootstrap / review.
-4. Walk evidence; apply the user-impact filter; drop anything that fails the test.
-5. Map kept changes to sections; update `[Unreleased]`.
-6. Verify: section order preserved, no released-version mutation, no fabricated entries, no skipped-category items present.
+3. Detect pre-first-release: `git tag` empty AND no version sections below `[Unreleased]`. Surface the state; it changes step 6.
+4. Pick the mode: bootstrap / review.
+5. Walk evidence; apply the user-impact filter and ruling-out heuristic; drop anything that fails.
+6. Map kept changes:
+   - Pre-first-release: single `### Added` bucket; fold dependency / platform requirements into their feature line.
+   - Post-first-release: classify into Added / Changed / Deprecated / Removed / Fixed / Security; create section headers only when populated.
+7. Verify: section order preserved, no empty subsection headers, no released-version mutation, no fabricated entries, no skipped-category items present.
