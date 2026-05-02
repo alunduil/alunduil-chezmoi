@@ -41,7 +41,15 @@ Test: would removing this badge lose information the reader couldn't get from th
 
 ## Procedure
 
-1. Read the README.
-2. Walk the checklist; note gaps.
-3. Walk the badges; flag any that don't earn their place and gaps the principle implies.
-4. Surface findings before editing. Apply only after scope is agreed.
+1. Read the README. Name the actual audience.
+2. **Ethos first** — for each existing section, name the reader need it
+   serves (identify / evaluate / use / engage). Sections serving no
+   need are noise; flag them to cut, even if the checklist nominally
+   has a slot. "What it's made of" tours, internal implementation
+   notes, and speculative future plans usually fall here.
+3. **Gaps** — walk the checklist to find reader needs *not yet*
+   covered. The checklist is a prompt for missing needs, not a license
+   for existing sections.
+4. Walk the badges against the principle; flag any that don't earn
+   their place.
+5. Surface findings before editing. Apply only after scope is agreed.

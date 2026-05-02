@@ -1,10 +1,13 @@
 # alunduil-chezmoi
 
+By [@alunduil](https://github.com/alunduil)
+
 [![License: 0BSD](https://img.shields.io/github/license/alunduil/alunduil-chezmoi)](LICENSE)
 [![Managed with chezmoi](https://img.shields.io/badge/managed%20with-chezmoi-blue)](https://chezmoi.io)
 [![Platform: Debian / Crostini](https://img.shields.io/badge/platform-Debian%20%2F%20Crostini-A81D33?logo=debian&logoColor=white)](https://www.debian.org)
+[![Claude skills: shareable](https://img.shields.io/badge/Claude%20skills-shareable-262625?logo=claude&logoColor=D97757)](dot_claude/skills/)
 
-Personal [chezmoi](https://chezmoi.io)-managed dotfiles for [@alunduil](https://github.com/alunduil). Run one command on a fresh Debian/Crostini host to go from bare OS to a fully configured development environment with AI pair programming, terminal multiplexing, and git integration — layouts, keybinds, and guardrails included. Source: <https://github.com/alunduil/alunduil-chezmoi>.
+Personal [chezmoi](https://chezmoi.io)-managed dotfiles. Run one command on a fresh Debian/Crostini host to go from bare OS to a fully configured development environment with AI pair programming, terminal multiplexing, and git integration — layouts, keybinds, and guardrails included. Source: <https://github.com/alunduil/alunduil-chezmoi>.
 
 Personal config — no warranty, no support. [0BSD licensed](LICENSE).
 
@@ -37,33 +40,6 @@ After bootstrap, confirm the key tools are on PATH:
 ```bash
 claude --version && claustre --version && zellij --version && lazygit --version
 ```
-
-## Companion repo
-
-`alunduil-claustre-state` (planned, private) holds Claustre's cross-machine task/project state:
-
-```bash
-claustre sync init git@github.com:alunduil/alunduil-claustre-state.git
-claustre sync pull
-```
-
-Only projects, tasks, and subtasks sync; sessions, worktrees, PIDs, and rate-limit state stay local.
-
-## Layout
-
-- `dot_bashrc`, `dot_profile`, `dot_bash_profile`, `dot_gitconfig` — shell + git config.
-- `dot_claude/` — user-level Claude Code harness: `CLAUDE.md` rules, `settings.json` hook wiring (pr-draft-guard for the GitHub MCP tools, zellaude across every Claude Code lifecycle event), `hooks/pr-draft-guard.sh` blocking non-draft PRs. Per-project sensors (tests/linters/types) stay with the project.
-- `dot_claustre/config.toml` — Claustre user config (`sync.auto_push = true`).
-- `dot_config/zellij/config.kdl` — Zellij config: plugin aliases (zellaude, zjstatus — both pinned to release tags) and the `Alt+p` keybind.
-- `dot_config/zellij/layouts/default.kdl` — initial-tab layout: zellaude top strip + 1-line `status-bar` (mode only, tips clipped).
-- `dot_config/zellij/layouts/pair.kdl` — deep-pairing layout: Claude Code (40%) alongside lazygit (60%). VS Code handles editing in its own window.
-- `dot_local/bin/gh` — wrapper that shadows `/usr/bin/gh` to require `--draft` on `gh pr create`. Bypass with `GH_DRAFT_GUARD=off`.
-- `run_once_before_*.sh.tmpl` — idempotent bootstrap scripts, split by concern:
-  - `01-install-system-packages` — apt packages, HashiCorp repo, Tailscale.
-  - `02-install-binary-tools` — Zellij, lazygit, act (GitHub release binaries).
-  - `03-install-node-ecosystem` — nvm, Node LTS, `@anthropic-ai/claude-code`, `@readwise/cli`.
-  - `04-install-rust-ecosystem` — rustup, Claustre.
-  - `05-install-standalone-tools` — rtk.
 
 ## Never in the repo
 
