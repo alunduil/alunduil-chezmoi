@@ -23,8 +23,8 @@ layout {
         }
         pane size=1 borderless=true {
             plugin location="zjstatus" {
-                format_left  "#[bg=black]{command_branch}{command_prs}"
-                format_right "#[bg=black]"
+                format_left  "#[bg=16]{command_branch}{command_prs}"
+                format_right "#[bg=16]"
                 command_branch_command    "bash -lc zellij-branch-status"
                 command_branch_format     "{stdout}"
                 command_branch_rendermode "dynamic"

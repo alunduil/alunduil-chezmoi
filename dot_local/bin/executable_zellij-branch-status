@@ -11,4 +11,4 @@ set -euo pipefail
 
 branch=$(git rev-parse --abbrev-ref HEAD 2>/dev/null) || branch="?"
 
-printf '#[bg=black,fg=white] %s ' "$branch"
+printf '#[bg=16,fg=255] %s ' "$branch"
