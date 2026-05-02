@@ -1,2 +1,4 @@
 cache = true
+max_cache_age = "14d"
 retry_wait_time = 5
+include_fragments = "full"
