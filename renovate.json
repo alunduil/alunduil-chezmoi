@@ -1,38 +1,43 @@
 {
   "$schema": "https://docs.renovatebot.com/renovate-schema.json",
-  "extends": ["config:recommended"],
+  "extends": ["config:best-practices"],
+  "baseBranches": ["main"],
+  "reviewers": ["alunduil"],
+  "pre-commit": {
+    "enabled": true
+  },
   "customManagers": [
     {
       "customType": "regex",
-      "fileMatch": ["^script/install/zellij$"],
+      "managerFilePatterns": ["/^script/install/zellij$/"],
       "matchStrings": ["ZELLIJ_VERSION=\"(?<currentValue>v[\\d.]+)\""],
       "depNameTemplate": "zellij-org/zellij",
       "datasourceTemplate": "github-releases"
     },
     {
       "customType": "regex",
-      "fileMatch": ["run_once_before_.*\\.sh\\.tmpl$"],
+      "managerFilePatterns": ["/run_once_before_.*\\.sh\\.tmpl$/"],
       "matchStrings": ["NVM_VERSION=\"(?<currentValue>v[\\d.]+)\""],
       "depNameTemplate": "nvm-sh/nvm",
       "datasourceTemplate": "github-releases"
     },
     {
       "customType": "regex",
-      "fileMatch": ["^script/install/lazygit$"],
+      "managerFilePatterns": ["/^script/install/lazygit$/"],
       "matchStrings": ["LAZYGIT_VERSION=\"(?<currentValue>v[\\d.]+)\""],
       "depNameTemplate": "jesseduffield/lazygit",
       "datasourceTemplate": "github-releases"
     },
     {
       "customType": "regex",
-      "fileMatch": ["^script/install/act$"],
+      "managerFilePatterns": ["/^script/install/act$/"],
       "matchStrings": ["ACT_VERSION=\"(?<currentValue>v[\\d.]+)\""],
       "depNameTemplate": "nektos/act",
       "datasourceTemplate": "github-releases"
     },
     {
       "customType": "regex",
-      "fileMatch": ["dot_config/zellij/config\\.kdl$"],
+      "managerFilePatterns": ["/dot_config/zellij/config\\.kdl$/"],
       "matchStrings": ["https://github\\.com/(?<depName>[^/]+/[^/]+)/releases/download/(?<currentValue>v[\\d.]+)/"],
       "datasourceTemplate": "github-releases"
     }
