@@ -27,6 +27,7 @@ chmod 600 ~/.config/chezmoi/key.txt
 # Interactive logins (per-machine, never managed):
 gh auth login                              # ~/.config/gh/
 claude                                     # ~/.claude/.credentials.json
+gcx login                                  # ~/.config/gcx/
 sudo tailscale up                          # tailnet auth
 claustre configure                         # wires up Claude Code permissions
 
