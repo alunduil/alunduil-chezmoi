@@ -31,11 +31,15 @@ A per-repo `CLAUDE.md` overrides anything here.
   `GH_DRAFT_GUARD=off gh pr create ...`.
 - Use the repo's PR template when one exists. Otherwise, structure
   the body (squash-merged, so this becomes the commit context):
-  - **Summary** — 1-2 sentences on what this PR delivers. Surface
-    the approach only if the choice isn't obvious from the diff.
-    Don't restate commit messages (squash collapses them) or
-    reproduce content visible in the diff (diagrams, snippets,
-    before/after). Link the issue; don't re-explain it.
+  - **Summary** — 1-2 sentences. Lead with the user-visible
+    outcome ("X now works"), not the diff line ("set Y to Z in
+    foo.kdl"). The diff shows what changed; the Summary explains
+    what now works. Surface mechanism only when the choice isn't
+    obvious from the diff. Link the issue; don't re-explain.
+
+    Bad: "Set `format_space \"#[bg=16]\"` in pair.kdl."
+    Good: "Bar paints uniformly black across the format gap,
+    closing the lighter strip from #68."
   - **Gotchas** — direct the reviewer: "focus on X because Y." Where
     to spend time, not just what's risky. Omit when nothing to flag.
   - **Verification** — material checks beyond CI in past tense ("ran
