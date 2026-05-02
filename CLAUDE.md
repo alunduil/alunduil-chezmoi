@@ -22,6 +22,10 @@ effect on `apply` until committed and pulled into the apply clone. Use
   `dot_config/zellij/config.kdl`.
 - `dot_local/bin/executable_gh` shadows system `gh` to enforce `--draft`
   on `gh pr create`. PRs Claude opens go through this wrapper.
+- Never committed: credentials/secrets, runtime state
+  (`.credentials.json`, session history, `~/.claustre/db/`), the age
+  private key, SSH private keys, toolchain binaries (chezmoi/Node/Rust
+  install via canonical installers).
 
 ## Sensors
 

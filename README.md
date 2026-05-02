@@ -29,17 +29,12 @@ gh auth login                              # ~/.config/gh/
 claude                                     # ~/.claude/.credentials.json
 sudo tailscale up                          # tailnet auth
 claustre configure                         # wires up Claude Code permissions
+
+# PATH check for chezmoi-installed binaries:
+zellij --version && lazygit --version
 ```
 
 If SSH to GitHub isn't set up yet, clone over HTTPS first and swap remotes once keys are in place.
-
-### Verify
-
-After bootstrap, confirm the key tools are on PATH:
-
-```bash
-claude --version && claustre --version && zellij --version && lazygit --version
-```
 
 ## Never in the repo
 
