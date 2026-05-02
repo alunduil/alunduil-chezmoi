@@ -49,6 +49,11 @@ if [[ "$selection" == remote:* ]]; then
     if [[ ! -d "$dir" ]]; then
         mkdir -p "$(dirname "$dir")"
         gh repo clone "$repo_full" "$dir"
+        if command -v claustre >/dev/null 2>&1; then
+            if ! claustre add-project "$path_part" "$dir"; then
+                printf 'git-repo-picker: claustre add-project failed for %s\n' "$path_part" >&2
+            fi
+        fi
     fi
 else
     dir="$HOME/$selection"
