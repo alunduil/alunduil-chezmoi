@@ -85,6 +85,9 @@ A per-repo `CLAUDE.md` overrides anything here.
   has been replaced).
 - Multi-step tasks: commit incrementally rather than batching.
   Interruptions leave a recoverable branch, not lost work.
+- Picking up a specific issue (`work #N`, `implement #N`, `fix #N`):
+  `issue-work` skill. Carries the inspect commands, staleness signals,
+  and go/no-go format.
 
 ## Feedback preference
 
