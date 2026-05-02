@@ -1,54 +1,54 @@
 #!/usr/bin/env bash
 set -euo pipefail
 
-if [[ "${1:-}" == "--list" ]]; then
-    query="${2:-}"
-    if [[ -n "${GIT_REPO_PICKER_CACHE:-}" && -f "$GIT_REPO_PICKER_CACHE" ]]; then
-        cat "$GIT_REPO_PICKER_CACHE"
-    fi
-    if [[ "$query" == */* ]]; then
-        gh search repos "$query" --limit 30 --json fullName -q '.[].fullName' 2>/dev/null \
-            | while IFS= read -r repo; do
-                if [[ -n "${GIT_REPO_PICKER_CACHE:-}" ]] \
-                    && grep -qxF "$repo" "$GIT_REPO_PICKER_CACHE" 2>/dev/null; then
-                    continue
-                fi
-                printf 'remote:%s\n' "$repo"
-            done
-    fi
-    exit 0
-fi
-
-for cmd in fzf zellij; do
+for cmd in fzf zellij gh; do
     if ! command -v "$cmd" >/dev/null 2>&1; then
         printf 'git-repo-picker: %s required but not found\n' "$cmd" >&2
         exit 1
     fi
 done
 
-cache=$(mktemp)
-trap 'rm -f "$cache"' EXIT
-export GIT_REPO_PICKER_CACHE="$cache"
+me=$(gh api user -q .login)
+
+local_cache=$(mktemp)
+remote_cache=$(mktemp)
+trap 'rm -f "$local_cache" "$remote_cache"' EXIT
 
 find "$HOME" -maxdepth 4 \( -name '.*' ! -name '.git' -prune \) -o \( -name .git -type d -print \) 2>/dev/null \
     | sed 's|/\.git$||' \
     | sed "s|^$HOME/||" \
-    | sort > "$cache"
+    | sort -u >"$local_cache"
 
-selection=$(fzf \
-    --bind "change:reload:$0 --list {q}" \
+{
+    gh repo list "$me" --limit 1000 --json nameWithOwner -q '.[].nameWithOwner' 2>/dev/null
+    while IFS= read -r org; do
+        [[ -z "$org" ]] && continue
+        gh repo list "$org" --limit 1000 --json nameWithOwner -q '.[].nameWithOwner' 2>/dev/null
+    done < <(gh api user/memberships/orgs --paginate -q '.[] | select(.role=="admin") | .organization.login' 2>/dev/null)
+} \
+    | awk -v me="$me" -F/ '$1==me{print $2; next} {print $0}' \
+    | sort -u \
+    | awk 'NR==FNR{seen[$0]=1; next} !seen[$0]{print "remote:"$0}' "$local_cache" - \
+    >"$remote_cache"
+
+selection=$(cat "$local_cache" "$remote_cache" | fzf \
     --prompt "repo> " \
-    --header "type to search local repos · include / for GitHub" \
-    < "$cache") || exit 0
+    --header "type to search · remote: clones on select") || exit 0
 
 [[ -z "$selection" ]] && exit 0
 
 if [[ "$selection" == remote:* ]]; then
-    repo="${selection#remote:}"
-    repo_name="${repo##*/}"
-    dir="$HOME/$repo_name"
+    path_part="${selection#remote:}"
+    if [[ "$path_part" == */* ]]; then
+        dir="$HOME/$path_part"
+        repo_full="$path_part"
+    else
+        dir="$HOME/$path_part"
+        repo_full="$me/$path_part"
+    fi
     if [[ ! -d "$dir" ]]; then
-        gh repo clone "$repo" "$dir"
+        mkdir -p "$(dirname "$dir")"
+        gh repo clone "$repo_full" "$dir"
     fi
 else
     dir="$HOME/$selection"
