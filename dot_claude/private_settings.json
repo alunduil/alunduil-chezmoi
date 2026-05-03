@@ -32,6 +32,15 @@
             "async": true
           }
         ]
+      },
+      {
+        "hooks": [
+          {
+            "type": "command",
+            "command": "/home/alunduil/.claude/hooks/pre-commit-edit-guard.sh"
+          }
+        ],
+        "matcher": "Edit|Write|MultiEdit|NotebookEdit"
       }
     ],
     "PostToolUseFailure": [
