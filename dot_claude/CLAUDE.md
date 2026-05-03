@@ -178,6 +178,18 @@ and examples that don't disambiguate.
   Manual maintenance only — never proposes adopting tooling, and
   cutting a release (tagging, version-file edits) is out of scope.
 
+## Issue relationships
+
+- Linking GitHub issues/PRs (blocked-by via GraphQL, parent/sub-issue,
+  Closes/Fixes, plain mention): `issue-links` skill. Strongest
+  accurate edge; size test resolves blocked-by vs parent/sub-issue.
+
+## Milestones
+
+- GitHub milestone work (creating, naming, scoping, closing):
+  `milestones` skill. One axis per project (release / date / theme),
+  no mixing, no using milestones as labels.
+
 ## Tests
 
 - Don't test upstream. If a behaviour belongs to the language,
