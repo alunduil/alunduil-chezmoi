@@ -217,3 +217,5 @@ behaviour:
   both wanted.
 - **Per-project sensors** (tests, linters, type-checkers) — detect
   violations after the fact. Live with the project.
+
+@RTK.md
