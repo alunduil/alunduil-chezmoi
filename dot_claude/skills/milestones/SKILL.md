@@ -13,7 +13,9 @@ shipping or closing event. If it doesn't converge, it's a label — use
 
 - **Release-anchored** — name = the version it targets: `v1.0.0`,
   `v1.1.0` (semver), or `1.0.0.0` (PVP). Best when the project ships
-  releases.
+  releases. Pre-stable work collapses to one placeholder — `v0.1.0`
+  (semver) or `0.0.1.0` (PVP) — since those names already mean "not
+  yet production-ready"; don't fan out across pre-1.0 versions.
 - **Date-anchored** — name = the calendar window: `2026-Q2`,
   `2026-05`, `Sprint 23`. Best when work is time-bounded.
 - **Theme-anchored** — name = the outcome: `Auth overhaul`,
