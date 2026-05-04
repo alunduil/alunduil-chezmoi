@@ -61,21 +61,9 @@ A per-repo `CLAUDE.md` overrides anything here.
 
 ## Issues
 
-- Use the repo's issue template when one exists. Otherwise:
-  - **Title** — statement true when done. Active voice, outcome
-    ("Profile writes persist across API restarts in Firestore",
-    not "Fix profile persistence").
-  - **Summary** — 1-2 sentences on what this delivers.
-  - **Motivation** — what problem, dependency, or opportunity drives
-    this.
-  - **Scope** — concrete changes required, specific enough to start
-    without ambiguity.
-  - **Acceptance criteria** — measurable conditions true when done.
-    Task-list syntax (`- [ ]`).
-  - **Additional context** — links, screenshots, related issues, when
-    they help.
-- Before filing, check milestones and labels. Assign to the most
-  relevant milestone (unset if none fits) and apply matching labels.
+- Filing a new issue (search for duplicates, detect templates,
+  compose title/body/labels/milestone): `issue-create` skill. Title
+  is a statement true when done.
 
 ## Issue workflow
 
