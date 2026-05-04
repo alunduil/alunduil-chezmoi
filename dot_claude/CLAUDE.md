@@ -61,21 +61,8 @@ A per-repo `CLAUDE.md` overrides anything here.
 
 ## Issues
 
-- Use the repo's issue template when one exists. Otherwise:
-  - **Title** — statement true when done. Active voice, outcome
-    ("Profile writes persist across API restarts in Firestore",
-    not "Fix profile persistence").
-  - **Summary** — 1-2 sentences on what this delivers.
-  - **Motivation** — what problem, dependency, or opportunity drives
-    this.
-  - **Scope** — concrete changes required, specific enough to start
-    without ambiguity.
-  - **Acceptance criteria** — measurable conditions true when done.
-    Task-list syntax (`- [ ]`).
-  - **Additional context** — links, screenshots, related issues, when
-    they help.
-- Before filing, check milestones and labels. Assign to the most
-  relevant milestone (unset if none fits) and apply matching labels.
+- Filing a new issue (search for duplicates, detect templates,
+  compose title/body/labels/milestone): `issue-create` skill.
 
 ## Issue workflow
 
@@ -165,30 +152,22 @@ and examples that don't disambiguate.
 ## Renovate
 
 - `renovate.json` work (audit, write, troubleshoot dashboard, regex
-  managers): `renovate` skill. Default preset is
-  `config:best-practices` with the pre-commit manager enabled
-  unconditionally.
+  managers): `renovate` skill.
 
 ## Changelogs
 
 - `CHANGELOG.md` work (bootstrap, review against commits) following
-  Keep a Changelog 1.1.0: `changelog` skill. Defers to auto-managed
-  setups (changesets, release-please, git-cliff, semantic-release,
-  towncrier); semver 2.0.0 by default, PVP for Haskell projects.
-  Manual maintenance only — never proposes adopting tooling, and
-  cutting a release (tagging, version-file edits) is out of scope.
+  Keep a Changelog 1.1.0: `changelog` skill.
 
 ## Issue relationships
 
 - Linking GitHub issues/PRs (blocked-by via GraphQL, parent/sub-issue,
-  Closes/Fixes, plain mention): `issue-links` skill. Strongest
-  accurate edge; size test resolves blocked-by vs parent/sub-issue.
+  Closes/Fixes, plain mention): `issue-links` skill.
 
 ## Milestones
 
 - GitHub milestone work (creating, naming, scoping, closing):
-  `milestones` skill. One axis per project (release / date / theme),
-  no mixing, no using milestones as labels.
+  `milestones` skill.
 
 ## Tests
 
