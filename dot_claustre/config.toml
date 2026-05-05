@@ -4,8 +4,9 @@
 [claude]
 # Alias tracks latest Opus; otherwise claustre's pinned default (claude-opus-4-6) wins.
 model = "opus"
-# claustre's default is "max"; "auto" lets the model's resolver pick.
-effort = "auto"
+# claustre's default is "max"; medium balances cost against capability for
+# mostly-autonomous work. Valid rungs: low, medium, high, xhigh, max.
+effort = "medium"
 
 [sync]
 auto_push = true
