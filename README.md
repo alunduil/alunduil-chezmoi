@@ -34,6 +34,7 @@ claustre configure                         # wires up Claude Code permissions
 
 # PATH check for chezmoi-installed binaries:
 zellij --version && lazygit --version && act --version && rtk --version
+ghc --version && cabal --version           # ghcup-managed Haskell toolchain
 gh extension list                          # confirms gh-poi (squash-merge pruner)
 ```
 

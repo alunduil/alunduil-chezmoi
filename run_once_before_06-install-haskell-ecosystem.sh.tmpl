@@ -1,0 +1,25 @@
+#!/usr/bin/env bash
+# Installs ghcup, GHC, and cabal-install. Canonical installer only:
+# get-ghcup.haskell.org. Debian apt ghc/cabal-install are avoided by design
+# (they lag upstream).
+
+set -euo pipefail
+
+log() { printf '==> %s\n' "$*" >&2; }
+
+# ---------------------------------------------------------- ghcup + ghc + cabal
+# NONINTERACTIVE skips prompts and installs the recommended GHC and cabal.
+# INSTALL_NO_STACK skips stack; HLS is opt-in (default off). The installer
+# would also append to ~/.bashrc, but chezmoi overwrites that on apply -- the
+# managed dot_bashrc sources ~/.ghcup/env itself.
+if ! command -v ghcup >/dev/null 2>&1; then
+  log "ghcup: installing recommended GHC + cabal"
+  curl -fsSL https://get-ghcup.haskell.org |
+    BOOTSTRAP_HASKELL_NONINTERACTIVE=1 \
+      BOOTSTRAP_HASKELL_INSTALL_NO_STACK=1 \
+      sh
+else
+  log "ghcup: already installed"
+fi
+
+log "haskell ecosystem complete"
