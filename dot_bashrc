@@ -121,3 +121,6 @@ export NVM_DIR="${XDG_CONFIG_HOME:-$HOME/.config}/nvm"
 
 # cargo/rustup: add ~/.cargo/bin to PATH when installed.
 [ -f "$HOME/.cargo/env" ] && . "$HOME/.cargo/env"
+
+# ghcup: add ~/.ghcup/bin (ghc, cabal) to PATH when installed.
+[ -f "$HOME/.ghcup/env" ] && . "$HOME/.ghcup/env"
