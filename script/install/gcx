@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 set -euo pipefail
 
-GCX_VERSION="v0.2.12"
+GCX_VERSION="v0.2.13"
 ARCH="linux_amd64"
 
 # shellcheck source-path=SCRIPTDIR source=lib.sh
