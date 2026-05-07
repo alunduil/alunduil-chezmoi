@@ -142,16 +142,22 @@ collect_locals() {
 
 # Resolve the canonical clone for <org>/<repo>, cloning from GitHub if needed.
 # Caller may pass an existing-clone hint (the dir from collect_locals) so we
-# pick up checkouts at non-default paths like $HOME/<repo>; absent that hint,
-# we fall back to $HOME/<org>/<repo>. claustre add-project runs only on fresh
-# clones to keep its project list scoped to canonicals.
+# pick up checkouts at non-default paths. Without a hint, fresh clones follow
+# the host convention: own repos to $HOME/<repo>, other-org repos to
+# $HOME/<org>/<repo>. claustre add-project runs only on fresh clones to keep
+# its project list scoped to canonicals.
 ensure_canonical() {
     local org=$1 repo=$2 hint=${3:-}
     if [[ -n "$hint" && -d "$hint/.git" ]]; then
         printf '%s' "$hint"
         return
     fi
-    local dir="$HOME/$org/$repo"
+    local dir
+    if [[ "$org" == "$ME" ]]; then
+        dir="$HOME/$repo"
+    else
+        dir="$HOME/$org/$repo"
+    fi
     if [[ ! -d "$dir/.git" ]]; then
         mkdir -p "$(dirname "$dir")"
         gh repo clone "$org/$repo" "$dir"
