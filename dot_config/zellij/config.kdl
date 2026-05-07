@@ -16,8 +16,10 @@ plugins {
 
 keybinds {
     shared_except "locked" {
-        // Searchable git-repo picker → pair layout in the chosen repo.
-        bind "Alt p" {
+        // Searchable repo/session picker → pair layout in the chosen repo.
+        // Alt+/ matches the universal "search/launcher" mnemonic and leaves
+        // Alt+p free for zellij's TogglePaneInGroup default.
+        bind "Alt /" {
             Run "git-repo-picker" {
                 floating true
                 close_on_exit true
