@@ -8,9 +8,12 @@
 #                              zellij session — selection focuses the tab.
 #                              Otherwise selection respawns the pair tab into
 #                              the existing worktree.
-#   local:<repo>               canonical clone exists under $HOME/<org>/<repo>/.
-#                              Selection generates a petname, creates a fresh
-#                              worktree off HEAD, and opens a pair tab in it.
+#   local:<repo>               canonical clone exists somewhere under $HOME/.
+#                              Org/repo is derived from the origin URL, not the
+#                              filesystem path, so $HOME/zfs-replicate and
+#                              $HOME/grafana/k6 both work. Selection generates a
+#                              petname, creates a fresh worktree off HEAD, and
+#                              opens a pair tab in it.
 #   remote:<repo>              repo is on GitHub but no local canonical clone.
 #                              Selection clones (no fork), runs claustre
 #                              add-project on the canonical, then takes the
@@ -85,23 +88,22 @@ build_rows() {
         done < <(find "$WORKTREE_ROOT" -mindepth 3 -maxdepth 3 -type d 2>/dev/null | sort)
     fi
 
-    # local: rows — canonical clones at $HOME/<org>/<repo>/.git. The dotfile
-    # prune skips $HOME/.local, so worktrees under $XDG_DATA_HOME never appear.
-    local local_paths
-    local_paths=$(find "$HOME" -maxdepth 4 \
-        \( -name '.*' ! -name '.git' -prune \) -o \
-        \( -name .git -type d -print \) 2>/dev/null \
-        | sed 's|/\.git$||' \
-        | sed "s|^$HOME/||" \
-        | grep -E '^[^/]+/[^/]+$' \
-        | sort -u)
-    while IFS=/ read -r org repo; do
+    # local: rows — keyed by GitHub origin URL, not filesystem path. Layouts
+    # under $HOME vary (some clones at $HOME/<repo>, others at $HOME/<org>/<repo>),
+    # so trusting the directory structure misclassifies clones; the origin is
+    # authoritative. The dotfile prune still skips $HOME/.local, so worktrees
+    # under $XDG_DATA_HOME never appear here.
+    local locals local_keys
+    locals=$(collect_locals)
+    while IFS=$'\t' read -r org repo dir; do
         [[ -z "$org" || -z "$repo" ]] && continue
-        printf 'local:%s\tspawn-fresh\t%s\t%s\n' \
-            "$(fmt_repo "$org" "$repo")" "$org" "$repo"
-    done <<<"$local_paths"
+        printf 'local:%s\tspawn-fresh\t%s\t%s\t%s\n' \
+            "$(fmt_repo "$org" "$repo")" "$org" "$repo" "$dir"
+    done <<<"$locals"
 
-    # remote: rows — gh repo list for me + admin orgs, minus locals.
+    # remote: rows — gh repo list for me + admin orgs, minus locals (matched
+    # against the origin-URL-derived local keys, not against filesystem paths).
+    local_keys=$(printf '%s\n' "$locals" | awk -F'\t' '{print $1"/"$2}' | sort -u)
     {
         gh repo list "$ME" --limit 1000 --json nameWithOwner -q '.[].nameWithOwner' 2>/dev/null
         while IFS= read -r org; do
@@ -111,17 +113,51 @@ build_rows() {
                     -q '.[] | select(.role=="admin") | .organization.login' 2>/dev/null)
     } | sort -u | while IFS=/ read -r org repo; do
         [[ -z "$org" || -z "$repo" ]] && continue
-        [[ -d "$HOME/$org/$repo/.git" ]] && continue
+        grep -Fxq "$org/$repo" <<<"$local_keys" && continue
         printf 'remote:%s\tclone-and-spawn\t%s\t%s\n' \
             "$(fmt_repo "$org" "$repo")" "$org" "$repo"
     done
 }
 
-# Ensure $HOME/<org>/<repo> is a canonical clone, cloning from GitHub if not.
-# Idempotent: a present .git short-circuits. claustre add-project runs only on
-# fresh clones to keep its project list scoped to canonicals.
+# Walk $HOME for git checkouts and map each to its github.com <org>/<repo> via
+# the origin remote. Emits TAB-separated <org>\t<repo>\t<dir> per local clone.
+# Repos with non-github origins or no origin are silently dropped — the picker
+# is GitHub-flavored throughout.
+collect_locals() {
+    local gitdir dir url path
+    while IFS= read -r gitdir; do
+        dir=${gitdir%/.git}
+        url=$(git -C "$dir" remote get-url origin 2>/dev/null) || continue
+        [[ "$url" == *github.com* ]] || continue
+        # Strip protocol/auth/host prefix and optional .git suffix; what
+        # remains should be exactly "<org>/<repo>".
+        path=$(printf '%s' "$url" | sed -E 's|\.git/?$||; s|^.*github\.com[:/]||')
+        [[ "$path" == */* && "$path" != *"/"*"/"* ]] || continue
+        printf '%s\t%s\t%s\n' "${path%%/*}" "${path#*/}" "$dir"
+    done < <(find "$HOME" -maxdepth 4 \
+        \( -name '.*' ! -name '.git' -prune \) -o \
+        \( -name .git -type d -print \) 2>/dev/null) \
+        | sort -u
+}
+
+# Resolve the canonical clone for <org>/<repo>, cloning from GitHub if needed.
+# Caller may pass an existing-clone hint (the dir from collect_locals) so we
+# pick up checkouts at non-default paths. Without a hint, fresh clones follow
+# the host convention: own repos to $HOME/<repo>, other-org repos to
+# $HOME/<org>/<repo>. claustre add-project runs only on fresh clones to keep
+# its project list scoped to canonicals.
 ensure_canonical() {
-    local org=$1 repo=$2 dir="$HOME/$1/$2"
+    local org=$1 repo=$2 hint=${3:-}
+    if [[ -n "$hint" && -d "$hint/.git" ]]; then
+        printf '%s' "$hint"
+        return
+    fi
+    local dir
+    if [[ "$org" == "$ME" ]]; then
+        dir="$HOME/$repo"
+    else
+        dir="$HOME/$org/$repo"
+    fi
     if [[ ! -d "$dir/.git" ]]; then
         mkdir -p "$(dirname "$dir")"
         gh repo clone "$org/$repo" "$dir"
@@ -161,7 +197,7 @@ selection=$(build_rows | fzf \
 # fzf returns the matched line verbatim, including ANSI codes on dimmed rows.
 # Drop them before splitting on TAB.
 selection=$(printf '%s' "$selection" | sed 's/\x1b\[[0-9;]*m//g')
-IFS=$'\t' read -r _display verb a1 a2 <<<"$selection"
+IFS=$'\t' read -r _display verb a1 a2 a3 <<<"$selection"
 
 case "$verb" in
     focus)
@@ -172,17 +208,9 @@ case "$verb" in
         # a1 = worktree dir, a2 = tab name
         spawn_pair_tab "$a1" "$a2"
         ;;
-    spawn-fresh)
-        # a1 = org, a2 = repo
-        canonical=$(ensure_canonical "$a1" "$a2")
-        petname=$(gen_petname "$a1" "$a2")
-        wt_dir="$WORKTREE_ROOT/$a1/$a2/$petname"
-        make_worktree "$canonical" "$wt_dir" "$petname"
-        spawn_pair_tab "$wt_dir" "$(fmt_tab "$a1" "$a2" "$petname")"
-        ;;
-    clone-and-spawn)
-        # a1 = org, a2 = repo
-        canonical=$(ensure_canonical "$a1" "$a2")
+    spawn-fresh | clone-and-spawn)
+        # a1 = org, a2 = repo, a3 = canonical-dir hint (empty for remote rows)
+        canonical=$(ensure_canonical "$a1" "$a2" "${a3:-}")
         petname=$(gen_petname "$a1" "$a2")
         wt_dir="$WORKTREE_ROOT/$a1/$a2/$petname"
         make_worktree "$canonical" "$wt_dir" "$petname"
