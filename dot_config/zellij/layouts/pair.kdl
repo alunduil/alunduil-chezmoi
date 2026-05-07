@@ -11,7 +11,7 @@
 // Invoke:
 //   zellij --layout pair                         # fresh session
 //   zellij action new-tab --layout pair          # new tab in current session
-//   Alt+p                                        # keybind, same as above
+//   Alt+/                                        # keybind, same as above
 //                                                # (git-repo-picker renames the
 //                                                # spawned tab to the repo name)
 
