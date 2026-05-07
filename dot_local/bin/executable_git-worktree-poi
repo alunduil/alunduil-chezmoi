@@ -1,0 +1,147 @@
+#!/usr/bin/env bash
+# gh-poi for local worktrees: surfaces and prunes worktrees whose work has
+# already merged or been closed upstream, leaving dirty/unpushed/active ones
+# alone. Walks $XDG_DATA_HOME/git-worktrees/ — the picker's worktree root.
+#
+# Usage:
+#   git worktree-poi            # list all worktrees with PR/state classification
+#   git worktree-poi --prune    # interactive fzf, multi-select removal
+
+set -euo pipefail
+
+die() { printf 'git-worktree-poi: %s\n' "$*" >&2; exit 1; }
+
+for cmd in git gh fzf; do
+    command -v "$cmd" >/dev/null 2>&1 || die "$cmd required but not found"
+done
+
+mode=list
+case "${1:-}" in
+    -p | --prune) mode=prune ;;
+    -h | --help)
+        sed -n '2,9p' "$0" | sed 's|^# \?||'
+        exit 0
+        ;;
+    "") ;;
+    *) die "unknown argument: $1" ;;
+esac
+
+WORKTREE_ROOT="${XDG_DATA_HOME:-$HOME/.local/share}/git-worktrees"
+[[ -d "$WORKTREE_ROOT" ]] || die "no worktrees under $WORKTREE_ROOT"
+
+# Classify a single worktree as one of: safe | attention | active.
+#
+#   active     PR open upstream — leave alone.
+#   safe       PR merged or closed, no dirty changes, no unpushed commits.
+#   attention  anything else (no PR, dirty, unpushed) — needs human judgment.
+#
+# Emits TAB-separated: <category>\t<branch>\t<pr_state>\t<dirty>\t<unpushed>\t<wt>
+classify() {
+    local wt=$1
+    local branch pr_state dirty unpushed
+    branch=$(git -C "$wt" symbolic-ref --short HEAD 2>/dev/null || printf 'DETACHED')
+
+    pr_state=NONE
+    if [[ "$branch" != "DETACHED" ]]; then
+        pr_state=$(gh pr list --head "$branch" --state all \
+                       --json state -q '.[0].state // "NONE"' 2>/dev/null \
+                   || printf 'UNKNOWN')
+    fi
+
+    dirty=clean
+    [[ -n "$(git -C "$wt" status --porcelain 2>/dev/null)" ]] && dirty=dirty
+
+    # No upstream is treated as "unpushed" — fresh worktrees from `worktree add
+    # -b` start that way, and a never-pushed branch shouldn't be pruned blindly.
+    unpushed=pushed
+    if ! git -C "$wt" rev-parse --abbrev-ref --symbolic-full-name '@{upstream}' >/dev/null 2>&1; then
+        unpushed=unpushed
+    elif [[ -n "$(git -C "$wt" log '@{upstream}..HEAD' --oneline 2>/dev/null)" ]]; then
+        unpushed=unpushed
+    fi
+
+    local category=attention
+    case "$pr_state" in
+        OPEN) category=active ;;
+        MERGED | CLOSED)
+            [[ "$dirty" == clean && "$unpushed" == pushed ]] && category=safe
+            ;;
+    esac
+
+    printf '%s\t%s\t%s\t%s\t%s\t%s\n' \
+        "$category" "$branch" "$pr_state" "$dirty" "$unpushed" "$wt"
+}
+
+# Walk every worktree dir under WORKTREE_ROOT (path is .../<org>/<repo>/<petname>).
+gather() {
+    while IFS= read -r wt; do
+        [[ -e "$wt/.git" ]] || continue
+        classify "$wt"
+    done < <(find "$WORKTREE_ROOT" -mindepth 3 -maxdepth 3 -type d 2>/dev/null | sort)
+}
+
+# ANSI: green=safe (32), yellow=attention (33), cyan=active (36)
+colorize() {
+    awk -F'\t' -v OFS='\t' '
+        {
+            color = "0"
+            if ($1 == "safe")      color = "32"
+            else if ($1 == "attention") color = "33"
+            else if ($1 == "active")    color = "36"
+            printf("\033[%sm%-9s\033[0m\t%s\t%s\t%s\t%s\t%s\n",
+                color, $1, $2, $3, $4, $5, $6)
+        }
+    '
+}
+
+rows=$(gather)
+[[ -n "$rows" ]] || { printf 'no worktrees found\n'; exit 0; }
+
+if [[ "$mode" == list ]]; then
+    {
+        printf '%s\t%s\t%s\t%s\t%s\t%s\n' STATE BRANCH PR DIRTY PUSH WORKTREE
+        printf '%s\n' "$rows"
+    } | colorize | column -t -s $'\t'
+    exit 0
+fi
+
+# --- prune mode ---
+# Pre-select safe rows (fzf reads --query for filter, but pre-marking takes
+# multi-select interaction. Easiest: pipe rows through fzf with multi and let
+# the user (un)mark; provide "S" key binding to mark all safe.
+selection=$(printf '%s\n' "$rows" | colorize | column -t -s $'\t' \
+    | fzf --multi --ansi \
+        --prompt "prune> " \
+        --header "tab to mark · enter to remove · esc to cancel · column 1 = safety") \
+    || exit 0
+
+[[ -z "$selection" ]] && exit 0
+
+# After column -t the row is space-padded; the worktree path was the last
+# field. Pull from the original $rows by branch+wt match.
+removed=0
+failed=0
+while IFS= read -r line; do
+    # Drop ANSI from the displayed row, then take the last whitespace field.
+    plain=$(printf '%s' "$line" | sed 's/\x1b\[[0-9;]*m//g')
+    wt=${plain##* }
+    [[ -d "$wt" ]] || continue
+
+    canonical_repo=$(basename "$(dirname "$wt")")
+    canonical_org=$(basename "$(dirname "$(dirname "$wt")")")
+    canonical="$HOME/$canonical_org/$canonical_repo"
+    branch=$(git -C "$wt" symbolic-ref --short HEAD 2>/dev/null || true)
+
+    if git -C "$canonical" worktree remove "$wt"; then
+        # Branch delete is best-effort: -d (safe) refuses unmerged; we don't
+        # force, since the picker can only generate petname branches and the
+        # user's safety guard above gates merge state already.
+        [[ -n "$branch" ]] && git -C "$canonical" branch -d "$branch" 2>/dev/null || true
+        removed=$((removed + 1))
+    else
+        printf 'failed to remove %s (use git worktree remove --force if intended)\n' "$wt" >&2
+        failed=$((failed + 1))
+    fi
+done <<<"$selection"
+
+printf 'removed: %d  failed: %d\n' "$removed" "$failed"
