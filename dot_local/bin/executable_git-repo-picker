@@ -1,9 +1,9 @@
 #!/usr/bin/env bash
-# Repo + session picker for the pair-tab workflow.
+# Repo + worktree picker for the pair-tab workflow.
 #
 # Three sets, fzf-merged, with org-elision when the org matches the GitHub user:
 #
-#   session:<repo> (petname)   existing worktree under $XDG_DATA_HOME/git-worktrees/.
+#   worktree:<repo> (petname)  existing worktree under $XDG_DATA_HOME/git-worktrees/.
 #                              Dimmed when a tab with that name is open in this
 #                              zellij session — selection focuses the tab.
 #                              Otherwise selection respawns the pair tab into
@@ -66,7 +66,7 @@ build_rows() {
     local opens
     opens=$(open_tabs)
 
-    # session: rows — one per existing worktree.
+    # worktree: rows — one per existing worktree directory.
     if [[ -d "$WORKTREE_ROOT" ]]; then
         local petdir petname repo org tab display
         while IFS= read -r petdir; do
@@ -76,10 +76,10 @@ build_rows() {
             org=$(basename "$(dirname "$(dirname "$petdir")")")
             tab=$(fmt_tab "$org" "$repo" "$petname")
             if grep -Fxq "$tab" <<<"$opens"; then
-                display=$(printf '\033[2msession:%s\033[0m' "$tab")
+                display=$(printf '\033[2mworktree:%s\033[0m' "$tab")
                 printf '%s\tfocus\t%s\n' "$display" "$tab"
             else
-                display="session:$tab"
+                display="worktree:$tab"
                 printf '%s\tspawn\t%s\t%s\n' "$display" "$petdir" "$tab"
             fi
         done < <(find "$WORKTREE_ROOT" -mindepth 3 -maxdepth 3 -type d 2>/dev/null | sort)
@@ -135,7 +135,7 @@ ensure_canonical() {
 
 # Create a fresh worktree off the canonical clone's HEAD, on a new branch
 # named after the petname. The branch and worktree share the petname so the
-# zjstatus branch line in the pair layout reads as the session label.
+# zjstatus branch line in the pair layout reads as the worktree label.
 make_worktree() {
     local canonical=$1 wt_dir=$2 petname=$3
     mkdir -p "$(dirname "$wt_dir")"
@@ -154,7 +154,7 @@ selection=$(build_rows | fzf \
     --with-nth=1 \
     --nth=1 \
     --prompt "repo> " \
-    --header "session: dim = open tab · enter to focus or spawn") || exit 0
+    --header "worktree: dim = open tab · enter to focus or spawn") || exit 0
 
 [[ -z "$selection" ]] && exit 0
 
