@@ -1,65 +1,194 @@
 #!/usr/bin/env bash
+# Repo + worktree picker for the pair-tab workflow.
+#
+# Three sets, fzf-merged, with org-elision when the org matches the GitHub user:
+#
+#   worktree:<repo> (petname)  existing worktree under $XDG_DATA_HOME/git-worktrees/.
+#                              Dimmed when a tab with that name is open in this
+#                              zellij session — selection focuses the tab.
+#                              Otherwise selection respawns the pair tab into
+#                              the existing worktree.
+#   local:<repo>               canonical clone exists under $HOME/<org>/<repo>/.
+#                              Selection generates a petname, creates a fresh
+#                              worktree off HEAD, and opens a pair tab in it.
+#   remote:<repo>              repo is on GitHub but no local canonical clone.
+#                              Selection clones (no fork), runs claustre
+#                              add-project on the canonical, then takes the
+#                              local: path above.
+#
+# Tabs are named "<repo-or-org/repo> (petname)" so go-to-tab-name round-trips.
+# Worktrees are durable — closing a tab does not remove them; that is
+# git-worktree-poi's job.
+
 set -euo pipefail
 
-for cmd in fzf zellij gh; do
-    if ! command -v "$cmd" >/dev/null 2>&1; then
-        printf 'git-repo-picker: %s required but not found\n' "$cmd" >&2
-        exit 1
-    fi
+die() { printf 'git-repo-picker: %s\n' "$*" >&2; exit 1; }
+
+for cmd in fzf zellij gh git jq golang-petname; do
+    command -v "$cmd" >/dev/null 2>&1 || die "$cmd required but not found"
 done
 
-me=$(gh api user -q .login)
+WORKTREE_ROOT="${XDG_DATA_HOME:-$HOME/.local/share}/git-worktrees"
+ME=$(gh api user -q .login)
 
-local_cache=$(mktemp)
-remote_cache=$(mktemp)
-trap 'rm -f "$local_cache" "$remote_cache"' EXIT
+# Drop the org prefix when it matches the GitHub user — own repos are referred
+# to by bare repo name in tab labels and picker rows for brevity.
+fmt_repo() {
+    local org=$1 repo=$2
+    if [[ "$org" == "$ME" ]]; then printf '%s' "$repo"; else printf '%s/%s' "$org" "$repo"; fi
+}
 
-find "$HOME" -maxdepth 4 \( -name '.*' ! -name '.git' -prune \) -o \( -name .git -type d -print \) 2>/dev/null \
-    | sed 's|/\.git$||' \
-    | sed "s|^$HOME/||" \
-    | sort -u >"$local_cache"
+fmt_tab() {
+    printf '%s (%s)' "$(fmt_repo "$1" "$2")" "$3"
+}
 
-{
-    gh repo list "$me" --limit 1000 --json nameWithOwner -q '.[].nameWithOwner' 2>/dev/null
-    while IFS= read -r org; do
-        [[ -z "$org" ]] && continue
-        gh repo list "$org" --limit 1000 --json nameWithOwner -q '.[].nameWithOwner' 2>/dev/null
-    done < <(gh api user/memberships/orgs --paginate -q '.[] | select(.role=="admin") | .organization.login' 2>/dev/null)
-} \
-    | awk -v me="$me" -F/ '$1==me{print $2; next} {print $0}' \
-    | sort -u \
-    | awk 'NR==FNR{seen[$0]=1; next} !seen[$0]{print "remote:"$0}' "$local_cache" - \
-    >"$remote_cache"
+# Open tab names in *this* zellij session, one per line. Empty when not running
+# inside zellij or when list-tabs fails for any reason.
+open_tabs() {
+    zellij action list-tabs --json 2>/dev/null | jq -r '.[].name' 2>/dev/null || true
+}
 
-selection=$(cat "$local_cache" "$remote_cache" | fzf \
+# Generate a petname not already used as a worktree directory name for this
+# org/repo. golang-petname's 2-word default has ~10^7 combinations, so 5 tries
+# is comfortably enough; the bound exists only to guarantee termination.
+gen_petname() {
+    local org=$1 repo=$2 try
+    for _ in 1 2 3 4 5; do
+        try=$(golang-petname -words 2)
+        [[ ! -e "$WORKTREE_ROOT/$org/$repo/$try" ]] && { printf '%s' "$try"; return; }
+    done
+    die "could not generate unique petname for $org/$repo"
+}
+
+# Each row is TAB-separated: <display>\t<verb>\t<arg>...
+# fzf shows --with-nth=1 (display only) and matches on --nth=1.
+build_rows() {
+    local opens
+    opens=$(open_tabs)
+
+    # worktree: rows — one per existing worktree directory.
+    if [[ -d "$WORKTREE_ROOT" ]]; then
+        local petdir petname repo org tab display
+        while IFS= read -r petdir; do
+            [[ -e "$petdir/.git" ]] || continue
+            petname=$(basename "$petdir")
+            repo=$(basename "$(dirname "$petdir")")
+            org=$(basename "$(dirname "$(dirname "$petdir")")")
+            tab=$(fmt_tab "$org" "$repo" "$petname")
+            if grep -Fxq "$tab" <<<"$opens"; then
+                display=$(printf '\033[2mworktree:%s\033[0m' "$tab")
+                printf '%s\tfocus\t%s\n' "$display" "$tab"
+            else
+                display="worktree:$tab"
+                printf '%s\tspawn\t%s\t%s\n' "$display" "$petdir" "$tab"
+            fi
+        done < <(find "$WORKTREE_ROOT" -mindepth 3 -maxdepth 3 -type d 2>/dev/null | sort)
+    fi
+
+    # local: rows — canonical clones at $HOME/<org>/<repo>/.git. The dotfile
+    # prune skips $HOME/.local, so worktrees under $XDG_DATA_HOME never appear.
+    local local_paths
+    local_paths=$(find "$HOME" -maxdepth 4 \
+        \( -name '.*' ! -name '.git' -prune \) -o \
+        \( -name .git -type d -print \) 2>/dev/null \
+        | sed 's|/\.git$||' \
+        | sed "s|^$HOME/||" \
+        | grep -E '^[^/]+/[^/]+$' \
+        | sort -u)
+    while IFS=/ read -r org repo; do
+        [[ -z "$org" || -z "$repo" ]] && continue
+        printf 'local:%s\tspawn-fresh\t%s\t%s\n' \
+            "$(fmt_repo "$org" "$repo")" "$org" "$repo"
+    done <<<"$local_paths"
+
+    # remote: rows — gh repo list for me + admin orgs, minus locals.
+    {
+        gh repo list "$ME" --limit 1000 --json nameWithOwner -q '.[].nameWithOwner' 2>/dev/null
+        while IFS= read -r org; do
+            [[ -z "$org" ]] && continue
+            gh repo list "$org" --limit 1000 --json nameWithOwner -q '.[].nameWithOwner' 2>/dev/null
+        done < <(gh api user/memberships/orgs --paginate \
+                    -q '.[] | select(.role=="admin") | .organization.login' 2>/dev/null)
+    } | sort -u | while IFS=/ read -r org repo; do
+        [[ -z "$org" || -z "$repo" ]] && continue
+        [[ -d "$HOME/$org/$repo/.git" ]] && continue
+        printf 'remote:%s\tclone-and-spawn\t%s\t%s\n' \
+            "$(fmt_repo "$org" "$repo")" "$org" "$repo"
+    done
+}
+
+# Ensure $HOME/<org>/<repo> is a canonical clone, cloning from GitHub if not.
+# Idempotent: a present .git short-circuits. claustre add-project runs only on
+# fresh clones to keep its project list scoped to canonicals.
+ensure_canonical() {
+    local org=$1 repo=$2 dir="$HOME/$1/$2"
+    if [[ ! -d "$dir/.git" ]]; then
+        mkdir -p "$(dirname "$dir")"
+        gh repo clone "$org/$repo" "$dir"
+        if command -v claustre >/dev/null 2>&1; then
+            claustre add-project "$org/$repo" "$dir" \
+                || printf 'git-repo-picker: claustre add-project failed for %s/%s\n' "$org" "$repo" >&2
+        fi
+    fi
+    printf '%s' "$dir"
+}
+
+# Create a fresh worktree off the canonical clone's HEAD, on a new branch
+# named after the petname. The branch and worktree share the petname so the
+# zjstatus branch line in the pair layout reads as the worktree label.
+make_worktree() {
+    local canonical=$1 wt_dir=$2 petname=$3
+    mkdir -p "$(dirname "$wt_dir")"
+    git -C "$canonical" worktree add "$wt_dir" -b "$petname"
+}
+
+spawn_pair_tab() {
+    local cwd=$1 tab=$2
+    zellij action new-tab --layout pair --cwd "$cwd"
+    zellij action rename-tab "$tab"
+}
+
+selection=$(build_rows | fzf \
+    --ansi \
+    --delimiter $'\t' \
+    --with-nth=1 \
+    --nth=1 \
     --prompt "repo> " \
-    --header "type to search · remote: clones on select") || exit 0
+    --header "worktree: dim = open tab · enter to focus or spawn") || exit 0
 
 [[ -z "$selection" ]] && exit 0
 
-if [[ "$selection" == remote:* ]]; then
-    path_part="${selection#remote:}"
-    if [[ "$path_part" == */* ]]; then
-        dir="$HOME/$path_part"
-        repo_full="$path_part"
-    else
-        dir="$HOME/$path_part"
-        repo_full="$me/$path_part"
-    fi
-    if [[ ! -d "$dir" ]]; then
-        mkdir -p "$(dirname "$dir")"
-        gh repo clone "$repo_full" "$dir"
-        if command -v claustre >/dev/null 2>&1; then
-            if ! claustre add-project "$path_part" "$dir"; then
-                printf 'git-repo-picker: claustre add-project failed for %s\n' "$path_part" >&2
-            fi
-        fi
-    fi
-else
-    dir="$HOME/$selection"
-fi
+# fzf returns the matched line verbatim, including ANSI codes on dimmed rows.
+# Drop them before splitting on TAB.
+selection=$(printf '%s' "$selection" | sed 's/\x1b\[[0-9;]*m//g')
+IFS=$'\t' read -r _display verb a1 a2 <<<"$selection"
 
-zellij action new-tab --layout pair --cwd "$dir"
-# pair.kdl hardcodes the tab name to "pair"; rename to the repo basename so
-# the tab-bar reflects which repo this pairing session is for.
-zellij action rename-tab "$(basename "$dir")"
+case "$verb" in
+    focus)
+        # a1 = tab name
+        zellij action go-to-tab-name "$a1"
+        ;;
+    spawn)
+        # a1 = worktree dir, a2 = tab name
+        spawn_pair_tab "$a1" "$a2"
+        ;;
+    spawn-fresh)
+        # a1 = org, a2 = repo
+        canonical=$(ensure_canonical "$a1" "$a2")
+        petname=$(gen_petname "$a1" "$a2")
+        wt_dir="$WORKTREE_ROOT/$a1/$a2/$petname"
+        make_worktree "$canonical" "$wt_dir" "$petname"
+        spawn_pair_tab "$wt_dir" "$(fmt_tab "$a1" "$a2" "$petname")"
+        ;;
+    clone-and-spawn)
+        # a1 = org, a2 = repo
+        canonical=$(ensure_canonical "$a1" "$a2")
+        petname=$(gen_petname "$a1" "$a2")
+        wt_dir="$WORKTREE_ROOT/$a1/$a2/$petname"
+        make_worktree "$canonical" "$wt_dir" "$petname"
+        spawn_pair_tab "$wt_dir" "$(fmt_tab "$a1" "$a2" "$petname")"
+        ;;
+    *)
+        die "unknown verb: $verb"
+        ;;
+esac
