@@ -184,6 +184,12 @@ spawn_pair_tab() {
     zellij action rename-tab "$tab"
 }
 
+# fzf exits as soon as the user selects a row, after which build_rows hits
+# SIGPIPE on the next write. With pipefail set that propagates a non-zero
+# exit through the substitution and the trailing `|| exit 0` would swallow
+# the whole picker silently. Disable pipefail just for this one pipeline so
+# a clean fzf selection wins regardless of the upstream's death.
+set +o pipefail
 selection=$(build_rows | fzf \
     --ansi \
     --delimiter $'\t' \
@@ -191,6 +197,7 @@ selection=$(build_rows | fzf \
     --nth=1 \
     --prompt "repo> " \
     --header "worktree: dim = open tab · enter to focus or spawn") || exit 0
+set -o pipefail
 
 [[ -z "$selection" ]] && exit 0
 
