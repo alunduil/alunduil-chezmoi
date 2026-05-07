@@ -1,9 +1,9 @@
 #!/usr/bin/env bash
-# Repo + session picker for the pair-tab workflow.
+# Repo + worktree picker for the pair-tab workflow.
 #
 # Three sets, fzf-merged, with org-elision when the org matches the GitHub user:
 #
-#   session:<repo> (petname)   existing worktree under $XDG_DATA_HOME/git-worktrees/.
+#   worktree:<repo> (petname)  existing worktree under $XDG_DATA_HOME/git-worktrees/.
 #                              Dimmed when a tab with that name is open in this
 #                              zellij session — selection focuses the tab.
 #                              Otherwise selection respawns the pair tab into
@@ -16,10 +16,10 @@
 #                              add-project on the canonical, then takes the
 #                              local: path above.
 #
-# Sessions and local are built upfront (cheap: filesystem + zellij). Remotes
-# require a `gh repo list` round-trip per org, so they are deferred until the
-# query length reaches REMOTE_THRESHOLD characters and then cached for the
-# lifetime of this picker invocation. fzf re-runs this script via
+# Worktree and local rows are built upfront (cheap: filesystem + zellij).
+# Remotes require a `gh repo list` round-trip per org, so they are deferred
+# until the query length reaches REMOTE_THRESHOLD characters and then cached
+# for the lifetime of this picker invocation. fzf re-runs this script via
 # `change:reload` to refresh the candidate set on every keystroke.
 #
 # Tabs are named "<repo-or-org/repo> (petname)" so go-to-tab-name round-trips.
@@ -47,7 +47,7 @@ open_tabs() {
     zellij action list-tabs --json 2>/dev/null | jq -r '.[].name' 2>/dev/null || true
 }
 
-print_sessions() {
+print_worktrees() {
     [[ -d "$WORKTREE_ROOT" ]] || return 0
     local opens petdir petname repo org tab display
     opens=$(open_tabs)
@@ -58,10 +58,10 @@ print_sessions() {
         org=$(basename "$(dirname "$(dirname "$petdir")")")
         tab=$(fmt_tab "$org" "$repo" "$petname")
         if grep -Fxq "$tab" <<<"$opens"; then
-            display=$(printf '\033[2msession:%s\033[0m' "$tab")
+            display=$(printf '\033[2mworktree:%s\033[0m' "$tab")
             printf '%s\tfocus\t%s\n' "$display" "$tab"
         else
-            display="session:$tab"
+            display="worktree:$tab"
             printf '%s\tspawn\t%s\t%s\n' "$display" "$petdir" "$tab"
         fi
     done < <(find "$WORKTREE_ROOT" -mindepth 3 -maxdepth 3 -type d 2>/dev/null | sort)
@@ -104,9 +104,10 @@ print_remotes() {
     done
 }
 
-# fzf re-invokes this script with --rows on every change event. Sessions and
-# local always render; remotes appear once the query reaches REMOTE_THRESHOLD
-# characters and stay for the rest of this invocation via REMOTES_FILE.
+# fzf re-invokes this script with --rows on every change event. Worktree and
+# local rows always render; remotes appear once the query reaches
+# REMOTE_THRESHOLD characters and stay for the rest of this invocation via
+# REMOTES_FILE.
 if [[ "${1:-}" == "--rows" ]]; then
     cat "$STATIC_FILE" 2>/dev/null || true
     query=${2:-}
@@ -135,7 +136,7 @@ REMOTES_FILE=$(mktemp)
 export ME WORKTREE_ROOT STATIC_FILE REMOTES_FILE
 trap 'rm -f "$STATIC_FILE" "$REMOTES_FILE" "${REMOTES_FILE}.tmp"' EXIT
 
-{ print_sessions; print_local; } >"$STATIC_FILE"
+{ print_worktrees; print_local; } >"$STATIC_FILE"
 : >"$REMOTES_FILE"
 
 SCRIPT=$(realpath "$0")
@@ -162,6 +163,9 @@ ensure_canonical() {
     printf '%s' "$dir"
 }
 
+# Create a fresh worktree off the canonical clone's HEAD, on a new branch
+# named after the petname. The branch and worktree share the petname so the
+# zjstatus branch line in the pair layout reads as the worktree label.
 make_worktree() {
     local canonical=$1 wt_dir=$2 petname=$3
     mkdir -p "$(dirname "$wt_dir")"
@@ -180,7 +184,7 @@ selection=$(fzf \
     --with-nth=1 \
     --nth=1 \
     --prompt "repo> " \
-    --header "type ${REMOTE_THRESHOLD}+ chars to load remotes · session: dim = open tab" \
+    --header "type ${REMOTE_THRESHOLD}+ chars to load remotes · worktree: dim = open tab" \
     --bind "change:reload($SCRIPT --rows {q})" \
     <"$STATIC_FILE") || exit 0
 
