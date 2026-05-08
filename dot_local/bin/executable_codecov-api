@@ -1,0 +1,44 @@
+#!/usr/bin/env bash
+# Authenticated curl wrapper for api.codecov.io. Lets the Claude allowlist
+# permit Codecov calls (`Bash(codecov-api:*)`) without granting unrestricted
+# `curl`. Mirrors the pattern of the gh shim in this directory.
+#
+# Usage:
+#   codecov-api /api/v2/github/<owner>/repos/<repo>/test-results/?branch=main
+#   codecov-api /graphql/ -X POST -H 'Content-Type: application/json' -d @query.json
+#
+# The first argument is an absolute path on api.codecov.io (must start with
+# /). Any further arguments are forwarded to curl, so callers can add -X,
+# -H, -d, --data-urlencode, etc.
+#
+# Auth: reads CODECOV_API_TOKEN from the environment. dot_bashrc populates
+# it from the chezmoi-encrypted file at ~/.config/codecov/token. If the
+# variable is missing we fail loudly rather than issuing an unauthenticated
+# request that returns a confusing 401.
+
+set -euo pipefail
+
+if [ -z "${CODECOV_API_TOKEN:-}" ]; then
+  printf 'codecov-api: CODECOV_API_TOKEN not set; check ~/.config/codecov/token\n' >&2
+  exit 64
+fi
+
+if [ "$#" -lt 1 ]; then
+  printf 'codecov-api: missing path argument (e.g. /api/v2/github/owner/repos/repo/test-results/)\n' >&2
+  exit 64
+fi
+
+path="$1"
+shift
+
+case "$path" in
+  /*) ;;
+  *)
+    printf 'codecov-api: path must start with / (got %q)\n' "$path" >&2
+    exit 64
+    ;;
+esac
+
+exec curl --fail --silent --show-error --location \
+  --header "Authorization: bearer ${CODECOV_API_TOKEN}" \
+  "https://api.codecov.io${path}" "$@"

@@ -179,6 +179,7 @@
       "Bash(cat:*)",
       "Bash(chezmoi:*)",
       "Bash(cmp:*)",
+      "Bash(codecov-api:*)",
       "Bash(cut:*)",
       "Bash(date:*)",
       "Bash(devcontainer:*)",
