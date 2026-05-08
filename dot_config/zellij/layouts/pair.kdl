@@ -4,9 +4,9 @@
 //
 // Template:
 //   zellaude   (1 line) — per-tab Claude Code activity + tab list
-//   zjstatus   (1 line) — left: current branch (5s) + open-PR list (60s)
-//                          right: gh rate-limit flags (60s)
+//   zjstatus   (1 line) — current branch (5s) + open-PR list (60s)
 //   children   (the panes)
+//   zjstatus   (1 line) — gh rate-limit flags (60s), left-aligned
 //   status-bar (1 line, clipped) — mode indicator only; tips suppressed
 //
 // Invoke:
@@ -25,7 +25,6 @@ layout {
             plugin location="zjstatus" {
                 format_left  "#[bg=16]{command_branch}{command_prs}"
                 format_space "#[bg=16]"
-                format_right "#[bg=16]{command_ratelimits}"
                 command_branch_command         "bash -lc zellij-branch-status"
                 command_branch_format          "{stdout}"
                 command_branch_rendermode      "dynamic"
@@ -34,13 +33,19 @@ layout {
                 command_prs_format             "{stdout}"
                 command_prs_rendermode         "dynamic"
                 command_prs_interval           "60"
+            }
+        }
+        children
+        pane size=1 borderless=true {
+            plugin location="zjstatus" {
+                format_left  "#[bg=16]{command_ratelimits}"
+                format_space "#[bg=16]"
                 command_ratelimits_command     "bash -lc zellij-rate-limit-status"
                 command_ratelimits_format      "{stdout}"
                 command_ratelimits_rendermode  "dynamic"
                 command_ratelimits_interval    "60"
             }
         }
-        children
         pane size=1 borderless=true {
             plugin location="status-bar"
         }
