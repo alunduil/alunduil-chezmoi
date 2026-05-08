@@ -195,14 +195,24 @@ ensure_canonical() {
     printf '%s' "$dir"
 }
 
-# Create a fresh worktree off the canonical clone's HEAD on a new branch
-# <ME>/worktree/<petname>. The user/worktree/ prefix scopes picker-created
-# branches into a personal namespace so they stay visually distinct from
-# upstream branches in `git branch` and remote refs.
+# Create a fresh worktree off the canonical's default branch on a new branch
+# <ME>/worktree/<petname>. Pulls the canonical first (best-effort) so the
+# worktree starts on a current base; on failure we branch from whatever the
+# local default ref points at, which both manual pulls and prior picker runs
+# keep current. The user/worktree/ prefix scopes picker-created branches
+# into a personal namespace, distinct from upstream branches in `git branch`
+# and remote refs.
 make_worktree() {
     local canonical=$1 wt_dir=$2 petname=$3
+    local default_ref default_branch
+    default_ref=$(git -C "$canonical" symbolic-ref --short refs/remotes/origin/HEAD)
+    default_branch=${default_ref#origin/}
+    if ! git -C "$canonical" pull --ff-only --quiet; then
+        printf 'git-repo-picker: pull failed; branching off possibly stale local %s\n' \
+            "$default_branch" >&2
+    fi
     mkdir -p "$(dirname "$wt_dir")"
-    git -C "$canonical" worktree add "$wt_dir" -b "$ME/worktree/$petname"
+    git -C "$canonical" worktree add "$wt_dir" -b "$ME/worktree/$petname" "$default_branch"
 }
 
 spawn_pair_tab() {
