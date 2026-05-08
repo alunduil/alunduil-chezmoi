@@ -13,7 +13,7 @@
 
 set -euo pipefail
 
-ARROW=$''
+ARROW=$''
 
 json=$(gh api rate_limit 2>/dev/null) || exit 0
 [ -n "$json" ] || exit 0

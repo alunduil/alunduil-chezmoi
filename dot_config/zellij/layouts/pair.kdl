@@ -4,9 +4,11 @@
 //
 // Template:
 //   zellaude   (1 line) — per-tab Claude Code activity + tab list
+//   spacer     (1 line) — bar-bg gap between stacked top bars
 //   zjstatus   (1 line) — current branch (5s) + open-PR list (60s)
 //   children   (the panes)
 //   zjstatus   (1 line) — gh rate-limit flags (60s), left-aligned
+//   spacer     (1 line) — bar-bg gap between stacked bottom bars
 //   status-bar (1 line, clipped) — mode indicator only; tips suppressed
 //
 // Invoke:
@@ -20,6 +22,12 @@ layout {
     default_tab_template {
         pane size=1 borderless=true {
             plugin location="zellaude"
+        }
+        pane size=1 borderless=true {
+            plugin location="zjstatus" {
+                format_left  "#[bg=16]"
+                format_space "#[bg=16]"
+            }
         }
         pane size=1 borderless=true {
             plugin location="zjstatus" {
@@ -44,6 +52,12 @@ layout {
                 command_ratelimits_format      "{stdout}"
                 command_ratelimits_rendermode  "dynamic"
                 command_ratelimits_interval    "60"
+            }
+        }
+        pane size=1 borderless=true {
+            plugin location="zjstatus" {
+                format_left  "#[bg=16]"
+                format_space "#[bg=16]"
             }
         }
         pane size=1 borderless=true {
