@@ -3,7 +3,7 @@
 # `command_ratelimits_rendermode "dynamic"` so the #[...] directives render
 # rather than printing as literal text.
 #
-# Three right-aligned ribbons for the GitHub `core`, `graphql`, and `search`
+# Three left-aligned ribbons for the GitHub `core`, `graphql`, and `search`
 # rate-limit buckets. Green by default; amber under 25% remaining; red under
 # 10%. Silent on failure (no auth, offline, gh missing) — no flag rather than
 # a "?" placeholder, so absence is ambiguous between healthy-and-quiet and
@@ -39,7 +39,7 @@ emit() {
   local label=$1 remaining=$2 limit=$3
   local bg
   bg=$(bucket_color "$remaining" "$limit")
-  printf '#[bg=16,fg=%s]%s#[bg=%s,fg=16] %s %s/%s #[bg=%s,fg=16]%s' \
+  printf '#[bg=%s,fg=16]%s#[bg=%s,fg=16] %s %s/%s #[bg=16,fg=%s]%s' \
     "$bg" "$ARROW" "$bg" "$label" "$remaining" "$limit" "$bg" "$ARROW"
 }
 
