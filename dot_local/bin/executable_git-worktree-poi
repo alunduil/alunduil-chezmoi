@@ -134,8 +134,8 @@ while IFS= read -r line; do
 
     if git -C "$canonical" worktree remove "$wt"; then
         # Branch delete is best-effort: -d (safe) refuses unmerged; we don't
-        # force, since the picker can only generate petname branches and the
-        # user's safety guard above gates merge state already.
+        # force, since the picker only creates branches under <user>/worktree/
+        # and the safety guard above gates merge state already.
         [[ -n "$branch" ]] && git -C "$canonical" branch -d "$branch" 2>/dev/null || true
         removed=$((removed + 1))
     else
