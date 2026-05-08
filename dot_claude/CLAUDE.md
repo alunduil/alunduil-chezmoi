@@ -169,6 +169,13 @@ and examples that don't disambiguate.
 - GitHub milestone work (creating, naming, scoping, closing):
   `milestones` skill.
 
+## Codecov
+
+- Flaky-test analysis, failure history, coverage queries — anything
+  that would otherwise hit the Codecov web UI's login wall: `codecov`
+  skill. Calls go through the `codecov-api` wrapper; token comes from
+  `~/.config/codecov/token` (chezmoi-decrypted from age).
+
 ## Tests
 
 - Don't test upstream. If a behaviour belongs to the language,

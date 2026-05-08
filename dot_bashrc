@@ -124,3 +124,9 @@ export NVM_DIR="${XDG_CONFIG_HOME:-$HOME/.config}/nvm"
 
 # ghcup: add ~/.ghcup/bin (ghc, cabal) to PATH when installed.
 [ -f "$HOME/.ghcup/env" ] && . "$HOME/.ghcup/env"
+
+# Codecov API token: deployed by chezmoi from an age-encrypted source to
+# ~/.config/codecov/token (mode 0600). No-op on hosts that haven't
+# applied the token yet; codecov-api fails loudly when the env var is
+# missing, so a typo here surfaces immediately.
+[ -r "$HOME/.config/codecov/token" ] && export CODECOV_API_TOKEN="$(<"$HOME/.config/codecov/token")"
