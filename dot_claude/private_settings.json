@@ -1,5 +1,9 @@
 {
   "$schema": "https://json.schemastore.org/claude-code-settings.json",
+  "statusLine": {
+    "type": "command",
+    "command": "/home/alunduil/.claude/statusline.sh"
+  },
   "hooks": {
     "PreToolUse": [
       {
