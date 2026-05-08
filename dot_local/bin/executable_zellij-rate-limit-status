@@ -1,0 +1,50 @@
+#!/usr/bin/env bash
+# zjstatus rate-limit widget for ~/.config/zellij/layouts/pair.kdl. Requires
+# `command_ratelimits_rendermode "dynamic"` so the #[...] directives render
+# rather than printing as literal text.
+#
+# Three right-aligned ribbons for the GitHub `core`, `graphql`, and `search`
+# rate-limit buckets. Green by default; amber under 25% remaining; red under
+# 10%. Silent on failure (no auth, offline, gh missing) — no flag rather than
+# a "?" placeholder, so absence is ambiguous between healthy-and-quiet and
+# broken.
+#
+# /rate_limit itself does not count against the rate limit, so polling is free.
+
+set -euo pipefail
+
+ARROW=$''
+
+json=$(gh api rate_limit 2>/dev/null) || exit 0
+[ -n "$json" ] || exit 0
+
+tsv=$(jq -r '[.resources.core.remaining, .resources.core.limit, .resources.graphql.remaining, .resources.graphql.limit, .resources.search.remaining, .resources.search.limit] | @tsv' <<<"$json" 2>/dev/null) || exit 0
+[ -n "$tsv" ] || exit 0
+
+read -r core_remaining core_limit graphql_remaining graphql_limit search_remaining search_limit <<<"$tsv"
+
+bucket_color() {
+  local remaining=$1 limit=$2
+  local pct=$(( remaining * 100 / limit ))
+  if [ "$pct" -lt 10 ]; then
+    printf 196
+  elif [ "$pct" -lt 25 ]; then
+    printf 214
+  else
+    printf 154
+  fi
+}
+
+emit() {
+  local label=$1 remaining=$2 limit=$3
+  local bg
+  bg=$(bucket_color "$remaining" "$limit")
+  printf '#[bg=16,fg=%s]%s#[bg=%s,fg=16] %s %s/%s #[bg=%s,fg=16]%s' \
+    "$bg" "$ARROW" "$bg" "$label" "$remaining" "$limit" "$bg" "$ARROW"
+}
+
+emit core "$core_remaining" "$core_limit"
+printf '#[bg=16] '
+emit gql "$graphql_remaining" "$graphql_limit"
+printf '#[bg=16] '
+emit search "$search_remaining" "$search_limit"
