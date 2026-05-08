@@ -195,13 +195,14 @@ ensure_canonical() {
     printf '%s' "$dir"
 }
 
-# Create a fresh worktree off the canonical clone's HEAD, on a new branch
-# named after the petname. The branch and worktree share the petname so the
-# zjstatus branch line in the pair layout reads as the worktree label.
+# Create a fresh worktree off the canonical clone's HEAD on a new branch
+# <ME>/worktree/<petname>. The user/worktree/ prefix scopes picker-created
+# branches into a personal namespace so they stay visually distinct from
+# upstream branches in `git branch` and remote refs.
 make_worktree() {
     local canonical=$1 wt_dir=$2 petname=$3
     mkdir -p "$(dirname "$wt_dir")"
-    git -C "$canonical" worktree add "$wt_dir" -b "$petname"
+    git -C "$canonical" worktree add "$wt_dir" -b "$ME/worktree/$petname"
 }
 
 spawn_pair_tab() {
