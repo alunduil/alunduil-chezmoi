@@ -1,0 +1,4 @@
+#!/usr/bin/env bash
+# fzf stub: emits $FZF_OUTPUT and exits 0; exits 130 (cancel) when unset.
+[[ -n "${FZF_OUTPUT:-}" ]] || exit 130
+printf '%s\n' "$FZF_OUTPUT"
