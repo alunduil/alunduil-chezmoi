@@ -46,6 +46,21 @@
     },
     {
       "customType": "regex",
+      "managerFilePatterns": ["/^script/install/lychee$/"],
+      "matchStrings": ["LYCHEE_VERSION=\"(?<currentValue>v[\\d.]+)\""],
+      "depNameTemplate": "lycheeverse/lychee",
+      "datasourceTemplate": "github-releases",
+      "extractVersionTemplate": "^lychee-(?<version>v[\\d.]+)$"
+    },
+    {
+      "customType": "regex",
+      "managerFilePatterns": ["/^script/install/signal-cli$/"],
+      "matchStrings": ["SIGNAL_CLI_VERSION=\"(?<currentValue>v[\\d.]+)\""],
+      "depNameTemplate": "AsamK/signal-cli",
+      "datasourceTemplate": "github-releases"
+    },
+    {
+      "customType": "regex",
       "managerFilePatterns": ["/^run_once_before_05-install-standalone-tools\\.sh\\.tmpl$/"],
       "matchStrings": ["GH_POI_VERSION=\"(?<currentValue>v[\\d.]+)\""],
       "depNameTemplate": "seachicken/gh-poi",

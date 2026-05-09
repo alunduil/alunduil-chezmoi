@@ -1,0 +1,41 @@
+#!/usr/bin/env bash
+set -euo pipefail
+
+SIGNAL_CLI_VERSION="v0.14.3"
+ARCH="Linux-native"
+
+# AsamK's release signing key. Published at keys.openpgp.org with UID
+# `AsamK <asamk@gmx.de>`. Pinned here so a swap on the keyserver can't
+# silently authorise a forged release.
+KEY_URL="https://keys.openpgp.org/vks/v1/by-fingerprint/FA10826A74907F9EC6BBB7FC2BA2CD21B5B09570"
+KEY_FPR="FA10826A74907F9EC6BBB7FC2BA2CD21B5B09570"
+
+# shellcheck source-path=SCRIPTDIR source=lib.sh
+. "$(dirname "$0")/lib.sh"
+
+parse_bin_dir "$@"
+
+bin="$BIN_DIR/signal-cli"
+if [ -x "$bin" ] && "$bin" --version 2>/dev/null | grep -qF "${SIGNAL_CLI_VERSION#v}"; then
+  printf '==> signal-cli: %s already installed at %s\n' "$SIGNAL_CLI_VERSION" "$bin" >&2
+  exit 0
+fi
+
+printf '==> signal-cli: downloading %s\n' "$SIGNAL_CLI_VERSION" >&2
+tmp="$(mktemp -d)"
+gpghome="$(mktemp -d)"
+chmod 700 "$gpghome"
+trap 'rm -rf "$tmp" "$gpghome"' EXIT
+
+# Releases ship `.asc` detached signatures, no checksums file -- so
+# verify_gpg replaces the verify_sha256 step used by other installers.
+base="https://github.com/AsamK/signal-cli/releases/download/${SIGNAL_CLI_VERSION}"
+asset="signal-cli-${SIGNAL_CLI_VERSION#v}-${ARCH}.tar.gz"
+curl -fsSL -o "$tmp/$asset" "$base/$asset"
+curl -fsSL -o "$tmp/$asset.asc" "$base/$asset.asc"
+
+verify_gpg "$tmp/$asset" "$tmp/$asset.asc" "$KEY_URL" "$KEY_FPR" "$gpghome"
+
+tar -xzf "$tmp/$asset" -C "$tmp" signal-cli
+mkdir -p "$BIN_DIR"
+install -m 0755 "$tmp/signal-cli" "$bin"
