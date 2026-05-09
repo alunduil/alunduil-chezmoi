@@ -1,0 +1,54 @@
+#!/usr/bin/env bash
+# Imports the user's PGP secret key from the chezmoi-deployed armored
+# export at ~/.gnupg/secret-keys.asc. The blob itself is
+# passphrase-encrypted (gpg --export-secret-keys protects it with the
+# original key passphrase) and chezmoi decrypts it from age on apply, so
+# the trust chain is age-key + GPG-passphrase. Idempotent: no-ops if the
+# fingerprint is already present in the local keyring. Refresh the blob
+# after key rotation; see README.
+
+set -euo pipefail
+
+log() { printf '==> %s\n' "$*" >&2; }
+
+BLOB="$HOME/.gnupg/secret-keys.asc"
+
+if [ ! -r "$BLOB" ]; then
+  log "pgp: $BLOB not present, skipping import"
+  exit 0
+fi
+
+# Discover fingerprints inside the blob without importing yet.
+fingerprints="$(gpg --batch --with-colons --import-options show-only --import "$BLOB" 2>/dev/null \
+  | awk -F: '$1 == "fpr" {print $10}' | sort -u)"
+
+if [ -z "$fingerprints" ]; then
+  log "pgp: no fingerprints found in $BLOB"
+  exit 0
+fi
+
+already_present="$(gpg --list-secret-keys --with-colons 2>/dev/null | awk -F: '$1 == "fpr" {print $10}')"
+
+missing=0
+for fp in $fingerprints; do
+  if grep -qx "$fp" <<<"$already_present"; then
+    log "pgp $fp: already in local keyring"
+  else
+    missing=1
+    break
+  fi
+done
+
+if [ "$missing" -eq 0 ]; then
+  exit 0
+fi
+
+log "pgp: importing secret keys from $BLOB"
+gpg --batch --import "$BLOB"
+
+# Trust your own key fully so signatures verify locally without prompting.
+for fp in $fingerprints; do
+  printf 'trust\n5\ny\nquit\n' | gpg --batch --command-fd 0 --edit-key "$fp" >/dev/null 2>&1 || true
+done
+
+log "pgp import complete"

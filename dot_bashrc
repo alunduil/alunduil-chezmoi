@@ -134,3 +134,11 @@ export NVM_DIR="${XDG_CONFIG_HOME:-$HOME/.config}/nvm"
 # Cloudflare API token: deployed by chezmoi from an age-encrypted source to
 # ~/.config/cloudflare/token (mode 0600). No-op until applied.
 [ -r "$HOME/.config/cloudflare/token" ] && export CLOUDFLARE_API_TOKEN="$(<"$HOME/.config/cloudflare/token")"
+
+# GPG: pinentry needs to know which TTY launched the request, otherwise it
+# falls back to whatever TTY started gpg-agent (often wrong inside tmux,
+# zellij, or a fresh terminal). Refresh on every shell so the next signing
+# operation prompts on the current pty.
+export GPG_TTY=$(tty)
+command -v gpg-connect-agent >/dev/null 2>&1 && \
+  gpg-connect-agent updatestartuptty /bye >/dev/null 2>&1

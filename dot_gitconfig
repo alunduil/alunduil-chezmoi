@@ -1,6 +1,11 @@
 [user]
 	name = Alex Brandt
 	email = alunduil@gmail.com
+	signingkey = 8F491CBC32D144341679826AE7E6572EF50D1BC5
+[commit]
+	gpgsign = true
+[tag]
+	gpgsign = true
 [init]
 	defaultBranch = main
 [filter "lfs"]
