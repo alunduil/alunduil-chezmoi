@@ -53,7 +53,8 @@ Renovate opens a "Dependency Dashboard" issue. Read it before assuming a bug:
 
 ## Procedure
 
-1. Read `renovate.json` if present. Note the repo's default branch (`git symbolic-ref refs/remotes/origin/HEAD` or the GitHub setting).
-2. **Greenfield** — write the Defaults block; fill `<owner>` and `<default-branch>`. Add custom regex managers for shell-script `*_VERSION=` pins or hard-coded release URLs.
-3. **Audit existing** — walk the Defaults block and the custom-managers conventions; flag drift (still on `config:recommended`, missing `reviewers`, hard-coded `baseBranchPatterns` not matching the actual default, leftover deprecated fields like `fileMatch` or `baseBranches`, ungoverned `*_VERSION=` pins).
-4. Surface findings before editing. Apply only after scope is agreed.
+1. Confirm any field name you plan to write against current docs at `https://docs.renovatebot.com/configuration-options/<field>/` before editing. Renames slip in regularly (`fileMatch` → `managerFilePatterns`, `baseBranches` → `baseBranchPatterns`); memory and prior commits are not authoritative.
+2. Read `renovate.json` if present. Note the repo's default branch (`git symbolic-ref refs/remotes/origin/HEAD` or the GitHub setting).
+3. **Greenfield** — write the Defaults block; fill `<owner>` and `<default-branch>`. Add custom regex managers for shell-script `*_VERSION=` pins or hard-coded release URLs.
+4. **Audit existing** — walk the Defaults block and the custom-managers conventions; flag drift (still on `config:recommended`, missing `reviewers`, hard-coded `baseBranchPatterns` not matching the actual default, leftover deprecated fields like `fileMatch` or `baseBranches`, ungoverned `*_VERSION=` pins).
+5. Surface findings before editing. Apply only after scope is agreed.
