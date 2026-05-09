@@ -16,10 +16,10 @@ INSTALL_DIR="{{ .chezmoi.sourceDir }}/script/install"
 "$INSTALL_DIR/act" --bin-dir "$HOME/.local/bin"
 "$INSTALL_DIR/gcx" --bin-dir "$HOME/.local/bin"
 
-# gcx ships its skill bundle inside the binary; `skills install --all`
-# extracts it to ~/.agents/skills (the cross-harness convention read by
-# Claude Code, Cursor, Copilot). --force re-syncs gcx-managed files on
-# version bumps without touching anything outside the bundle.
-"$HOME/.local/bin/gcx" skills install --all --force >/dev/null
+# gcx ships its skill bundle inside the binary; `agent skills install
+# --all` extracts it to ~/.agents/skills (the cross-harness convention
+# read by Claude Code, Cursor, Copilot). --force re-syncs gcx-managed
+# files on version bumps without touching anything outside the bundle.
+"$HOME/.local/bin/gcx" agent skills install --all --force >/dev/null
 
 mkdir -p "$HOME/.config/zellij/plugins"
