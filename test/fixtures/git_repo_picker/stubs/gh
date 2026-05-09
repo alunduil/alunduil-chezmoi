@@ -1,0 +1,16 @@
+#!/usr/bin/env bash
+# gh stub: returns $GH_USER for `api user`, empty for memberships, clones $GH_CLONE_SRC for `repo clone`.
+case "${1:-} ${2:-}" in
+  "api user")
+    printf '%s' "${GH_USER:-test-user}"
+    ;;
+  "api user/memberships/orgs")
+    : # no admin orgs by default
+    ;;
+  "repo list")
+    printf '%s' "${GH_REPO_LIST:-}"
+    ;;
+  "repo clone")
+    git clone --quiet "${GH_CLONE_SRC:?GH_CLONE_SRC must be set}" "$4"
+    ;;
+esac

@@ -1,0 +1,6 @@
+#!/usr/bin/env bash
+# zellij stub: appends "$@" to $ZELLIJ_RECORDER; emits $ZELLIJ_TABS_JSON for action list-tabs.
+printf '%s\n' "$*" >>"$ZELLIJ_RECORDER"
+if [[ "${1:-}" == "action" && "${2:-}" == "list-tabs" ]]; then
+  printf '%s' "${ZELLIJ_TABS_JSON:-[]}"
+fi

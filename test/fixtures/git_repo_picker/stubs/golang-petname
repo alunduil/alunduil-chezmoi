@@ -1,0 +1,3 @@
+#!/usr/bin/env bash
+# golang-petname stub: prints $PETNAME (default "test-petname"), ignoring args.
+printf '%s\n' "${PETNAME:-test-petname}"

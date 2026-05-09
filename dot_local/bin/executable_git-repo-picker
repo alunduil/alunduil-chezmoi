@@ -120,6 +120,10 @@ print_remotes() {
     done
 }
 
+# Tests source this script to exercise helpers above without triggering the
+# --rows handler or main entry below.
+if [[ "${BASH_SOURCE[0]}" != "$0" ]]; then return 0; fi
+
 # fzf re-invokes this script with --rows on every change event. Worktree and
 # local rows always render; remotes appear once the query reaches
 # REMOTE_THRESHOLD characters and stay for the rest of this invocation via
