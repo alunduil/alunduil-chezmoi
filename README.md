@@ -13,7 +13,7 @@ Personal config — no warranty, no support. [0BSD licensed](LICENSE).
 
 ## Bootstrap
 
-Requires a Debian/Crostini host and the age key from a password manager.
+Requires a Debian/Crostini host and the age key plus SSH key archive from a password manager.
 
 ```bash
 sh -c "$(curl -fsLS get.chezmoi.io)" -- -b "$HOME/.local/bin"
@@ -21,6 +21,13 @@ sh -c "$(curl -fsLS get.chezmoi.io)" -- -b "$HOME/.local/bin"
 mkdir -p ~/.config/chezmoi
 $EDITOR ~/.config/chezmoi/key.txt          # paste age key contents
 chmod 600 ~/.config/chezmoi/key.txt
+
+mkdir -p ~/.ssh
+# Restore ~/.ssh/{config,id_rsa,id_rsa.pub,known_hosts} from the password manager
+# before cloning over SSH. Keep private key material mode 600.
+chmod 700 ~/.ssh
+chmod 600 ~/.ssh/config ~/.ssh/id_rsa ~/.ssh/known_hosts
+chmod 644 ~/.ssh/id_rsa.pub
 
 ~/.local/bin/chezmoi init --apply git@github.com:alunduil/alunduil-chezmoi.git
 
@@ -44,7 +51,7 @@ gh extension list                          # confirms gh-poi (squash-merge prune
 claude mcp list                            # confirms cloudflare-* MCP servers
 ```
 
-If SSH to GitHub isn't set up yet, clone over HTTPS first and swap remotes once keys are in place.
+SSH keys are restored from the password manager immediately after the age key and before `chezmoi init --apply`, so the normal bootstrap can clone over SSH. If the SSH archive is unavailable during recovery, clone over HTTPS first and swap remotes once a restored or regenerated key is added to GitHub.
 
 ## Adding an encrypted secret
 
