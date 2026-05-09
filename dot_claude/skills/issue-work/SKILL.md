@@ -8,9 +8,10 @@ description: Pick up an existing GitHub issue in the checked-out repo — implem
 ## Inspect
 
 ```bash
-gh issue view <N> --comments                     # body + comments + cross-refs
-gh issue develop <N> --list                      # branches linked to this issue
-gh pr list --search "<N> in:body" --state open   # open PR taking it forward?
+gh issue view <N> --comments                                # body + comments + cross-refs
+gh issue develop <N> --list                                 # branches linked to this issue
+gh pr list --search "<N> in:body" --state open              # open PR taking it forward?
+gh pr list --search "<keywords> in:title,body" --state merged --limit 20  # merged PR already covering same scope, even if unlinked?
 ```
 
 For recent commits in the area:
@@ -32,6 +33,7 @@ Any one fires a go/no-go before writing code:
 
 - A commit since the issue was filed already implements or supersedes the change.
 - A linked PR is already merged — the issue should close, not be re-implemented.
+- An *unlinked* merged PR covers the same scope (keyword/path search). Filers don't always cross-reference; check before duplicating work.
 - The issue assumes tooling/files that have since been replaced or removed.
 - The motivating dependency resolved differently (e.g. "waiting on upstream X" — X shipped via a different mechanism).
 - A maintainer comment narrows or vetoes the original scope and the body wasn't updated.
