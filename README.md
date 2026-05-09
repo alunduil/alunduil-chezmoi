@@ -37,9 +37,23 @@ zellij --version && lazygit --version && act --version && rtk --version
 ghc --version && cabal --version           # ghcup-managed Haskell toolchain
 golang-petname                             # repo-picker worktree namer
 gh extension list                          # confirms gh-poi (squash-merge pruner)
+claude mcp list                            # confirms cloudflare-* MCP servers
 ```
 
 If SSH to GitHub isn't set up yet, clone over HTTPS first and swap remotes once keys are in place.
+
+## Adding an encrypted secret
+
+For credentials that should replay across machines (API tokens, etc.), encrypt with chezmoi/age rather than leaving them out of source. Run from this checkout's root so `--source` lands the file here; without it `chezmoi add` writes to the apply clone (`~/.local/share/chezmoi`), which is read-only by convention.
+
+```bash
+mkdir -p ~/.config/<service>
+umask 077
+$EDITOR ~/.config/<service>/token          # paste secret, no trailing newline
+chezmoi add --encrypt --source "$PWD" ~/.config/<service>/token
+```
+
+Stored as `dot_config/<service>/encrypted_private_token.age` and restored (mode 600) on `chezmoi apply`. See `dot_config/codecov/` for an existing example.
 
 ## Contributing
 

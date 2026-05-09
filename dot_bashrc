@@ -130,3 +130,7 @@ export NVM_DIR="${XDG_CONFIG_HOME:-$HOME/.config}/nvm"
 # applied the token yet; codecov-api fails loudly when the env var is
 # missing, so a typo here surfaces immediately.
 [ -r "$HOME/.config/codecov/token" ] && export CODECOV_API_TOKEN="$(<"$HOME/.config/codecov/token")"
+
+# Cloudflare API token: deployed by chezmoi from an age-encrypted source to
+# ~/.config/cloudflare/token (mode 0600). No-op until applied.
+[ -r "$HOME/.config/cloudflare/token" ] && export CLOUDFLARE_API_TOKEN="$(<"$HOME/.config/cloudflare/token")"
