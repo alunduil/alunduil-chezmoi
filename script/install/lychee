@@ -1,0 +1,36 @@
+#!/usr/bin/env bash
+set -euo pipefail
+
+LYCHEE_VERSION="v0.24.2"
+ARCH="x86_64-unknown-linux-musl"
+
+# shellcheck source-path=SCRIPTDIR source=lib.sh
+. "$(dirname "$0")/lib.sh"
+
+parse_bin_dir "$@"
+
+bin="$BIN_DIR/lychee"
+if [ -x "$bin" ] && "$bin" --version 2>/dev/null | grep -qF "${LYCHEE_VERSION#v}"; then
+  printf '==> lychee: %s already installed at %s\n' "$LYCHEE_VERSION" "$bin" >&2
+  exit 0
+fi
+
+printf '==> lychee: downloading %s\n' "$LYCHEE_VERSION" >&2
+tmp="$(mktemp -d)"
+trap 'rm -rf "$tmp"' EXIT
+
+# lycheeverse/lychee tags binaries as `lychee-vX.Y.Z` (the cargo workspace
+# also publishes `lychee-lib-vX.Y.Z` from the same repo). Tarball nests
+# everything under `lychee-${ARCH}/`, with the binary at
+# `lychee-${ARCH}/lychee`.
+base="https://github.com/lycheeverse/lychee/releases/download/lychee-${LYCHEE_VERSION}"
+asset="lychee-${ARCH}.tar.gz"
+curl -fsSL -o "$tmp/$asset" "$base/$asset"
+curl -fsSL -o "$tmp/$asset.sha256" "$base/$asset.sha256"
+
+expected="$(expected_from_checksums "$tmp/$asset.sha256" "$asset")"
+verify_sha256 "$tmp/$asset" "$expected"
+
+tar -xzf "$tmp/$asset" -C "$tmp" "lychee-${ARCH}/lychee"
+mkdir -p "$BIN_DIR"
+install -m 0755 "$tmp/lychee-${ARCH}/lychee" "$bin"

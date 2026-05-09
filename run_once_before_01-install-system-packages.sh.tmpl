@@ -25,11 +25,32 @@ if [ ! -f /usr/share/keyrings/githubcli-archive-keyring.gpg ]; then
     "$(dpkg --print-architecture)" | sudo tee /etc/apt/sources.list.d/github-cli.list >/dev/null
 fi
 
+# ------------------------------------------------------------- signal-desktop
+if [ ! -f /usr/share/keyrings/signal-desktop-keyring.gpg ]; then
+  log "signal-desktop: adding apt repository"
+  curl -fsSL https://updates.signal.org/desktop/apt/keys.asc |
+    sudo gpg --dearmor -o /usr/share/keyrings/signal-desktop-keyring.gpg
+  printf 'deb [arch=amd64 signed-by=/usr/share/keyrings/signal-desktop-keyring.gpg] https://updates.signal.org/desktop/apt xenial main\n' |
+    sudo tee /etc/apt/sources.list.d/signal-xenial.list >/dev/null
+fi
+
+# -------------------------------------------------------------------- keybase
+# Keybase's apt repo is unsigned; their official install guide uses
+# `[trusted=yes]` to skip apt's signature check. Transport integrity
+# comes from HTTPS to prerelease.keybase.io. The keybase service
+# self-updates once installed, so versions track upstream regardless.
+if [ ! -f /etc/apt/sources.list.d/keybase.list ]; then
+  log "keybase: adding apt repository"
+  printf 'deb [trusted=yes] https://prerelease.keybase.io/deb stable main\n' |
+    sudo tee /etc/apt/sources.list.d/keybase.list >/dev/null
+fi
+
 # -------------------------------------------------------------------- apt pkgs
 APT_PACKAGES=(
   gh zsh ripgrep fd-find fzf jq unzip age terraform libnotify-bin
   build-essential libffi-dev libgmp-dev libncurses-dev zlib1g-dev
   golang-petname
+  keybase signal-desktop
 )
 missing=()
 for pkg in "${APT_PACKAGES[@]}"; do

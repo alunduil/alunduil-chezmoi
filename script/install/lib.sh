@@ -53,3 +53,29 @@ verify_sha256() {
     return 1
   fi
 }
+
+# Verify a detached GPG signature when upstream publishes .asc but no
+# .sha256 (e.g. AsamK/signal-cli). Imports KEY_URL into an ephemeral
+# GNUPGHOME under GPGHOME, asserts the imported fingerprint equals
+# EXPECTED_FPR (so a swapped key can't slip through), then verifies
+# ASC over FILE. The ephemeral keyring keeps the user's ~/.gnupg
+# untouched; caller is responsible for cleaning GPGHOME.
+verify_gpg() {
+  local file="$1" asc="$2" key_url="$3" expected_fpr="$4" gpghome="$5"
+  local actual_fpr
+
+  GNUPGHOME="$gpghome" gpg --quiet --batch --import \
+    <(curl -fsSL "$key_url") 2>/dev/null
+  actual_fpr="$(GNUPGHOME="$gpghome" gpg --list-keys --with-colons |
+    awk -F: '$1 == "fpr" {print $10; exit}')"
+  if [ "$actual_fpr" != "$expected_fpr" ]; then
+    printf '%s: gpg fingerprint mismatch on %s -- expected %s, got %s\n' \
+      "${0##*/}" "$key_url" "$expected_fpr" "$actual_fpr" >&2
+    return 1
+  fi
+  if ! GNUPGHOME="$gpghome" gpg --quiet --batch --verify "$asc" "$file" 2>/dev/null; then
+    printf '%s: gpg signature verification failed for %s\n' \
+      "${0##*/}" "${file##*/}" >&2
+    return 1
+  fi
+}
