@@ -3,33 +3,42 @@
 # or been closed upstream, leaving dirty/unpushed/active ones alone. Walks
 # $XDG_DATA_HOME/git-worktrees/ — the picker's worktree root.
 #
+# In-use guard: any worktree containing a process cwd (zellij pane, editor,
+# tmux, dev server, ...) is annotated `in-use` and never removed. Detection
+# reads /proc/*/cwd, so it generalises beyond zellij's CLI surface.
+#
 # Usage:
-#   git worktree-poi              # remove safe worktrees (merged|closed PR + clean + pushed)
+#   git worktree-poi              # remove safe worktrees (merged|closed PR + clean + pushed + idle)
 #   git worktree-poi -n|--dry-run # preview without removing
 
 set -euo pipefail
 
 die() { printf 'git-worktree-poi: %s\n' "$*" >&2; exit 1; }
 
-for cmd in git gh; do
-    command -v "$cmd" >/dev/null 2>&1 || die "$cmd required but not found"
-done
-
-dry_run=0
-case "${1:-}" in
-    -n | --dry-run) dry_run=1 ;;
-    -h | --help)
-        sed -n '2,8p' "$0" | sed 's|^# \?||'
-        exit 0
-        ;;
-    "") ;;
-    *) die "unknown argument: $1" ;;
-esac
-
 WORKTREE_ROOT="${XDG_DATA_HOME:-$HOME/.local/share}/git-worktrees"
-[[ -d "$WORKTREE_ROOT" ]] || die "no worktrees under $WORKTREE_ROOT"
 
-CWD="$(pwd -P)"
+# Process cwds whose target lives under $WORKTREE_ROOT. Populated once before
+# classification; every classify() call consults this set via is_in_use.
+declare -a IN_USE_CWDS=()
+
+collect_in_use_cwds() {
+    local cwd_link target
+    for cwd_link in /proc/*/cwd; do
+        target=$(readlink "$cwd_link" 2>/dev/null) || continue
+        [[ "$target" == "$WORKTREE_ROOT"/* ]] && printf '%s\n' "$target"
+    done
+}
+
+# is_in_use <wt>: succeeds if any IN_USE_CWDS entry is the worktree itself or
+# nested under it. Boundary check uses "$wt"/* so /foo/bar2 doesn't count as
+# inside /foo/bar.
+is_in_use() {
+    local wt=$1 cwd
+    for cwd in "${IN_USE_CWDS[@]}"; do
+        [[ "$cwd" == "$wt" || "$cwd" == "$wt"/* ]] && return 0
+    done
+    return 1
+}
 
 # classify <wt>: emits TAB-separated:
 #   verdict\trel\tbranch\tdetail\twt
@@ -37,7 +46,7 @@ CWD="$(pwd -P)"
 # verdict ∈ {remove, keep}
 # rel     = "<repo>/<slug>" (org elided; <wt> sits at <root>/<org>/<repo>/<slug>)
 # detail  = human-readable reason — "PR #N merged" for remove, comma-joined
-#           blockers ("no PR, unpushed", "PR #N open", ...) for keep
+#           blockers ("no PR, unpushed", "in-use, PR #N merged", ...) for keep
 classify() {
     local wt=$1
     local rel branch pr_info pr_state pr_num pr_state_lc dirty
@@ -50,6 +59,8 @@ classify() {
         branch='(detached HEAD)'
         reasons+=("detached HEAD")
     fi
+
+    is_in_use "$wt" && reasons+=("in-use")
 
     pr_state=NONE
     pr_num=
@@ -128,6 +139,31 @@ print_section() {
     fi
     printf '\n'
 }
+
+# Tests source this script to exercise helpers above without running the
+# main flow.
+if [[ "${BASH_SOURCE[0]}" != "$0" ]]; then return 0; fi
+
+for cmd in git gh; do
+    command -v "$cmd" >/dev/null 2>&1 || die "$cmd required but not found"
+done
+
+dry_run=0
+case "${1:-}" in
+    -n | --dry-run) dry_run=1 ;;
+    -h | --help)
+        sed -n '2,12p' "$0" | sed 's|^# \?||'
+        exit 0
+        ;;
+    "") ;;
+    *) die "unknown argument: $1" ;;
+esac
+
+[[ -d "$WORKTREE_ROOT" ]] || die "no worktrees under $WORKTREE_ROOT"
+
+CWD="$(pwd -P)"
+
+mapfile -t IN_USE_CWDS < <(collect_in_use_cwds)
 
 rows=$(gather)
 [[ -n "$rows" ]] || { printf 'no worktrees found\n'; exit 0; }
