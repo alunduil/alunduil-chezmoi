@@ -1,6 +1,6 @@
 # Architecture
 
-Background and rationale for how this repo is shaped. For step-by-step setup, see [bootstrap.md](bootstrap.md); for task-shaped recipes, see [recipes/](recipes/).
+Background and rationale for how this repo is shaped. For step-by-step setup, see [tutorials/bootstrap.md](../tutorials/bootstrap.md); for task-shaped how-tos, see [how-to/](../how-to/).
 
 ## Source vs. apply clone
 
@@ -25,7 +25,7 @@ Two encryption schemes are stacked deliberately:
 - **age** unlocks the chezmoi-managed secrets at `apply` time. The age key lives at `~/.config/chezmoi/key.txt` and is restored from a password manager on a fresh host.
 - **GPG** signs commits and is itself stored as an age-encrypted blob in `private_dot_gnupg/`. The trust chain is *age key + GPG passphrase*; neither alone is enough.
 
-Age handles "secrets at rest in a public-ish git repo" cleanly but can't sign commits. GPG signs commits but its own key needs somewhere safe to live. Layering puts the long-lived signing identity behind the same age-key recovery flow as everything else, so a fresh host needs exactly one out-of-band secret (the age key) to bootstrap the rest. The paper-key backup (see [recipes/pgp-signing.md](recipes/pgp-signing.md)) is the independent fallback if both clouds and repo are lost together.
+Age handles "secrets at rest in a public-ish git repo" cleanly but can't sign commits. GPG signs commits but its own key needs somewhere safe to live. Layering puts the long-lived signing identity behind the same age-key recovery flow as everything else, so a fresh host needs exactly one out-of-band secret (the age key) to bootstrap the rest. The paper-key backup (see [how-to/pgp-signing.md](../how-to/pgp-signing.md)) is the independent fallback if both clouds and repo are lost together.
 
 ## `gh` shim
 

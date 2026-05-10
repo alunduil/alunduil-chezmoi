@@ -15,11 +15,13 @@ Personal config — no warranty, no support. [0BSD licensed](LICENSE).
 
 Organised by [Diátaxis](https://diataxis.fr):
 
-- [Bootstrap](docs/bootstrap.md) — tutorial: zero to working host.
-- Recipes (how-to):
-  - [Adding an encrypted secret](docs/recipes/encrypted-secret.md)
-  - [PGP commit signing](docs/recipes/pgp-signing.md) — including paper-key backup and key rotation.
-- [Architecture](docs/architecture.md) — explanation: source vs. apply clone, bootstrap shape, layered trust, the `gh` shim, the two CLAUDE.md files.
+- Tutorials
+  - [Bootstrap](docs/tutorials/bootstrap.md) — zero to working host.
+- How-to
+  - [Adding an encrypted secret](docs/how-to/encrypted-secret.md)
+  - [PGP commit signing](docs/how-to/pgp-signing.md) — including paper-key backup and key rotation.
+- Explanation
+  - [Architecture](docs/explanation/architecture.md) — source vs. apply clone, bootstrap shape, layered trust, the `gh` shim, the two CLAUDE.md files.
 
 ## Contributing
 
