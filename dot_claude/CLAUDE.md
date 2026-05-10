@@ -159,6 +159,11 @@ and examples that don't disambiguate.
 - `CHANGELOG.md` work (bootstrap, review against commits) following
   Keep a Changelog 1.1.0: `changelog` skill.
 
+## ADRs
+
+- Architecture Decision Record work (warranted/not, Nygard or MADR
+  template detection, scaffolding): `adr` skill.
+
 ## Issue relationships
 
 - Linking GitHub issues/PRs (blocked-by via GraphQL, parent/sub-issue,
