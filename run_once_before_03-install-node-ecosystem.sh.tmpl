@@ -50,11 +50,21 @@ else
 fi
 
 # ----------------------------------------------------------- Readwise CLI
-if ! command -v readwise >/dev/null 2>&1; then
-  log "readwise-cli: npm install -g @readwise/cli"
-  npm install -g @readwise/cli
+# Pin enforced (mirrors gh-poi in script 05): if a different version is
+# already installed, npm replaces it so renovate-tracked bumps actually
+# take effect. `npm ls -g` is the local query, no network round-trip.
+READWISE_CLI_VERSION="0.5.6"
+installed="$(npm ls -g --depth=0 --parseable=false @readwise/cli 2>/dev/null |
+  sed -n 's,.*@readwise/cli@\([0-9][0-9.]*\).*,\1,p' | head -1)"
+if [ "$installed" != "$READWISE_CLI_VERSION" ]; then
+  if [ -n "$installed" ]; then
+    log "readwise-cli: replacing $installed with $READWISE_CLI_VERSION"
+  else
+    log "readwise-cli: installing $READWISE_CLI_VERSION"
+  fi
+  npm install -g "@readwise/cli@$READWISE_CLI_VERSION"
 else
-  log "readwise-cli: already installed"
+  log "readwise-cli: $READWISE_CLI_VERSION already installed"
 fi
 
 log "node ecosystem complete"
