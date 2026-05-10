@@ -10,8 +10,10 @@ description: Pick up an existing GitHub issue in the checked-out repo — implem
 ```bash
 gh issue view <N> --comments                                # body + comments + cross-refs
 gh issue develop <N> --list                                 # branches linked to this issue
-gh pr list --search "<N> in:body" --state open              # open PR taking it forward?
-gh pr list --search "<keywords> in:title,body" --state merged --limit 20  # merged PR already covering same scope, even if unlinked?
+gh pr list --state all --limit 20 \
+  --search "(<N> in:body) OR (<keywords> in:title,body)" \
+  --json number,title,state,url
+# state=OPEN → in-flight PR (takeover candidate); state=MERGED → scope already covered, even if unlinked
 ```
 
 For recent commits in the area:
