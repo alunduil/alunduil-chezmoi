@@ -1,6 +1,7 @@
 #!/usr/bin/env bash
 # gh-poi for local worktrees: removes worktrees whose work has already merged
-# or been closed upstream, leaving dirty/unpushed/active ones alone. Walks
+# or been closed upstream, plus empty worktrees with no PR (misclicks and
+# abandoned exploration). Leaves dirty/active/in-use ones alone. Walks
 # $XDG_DATA_HOME/git-worktrees/ — the picker's worktree root.
 #
 # In-use guard: any worktree containing a process cwd (zellij pane, editor,
@@ -8,7 +9,7 @@
 # reads /proc/*/cwd, so it generalises beyond zellij's CLI surface.
 #
 # Usage:
-#   git worktree-poi              # remove safe worktrees (merged|closed PR + clean + pushed + idle)
+#   git worktree-poi              # remove safe worktrees (merged/closed PR + pushed, or no commits + no PR)
 #   git worktree-poi -n|--dry-run # preview without removing
 
 set -euo pipefail
@@ -45,11 +46,13 @@ is_in_use() {
 #
 # verdict ∈ {remove, keep}
 # rel     = "<repo>/<slug>" (org elided; <wt> sits at <root>/<org>/<repo>/<slug>)
-# detail  = human-readable reason — "PR #N merged" for remove, comma-joined
-#           blockers ("no PR, unpushed", "in-use, PR #N merged", ...) for keep
+# detail  = human-readable reason — "PR #N merged" or "no commits, no PR" for
+#           remove, comma-joined blockers ("no PR, unpushed", "in-use,
+#           PR #N merged", ...) for keep
 classify() {
     local wt=$1
-    local rel branch pr_info pr_state pr_num pr_state_lc dirty
+    local rel branch pr_info pr_state pr_num pr_state_lc dirty base ahead
+    local upstream_reason=
     local reasons=()
 
     rel="${wt#"$WORKTREE_ROOT"/}"
@@ -82,23 +85,44 @@ classify() {
     [[ -n "$(git -C "$wt" status --porcelain 2>/dev/null)" ]] && dirty=dirty
     [[ "$dirty" == dirty ]] && reasons+=("uncommitted changes")
 
-    # No upstream is treated as an "unpushed" blocker — fresh worktrees from
-    # `worktree add -b` start that way, and a never-pushed branch shouldn't be
-    # pruned blindly.
+    # Upstream/ahead facts captured but not yet folded into reasons. The
+    # merged-PR safe path needs them as blockers (don't prune never-pushed
+    # work). The empty-worktree safe path (NONE + ahead==0) ignores them —
+    # ahead==0 already proves nothing local would be lost.
+    ahead=
     if [[ "$branch" != '(detached HEAD)' ]]; then
         if ! git -C "$wt" rev-parse --abbrev-ref --symbolic-full-name '@{upstream}' >/dev/null 2>&1; then
-            reasons+=("no upstream")
+            upstream_reason="no upstream"
         elif [[ -n "$(git -C "$wt" log '@{upstream}..HEAD' --oneline 2>/dev/null)" ]]; then
-            reasons+=("unpushed")
+            upstream_reason="unpushed"
         fi
+        base=$(git -C "$wt" rev-parse --abbrev-ref origin/HEAD 2>/dev/null) || base=origin/main
+        ahead=$(git -C "$wt" rev-list --count "$base..HEAD" 2>/dev/null) || ahead=
     fi
 
     pr_state_lc=$(printf '%s' "$pr_state" | tr '[:upper:]' '[:lower:]')
     case "$pr_state" in
-        OPEN) reasons+=("PR #${pr_num} open") ;;
-        UNKNOWN) reasons+=("PR state unknown") ;;
-        NONE) [[ "$branch" != '(detached HEAD)' ]] && reasons+=("no PR") ;;
+        OPEN)
+            [[ -n "$upstream_reason" ]] && reasons+=("$upstream_reason")
+            reasons+=("PR #${pr_num} open")
+            ;;
+        UNKNOWN)
+            [[ -n "$upstream_reason" ]] && reasons+=("$upstream_reason")
+            reasons+=("PR state unknown")
+            ;;
+        NONE)
+            if [[ "$branch" != '(detached HEAD)' ]]; then
+                if [[ ${#reasons[@]} -eq 0 && "$ahead" == "0" ]]; then
+                    printf 'remove\t%s\t%s\t%s\t%s\n' \
+                        "$rel" "$branch" "no commits, no PR" "$wt"
+                    return
+                fi
+                [[ -n "$upstream_reason" ]] && reasons+=("$upstream_reason")
+                reasons+=("no PR")
+            fi
+            ;;
         MERGED | CLOSED)
+            [[ -n "$upstream_reason" ]] && reasons+=("$upstream_reason")
             if [[ ${#reasons[@]} -eq 0 ]]; then
                 printf 'remove\t%s\t%s\t%s\t%s\n' \
                     "$rel" "$branch" "PR #${pr_num} ${pr_state_lc}" "$wt"
