@@ -22,6 +22,14 @@ WORKTREE_ROOT="${XDG_DATA_HOME:-$HOME/.local/share}/git-worktrees"
 # classification; every classify() call consults this set via is_in_use.
 declare -a IN_USE_CWDS=()
 
+# PR state per worktree, populated once by batch_fetch_pr_states before
+# classification. Keyed by absolute worktree path. Empty map entry → NONE
+# (no PR for that branch); UNKNOWN means the GraphQL query failed for the
+# whole repo group. Splitting state and number lets classify() drop straight
+# into the existing case "$pr_state" block.
+declare -A PR_STATE_BY_WT=()
+declare -A PR_NUM_BY_WT=()
+
 collect_in_use_cwds() {
     local cwd_link target
     for cwd_link in /proc/*/cwd; do
@@ -41,6 +49,110 @@ is_in_use() {
     return 1
 }
 
+# github_slug <remote-url>: emit "owner/repo" from a GitHub remote URL,
+# stripping any trailing .git. Returns non-zero for non-GitHub remotes so
+# the caller can fall back to UNKNOWN.
+github_slug() {
+    local url=$1
+    url=${url%.git}
+    case "$url" in
+    *github.com/*) printf '%s\n' "${url##*github.com/}" ;;
+    *github.com:*) printf '%s\n' "${url##*github.com:}" ;;
+    *) return 1 ;;
+    esac
+}
+
+# fetch_pr_states_for_repo <canonical> <newline-separated "wt\tbranch" pairs>:
+# resolve <canonical>'s GitHub slug, issue one aliased GraphQL query for every
+# branch in the group, and populate PR_STATE_BY_WT / PR_NUM_BY_WT. On any
+# failure (no origin, non-GitHub URL, query error) every wt in the group is
+# marked UNKNOWN — matching the previous per-call fallback.
+fetch_pr_states_for_repo() {
+    local canonical=$1 pairs=$2
+    local -a group_wts=() group_branches=()
+    local wt branch
+    while IFS=$'\t' read -r wt branch; do
+        [[ -z "$wt" ]] && continue
+        group_wts+=("$wt")
+        group_branches+=("$branch")
+    done <<<"$pairs"
+    ((${#group_wts[@]})) || return 0
+
+    local mark_unknown=0 url owner_name owner name
+    if ! url=$(git -C "$canonical" remote get-url origin 2>/dev/null); then
+        mark_unknown=1
+    elif ! owner_name=$(github_slug "$url"); then
+        mark_unknown=1
+    fi
+
+    if ((mark_unknown == 0)); then
+        owner=${owner_name%%/*}
+        name=${owner_name##*/}
+
+        local query="query(\$owner: String!, \$name: String!"
+        local -a args=(-f "owner=$owner" -f "name=$name")
+        local i
+        for i in "${!group_branches[@]}"; do
+            query+=", \$b$i: String!"
+            args+=(-f "b$i=${group_branches[i]}")
+        done
+        query+=") { repository(owner: \$owner, name: \$name) {"
+        for i in "${!group_branches[@]}"; do
+            query+=" pr$i: pullRequests(headRefName: \$b$i, first: 1, states: [OPEN, MERGED, CLOSED]) { nodes { number state } }"
+        done
+        query+=" } }"
+
+        local resp
+        if ! resp=$(gh api graphql "${args[@]}" -f "query=$query" \
+            -q '.data.repository | to_entries | map("\(.key)\t\(.value.nodes[0].number // "")\t\(.value.nodes[0].state // "NONE")") | join("\n")' \
+            2>/dev/null) || [[ -z "$resp" ]]; then
+            mark_unknown=1
+        fi
+    fi
+
+    if ((mark_unknown)); then
+        for wt in "${group_wts[@]}"; do
+            PR_STATE_BY_WT[$wt]=UNKNOWN
+        done
+        return
+    fi
+
+    local -A wt_for_alias=()
+    for i in "${!group_wts[@]}"; do
+        wt_for_alias[pr$i]=${group_wts[i]}
+    done
+
+    local alias num state
+    while IFS=$'\t' read -r alias num state; do
+        [[ -z "$alias" ]] && continue
+        wt=${wt_for_alias[$alias]:-}
+        [[ -n "$wt" ]] || continue
+        PR_STATE_BY_WT[$wt]=$state
+        PR_NUM_BY_WT[$wt]=$num
+    done <<<"$resp"
+}
+
+# batch_fetch_pr_states: walk every worktree under $WORKTREE_ROOT, group by
+# canonical (one canonical = one GitHub repo), and dispatch one GraphQL query
+# per group. Detached-HEAD worktrees are skipped — classify() leaves their
+# pr_state at NONE without consulting the maps.
+batch_fetch_pr_states() {
+    local wt canonical branch
+    declare -A by_canonical=()
+
+    while IFS= read -r wt; do
+        [[ -e "$wt/.git" ]] || continue
+        canonical=$(git -C "$wt" rev-parse --path-format=absolute --git-common-dir 2>/dev/null) || continue
+        canonical=${canonical%/.git}
+        branch=$(git -C "$wt" symbolic-ref --short HEAD 2>/dev/null) || continue
+        by_canonical[$canonical]+="$wt"$'\t'"$branch"$'\n'
+    done < <(find "$WORKTREE_ROOT" -mindepth 3 -maxdepth 3 -type d 2>/dev/null | sort)
+
+    for canonical in "${!by_canonical[@]}"; do
+        fetch_pr_states_for_repo "$canonical" "${by_canonical[$canonical]}"
+    done
+}
+
 # classify <wt>: emits TAB-separated:
 #   verdict\trel\tbranch\tdetail\twt
 #
@@ -51,7 +163,7 @@ is_in_use() {
 #           PR #N merged", ...) for keep
 classify() {
     local wt=$1
-    local rel branch pr_info pr_state pr_num pr_state_lc dirty base ahead
+    local rel branch pr_state pr_num pr_state_lc dirty base ahead
     local upstream_reason=
     local reasons=()
 
@@ -68,17 +180,8 @@ classify() {
     pr_state=NONE
     pr_num=
     if [[ "$branch" != '(detached HEAD)' ]]; then
-        if pr_info=$(gh pr list --head "$branch" --state all \
-                         --json state,number \
-                         -q 'if length > 0 then "\(.[0].state)\t\(.[0].number)" else "" end' \
-                         2>/dev/null); then
-            if [[ -n "$pr_info" ]]; then
-                pr_state=${pr_info%%$'\t'*}
-                pr_num=${pr_info#*$'\t'}
-            fi
-        else
-            pr_state=UNKNOWN
-        fi
+        pr_state=${PR_STATE_BY_WT[$wt]:-NONE}
+        pr_num=${PR_NUM_BY_WT[$wt]:-}
     fi
 
     dirty=clean
@@ -188,6 +291,8 @@ esac
 CWD="$(pwd -P)"
 
 mapfile -t IN_USE_CWDS < <(collect_in_use_cwds)
+
+batch_fetch_pr_states
 
 rows=$(gather)
 [[ -n "$rows" ]] || { printf 'no worktrees found\n'; exit 0; }
