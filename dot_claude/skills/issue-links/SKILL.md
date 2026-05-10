@@ -40,16 +40,37 @@ close, fix, resolve (any tense).
 
 ### blocked-by (GraphQL only — no `gh issue` flag, no REST)
 
+Two round-trips minimum: GraphQL executes one operation per request
+and `Mutation` doesn't expose `repository`, so query and mutation
+can't share a document. The lookup is aliased so both IDs return in
+one call (one rate-limit point), then the mutation runs.
+
 ```bash
-A=$(gh issue view <A> --json id --jq .id)   # blocked issue
-B=$(gh issue view <B> --json id --jq .id)   # blocker
-gh api graphql -f query='
+read A_ID B_ID <<<"$(gh api graphql \
+  -F owner=OWNER -F repo=REPO -F a=<A> -F b=<B> \
+  -f query='
+    query($owner: String!, $repo: String!, $a: Int!, $b: Int!) {
+      repository(owner: $owner, name: $repo) {
+        a: issue(number: $a) { id }
+        b: issue(number: $b) { id }
+      }
+    }' --jq '.data.repository | "\(.a.id) \(.b.id)"')"
+
+gh api graphql -f a="$A_ID" -f b="$B_ID" -f query='
   mutation($a: ID!, $b: ID!) {
     addBlockedBy(input: { issueId: $a, blockingIssueId: $b }) {
       issue { number }
       blockingIssue { number }
     }
-  }' -f a="$A" -f b="$B"
+  }'
+```
+
+Cross-repo: lift each alias above `repository` so each issue gets
+its own repo selection in the same query:
+
+```graphql
+a: repository(owner: $oA, name: $rA) { issue(number: $nA) { id } }
+b: repository(owner: $oB, name: $rB) { issue(number: $nB) { id } }
 ```
 
 Removal: `removeBlockedBy(input: { issueId, blockingIssueId })`.
@@ -58,15 +79,25 @@ Use `-f` (not `-F`) for `ID!` variables — `-F` coerces to Int/Bool.
 
 ### Parent / sub-issue
 
+Same shape as blocked-by — aliased lookup, then mutation.
+
 ```bash
-P=$(gh issue view <parent> --json id --jq .id)
-S=$(gh issue view <sub>    --json id --jq .id)
-gh api graphql -f query='
+read P_ID S_ID <<<"$(gh api graphql \
+  -F owner=OWNER -F repo=REPO -F p=<parent> -F s=<sub> \
+  -f query='
+    query($owner: String!, $repo: String!, $p: Int!, $s: Int!) {
+      repository(owner: $owner, name: $repo) {
+        p: issue(number: $p) { id }
+        s: issue(number: $s) { id }
+      }
+    }' --jq '.data.repository | "\(.p.id) \(.s.id)"')"
+
+gh api graphql -f p="$P_ID" -f s="$S_ID" -f query='
   mutation($p: ID!, $s: ID!) {
     addSubIssue(input: { issueId: $p, subIssueId: $s }) {
       issue { number }
     }
-  }' -f p="$P" -f s="$S"
+  }'
 ```
 
 Removal: `removeSubIssue`. Reorder: `reprioritizeSubIssue`. Reparent
