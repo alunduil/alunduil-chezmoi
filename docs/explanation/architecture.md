@@ -16,7 +16,7 @@ C4Container
     System_Boundary(host, "Debian/Crostini host") {
         Container(source, "Source clone", "git working tree", "Where edits happen")
         Container(apply, "Apply clone", "~/.local/share/chezmoi", "What chezmoi reads on diff/apply")
-        Container(home, "Deployed files", "$HOME/{.config,.gnupg,.local/bin,...}", "Written by chezmoi apply, age-decrypted on the way in")
+        Container(home, "Deployed files", "$HOME/{.config,.gnupg,.ssh,.local/bin,...}", "Written by chezmoi apply, age-decrypted on the way in")
     }
 
     Rel(user, source, "edits, commits")
@@ -41,14 +41,15 @@ Bootstrap lives in `run_once_before_NN-*.sh.tmpl` scripts. Each script is respon
 
 Tool versions live in `script/install/{zellij,lazygit,act,gcx}` and are reused by both bootstrap and CI; there's exactly one place to bump. Zellij *plugins* (`zellaude`, `zjstatus`) are pinned separately as alias tags in `dot_config/zellij/config.kdl` because the plugin registry is independent of the binary.
 
-## Layered trust: age behind GPG
+## Layered trust: everything behind age
 
-Two encryption schemes are stacked deliberately:
+Long-lived secrets are stored as age-encrypted blobs in the source tree and unlocked at `apply` time:
 
-- **age** unlocks the chezmoi-managed secrets at `apply` time. The age key lives at `~/.config/chezmoi/key.txt` and is restored from a password manager on a fresh host.
-- **GPG** signs commits and is itself stored as an age-encrypted blob in `private_dot_gnupg/`. The trust chain is *age key + GPG passphrase*; neither alone is enough.
+- **age key** lives at `~/.config/chezmoi/key.txt` and is restored from a password manager on a fresh host. It's the one out-of-band secret the bootstrap needs.
+- **GPG** signs commits. The secret key ships as an age-encrypted blob in `private_dot_gnupg/`; trust chain is *age key + GPG passphrase*.
+- **SSH** keys (`~/.ssh/{id_rsa,config}`) ship the same way under `private_dot_ssh/`; trust chain is just the age key. This is what makes `chezmoi init --apply` over HTTPS bootstrap straight into a working SSH-to-GitHub state.
 
-Age handles "secrets at rest in a public-ish git repo" cleanly but can't sign commits. GPG signs commits but its own key needs somewhere safe to live. Layering puts the long-lived signing identity behind the same age-key recovery flow as everything else, so a fresh host needs exactly one out-of-band secret (the age key) to bootstrap the rest. The paper-key backup (see [how-to/pgp-signing.md](../how-to/pgp-signing.md)) is the independent fallback if both clouds and repo are lost together.
+Age handles "secrets at rest in a public-ish git repo" cleanly but can't sign commits or authenticate to SSH servers. GPG and SSH each need somewhere safe to live. Putting both behind the same age-key recovery flow means a fresh host needs exactly one out-of-band secret to bootstrap everything else. The paper-key backup (see [how-to/pgp-signing.md](../how-to/pgp-signing.md)) is the independent fallback if both clouds and repo are lost together.
 
 ## `gh` shim
 
