@@ -1,6 +1,5 @@
-// Zellij config for the pair-session workflow. Claustre handles day-to-day
-// Claude Code sessions; Zellij is reserved for deep pairing, where a layout
-// plus rich info bars earn their keep.
+// Zellij config for the pair-session workflow, where a layout plus
+// rich info bars earn their keep.
 //
 // Plugins are pinned by release tag -- Zellij fetches and caches them in
 // ~/.cache/zellij/ on first use. Aliases (below) keep references short.
