@@ -79,5 +79,12 @@
       "matchStrings": ["https://github\\.com/(?<depName>[^/]+/[^/]+)/releases/download/(?<currentValue>v[\\d.]+)/"],
       "datasourceTemplate": "github-releases"
     }
+  ],
+  "packageRules": [
+    {
+      "description": "Pinned: zellij 0.44.x panics in wasm_bridge.rs:903 under concurrent plugin instantiation (upstream zellij-org/zellij#4960). zjstatus 0.23+ requires zellij-tile 0.44.1, so it pins alongside zellij. Re-enable once #4960 is fixed.",
+      "matchPackageNames": ["zellij-org/zellij", "dj95/zjstatus"],
+      "enabled": false
+    }
   ]
 }
