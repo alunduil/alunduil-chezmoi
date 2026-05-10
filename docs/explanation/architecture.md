@@ -2,6 +2,29 @@
 
 Background and rationale for how this repo is shaped. For step-by-step setup, see [tutorials/bootstrap.md](../tutorials/bootstrap.md); for task-shaped how-tos, see [how-to/](../how-to/).
 
+## At a glance
+
+[C4](https://c4model.com) Container view, steady state — bootstrap-only edges (password-manager → age key) are covered in prose below.
+
+```mermaid
+C4Container
+    title Container view: alunduil-chezmoi on a host
+
+    Person(user, "User", "alunduil")
+    System_Ext(github, "GitHub", "git remote")
+
+    System_Boundary(host, "Debian/Crostini host") {
+        Container(source, "Source clone", "git working tree", "Where edits happen")
+        Container(apply, "Apply clone", "~/.local/share/chezmoi", "What chezmoi reads on diff/apply")
+        Container(home, "Deployed files", "$HOME/{.config,.gnupg,.local/bin,...}", "Written by chezmoi apply, age-decrypted on the way in")
+    }
+
+    Rel(user, source, "edits, commits")
+    Rel(source, github, "push")
+    Rel(github, apply, "pull")
+    Rel(apply, home, "chezmoi apply")
+```
+
 ## Source vs. apply clone
 
 Chezmoi separates the *source* (this checkout) from the *applied clone* at `~/.local/share/chezmoi`. `chezmoi diff` and `chezmoi apply` read the apply clone, not the working tree, so edits here only take effect after they're committed and the apply clone is updated. Use `chezmoi diff --source-path .` to preview from this checkout.
