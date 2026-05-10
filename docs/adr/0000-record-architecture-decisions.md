@@ -2,7 +2,7 @@
 
 ## Status
 
-Proposed
+Accepted
 
 ## Context
 
@@ -20,8 +20,11 @@ Decision Records under `docs/adr/`, using the Nygard format (Title,
 Status, Context, Decision, Consequences). Files are named
 `NNNN-kebab-title.md`, numbered sequentially starting at `0000`.
 
-New ADRs default to `Status: Proposed`; promotion to `Accepted`,
-`Superseded by NNNN`, or `Deprecated` happens by edit.
+New ADRs land with `Status: Accepted` — the PR review that merges them
+is the acceptance step. Later transitions to `Superseded by NNNN` or
+`Deprecated` happen by edit. `Proposed` is reserved for the rare case
+where an ADR is published as a discussion artifact ahead of any
+implementing PR.
 
 We will not file ADRs for tactical implementation choices, framework
 defaults, or anything a commit message carries adequately. Sprawl makes
