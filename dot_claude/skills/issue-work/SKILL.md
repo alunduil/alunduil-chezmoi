@@ -52,7 +52,7 @@ Raise in chat by default. Escalate to an issue comment when durability matters: 
 
 Prefer existing context over creating new:
 
-- Already on a fresh branch (e.g. claustre worktree pre-pack): use it.
+- Already on a petname worktree branch (HEAD matches `*/worktree/*` or CWD under `~/.local/share/git-worktrees/`): use it; don't create a new branch.
 - Open PR taking the issue forward → takeover: `gh pr checkout <PR#>`.
 - Linked branch but no PR yet: `gh issue develop --checkout <N>` checks it out.
 - Nothing linked: `gh issue develop --checkout <N>` creates and links a branch.

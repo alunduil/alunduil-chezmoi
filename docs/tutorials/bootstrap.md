@@ -17,7 +17,6 @@ claude                                     # ~/.claude/.credentials.json
 gcx login                                  # ~/.config/gcx/
 readwise login                             # ~/.readwise-cli.json
 sudo tailscale up                          # tailnet auth
-claustre configure                         # wires up Claude Code permissions
 keybase login                              # ~/.config/keybase/ (devices, KBFS)
 signal-desktop                             # link to phone via QR scan
 signal-cli -a +<phone> register            # SMS-verified, ~/.local/share/signal-cli/

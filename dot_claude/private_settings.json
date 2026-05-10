@@ -269,7 +269,6 @@
       "Bash(git push* -f*)",
       "Bash(git push*main*)",
       "Read(/home/alunduil/.claude/.credentials.json)",
-      "Read(/home/alunduil/.claustre/claustre.db*)",
       "Read(/home/alunduil/.gnupg/**)",
       "Read(/home/alunduil/.ssh/**)"
     ]

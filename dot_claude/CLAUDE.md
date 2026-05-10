@@ -59,6 +59,13 @@ A per-repo `CLAUDE.md` overrides anything here.
   merge collapses noise. Merge style and intermediate-commit
   preservation are repo-specific; defer to the repo when stated.
 
+## Worktrees
+
+- HEAD on `<user>/worktree/<petname>` (path under
+  `~/.local/share/git-worktrees/`): commit on that branch. No
+  `git switch -c` or `gh issue develop --checkout` — the petname
+  branch is the working branch regardless of issue or task.
+
 ## Issues
 
 - Filing a new issue (search for duplicates, detect templates,
