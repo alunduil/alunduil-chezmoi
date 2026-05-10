@@ -145,14 +145,19 @@ removed_rows=""
 failed_rows=""
 if [[ -n "$remove_rows" ]]; then
     while IFS=$'\t' read -r verdict rel branch detail wt; do
-        canonical_repo=$(basename "$(dirname "$wt")")
-        canonical_org=$(basename "$(dirname "$(dirname "$wt")")")
-        canonical="$HOME/$canonical_org/$canonical_repo"
+        # Ask git for the canonical's path rather than reconstructing it from
+        # $wt: canonicals don't always live at $HOME/<org>/<repo> (own-org
+        # repos live at $HOME/<repo>, and the picker honors origin-URL hints
+        # for arbitrary checkout locations). --git-common-dir resolves through
+        # the worktree's .git file regardless. Capture before removal — once
+        # $wt is gone, branch -d needs somewhere else to operate from.
+        canonical=$(git -C "$wt" rev-parse --path-format=absolute --git-common-dir 2>/dev/null || true)
+        canonical=${canonical%/.git}
         row=$(printf '%s\t%s\t%s\t%s\t%s' "$verdict" "$rel" "$branch" "$detail" "$wt")
-        if git -C "$canonical" worktree remove "$wt" 2>/dev/null; then
+        if git -C "$wt" worktree remove "$wt" 2>/dev/null; then
             # branch -d is best-effort: refuses unmerged, which we don't force
             # since the safety gate already required MERGED|CLOSED upstream
-            [[ "$branch" != '(detached HEAD)' ]] \
+            [[ "$branch" != '(detached HEAD)' && -n "$canonical" ]] \
                 && git -C "$canonical" branch -d "$branch" 2>/dev/null || true
             removed_rows+="${row}"$'\n'
         else
