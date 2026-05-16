@@ -135,6 +135,10 @@ export NVM_DIR="${XDG_CONFIG_HOME:-$HOME/.config}/nvm"
 # ~/.config/cloudflare/token (mode 0600). No-op until applied.
 [ -r "$HOME/.config/cloudflare/token" ] && export CLOUDFLARE_API_TOKEN="$(<"$HOME/.config/cloudflare/token")"
 
+# Uptime Robot API token: same pattern. Consumed by the run_onchange MCP
+# registration script and available to ad-hoc shell commands.
+[ -r "$HOME/.config/uptimerobot/token" ] && export UPTIMEROBOT_API_TOKEN="$(<"$HOME/.config/uptimerobot/token")"
+
 # GPG: pinentry needs to know which TTY launched the request, otherwise it
 # falls back to whatever TTY started gpg-agent (often wrong inside tmux,
 # zellij, or a fresh terminal). Refresh on every shell so the next signing
