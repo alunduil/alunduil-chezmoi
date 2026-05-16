@@ -37,5 +37,5 @@ token="$(<"$token_file")"
 claude mcp remove uptimerobot --scope user >/dev/null 2>&1 || true
 log "uptimerobot: registering"
 claude mcp add uptimerobot --transport http --scope user \
-  --header "Authorization: Bearer ${token}" \
-  https://mcp.uptimerobot.com/mcp
+  https://mcp.uptimerobot.com/mcp \
+  --header "Authorization: Bearer ${token}"
