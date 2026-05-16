@@ -27,6 +27,7 @@ lychee --version                           # markdown link checker (mirrors CI)
 yq --version                               # YAML processor (mikefarah/yq)
 ghc --version && cabal --version           # ghcup-managed Haskell toolchain
 golang-petname                             # repo-picker worktree namer
+command -v nethack                         # roguelike (nethack-console)
 gh extension list                          # confirms gh-poi (squash-merge pruner)
 claude mcp list                            # confirms cloudflare-* MCP servers
 ```
