@@ -24,6 +24,7 @@ signal-cli -a +<phone> register            # SMS-verified, ~/.local/share/signal
 # PATH check for chezmoi-installed binaries:
 zellij --version && lazygit --version && act --version && rtk --version
 lychee --version                           # markdown link checker (mirrors CI)
+yq --version                               # YAML processor (mikefarah/yq)
 ghc --version && cabal --version           # ghcup-managed Haskell toolchain
 golang-petname                             # repo-picker worktree namer
 gh extension list                          # confirms gh-poi (squash-merge pruner)

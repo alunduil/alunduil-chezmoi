@@ -1,0 +1,43 @@
+#!/usr/bin/env bash
+set -euo pipefail
+
+YQ_VERSION="v4.53.2"
+ARCH="linux_amd64"
+
+# shellcheck source-path=SCRIPTDIR source=lib.sh
+. "$(dirname "$0")/lib.sh"
+
+parse_bin_dir "$@"
+
+bin="$BIN_DIR/yq"
+if [ -x "$bin" ] && "$bin" --version 2>/dev/null | grep -qF "${YQ_VERSION#v}"; then
+  printf '==> yq: %s already installed at %s\n' "$YQ_VERSION" "$bin" >&2
+  exit 0
+fi
+
+printf '==> yq: downloading %s\n' "$YQ_VERSION" >&2
+tmp="$(mktemp -d)"
+trap 'rm -rf "$tmp"' EXIT
+
+# mikefarah/yq publishes the binary directly (no tarball needed) and a
+# wide-format `checksums` table indexed by `checksums_hashes_order`.
+# SHA-256 is one column among many, so resolve its column dynamically
+# instead of hard-coding a position that upstream could reorder.
+base="https://github.com/mikefarah/yq/releases/download/${YQ_VERSION}"
+asset="yq_${ARCH}"
+curl -fsSL -o "$tmp/$asset" "$base/$asset"
+curl -fsSL -o "$tmp/checksums" "$base/checksums"
+curl -fsSL -o "$tmp/checksums_hashes_order" "$base/checksums_hashes_order"
+
+hash_row="$(awk '/^SHA-256$/ {print NR; exit}' "$tmp/checksums_hashes_order")"
+if [ -z "$hash_row" ]; then
+  echo "yq: SHA-256 missing from checksums_hashes_order" >&2
+  exit 1
+fi
+col=$((hash_row + 1))
+expected="$(awk -v f="$asset" -v c="$col" \
+  'BEGIN{FS="  "} $1 == f {print $c}' "$tmp/checksums")"
+verify_sha256 "$tmp/$asset" "$expected"
+
+mkdir -p "$BIN_DIR"
+install -m 0755 "$tmp/$asset" "$bin"
