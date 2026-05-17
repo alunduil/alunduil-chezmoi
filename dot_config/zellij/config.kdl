@@ -8,6 +8,14 @@
 // anyway. The pair layout adds a zjstatus line for PR-aware status; default
 // stays minimal.
 
+// Sessions never serialize. On filesystems where btime isn't exposed
+// (Crostini's ext4 path through 9p), the resurrection-file scan logs
+// "creation time is not available" twice a second per saved session and
+// eventually saturates the screen/plugin threads — see zellij-org/zellij#4165
+// and PR #5057. Until the fix lands upstream, keep the cache empty so the
+// loop has nothing to iterate.
+session_serialization false
+
 plugins {
     zellaude location="https://github.com/ishefi/zellaude/releases/download/v0.5.0/zellaude.wasm"
     zjstatus location="https://github.com/dj95/zjstatus/releases/download/v0.22.0/zjstatus.wasm"
