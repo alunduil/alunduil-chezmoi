@@ -144,20 +144,22 @@ fi
 
 # --- main entry ---
 
-# Mirror stderr to a persistent log so failures inside the close_on_exit
-# floating pane can be inspected after the pane vanishes. Pause on non-zero
-# exit when running under zellij so the user sees the log path before the
-# pane closes; outside zellij (tests, CLI) just exit.
+# Mirror stderr to a per-invocation log so failures inside the close_on_exit
+# floating pane can be inspected after the pane vanishes. Successful runs
+# delete their log; failures keep it, and under zellij pause with the path so
+# the user sees it before the pane closes. Per-run names prevent a second
+# picker from clobbering a still-paused first picker's evidence.
 LOG_DIR="${XDG_STATE_HOME:-$HOME/.local/state}/git-repo-picker"
 mkdir -p "$LOG_DIR"
-LOG="$LOG_DIR/last.log"
-: >"$LOG"
+LOG=$(mktemp "$LOG_DIR/run.XXXXXX.log")
 exec 2> >(tee "$LOG" >&2)
 
 on_exit() {
     local rc=$?
     [[ -n "${STATIC_FILE:-}" ]] && rm -f "$STATIC_FILE" "$REMOTES_FILE" "${REMOTES_FILE}.tmp"
-    if (( rc != 0 )) && [[ -n "${ZELLIJ:-}" ]]; then
+    if (( rc == 0 )); then
+        rm -f "$LOG"
+    elif [[ -n "${ZELLIJ:-}" ]]; then
         printf '\ngit-repo-picker: failed (exit %d). Log: %s\nPress Enter to dismiss...' \
             "$rc" "$LOG" >&2
         read -r _ </dev/tty 2>/dev/null || sleep 10
