@@ -1,0 +1,33 @@
+#!/usr/bin/env bash
+set -euo pipefail
+
+TRUENAS_MCP_VERSION="v0.0.4"
+ARCH="linux-amd64"
+
+# shellcheck source-path=SCRIPTDIR source=lib.sh
+. "$(dirname "$0")/lib.sh"
+
+parse_bin_dir "$@"
+
+bin="$BIN_DIR/truenas-mcp"
+if [ -x "$bin" ] && "$bin" --version 2>/dev/null | grep -qF "${TRUENAS_MCP_VERSION#v}"; then
+  printf '==> truenas-mcp: %s already installed at %s\n' "$TRUENAS_MCP_VERSION" "$bin" >&2
+  exit 0
+fi
+
+printf '==> truenas-mcp: downloading %s\n' "$TRUENAS_MCP_VERSION" >&2
+tmp="$(mktemp -d)"
+trap 'rm -rf "$tmp"' EXIT
+
+base="https://github.com/truenas/truenas-mcp/releases/download/${TRUENAS_MCP_VERSION}"
+asset="truenas-mcp-${ARCH}.tar.gz"
+curl -fsSL -o "$tmp/$asset" "$base/$asset"
+curl -fsSL -o "$tmp/checksums.txt" "$base/checksums.txt"
+
+expected="$(expected_from_checksums "$tmp/checksums.txt" "$asset")"
+verify_sha256 "$tmp/$asset" "$expected"
+
+# Tarball contains a single platform-suffixed binary; rename on install.
+tar -xzf "$tmp/$asset" -C "$tmp" "truenas-mcp-${ARCH}"
+mkdir -p "$BIN_DIR"
+install -m 0755 "$tmp/truenas-mcp-${ARCH}" "$bin"

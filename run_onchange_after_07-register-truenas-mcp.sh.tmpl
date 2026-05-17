@@ -1,0 +1,53 @@
+#!/usr/bin/env bash
+# Registers TrueNAS Research Labs' official MCP with Claude Code. Local
+# stdio binary (truenas-mcp, installed in script 02) plus URL and API key
+# passed as -e env vars, which Claude Code bakes into ~/.claude.json.
+#
+# Why run_onchange_after instead of run_once_before:
+#   - _after_: the chezmoi-encrypted api key must be decrypted to
+#     ~/.config/truenas/api_key before we read it, which only happens
+#     after files are applied. The url file likewise deploys this pass.
+#   - run_onchange (keyed on both source hashes below): when the key
+#     rotates or the URL changes, source content changes, this script
+#     reruns, and the stale entry in ~/.claude.json gets replaced.
+#
+# Rerun-on-rotation triggers: hashes of both source files embedded
+# below. The `with` guard on the encrypted key keeps the template
+# renderable before the user has run `chezmoi add --encrypt` for the
+# first time.
+# key-hash: {{ with (glob (joinPath .chezmoi.sourceDir "dot_config/truenas/encrypted_private_api_key.age")) }}{{ include "dot_config/truenas/encrypted_private_api_key.age" | sha256sum }}{{ else }}not-yet-encrypted{{ end }}
+# url-hash: {{ include "dot_config/truenas/url" | sha256sum }}
+
+set -euo pipefail
+
+log() { printf '==> %s\n' "$*" >&2; }
+
+url_file="$HOME/.config/truenas/url"
+key_file="$HOME/.config/truenas/api_key"
+bin="$HOME/.local/bin/truenas-mcp"
+
+if [ ! -s "$url_file" ]; then
+  log "truenas-mcp: url missing or empty at $url_file, skipping"
+  exit 0
+fi
+if [ ! -r "$key_file" ]; then
+  log "truenas-mcp: api key not deployed at $key_file, skipping"
+  exit 0
+fi
+if [ ! -x "$bin" ]; then
+  log "truenas-mcp: binary missing at $bin, skipping"
+  exit 0
+fi
+
+url="$(<"$url_file")"
+key="$(<"$key_file")"
+
+# Idempotent re-register: remove any existing entry (no-op if absent) and
+# add afresh so a rotated key or changed URL replaces the stale entry in
+# ~/.claude.json.
+claude mcp remove truenas --scope user >/dev/null 2>&1 || true
+log "truenas-mcp: registering"
+claude mcp add truenas --scope user \
+  -e "TRUENAS_URL=${url}" \
+  -e "TRUENAS_API_KEY=${key}" \
+  -- "$bin"
