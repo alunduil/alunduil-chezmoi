@@ -15,8 +15,7 @@
 #                              petname, creates a fresh worktree off HEAD, and
 #                              opens a pair tab in it.
 #   remote:<repo>              repo is on GitHub but no local canonical clone.
-#                              Selection clones (no fork), runs claustre
-#                              add-project on the canonical, then takes the
+#                              Selection clones (no fork), then takes the
 #                              local: path above.
 #
 # Worktree and local rows are built upfront (cheap: filesystem + zellij).
@@ -145,6 +144,29 @@ fi
 
 # --- main entry ---
 
+# Mirror stderr to a per-invocation log so failures inside the close_on_exit
+# floating pane can be inspected after the pane vanishes. Successful runs
+# delete their log; failures keep it, and under zellij pause with the path so
+# the user sees it before the pane closes. Per-run names prevent a second
+# picker from clobbering a still-paused first picker's evidence.
+LOG_DIR="${XDG_STATE_HOME:-$HOME/.local/state}/git-repo-picker"
+mkdir -p "$LOG_DIR"
+LOG=$(mktemp "$LOG_DIR/run.XXXXXX.log")
+exec 2> >(tee "$LOG" >&2)
+
+on_exit() {
+    local rc=$?
+    [[ -n "${STATIC_FILE:-}" ]] && rm -f "$STATIC_FILE" "$REMOTES_FILE" "${REMOTES_FILE}.tmp"
+    if (( rc == 0 )); then
+        rm -f "$LOG"
+    elif [[ -n "${ZELLIJ:-}" ]]; then
+        printf '\ngit-repo-picker: failed (exit %d). Log: %s\nPress Enter to dismiss...' \
+            "$rc" "$LOG" >&2
+        read -r _ </dev/tty 2>/dev/null || sleep 10
+    fi
+}
+trap on_exit EXIT
+
 for cmd in fzf zellij gh git jq golang-petname; do
     command -v "$cmd" >/dev/null 2>&1 || die "$cmd required but not found"
 done
@@ -154,7 +176,6 @@ ME=$(gh api user -q .login)
 STATIC_FILE=$(mktemp)
 REMOTES_FILE=$(mktemp)
 export ME WORKTREE_ROOT STATIC_FILE REMOTES_FILE
-trap 'rm -f "$STATIC_FILE" "$REMOTES_FILE" "${REMOTES_FILE}.tmp"' EXIT
 
 { print_worktrees; print_local; } >"$STATIC_FILE"
 : >"$REMOTES_FILE"
@@ -174,8 +195,7 @@ gen_petname() {
 # Caller may pass an existing-clone hint (the dir from collect_locals) so we
 # pick up checkouts at non-default paths. Without a hint, fresh clones follow
 # the host convention: own repos to $HOME/<repo>, other-org repos to
-# $HOME/<org>/<repo>. claustre add-project runs only on fresh clones to keep
-# its project list scoped to canonicals.
+# $HOME/<org>/<repo>.
 ensure_canonical() {
     local org=$1 repo=$2 hint=${3:-}
     if [[ -n "$hint" && -d "$hint/.git" ]]; then
@@ -191,10 +211,6 @@ ensure_canonical() {
     if [[ ! -d "$dir/.git" ]]; then
         mkdir -p "$(dirname "$dir")"
         gh repo clone "$org/$repo" "$dir"
-        if command -v claustre >/dev/null 2>&1; then
-            claustre add-project "$org/$repo" "$dir" \
-                || printf 'git-repo-picker: claustre add-project failed for %s/%s\n' "$org" "$repo" >&2
-        fi
     fi
     printf '%s' "$dir"
 }
