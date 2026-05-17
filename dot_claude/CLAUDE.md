@@ -102,6 +102,11 @@ A per-repo `CLAUDE.md` overrides anything here.
 - Rule of three before extracting an abstraction. Exception: when a
   clean semantic concept is obvious upfront, name it early — shared
   vocabulary beats loose duplicates that resist extraction.
+- Before reaching for `curl`, manual API calls, or first-principles
+  scripts, check what's already on the host: chezmoi-managed
+  credentials under `~/.config/`, registered MCP servers
+  (`claude mcp list`), and pinned CLIs in the repo's install
+  scripts. One of these usually already covers the task.
 
 ## Scope
 
@@ -118,6 +123,9 @@ A per-repo `CLAUDE.md` overrides anything here.
   need a quick `grep`/`find`/`unzip -l`/WebFetch/devcontainer-exec
   first. When verifying is too expensive, say "I haven't checked, but
   I think..." rather than picking a side.
+- If a fetch, command, or tool call is denied or fails, stop and
+  surface it. Never fill in plausible-looking data to paper over a
+  missing source — fabricated content is worse than a gap.
 
 ## Comments
 
@@ -143,6 +151,13 @@ audience needs more:
 - Repo-local `CLAUDE.md` when the audience is Claude, not a human.
 - Promote to `~/.claude/CLAUDE.md` when the same friction shows up
   in more than one project.
+
+Document only what exists at current HEAD. No pre-announcements,
+forward-looking banners, or planned-feature notes in READMEs,
+CHANGELOGs, or docs — the diff and the issue tracker carry that.
+Never write pointers to where secrets live (e.g. "token in
+`~/.config/foo/token`") in committed files; they're prompt-injection
+bait for whatever reads the repo next.
 
 Human-read docs should be skimmable and earn their place.
 AI-targeted text (this file, repo-local `CLAUDE.md`, hooks, prompt
