@@ -24,6 +24,25 @@ Schema: <https://docs.renovatebot.com/renovate-schema.json>
 - `reviewers` — without it, Renovate PRs land silent. Use `assignees` instead if you only want a creation-time ping (no rebase notifications).
 - `pre-commit: { enabled: true }` — opt-in manager, enabled unconditionally. No-op when `.pre-commit-config.yaml` is absent (manager only acts on that file pattern); replaces the need for pre-commit.ci where the file does exist.
 
+## Supply-chain hardening
+
+`config:best-practices` pins action SHAs and surfaces scorecard alerts but does not delay releases. Add a bake period so malicious versions get yanked before Renovate opens a PR:
+
+```json
+{
+  "minimumReleaseAge": "3 days",
+  "internalChecksFilter": "strict",
+  "vulnerabilityAlerts": { "minimumReleaseAge": "0 days" },
+  "osvVulnerabilityAlerts": true
+}
+```
+
+- `minimumReleaseAge` — days between publication and PR. 3-7 is the typical sweet spot; catches the common attack shape (publish → community flags → upstream yanks within a day or two). Doesn't help against patient attacks (xz, SolarWinds); those are the minority of published supply-chain incidents.
+- `internalChecksFilter: "strict"` — PRs *wait* during the bake. Without it Renovate opens the PR immediately and labels it "pending", which defeats the purpose.
+- `vulnerabilityAlerts.minimumReleaseAge: "0 days"` — load-bearing carve-out so known CVEs bypass the delay. Without it, the bake delays security fixes too.
+- `osvVulnerabilityAlerts: true` — widens the alert source beyond GitHub's advisory database to OSV.
+- Datasources without a publication date (some custom regex managers) make `minimumReleaseAge` a no-op rather than an error; degrades gracefully.
+
 ## Custom regex managers
 
 For version pins inside scripts, KDL, etc.:
@@ -71,6 +90,6 @@ Renovate opens a "Dependency Dashboard" issue. Read it before assuming a bug:
 
 1. Confirm any field name you plan to write against current docs at `https://docs.renovatebot.com/configuration-options/<field>/` before editing. Renames slip in regularly (`fileMatch` → `managerFilePatterns`, `baseBranches` → `baseBranchPatterns`); memory and prior commits are not authoritative.
 2. Read `renovate.json` if present. Note the repo's default branch (`git symbolic-ref refs/remotes/origin/HEAD` or the GitHub setting).
-3. **Greenfield** — write the Defaults block; fill `<owner>` and `<default-branch>`. Add custom regex managers for shell-script `*_VERSION=` pins or hard-coded release URLs. Add the `renovate-config-validator` pre-commit hook (see Validation).
-4. **Audit existing** — walk the Defaults block and the custom-managers conventions; flag drift (still on `config:recommended`, missing `reviewers`, hard-coded `baseBranchPatterns` not matching the actual default, leftover deprecated fields like `fileMatch` or `baseBranches`, ungoverned `*_VERSION=` pins, missing `renovate-config-validator` pre-commit hook).
+3. **Greenfield** — write the Defaults block and the Supply-chain hardening block; fill `<owner>` and `<default-branch>`. Add custom regex managers for shell-script `*_VERSION=` pins or hard-coded release URLs. Add the `renovate-config-validator` pre-commit hook (see Validation).
+4. **Audit existing** — walk the Defaults, Supply-chain hardening, and custom-managers conventions; flag drift (still on `config:recommended`, missing `reviewers`, hard-coded `baseBranchPatterns` not matching the actual default, leftover deprecated fields like `fileMatch` or `baseBranches`, ungoverned `*_VERSION=` pins, missing `renovate-config-validator` pre-commit hook, missing `minimumReleaseAge` bake period or `vulnerabilityAlerts` carve-out).
 5. Surface findings before editing. Apply only after scope is agreed.
