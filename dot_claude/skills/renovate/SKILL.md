@@ -1,11 +1,7 @@
 ---
 name: renovate
-description: Audit, write, or revise renovate.json. Use when adding Renovate to a repo, troubleshooting unexpected (or missing) update PRs, or evolving an existing config. Applies the config:best-practices preset, explicit baseBranchPatterns/reviewers, and pre-commit manager opt-in.
+description: Audit, write, or revise renovate.json. Use when adding Renovate, troubleshooting unexpected (or missing) update PRs, hardening against supply-chain attacks, or evolving an existing config.
 ---
-
-# Renovate
-
-Schema: <https://docs.renovatebot.com/renovate-schema.json>
 
 ## Defaults
 
@@ -19,10 +15,10 @@ Schema: <https://docs.renovatebot.com/renovate-schema.json>
 }
 ```
 
-- `config:best-practices` — adds `helpers:pinGitHubActionDigests` (action SHA pinning) and OpenSSF scorecard alerts on top of `config:recommended`. Default for all repos.
-- `baseBranchPatterns` — set to the repo's actual default branch (`main`, `master`, `trunk`, …), not a hard-coded value. Auto-detected if omitted; explicit is more portable across forks.
+- `config:best-practices` — adds `helpers:pinGitHubActionDigests` (action SHA pinning) and OpenSSF scorecard alerts on top of `config:recommended`.
+- `baseBranchPatterns` — set explicitly to the repo's default branch (`main`, `master`, `trunk`, …); auto-detected otherwise, but explicit travels better across forks.
 - `reviewers` — without it, Renovate PRs land silent. Use `assignees` instead if you only want a creation-time ping (no rebase notifications).
-- `pre-commit: { enabled: true }` — opt-in manager, enabled unconditionally. No-op when `.pre-commit-config.yaml` is absent (manager only acts on that file pattern); replaces the need for pre-commit.ci where the file does exist.
+- `pre-commit: { enabled: true }` — opt-in manager; enable unconditionally. No-op without `.pre-commit-config.yaml`; replaces pre-commit.ci where the file exists.
 
 ## Supply-chain hardening
 
@@ -37,11 +33,10 @@ Schema: <https://docs.renovatebot.com/renovate-schema.json>
 }
 ```
 
-- `minimumReleaseAge` — days between publication and PR. 3-7 is the typical sweet spot; catches the common attack shape (publish → community flags → upstream yanks within a day or two). Doesn't help against patient attacks (xz, SolarWinds); those are the minority of published supply-chain incidents.
-- `internalChecksFilter: "strict"` — PRs *wait* during the bake. Without it Renovate opens the PR immediately and labels it "pending", which defeats the purpose.
-- `vulnerabilityAlerts.minimumReleaseAge: "0 days"` — load-bearing carve-out so known CVEs bypass the delay. Without it, the bake delays security fixes too.
-- `osvVulnerabilityAlerts: true` — widens the alert source beyond GitHub's advisory database to OSV.
-- Datasources without a publication date (some custom regex managers) make `minimumReleaseAge` a no-op rather than an error; degrades gracefully.
+- `minimumReleaseAge` — days between publication and PR. 3-7 is the sweet spot; catches the common attack shape (publish → community flags → upstream yanks within a day or two).
+- `internalChecksFilter: "strict"` — PRs wait during the bake. Without it Renovate opens the PR immediately and labels it "pending", defeating the purpose.
+- `vulnerabilityAlerts.minimumReleaseAge: "0 days"` — load-bearing carve-out so known CVEs bypass the delay. Without it, the bake delays security fixes.
+- `osvVulnerabilityAlerts: true` — widens alert source beyond GitHub's advisory database to OSV.
 
 ## Custom regex managers
 
