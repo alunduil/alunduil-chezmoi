@@ -20,7 +20,7 @@ repos:
     rev: v6.0.0
     hooks:
       - id: check-json
-        # malformed.json is intentionally invalid — fixtures exercise
-        # the fail-closed-on-bad-input path of each guard hook.
-        exclude: ^test/fixtures/(pr_draft_guard|changelog_guard)/malformed\.json$
+        # malformed.json is intentionally invalid — a fixture for the
+        # pr-draft-guard hook's fail-closed-on-bad-input test.
+        exclude: ^test/fixtures/pr_draft_guard/malformed\.json$
       - id: detect-private-key
