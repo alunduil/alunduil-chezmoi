@@ -99,6 +99,44 @@ _mkworktree() {
   [[ "$output" == *"PR #99 merged"* ]]
 }
 
+# --- classify: gone vs. never-pushed upstreams ---
+
+@test "classify: merged PR with gone upstream is removed" {
+  # Simulates post-merge auto-prune: branch.<name>.remote/.merge stay set,
+  # but refs/remotes/origin/<branch> is gone. The PR's merged state proves
+  # the work was pushed, so the missing remote ref must not block removal.
+  _mkworktree
+  git -C "$WT" update-ref -d refs/remotes/origin/feature
+  run bash -c '
+    source "$1"
+    PR_STATE_BY_WT[$2]=MERGED
+    PR_NUM_BY_WT[$2]=42
+    IN_USE_CWDS=()
+    classify "$2"
+  ' _ "$POI" "$WT"
+  [ "$status" -eq 0 ]
+  [[ "${lines[0]}" == remove$'\t'* ]]
+  [[ "$output" == *"PR #42 merged"* ]]
+}
+
+@test "classify: merged PR with no upstream config is kept" {
+  # Regression guard against the gone-upstream fix: when branch.<name>.merge
+  # is unset, there's no proof the work was ever pushed — keep, even if a
+  # merged PR happens to share the branch name.
+  _mkworktree
+  git -C "$WT" branch --unset-upstream
+  run bash -c '
+    source "$1"
+    PR_STATE_BY_WT[$2]=MERGED
+    PR_NUM_BY_WT[$2]=42
+    IN_USE_CWDS=()
+    classify "$2"
+  ' _ "$POI" "$WT"
+  [ "$status" -eq 0 ]
+  [[ "${lines[0]}" == keep$'\t'* ]]
+  [[ "$output" == *"no upstream"* ]]
+}
+
 # --- batch_fetch_pr_states: one query per repo ---
 
 @test "batch fetch: one graphql call serves three same-repo worktrees" {
