@@ -18,7 +18,7 @@
       {
         "hooks": [
           {
-            "command": "/home/alunduil/.claude/hooks/changelog-guard.sh",
+            "command": "/home/alunduil/.claude/hooks/changelog-guard.py",
             "type": "command"
           }
         ],

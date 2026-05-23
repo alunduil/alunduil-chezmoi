@@ -4,8 +4,8 @@ bats_require_minimum_version 1.5.0
 setup() {
   REPO_ROOT="$(cd "$BATS_TEST_DIRNAME/.." && pwd)"
   FIXTURES="$BATS_TEST_DIRNAME/fixtures/changelog_guard"
-  HOOK="$BATS_TEST_TMPDIR/changelog-guard.sh"
-  install -m 0755 "$REPO_ROOT/dot_claude/hooks/executable_changelog-guard.sh" "$HOOK"
+  HOOK="$BATS_TEST_TMPDIR/changelog-guard.py"
+  install -m 0755 "$REPO_ROOT/dot_claude/hooks/executable_changelog-guard.py" "$HOOK"
   CHANGELOG="$BATS_TEST_TMPDIR/CHANGELOG.md"
   README="$BATS_TEST_TMPDIR/README.md"
   TODAY="$(date -u +%Y-%m-%d)"
