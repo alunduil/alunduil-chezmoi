@@ -23,7 +23,9 @@ setup() {
   export GH_USER=me
   export PR_CACHE_DIR="$TMPROOT/pr_cache"
   mkdir -p "$PR_CACHE_DIR"
-  unset FZF_OUTPUT ZELLIJ_TAB_NAMES GH_CLONE_SRC GH_REPO_LIST PETNAME GH_PR_VIEW
+  unset FZF_OUTPUT ZELLIJ_TAB_NAMES GH_CLONE_SRC GH_REPO_LIST PETNAME
+  # Drop any GH_PR_VIEW_* leakage from prior tests.
+  while IFS= read -r var; do unset "$var"; done < <(compgen -e | grep '^GH_PR_VIEW_' || true)
 }
 
 # Seed a worktree under $WORKTREE_ROOT/<org>/<repo>/<petname> so
@@ -188,7 +190,7 @@ mkcanonical() {
 
 @test "print_pr_rows: matching worktree emits spawn row" {
   mkpr_worktree me hello kind-newt feature/x
-  export GH_PR_VIEW="123=feature/x"
+  export GH_PR_VIEW_123=$'me\thello\tfeature/x'
   run bash -c 'source "$1"; ME=me WORKTREE_ROOT="$2" print_pr_rows 123' \
     _ "$PICKER" "$XDG_DATA_HOME/git-worktrees"
   [ "$status" -eq 0 ]
@@ -198,7 +200,7 @@ mkcanonical() {
 
 @test "print_pr_rows: matching worktree with open tab emits focus row" {
   mkpr_worktree me hello kind-newt feature/x
-  export GH_PR_VIEW="123=feature/x"
+  export GH_PR_VIEW_123=$'me\thello\tfeature/x'
   export ZELLIJ_TAB_NAMES=$'hello (kind-newt)\n'
   run bash -c 'source "$1"; ME=me WORKTREE_ROOT="$2" print_pr_rows 123' \
     _ "$PICKER" "$XDG_DATA_HOME/git-worktrees"
@@ -208,13 +210,25 @@ mkcanonical() {
 
 @test "print_pr_rows: no matching worktree emits noop hint with head ref" {
   mkpr_worktree me hello kind-newt feature/unrelated
-  export GH_PR_VIEW="123=feature/missing"
+  export GH_PR_VIEW_123=$'me\thello\tfeature/missing'
   run bash -c 'source "$1"; ME=me WORKTREE_ROOT="$2" print_pr_rows 123' \
     _ "$PICKER" "$XDG_DATA_HOME/git-worktrees"
   [ "$status" -eq 0 ]
   [[ "$output" == *"noop"* ]]
   [[ "$output" == *"no matching worktree"* ]]
   [[ "$output" == *"feature/missing"* ]]
+}
+
+@test "print_pr_rows: ignores same-branch worktree in a different repo" {
+  # Branch name collision across repos: only the one under the PR's base repo
+  # should match. Without the scope guard this test would false-positive.
+  mkpr_worktree other hello kind-newt feature/x
+  export GH_PR_VIEW_123=$'me\thello\tfeature/x'
+  run bash -c 'source "$1"; ME=me WORKTREE_ROOT="$2" print_pr_rows 123' \
+    _ "$PICKER" "$XDG_DATA_HOME/git-worktrees"
+  [ "$status" -eq 0 ]
+  [[ "$output" == *"noop"* ]]
+  [[ "$output" == *"no matching worktree"* ]]
 }
 
 @test "print_pr_rows: unknown PR emits noop error row" {
@@ -227,12 +241,12 @@ mkcanonical() {
 
 @test "print_pr_rows: caches resolution to avoid repeated gh calls" {
   mkpr_worktree me hello kind-newt feature/x
-  export GH_PR_VIEW="123=feature/x"
+  export GH_PR_VIEW_123=$'me\thello\tfeature/x'
   # First call populates the cache.
   bash -c 'source "$1"; ME=me WORKTREE_ROOT="$2" print_pr_rows 123 >/dev/null' \
     _ "$PICKER" "$XDG_DATA_HOME/git-worktrees"
-  # Drop GH_PR_VIEW so a re-fetch would fail with "no such PR".
-  unset GH_PR_VIEW
+  # Drop the fixture so a re-fetch would fail with "no such PR".
+  unset GH_PR_VIEW_123
   run bash -c 'source "$1"; ME=me WORKTREE_ROOT="$2" print_pr_rows 123' \
     _ "$PICKER" "$XDG_DATA_HOME/git-worktrees"
   [ "$status" -eq 0 ]
