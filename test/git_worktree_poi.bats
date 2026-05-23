@@ -192,8 +192,11 @@ STUB
   invocations=$(wc -l <"$count_file")
   [ "$invocations" -eq 1 ]
 
-  [[ "$output" == *"Would remove (2)"* ]]
-  [[ "$output" == *"Would keep (1)"* ]]
+  [[ "$output" == *"== DRY RUN =="* ]]
+  [[ "$output" == *"Would remove"* ]]
+  [[ "$output" == *"Would keep"* ]]
+  [[ "$output" != *"Would remove (2)"* ]]
+  [[ "$output" != *"Would keep (1)"* ]]
   [[ "$output" == *"PR #1 merged"* ]]
   [[ "$output" == *"PR #2 open"* ]]
   [[ "$output" == *"no commits, no PR"* ]]
@@ -206,6 +209,18 @@ STUB
 # embedded comma; without the verdict branch the splitter would shred it into
 # two atoms and lose the green wrap. Forces colour vars on since bats stdout
 # isn't a tty.
+@test "print_section: empty data renders dimmed (none) placeholder" {
+  run bash -c "
+    source '$POI'
+    DIM=\$'\\033[2m' RESET=\$'\\033[0m'
+    CWD=/tmp
+    print_section 'Would remove' ''
+  "
+  [ "$status" -eq 0 ]
+  [[ "$output" == *"Would remove"* ]]
+  [[ "$output" == *$'\033[2m'"(none)"$'\033[0m'* ]]
+}
+
 @test "print_section: remove-row detail with embedded comma stays one coloured atom" {
   run bash -c "
     source '$POI'

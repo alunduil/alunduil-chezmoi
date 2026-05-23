@@ -303,36 +303,37 @@ colour_reason() {
 
 # print_section <heading> <tsv-rows>
 print_section() {
-    local heading=$1 data=$2 count=0
-    [[ -n "$data" ]] && count=$(printf '%s\n' "$data" | wc -l)
-    printf '%s%s%s %s(%d)%s\n' "$BOLD" "$heading" "$RESET" "$DIM" "$count" "$RESET"
-    if [[ -n "$data" ]]; then
-        while IFS=$'\t' read -r verdict rel branch detail wt; do
-            local current=''
-            [[ "$wt" == "$CWD" ]] && current=" ${BOLD_YELLOW}(current)${RESET}"
-            printf '  %s%s%s%s\n' "$BOLD" "$rel" "$RESET" "$current"
-
-            # Remove-row details are single atoms (some, like "no commits, no
-            # PR", contain commas). Keep-row details are comma-joined and
-            # need splitting.
-            local coloured=''
-            if [[ "$verdict" == remove ]]; then
-                coloured=$(colour_reason "$detail")
-            else
-                local rest=$detail sep='' part
-                while [[ "$rest" == *", "* ]]; do
-                    part=${rest%%, *}
-                    coloured+="${sep}$(colour_reason "$part")"
-                    sep="${DIM}, ${RESET}"
-                    rest=${rest#*, }
-                done
-                coloured+="${sep}$(colour_reason "$rest")"
-            fi
-
-            printf '    %s└─%s %s%s%s %s·%s %s\n' \
-                "$DIM" "$RESET" "$DIM" "$branch" "$RESET" "$DIM" "$RESET" "$coloured"
-        done <<<"$data"
+    local heading=$1 data=$2
+    printf '%s%s%s\n' "$BOLD" "$heading" "$RESET"
+    if [[ -z "$data" ]]; then
+        printf '  %s(none)%s\n\n' "$DIM" "$RESET"
+        return
     fi
+    while IFS=$'\t' read -r verdict rel branch detail wt; do
+        local current=''
+        [[ "$wt" == "$CWD" ]] && current=" ${BOLD_YELLOW}(current)${RESET}"
+        printf '  %s%s%s%s\n' "$BOLD" "$rel" "$RESET" "$current"
+
+        # Remove-row details are single atoms (some, like "no commits, no
+        # PR", contain commas). Keep-row details are comma-joined and
+        # need splitting.
+        local coloured=''
+        if [[ "$verdict" == remove ]]; then
+            coloured=$(colour_reason "$detail")
+        else
+            local rest=$detail sep='' part
+            while [[ "$rest" == *", "* ]]; do
+                part=${rest%%, *}
+                coloured+="${sep}$(colour_reason "$part")"
+                sep="${DIM}, ${RESET}"
+                rest=${rest#*, }
+            done
+            coloured+="${sep}$(colour_reason "$rest")"
+        fi
+
+        printf '    %s└─%s %s%s%s %s·%s %s\n' \
+            "$DIM" "$RESET" "$DIM" "$branch" "$RESET" "$DIM" "$RESET" "$coloured"
+    done <<<"$data"
     printf '\n'
 }
 
@@ -370,6 +371,7 @@ remove_rows=$(printf '%s\n' "$rows" | awk -F'\t' '$1=="remove"')
 keep_rows=$(printf '%s\n' "$rows" | awk -F'\t' '$1=="keep"')
 
 if ((dry_run)); then
+    printf '%s== DRY RUN ==%s\n\n' "$BOLD" "$RESET"
     print_section 'Would remove' "$remove_rows"
     print_section 'Would keep' "$keep_rows"
     exit 0
