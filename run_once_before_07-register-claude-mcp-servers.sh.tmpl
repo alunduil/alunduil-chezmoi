@@ -24,4 +24,15 @@ for name in "${!CLOUDFLARE_MCP[@]}"; do
   fi
 done
 
+# --------------------------------------------------------------------- GitHub
+# Official Copilot MCP server. OAuth like Cloudflare; tools land under
+# mcp__github__*, which pr-draft-guard.sh keys on for the draft-PR enforcement.
+if claude mcp list 2>/dev/null | grep -q "^github:"; then
+  log "github: already registered"
+else
+  log "github: registering"
+  claude mcp add github --transport http --scope user \
+    https://api.githubcopilot.com/mcp/
+fi
+
 log "claude mcp servers complete"
