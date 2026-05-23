@@ -302,37 +302,94 @@ colour_reason() {
 }
 
 # print_section <heading> <tsv-rows>
+#
+# Inline single-row layout. `gh poi`'s tree glyphs (`├─`/`└─`) carry meaning
+# because branches can have multiple PRs attached (cardinality ≥ 1). Here
+# every worktree produces exactly one detail row, so the tree is degenerate
+# decoration — collapse to one line per worktree and reclaim the vertical
+# space. Two passes: collect coloured halves and visible widths, then emit
+# with `[detail]` aligned per section.
 print_section() {
-    local heading=$1 data=$2 count=0
-    [[ -n "$data" ]] && count=$(printf '%s\n' "$data" | wc -l)
-    printf '%s%s%s %s(%d)%s\n' "$BOLD" "$heading" "$RESET" "$DIM" "$count" "$RESET"
-    if [[ -n "$data" ]]; then
-        while IFS=$'\t' read -r verdict rel branch detail wt; do
-            local current=''
-            [[ "$wt" == "$CWD" ]] && current=" ${BOLD_YELLOW}(current)${RESET}"
-            printf '  %s%s%s%s\n' "$BOLD" "$rel" "$RESET" "$current"
-
-            # Remove-row details are single atoms (some, like "no commits, no
-            # PR", contain commas). Keep-row details are comma-joined and
-            # need splitting.
-            local coloured=''
-            if [[ "$verdict" == remove ]]; then
-                coloured=$(colour_reason "$detail")
-            else
-                local rest=$detail sep='' part
-                while [[ "$rest" == *", "* ]]; do
-                    part=${rest%%, *}
-                    coloured+="${sep}$(colour_reason "$part")"
-                    sep="${DIM}, ${RESET}"
-                    rest=${rest#*, }
-                done
-                coloured+="${sep}$(colour_reason "$rest")"
-            fi
-
-            printf '    %s└─%s %s%s%s %s·%s %s\n' \
-                "$DIM" "$RESET" "$DIM" "$branch" "$RESET" "$DIM" "$RESET" "$coloured"
-        done <<<"$data"
+    local heading=$1 data=$2
+    printf '%s%s%s\n' "$BOLD" "$heading" "$RESET"
+    if [[ -z "$data" ]]; then
+        printf '  %s(none)%s\n\n' "$DIM" "$RESET"
+        return
     fi
+
+    local -a left_coloured=() right_coloured=() left_widths=()
+    local verdict rel branch detail wt
+
+    while IFS=$'\t' read -r verdict rel branch detail wt; do
+        # Head marker lives in col 1 (gh poi convention). BOLD_YELLOW carries
+        # the same "you are here" signal the old `(current)` suffix did, but
+        # in a fixed column instead of a varying line-end position.
+        local marker_col marker_plain
+        if [[ "$wt" == "$CWD" ]]; then
+            marker_col="${BOLD_YELLOW}*${RESET} "
+            marker_plain='* '
+        else
+            marker_col='  '
+            marker_plain='  '
+        fi
+
+        # Petname branches encode rel's slug (`<user>/worktree/<slug>` vs
+        # `<repo>/<slug>`), so the branch reads off rel. Show it only when
+        # the slug differs — manual renames, custom checkouts. Detached HEAD
+        # already surfaces in detail; suppress the redundant `(branch)`.
+        local branch_col='' branch_plain=''
+        if [[ "$branch" != '(detached HEAD)' && "${branch##*/}" != "${rel##*/}" ]]; then
+            branch_col=" ${DIM}(${branch})${RESET}"
+            branch_plain=" (${branch})"
+        fi
+
+        local left="${marker_col}${rel}${branch_col}"
+        local plain="${marker_plain}${rel}${branch_plain}"
+        left_coloured+=("$left")
+        left_widths+=("${#plain}")
+
+        # Remove-row details are single atoms (some, like "no commits, no
+        # PR", contain commas). Keep-row details are comma-joined and need
+        # splitting before per-reason colouring.
+        local coloured=''
+        if [[ "$verdict" == remove ]]; then
+            coloured=$(colour_reason "$detail")
+        else
+            local rest=$detail sep='' part
+            while [[ "$rest" == *", "* ]]; do
+                part=${rest%%, *}
+                coloured+="${sep}$(colour_reason "$part")"
+                sep="${DIM}, ${RESET}"
+                rest=${rest#*, }
+            done
+            coloured+="${sep}$(colour_reason "$rest")"
+        fi
+        right_coloured+=("${DIM}[${RESET}${coloured}${DIM}]${RESET}")
+    done <<<"$data"
+
+    # Soft cap on the alignment column. Without it, one row with a long
+    # divergent-branch paren (e.g. an auto-generated issue branch) drags
+    # every other row's `[detail]` 60+ chars to the right and off most
+    # terminals. Rows over the cap are excluded from the max and just land
+    # with a 3-space gutter — ragged-right, gh-poi style — while the rest
+    # of the section stays aligned.
+    local soft_cap=50 max_left=0 i w
+    for i in "${!left_widths[@]}"; do
+        w=${left_widths[i]}
+        ((w > soft_cap)) && continue
+        ((w > max_left)) && max_left=$w
+    done
+
+    local pad
+    for i in "${!left_coloured[@]}"; do
+        w=${left_widths[i]}
+        if ((w > max_left)); then
+            pad=3
+        else
+            pad=$((max_left - w + 3))
+        fi
+        printf '%s%*s%s\n' "${left_coloured[i]}" "$pad" '' "${right_coloured[i]}"
+    done
     printf '\n'
 }
 
@@ -370,6 +427,7 @@ remove_rows=$(printf '%s\n' "$rows" | awk -F'\t' '$1=="remove"')
 keep_rows=$(printf '%s\n' "$rows" | awk -F'\t' '$1=="keep"')
 
 if ((dry_run)); then
+    printf '%s== DRY RUN ==%s\n\n' "$BOLD" "$RESET"
     print_section 'Would remove' "$remove_rows"
     print_section 'Would keep' "$keep_rows"
     exit 0

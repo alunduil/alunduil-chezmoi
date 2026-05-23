@@ -192,11 +192,16 @@ STUB
   invocations=$(wc -l <"$count_file")
   [ "$invocations" -eq 1 ]
 
-  [[ "$output" == *"Would remove (2)"* ]]
-  [[ "$output" == *"Would keep (1)"* ]]
+  [[ "$output" == *"== DRY RUN =="* ]]
+  [[ "$output" == *"Would remove"* ]]
+  [[ "$output" == *"Would keep"* ]]
+  [[ "$output" != *"Would remove (2)"* ]]
+  [[ "$output" != *"Would keep (1)"* ]]
   [[ "$output" == *"PR #1 merged"* ]]
   [[ "$output" == *"PR #2 open"* ]]
   [[ "$output" == *"no commits, no PR"* ]]
+  # Inline layout: no second-line tree glyph (cardinality is always 1).
+  [[ "$output" != *"└─"* ]]
 }
 
 # --- print_section: verdict-branched splitter ---
@@ -206,6 +211,58 @@ STUB
 # embedded comma; without the verdict branch the splitter would shred it into
 # two atoms and lose the green wrap. Forces colour vars on since bats stdout
 # isn't a tty.
+@test "print_section: empty data renders dimmed (none) placeholder" {
+  run bash -c "
+    source '$POI'
+    DIM=\$'\\033[2m' RESET=\$'\\033[0m'
+    CWD=/tmp
+    print_section 'Would remove' ''
+  "
+  [ "$status" -eq 0 ]
+  [[ "$output" == *"Would remove"* ]]
+  [[ "$output" == *$'\033[2m'"(none)"$'\033[0m'* ]]
+}
+
+@test "print_section: row whose wt matches CWD gets BOLD_YELLOW asterisk marker" {
+  run bash -c "
+    source '$POI'
+    BOLD_YELLOW=\$'\\033[1;33m' DIM=\$'\\033[2m' RESET=\$'\\033[0m'
+    CWD=/tmp/wt
+    row=\$(printf 'keep\\trepo/feature\\tu/worktree/feature\\tin-use\\t/tmp/wt')
+    print_section 'Kept' \"\$row\"
+  "
+  [ "$status" -eq 0 ]
+  [[ "$output" == *$'\033[1;33m'"*"$'\033[0m'* ]]
+}
+
+@test "print_section: branch matching rel slug is elided" {
+  # Petname worktrees encode rel's slug in the branch name, so the branch
+  # adds no information and would just inflate the rel column.
+  run bash -c "
+    source '$POI'
+    DIM=\$'\\033[2m' RESET=\$'\\033[0m'
+    CWD=/tmp
+    row=\$(printf 'keep\\trepo/feature\\tu/worktree/feature\\tin-use\\t/tmp/wt')
+    print_section 'Kept' \"\$row\"
+  "
+  [ "$status" -eq 0 ]
+  [[ "$output" != *"u/worktree/feature"* ]]
+}
+
+@test "print_section: branch with divergent slug is shown" {
+  # Manual rename or custom checkout — branch can't be read off rel, so
+  # show it (dim) to preserve the identifier.
+  run bash -c "
+    source '$POI'
+    DIM=\$'\\033[2m' RESET=\$'\\033[0m'
+    CWD=/tmp
+    row=\$(printf 'keep\\trepo/feature\\tunrelated-name\\tin-use\\t/tmp/wt')
+    print_section 'Kept' \"\$row\"
+  "
+  [ "$status" -eq 0 ]
+  [[ "$output" == *"(unrelated-name)"* ]]
+}
+
 @test "print_section: remove-row detail with embedded comma stays one coloured atom" {
   run bash -c "
     source '$POI'
