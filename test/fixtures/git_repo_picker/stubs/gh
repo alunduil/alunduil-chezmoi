@@ -1,5 +1,8 @@
 #!/usr/bin/env bash
 # gh stub: returns $GH_USER for `api user`, empty for memberships, clones $GH_CLONE_SRC for `repo clone`.
+# `pr list --repo <org>/<repo>` returns the TSV in
+# $GH_PR_LIST_<org>_<repo> ("<branch>\t<number>" per line) verbatim,
+# ignoring --json/-q args. Missing var yields empty output (no PRs).
 case "${1:-} ${2:-}" in
   "api user")
     printf '%s' "${GH_USER:-test-user}"
@@ -12,5 +15,18 @@ case "${1:-} ${2:-}" in
     ;;
   "repo clone")
     git clone --quiet "${GH_CLONE_SRC:?GH_CLONE_SRC must be set}" "$4"
+    ;;
+  "pr list")
+    shift
+    repo=""
+    while (( $# )); do
+      if [[ "$1" == "--repo" ]]; then repo="$2"; shift 2; else shift; fi
+    done
+    var="GH_PR_LIST_${repo//[!a-zA-Z0-9_]/_}"
+    val="${!var:-}"
+    # Real `gh pr list -q ... | @tsv` terminates each row with a newline;
+    # mirror that so the picker's `read -r branch num` loop doesn't drop the
+    # final line.
+    [[ -n "$val" ]] && printf '%s\n' "$val"
     ;;
 esac

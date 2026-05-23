@@ -18,11 +18,21 @@
 #                              Selection clones (no fork), then takes the
 #                              local: path above.
 #
+# A `pr:` query prefix swaps the worktree set for a PR-enriched variant —
+# rows look like `worktree:<repo> (petname) pr:<N>` so fzf's substring filter
+# resolves `pr:174` to whichever local worktree is on PR 174's head ref, in
+# any repo. Strictly re-open: worktrees without an open/merged/closed PR for
+# their branch are omitted from the pr: set, so this view is "find an
+# existing worktree by PR", never "make one."
+#
 # Worktree and local rows are built upfront (cheap: filesystem + zellij).
 # Remotes require a `gh repo list` round-trip per org, so they are deferred
 # until the query length reaches REMOTE_THRESHOLD characters and then cached
-# for the lifetime of this picker invocation. fzf re-runs this script via
-# `change:reload` to refresh the candidate set on every keystroke.
+# for the lifetime of this picker invocation. PR-enriched worktree rows are
+# deferred the same way: populated on the first `pr:` query via one
+# `gh pr list --repo <org>/<repo>` per distinct repo, then cached. fzf
+# re-runs this script via `change:reload` to refresh the candidate set on
+# every keystroke.
 #
 # Tabs are named "<repo-or-org/repo> (petname)" so go-to-tab-name round-trips.
 # Worktrees are durable — closing a tab does not remove them; that is
@@ -88,6 +98,61 @@ print_worktrees() {
     done < <(find "$WORKTREE_ROOT" -mindepth 3 -maxdepth 3 -type d 2>/dev/null | sort)
 }
 
+# Worktree rows enriched with their associated PR number. Walks
+# $WORKTREE_ROOT, batches one `gh pr list --repo <org>/<repo>` per distinct
+# repo into a (branch → pr#) map, then re-walks emitting `worktree:<tab>
+# pr:<N>` for each worktree whose current branch matches a known PR head.
+# Worktrees without an associated PR are omitted (this view is "find by PR";
+# the unenriched STATIC_FILE rows cover the other cases). Slow — gated to
+# pr:* queries by the --rows handler and cached in WORKTREE_PR_FILE per
+# invocation.
+print_worktrees_with_prs() {
+    [[ -d "$WORKTREE_ROOT" ]] || return 0
+
+    local petdir
+    local -a petdirs=()
+    while IFS= read -r petdir; do
+        [[ -e "$petdir/.git" ]] && petdirs+=("$petdir")
+    done < <(find "$WORKTREE_ROOT" -mindepth 3 -maxdepth 3 -type d 2>/dev/null | sort)
+    ((${#petdirs[@]})) || return 0
+
+    local -A pr_for=()
+    local -A seen_repo=()
+    local repo org repo_key branch num
+    for petdir in "${petdirs[@]}"; do
+        repo=$(basename "$(dirname "$petdir")")
+        org=$(basename "$(dirname "$(dirname "$petdir")")")
+        repo_key="$org/$repo"
+        [[ -n "${seen_repo[$repo_key]:-}" ]] && continue
+        seen_repo[$repo_key]=1
+        while IFS=$'\t' read -r branch num; do
+            [[ -n "$branch" && -n "$num" ]] || continue
+            pr_for["$repo_key:$branch"]=$num
+        done < <(gh pr list --repo "$repo_key" --state all --limit 1000 \
+            --json number,headRefName -q '.[] | [.headRefName, .number] | @tsv' \
+            2>/dev/null)
+    done
+
+    local opens petname tab display pr_n
+    opens=$(open_tabs)
+    for petdir in "${petdirs[@]}"; do
+        petname=$(basename "$petdir")
+        repo=$(basename "$(dirname "$petdir")")
+        org=$(basename "$(dirname "$(dirname "$petdir")")")
+        branch=$(git -C "$petdir" branch --show-current 2>/dev/null) || continue
+        pr_n=${pr_for["$org/$repo:$branch"]:-}
+        [[ -n "$pr_n" ]] || continue
+        tab=$(fmt_tab "$org" "$repo" "$petname")
+        if grep -Fxq "$tab" <<<"$opens"; then
+            display=$(printf '\033[2mworktree:%s pr:%s\033[0m' "$tab" "$pr_n")
+            printf '%s\tfocus\t%s\n' "$display" "$tab"
+        else
+            display="worktree:$tab pr:$pr_n"
+            printf '%s\tspawn\t%s\t%s\n' "$display" "$petdir" "$tab"
+        fi
+    done
+}
+
 print_local() {
     local org repo dir
     while IFS=$'\t' read -r org repo dir; do
@@ -128,12 +193,22 @@ if [[ "${BASH_SOURCE[0]}" != "$0" ]]; then return 0; fi
 # REMOTE_THRESHOLD characters and stay for the rest of this invocation via
 # REMOTES_FILE.
 if [[ "${1:-}" == "--rows" ]]; then
-    cat "$STATIC_FILE" 2>/dev/null || true
     query=${2:-}
+    if [[ "$query" == pr:* ]]; then
+        # Atomic fill: write to .tmp and rename, so a fzf-killed reload
+        # mid-fetch never leaves a partial file the next reload would read.
+        # `! -e` (not `-s`) guards the empty-on-purpose case where the user
+        # has no PR-tagged worktrees — we still want to skip the refill.
+        if [[ ! -e "$WORKTREE_PR_FILE" ]]; then
+            print_worktrees_with_prs >"${WORKTREE_PR_FILE}.tmp" 2>/dev/null \
+                && mv "${WORKTREE_PR_FILE}.tmp" "$WORKTREE_PR_FILE" 2>/dev/null
+        fi
+        cat "$WORKTREE_PR_FILE" 2>/dev/null || true
+        exit 0
+    fi
+    cat "$STATIC_FILE" 2>/dev/null || true
     if ((${#query} >= REMOTE_THRESHOLD)); then
         if [[ ! -s "$REMOTES_FILE" ]]; then
-            # Atomic fill: write to .tmp and rename, so a fzf-killed reload
-            # mid-fetch never leaves a partial file the next reload would read.
             print_remotes >"${REMOTES_FILE}.tmp" 2>/dev/null \
                 && mv "${REMOTES_FILE}.tmp" "$REMOTES_FILE" 2>/dev/null
         fi
@@ -157,6 +232,7 @@ exec 2> >(tee "$LOG" >&2)
 on_exit() {
     local rc=$?
     [[ -n "${STATIC_FILE:-}" ]] && rm -f "$STATIC_FILE" "$REMOTES_FILE" "${REMOTES_FILE}.tmp"
+    [[ -n "${WORKTREE_PR_FILE:-}" ]] && rm -f "$WORKTREE_PR_FILE" "${WORKTREE_PR_FILE}.tmp"
     if (( rc == 0 )); then
         rm -f "$LOG"
     elif [[ -n "${ZELLIJ:-}" ]]; then
@@ -175,7 +251,11 @@ ME=$(gh api user -q .login)
 
 STATIC_FILE=$(mktemp)
 REMOTES_FILE=$(mktemp)
-export ME WORKTREE_ROOT STATIC_FILE REMOTES_FILE
+# -u so the file only exists after the first pr:* query populates it; the
+# --rows handler uses `! -e` to gate the fill, which keeps the "user has 0
+# PR-tagged worktrees" case from re-fetching on every keystroke.
+WORKTREE_PR_FILE=$(mktemp -u)
+export ME WORKTREE_ROOT STATIC_FILE REMOTES_FILE WORKTREE_PR_FILE
 
 { print_worktrees; print_local; } >"$STATIC_FILE"
 : >"$REMOTES_FILE"
@@ -250,7 +330,7 @@ selection=$(fzf \
     --with-nth=1 \
     --nth=1 \
     --prompt "repo> " \
-    --header "type ${REMOTE_THRESHOLD}+ chars to load remotes · worktree: dim = open tab" \
+    --header "type ${REMOTE_THRESHOLD}+ chars for remotes · worktree: dim = open tab · pr:<N> filters worktrees by PR" \
     --bind "change:reload($SCRIPT --rows {q})" \
     <"$STATIC_FILE") || exit 0
 
