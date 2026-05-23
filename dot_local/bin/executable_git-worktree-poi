@@ -195,7 +195,18 @@ classify() {
     ahead=
     if [[ "$branch" != '(detached HEAD)' ]]; then
         if ! git -C "$wt" rev-parse --abbrev-ref --symbolic-full-name '@{upstream}' >/dev/null 2>&1; then
-            upstream_reason="no upstream"
+            # @{upstream} fails in two distinct situations:
+            #   - branch.<name>.merge unset: truly never-pushed work; keep.
+            #   - branch.<name>.merge set but remote-tracking ref pruned
+            #     ("[gone]"): was pushed, then deleted remote-side (typical
+            #     auto-delete-on-merge). Safe to remove when a merged/closed
+            #     PR proves the push happened.
+            # %(upstream:track) returns [gone] only in the second case.
+            if [[ "$(git -C "$wt" for-each-ref --format='%(upstream:track)' "refs/heads/$branch" 2>/dev/null)" == "[gone]" ]]; then
+                upstream_reason="upstream gone"
+            else
+                upstream_reason="no upstream"
+            fi
         elif [[ -n "$(git -C "$wt" log '@{upstream}..HEAD' --oneline 2>/dev/null)" ]]; then
             upstream_reason="unpushed"
         fi
@@ -225,7 +236,12 @@ classify() {
             fi
             ;;
         MERGED | CLOSED)
-            [[ -n "$upstream_reason" ]] && reasons+=("$upstream_reason")
+            # "upstream gone" isn't a blocker here: the PR's terminal state
+            # proves the work was pushed; the remote ref was just pruned.
+            # "no upstream" / "unpushed" still block — those mean we have
+            # no proof the work made it off the local clone.
+            [[ -n "$upstream_reason" && "$upstream_reason" != "upstream gone" ]] \
+                && reasons+=("$upstream_reason")
             if [[ ${#reasons[@]} -eq 0 ]]; then
                 printf 'remove\t%s\t%s\t%s\t%s\n' \
                     "$rel" "$branch" "PR #${pr_num} ${pr_state_lc}" "$wt"
