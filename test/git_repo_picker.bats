@@ -21,7 +21,16 @@ setup() {
   export ZELLIJ_RECORDER="$TMPROOT/zellij.log"
   : >"$ZELLIJ_RECORDER"
   export GH_USER=me
-  unset FZF_OUTPUT ZELLIJ_TABS_JSON GH_CLONE_SRC GH_REPO_LIST PETNAME
+  unset FZF_OUTPUT ZELLIJ_TAB_NAMES GH_CLONE_SRC GH_REPO_LIST PETNAME
+}
+
+# Seed a worktree under $WORKTREE_ROOT/<org>/<repo>/<petname> so
+# `print_worktrees` walks find it the same way the real picker does.
+mkworktree() {
+  local org="$1" repo="$2" petname="$3"
+  local dir="$XDG_DATA_HOME/git-worktrees/$org/$repo/$petname"
+  mkdir -p "$dir"
+  : >"$dir/.git"
 }
 
 teardown() {
@@ -106,6 +115,27 @@ mkcanonical() {
   run bash -c 'source "$1"; ME=me fmt_tab grafana k6 kind-newt' _ "$PICKER"
   [ "$status" -eq 0 ]
   [ "$output" = "grafana/k6 (kind-newt)" ]
+}
+
+# --- print_worktrees: dim when a tab is already open ---
+
+@test "print_worktrees: open tab emits dimmed focus row" {
+  mkworktree me hello kind-newt
+  export ZELLIJ_TAB_NAMES=$'hello (kind-newt)\n'
+  run bash -c 'source "$1"; ME=me WORKTREE_ROOT="$2" print_worktrees' \
+    _ "$PICKER" "$XDG_DATA_HOME/git-worktrees"
+  [ "$status" -eq 0 ]
+  [ "$output" = "$(printf '\033[2mworktree:hello (kind-newt)\033[0m\tfocus\thello (kind-newt)')" ]
+}
+
+@test "print_worktrees: closed tab emits undimmed spawn row" {
+  mkworktree me hello kind-newt
+  export ZELLIJ_TAB_NAMES=""
+  run bash -c 'source "$1"; ME=me WORKTREE_ROOT="$2" print_worktrees' \
+    _ "$PICKER" "$XDG_DATA_HOME/git-worktrees"
+  [ "$status" -eq 0 ]
+  local petdir="$XDG_DATA_HOME/git-worktrees/me/hello/kind-newt"
+  [ "$output" = "$(printf 'worktree:hello (kind-newt)\tspawn\t%s\thello (kind-newt)' "$petdir")" ]
 }
 
 # --- TSV dispatch (end-to-end) ---
