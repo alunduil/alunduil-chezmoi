@@ -21,11 +21,9 @@ setup() {
   export ZELLIJ_RECORDER="$TMPROOT/zellij.log"
   : >"$ZELLIJ_RECORDER"
   export GH_USER=me
-  export PR_CACHE_DIR="$TMPROOT/pr_cache"
-  mkdir -p "$PR_CACHE_DIR"
   unset FZF_OUTPUT ZELLIJ_TAB_NAMES GH_CLONE_SRC GH_REPO_LIST PETNAME
-  # Drop any GH_PR_VIEW_* leakage from prior tests.
-  while IFS= read -r var; do unset "$var"; done < <(compgen -e | grep '^GH_PR_VIEW_' || true)
+  # Drop any GH_PR_LIST_* leakage from prior tests.
+  while IFS= read -r var; do unset "$var"; done < <(compgen -e | grep '^GH_PR_LIST_' || true)
 }
 
 # Seed a worktree under $WORKTREE_ROOT/<org>/<repo>/<petname> so
@@ -186,79 +184,73 @@ mkcanonical() {
   grep -Fxq "action rename-tab hello (fresh-petname)" "$ZELLIJ_RECORDER"
 }
 
-# --- print_pr_rows: pr:<N> resolution ---
+# --- print_worktrees_with_prs: pr:<N>-tagged worktree rows ---
 
-@test "print_pr_rows: matching worktree emits spawn row" {
+@test "print_worktrees_with_prs: tags worktree with the branch's PR number" {
   mkpr_worktree me hello kind-newt feature/x
-  export GH_PR_VIEW_123=$'me\thello\tfeature/x'
-  run bash -c 'source "$1"; ME=me WORKTREE_ROOT="$2" print_pr_rows 123' \
+  export GH_PR_LIST_me_hello=$'feature/x\t174\nother-branch\t99'
+  run bash -c 'source "$1"; ME=me WORKTREE_ROOT="$2" print_worktrees_with_prs' \
     _ "$PICKER" "$XDG_DATA_HOME/git-worktrees"
   [ "$status" -eq 0 ]
   local petdir="$XDG_DATA_HOME/git-worktrees/me/hello/kind-newt"
-  [ "$output" = "$(printf 'pr:123 → worktree:hello (kind-newt)\tspawn\t%s\thello (kind-newt)' "$petdir")" ]
+  [ "$output" = "$(printf 'worktree:hello (kind-newt) pr:174\tspawn\t%s\thello (kind-newt)' "$petdir")" ]
 }
 
-@test "print_pr_rows: matching worktree with open tab emits focus row" {
+@test "print_worktrees_with_prs: open tab dims the enriched row and dispatches focus" {
   mkpr_worktree me hello kind-newt feature/x
-  export GH_PR_VIEW_123=$'me\thello\tfeature/x'
+  export GH_PR_LIST_me_hello=$'feature/x\t174'
   export ZELLIJ_TAB_NAMES=$'hello (kind-newt)\n'
-  run bash -c 'source "$1"; ME=me WORKTREE_ROOT="$2" print_pr_rows 123' \
+  run bash -c 'source "$1"; ME=me WORKTREE_ROOT="$2" print_worktrees_with_prs' \
     _ "$PICKER" "$XDG_DATA_HOME/git-worktrees"
   [ "$status" -eq 0 ]
-  [ "$output" = "$(printf 'pr:123 → \033[2mworktree:hello (kind-newt)\033[0m\tfocus\thello (kind-newt)')" ]
+  [ "$output" = "$(printf '\033[2mworktree:hello (kind-newt) pr:174\033[0m\tfocus\thello (kind-newt)')" ]
 }
 
-@test "print_pr_rows: no matching worktree emits noop hint with head ref" {
-  mkpr_worktree me hello kind-newt feature/unrelated
-  export GH_PR_VIEW_123=$'me\thello\tfeature/missing'
-  run bash -c 'source "$1"; ME=me WORKTREE_ROOT="$2" print_pr_rows 123' \
+@test "print_worktrees_with_prs: omits worktrees with no PR for their branch" {
+  mkpr_worktree me hello kind-newt feature/no-pr
+  export GH_PR_LIST_me_hello=$'feature/x\t174'
+  run bash -c 'source "$1"; ME=me WORKTREE_ROOT="$2" print_worktrees_with_prs' \
     _ "$PICKER" "$XDG_DATA_HOME/git-worktrees"
   [ "$status" -eq 0 ]
-  [[ "$output" == *"noop"* ]]
-  [[ "$output" == *"no matching worktree"* ]]
-  [[ "$output" == *"feature/missing"* ]]
+  [ -z "$output" ]
 }
 
-@test "print_pr_rows: ignores same-branch worktree in a different repo" {
-  # Branch name collision across repos: only the one under the PR's base repo
-  # should match. Without the scope guard this test would false-positive.
-  mkpr_worktree other hello kind-newt feature/x
-  export GH_PR_VIEW_123=$'me\thello\tfeature/x'
-  run bash -c 'source "$1"; ME=me WORKTREE_ROOT="$2" print_pr_rows 123' \
-    _ "$PICKER" "$XDG_DATA_HOME/git-worktrees"
-  [ "$status" -eq 0 ]
-  [[ "$output" == *"noop"* ]]
-  [[ "$output" == *"no matching worktree"* ]]
-}
-
-@test "print_pr_rows: unknown PR emits noop error row" {
-  run bash -c 'source "$1"; ME=me WORKTREE_ROOT="$2" print_pr_rows 999' \
-    _ "$PICKER" "$XDG_DATA_HOME/git-worktrees"
-  [ "$status" -eq 0 ]
-  [[ "$output" == *"noop"* ]]
-  [[ "$output" == *"no such PR"* ]]
-}
-
-@test "print_pr_rows: caches resolution to avoid repeated gh calls" {
+@test "print_worktrees_with_prs: surfaces PRs across distinct repos" {
   mkpr_worktree me hello kind-newt feature/x
-  export GH_PR_VIEW_123=$'me\thello\tfeature/x'
-  # First call populates the cache.
-  bash -c 'source "$1"; ME=me WORKTREE_ROOT="$2" print_pr_rows 123 >/dev/null' \
-    _ "$PICKER" "$XDG_DATA_HOME/git-worktrees"
-  # Drop the fixture so a re-fetch would fail with "no such PR".
-  unset GH_PR_VIEW_123
-  run bash -c 'source "$1"; ME=me WORKTREE_ROOT="$2" print_pr_rows 123' \
+  mkpr_worktree grafana k6 happy-mole feature/y
+  export GH_PR_LIST_me_hello=$'feature/x\t174'
+  export GH_PR_LIST_grafana_k6=$'feature/y\t88'
+  run bash -c 'source "$1"; ME=me WORKTREE_ROOT="$2" print_worktrees_with_prs' \
     _ "$PICKER" "$XDG_DATA_HOME/git-worktrees"
   [ "$status" -eq 0 ]
-  [[ "$output" == *"worktree:hello (kind-newt)"* ]]
+  [[ "$output" == *"worktree:hello (kind-newt) pr:174"* ]]
+  [[ "$output" == *"worktree:grafana/k6 (happy-mole) pr:88"* ]]
 }
 
-@test "dispatch noop: no zellij action fires beyond the upfront query" {
-  export FZF_OUTPUT=$'pr:123 → \033[2mno such PR\033[0m\tnoop'
-  run bash "$PICKER"
+# --- --rows handler: pr:* gate and cache ---
+
+@test "--rows pr:174: lazily populates WORKTREE_PR_FILE and emits enriched rows" {
+  mkpr_worktree me hello kind-newt feature/x
+  export GH_PR_LIST_me_hello=$'feature/x\t174'
+  export WORKTREE_PR_FILE STATIC_FILE REMOTES_FILE
+  WORKTREE_PR_FILE="$TMPROOT/wt_pr"  # does not exist yet
+  STATIC_FILE="$TMPROOT/static.tsv"; : >"$STATIC_FILE"
+  REMOTES_FILE="$TMPROOT/remotes.tsv"; : >"$REMOTES_FILE"
+  ME=me run bash "$PICKER" --rows "pr:174"
   [ "$status" -eq 0 ]
-  # query-tab-names is fired upfront by print_worktrees; nothing else should run.
-  ! grep -v "action query-tab-names" "$ZELLIJ_RECORDER" | grep -q .
+  [[ "$output" == *"worktree:hello (kind-newt) pr:174"* ]]
+  [ -e "$WORKTREE_PR_FILE" ]  # gate file now exists; future reloads skip the fill
+}
+
+@test "--rows non-pr query: serves STATIC_FILE without touching WORKTREE_PR_FILE" {
+  export WORKTREE_PR_FILE STATIC_FILE REMOTES_FILE
+  WORKTREE_PR_FILE="$TMPROOT/wt_pr"
+  STATIC_FILE="$TMPROOT/static.tsv"; printf 'worktree:foo\tspawn\t/x\tfoo\n' >"$STATIC_FILE"
+  REMOTES_FILE="$TMPROOT/remotes.tsv"; : >"$REMOTES_FILE"
+  ME=me run bash "$PICKER" --rows "f"
+  [ "$status" -eq 0 ]
+  [ "$output" = "worktree:foo	spawn	/x	foo" ]
+  [ ! -e "$WORKTREE_PR_FILE" ]
 }
 
 @test "dispatch clone-and-spawn: clones canonical, creates worktree, spawns tab" {
