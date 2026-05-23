@@ -180,6 +180,12 @@ and examples that don't disambiguate.
 
 - `CHANGELOG.md` work (bootstrap, review against commits) following
   Keep a Changelog 1.1.0: `changelog` skill.
+- Forward-looking edits to `*CHANGELOG*` files are blocked by
+  `~/.claude/hooks/changelog-guard.sh` on Edit/Write/MultiEdit. It
+  rejects future-dated version headings, pre-announcement phrases
+  (`coming soon`, `planned`, `upcoming`), and new content under
+  past-dated release sections. Released sections are immutable —
+  move entries back to `[Unreleased]` instead.
 
 ## ADRs
 

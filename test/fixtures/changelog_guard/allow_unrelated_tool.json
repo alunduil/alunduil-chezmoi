@@ -1,0 +1,11 @@
+{
+  "session_id": "test",
+  "transcript_path": "/tmp/t.jsonl",
+  "cwd": "/tmp",
+  "hook_event_name": "PreToolUse",
+  "tool_use_id": "toolu_test",
+  "tool_name": "Read",
+  "tool_input": {
+    "file_path": "__CHANGELOG__"
+  }
+}

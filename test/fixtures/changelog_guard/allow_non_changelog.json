@@ -1,0 +1,13 @@
+{
+  "session_id": "test",
+  "transcript_path": "/tmp/t.jsonl",
+  "cwd": "/tmp",
+  "hook_event_name": "PreToolUse",
+  "tool_use_id": "toolu_test",
+  "tool_name": "Edit",
+  "tool_input": {
+    "file_path": "__README__",
+    "old_string": "anything",
+    "new_string": "anything Coming soon: 2.0"
+  }
+}

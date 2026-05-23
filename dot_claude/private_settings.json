@@ -18,6 +18,15 @@
       {
         "hooks": [
           {
+            "command": "/home/alunduil/.claude/hooks/changelog-guard.sh",
+            "type": "command"
+          }
+        ],
+        "matcher": "Edit|Write|MultiEdit"
+      },
+      {
+        "hooks": [
+          {
             "type": "command",
             "command": "/home/alunduil/.config/zellij/plugins/zellaude-hook.sh",
             "timeout": 5,
