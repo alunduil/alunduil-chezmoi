@@ -1,5 +1,7 @@
 #!/usr/bin/env bash
 # gh stub: returns $GH_USER for `api user`, empty for memberships, clones $GH_CLONE_SRC for `repo clone`.
+# `pr view <N>` resolves via $GH_PR_VIEW (semicolon-delimited N=branch pairs);
+# unknown N exits nonzero so the picker treats it as a missing PR.
 case "${1:-} ${2:-}" in
   "api user")
     printf '%s' "${GH_USER:-test-user}"
@@ -12,5 +14,16 @@ case "${1:-} ${2:-}" in
     ;;
   "repo clone")
     git clone --quiet "${GH_CLONE_SRC:?GH_CLONE_SRC must be set}" "$4"
+    ;;
+  "pr view")
+    n="$3"
+    IFS=';' read -ra pairs <<<"${GH_PR_VIEW:-}"
+    for pair in "${pairs[@]}"; do
+      [[ "${pair%%=*}" == "$n" ]] || continue
+      printf '%s\n' "${pair#*=}"
+      exit 0
+    done
+    printf 'no such PR: %s\n' "$n" >&2
+    exit 1
     ;;
 esac

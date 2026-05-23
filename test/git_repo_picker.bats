@@ -21,7 +21,9 @@ setup() {
   export ZELLIJ_RECORDER="$TMPROOT/zellij.log"
   : >"$ZELLIJ_RECORDER"
   export GH_USER=me
-  unset FZF_OUTPUT ZELLIJ_TAB_NAMES GH_CLONE_SRC GH_REPO_LIST PETNAME
+  export PR_CACHE_DIR="$TMPROOT/pr_cache"
+  mkdir -p "$PR_CACHE_DIR"
+  unset FZF_OUTPUT ZELLIJ_TAB_NAMES GH_CLONE_SRC GH_REPO_LIST PETNAME GH_PR_VIEW
 }
 
 # Seed a worktree under $WORKTREE_ROOT/<org>/<repo>/<petname> so
@@ -44,6 +46,18 @@ mklocal() {
   local dir="$1" url="$2"
   git init --quiet "$dir"
   git -C "$dir" remote add origin "$url"
+}
+
+# Build a worktree under $WORKTREE_ROOT on a named branch, backed by a real
+# canonical clone — so `git -C <wt> branch --show-current` returns the branch
+# print_pr_rows compares against the PR's head ref.
+mkpr_worktree() {
+  local org="$1" repo="$2" petname="$3" branch="$4"
+  local canonical="$TMPROOT/canonicals/$repo"
+  mkcanonical "$canonical" "$repo" >/dev/null
+  local petdir="$XDG_DATA_HOME/git-worktrees/$org/$repo/$petname"
+  mkdir -p "$(dirname "$petdir")"
+  git -C "$canonical" worktree add --quiet "$petdir" -b "$branch" >/dev/null
 }
 
 # Build a bare "remote" plus a canonical clone with origin/HEAD set up, so
@@ -168,6 +182,69 @@ mkcanonical() {
   [ "$(git -C "$wt" rev-parse --abbrev-ref HEAD)" = "me/worktree/fresh-petname" ]
   grep -Fxq "action new-tab --layout pair --cwd $wt" "$ZELLIJ_RECORDER"
   grep -Fxq "action rename-tab hello (fresh-petname)" "$ZELLIJ_RECORDER"
+}
+
+# --- print_pr_rows: pr:<N> resolution ---
+
+@test "print_pr_rows: matching worktree emits spawn row" {
+  mkpr_worktree me hello kind-newt feature/x
+  export GH_PR_VIEW="123=feature/x"
+  run bash -c 'source "$1"; ME=me WORKTREE_ROOT="$2" print_pr_rows 123' \
+    _ "$PICKER" "$XDG_DATA_HOME/git-worktrees"
+  [ "$status" -eq 0 ]
+  local petdir="$XDG_DATA_HOME/git-worktrees/me/hello/kind-newt"
+  [ "$output" = "$(printf 'pr:123 → worktree:hello (kind-newt)\tspawn\t%s\thello (kind-newt)' "$petdir")" ]
+}
+
+@test "print_pr_rows: matching worktree with open tab emits focus row" {
+  mkpr_worktree me hello kind-newt feature/x
+  export GH_PR_VIEW="123=feature/x"
+  export ZELLIJ_TAB_NAMES=$'hello (kind-newt)\n'
+  run bash -c 'source "$1"; ME=me WORKTREE_ROOT="$2" print_pr_rows 123' \
+    _ "$PICKER" "$XDG_DATA_HOME/git-worktrees"
+  [ "$status" -eq 0 ]
+  [ "$output" = "$(printf 'pr:123 → \033[2mworktree:hello (kind-newt)\033[0m\tfocus\thello (kind-newt)')" ]
+}
+
+@test "print_pr_rows: no matching worktree emits noop hint with head ref" {
+  mkpr_worktree me hello kind-newt feature/unrelated
+  export GH_PR_VIEW="123=feature/missing"
+  run bash -c 'source "$1"; ME=me WORKTREE_ROOT="$2" print_pr_rows 123' \
+    _ "$PICKER" "$XDG_DATA_HOME/git-worktrees"
+  [ "$status" -eq 0 ]
+  [[ "$output" == *"noop"* ]]
+  [[ "$output" == *"no matching worktree"* ]]
+  [[ "$output" == *"feature/missing"* ]]
+}
+
+@test "print_pr_rows: unknown PR emits noop error row" {
+  run bash -c 'source "$1"; ME=me WORKTREE_ROOT="$2" print_pr_rows 999' \
+    _ "$PICKER" "$XDG_DATA_HOME/git-worktrees"
+  [ "$status" -eq 0 ]
+  [[ "$output" == *"noop"* ]]
+  [[ "$output" == *"no such PR"* ]]
+}
+
+@test "print_pr_rows: caches resolution to avoid repeated gh calls" {
+  mkpr_worktree me hello kind-newt feature/x
+  export GH_PR_VIEW="123=feature/x"
+  # First call populates the cache.
+  bash -c 'source "$1"; ME=me WORKTREE_ROOT="$2" print_pr_rows 123 >/dev/null' \
+    _ "$PICKER" "$XDG_DATA_HOME/git-worktrees"
+  # Drop GH_PR_VIEW so a re-fetch would fail with "no such PR".
+  unset GH_PR_VIEW
+  run bash -c 'source "$1"; ME=me WORKTREE_ROOT="$2" print_pr_rows 123' \
+    _ "$PICKER" "$XDG_DATA_HOME/git-worktrees"
+  [ "$status" -eq 0 ]
+  [[ "$output" == *"worktree:hello (kind-newt)"* ]]
+}
+
+@test "dispatch noop: no zellij action fires beyond the upfront query" {
+  export FZF_OUTPUT=$'pr:123 → \033[2mno such PR\033[0m\tnoop'
+  run bash "$PICKER"
+  [ "$status" -eq 0 ]
+  # query-tab-names is fired upfront by print_worktrees; nothing else should run.
+  ! grep -v "action query-tab-names" "$ZELLIJ_RECORDER" | grep -q .
 }
 
 @test "dispatch clone-and-spawn: clones canonical, creates worktree, spawns tab" {
