@@ -25,33 +25,25 @@ HEADING_RE = re.compile(r"^##\s+\[[^\]]+\]\s+-\s+(\d{4}-\d{2}-\d{2})\s*$")
 PHRASE_RE = re.compile(r"\b(coming soon|planned|upcoming)\b", re.IGNORECASE)
 
 
-def apply_edit(text, old, new, replace_all):
-    if not old or old not in text:
-        return None
-    return text.replace(old, new) if replace_all else text.replace(old, new, 1)
-
-
 def post_edit_content(tool_name, tool_input, before):
     if tool_name == "Write":
         return tool_input.get("content", "")
     if tool_name == "Edit":
-        return apply_edit(
-            before,
-            tool_input.get("old_string", ""),
-            tool_input.get("new_string", ""),
-            tool_input.get("replace_all", False),
-        )
+        old = tool_input.get("old_string", "")
+        if not old or old not in before:
+            return None
+        new = tool_input.get("new_string", "")
+        count = -1 if tool_input.get("replace_all", False) else 1
+        return before.replace(old, new, count)
     if tool_name == "MultiEdit":
         after = before
         for edit in tool_input.get("edits", []):
-            after = apply_edit(
-                after,
-                edit.get("old_string", ""),
-                edit.get("new_string", ""),
-                edit.get("replace_all", False),
-            )
-            if after is None:
+            old = edit.get("old_string", "")
+            if not old or old not in after:
                 return None
+            new = edit.get("new_string", "")
+            count = -1 if edit.get("replace_all", False) else 1
+            after = after.replace(old, new, count)
         return after
     return None
 
