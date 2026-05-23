@@ -40,7 +40,7 @@ CWD="$(pwd -P)"
 #           blockers ("no PR, unpushed", "PR #N open", ...) for keep
 classify() {
     local wt=$1
-    local rel branch pr_info pr_state pr_num pr_state_lc dirty
+    local rel branch pr_info pr_state pr_num pr_state_lc dirty base ahead
     local reasons=()
 
     rel="${wt#"$WORKTREE_ROOT"/}"
@@ -74,19 +74,31 @@ classify() {
     # No upstream is treated as an "unpushed" blocker — fresh worktrees from
     # `worktree add -b` start that way, and a never-pushed branch shouldn't be
     # pruned blindly.
+    ahead=
     if [[ "$branch" != '(detached HEAD)' ]]; then
         if ! git -C "$wt" rev-parse --abbrev-ref --symbolic-full-name '@{upstream}' >/dev/null 2>&1; then
             reasons+=("no upstream")
         elif [[ -n "$(git -C "$wt" log '@{upstream}..HEAD' --oneline 2>/dev/null)" ]]; then
             reasons+=("unpushed")
         fi
+        base=$(git -C "$wt" rev-parse --abbrev-ref origin/HEAD 2>/dev/null || echo origin/main)
+        ahead=$(git -C "$wt" rev-list --count "$base..HEAD" 2>/dev/null || echo "")
     fi
 
     pr_state_lc=$(printf '%s' "$pr_state" | tr '[:upper:]' '[:lower:]')
     case "$pr_state" in
         OPEN) reasons+=("PR #${pr_num} open") ;;
         UNKNOWN) reasons+=("PR state unknown") ;;
-        NONE) [[ "$branch" != '(detached HEAD)' ]] && reasons+=("no PR") ;;
+        NONE)
+            # ahead==0 proves nothing local would be lost, so the no-upstream /
+            # unpushed gates the merged-PR path requires don't apply here.
+            if [[ "$branch" != '(detached HEAD)' && "$dirty" == clean && "$ahead" == 0 ]]; then
+                printf 'remove\t%s\t%s\t%s\t%s\n' \
+                    "$rel" "$branch" "no commits, no PR" "$wt"
+                return
+            fi
+            [[ "$branch" != '(detached HEAD)' ]] && reasons+=("no PR")
+            ;;
         MERGED | CLOSED)
             if [[ ${#reasons[@]} -eq 0 ]]; then
                 printf 'remove\t%s\t%s\t%s\t%s\n' \
