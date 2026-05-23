@@ -198,3 +198,23 @@ STUB
   [[ "$output" == *"PR #2 open"* ]]
   [[ "$output" == *"no commits, no PR"* ]]
 }
+
+# --- print_section: verdict-branched splitter ---
+
+# The keep-row detail is comma-joined, so print_section splits on ", " to
+# colour each reason. The "no commits, no PR" remove-row detail contains an
+# embedded comma; without the verdict branch the splitter would shred it into
+# two atoms and lose the green wrap. Forces colour vars on since bats stdout
+# isn't a tty.
+@test "print_section: remove-row detail with embedded comma stays one coloured atom" {
+  run bash -c "
+    source '$POI'
+    BOLD=\$'\\033[1m' DIM=\$'\\033[2m' RESET=\$'\\033[0m'
+    GREEN=\$'\\033[32m' BOLD_YELLOW=\$'\\033[1;33m'
+    CWD=/tmp
+    row=\$(printf 'remove\\tx/y\\tbranch\\tno commits, no PR\\t/tmp/wt')
+    print_section 'Would remove' \"\$row\"
+  "
+  [ "$status" -eq 0 ]
+  [[ "$output" == *$'\033[32m'"no commits, no PR"$'\033[0m'* ]]
+}
