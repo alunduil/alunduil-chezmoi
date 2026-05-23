@@ -1,6 +1,7 @@
 #!/usr/bin/env bash
-# zellij stub: appends "$@" to $ZELLIJ_RECORDER; emits $ZELLIJ_TABS_JSON for action list-tabs.
+# zellij stub: appends "$@" to $ZELLIJ_RECORDER; emits $ZELLIJ_TAB_NAMES
+# (newline-delimited) for `action query-tab-names`, matching real CLI output.
 printf '%s\n' "$*" >>"$ZELLIJ_RECORDER"
-if [[ "${1:-}" == "action" && "${2:-}" == "list-tabs" ]]; then
-  printf '%s' "${ZELLIJ_TABS_JSON:-[]}"
+if [[ "${1:-}" == "action" && "${2:-}" == "query-tab-names" ]]; then
+  printf '%s' "${ZELLIJ_TAB_NAMES:-}"
 fi
