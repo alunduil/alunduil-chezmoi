@@ -1,6 +1,6 @@
 ---
 name: vale
-description: Audit, write, or revise .vale.ini. Use when adding Vale to a repo, troubleshooting silent passes or noisy findings, or evolving an existing config. Applies the two-hook pre-commit pattern (sync + lint), explicit Packages and per-format BasedOnStyles, scoping/ignores for false positives, and a shared accept.txt vocabulary.
+description: Audit, write, or revise .vale.ini, or work through vale findings on a repo. Use when adding Vale, troubleshooting silent passes or noisy findings, evolving config, or applying the suggestion → warning → error cleanup cascade after a vale run (interactive or pre-commit failure). Applies the two-hook pre-commit pattern (sync + lint), explicit Packages and per-format BasedOnStyles, scoping/ignores for false positives, and a shared accept.txt vocabulary.
 ---
 
 # Vale
@@ -130,6 +130,10 @@ Two hooks, both `id: vale`. The first runs `vale sync` to install declared `Pack
 - `--minAlertLevel=error` — overrides the file's `warning` default so only errors block commits.
 - `errata-ai/*` repos resolve to `vale-cli/*` on GitHub; vale.sh still publishes `errata-ai/vale` in the canonical example. Both work — match the upstream docs rather than chase the rename in every repo.
 - Pair with `markdownlint-cli2` for prose-heavy repos. Vale catches voice/usage; markdownlint catches structure (heading hierarchy, link syntax). No overlap; wire as separate hooks.
+
+## Cleanup cascade
+
+Sweep findings low-tier to high-tier: suggestions, then warnings, then errors. Fixing a suggestion can introduce a new warning or error (a reworded passive becomes a long sentence; an em-dash adjacent to a link trips `Microsoft.Dashes` via tokenizer normalization). The reverse order risks re-introducing what you just cleared. Suggestions resurfacing during a later pass is fine; warnings or errors resurfacing isn't. Set `MinAlertLevel = suggestion` in-file to see the full backlog on `vale .`; keep `--minAlertLevel=error` in pre-commit so the cascade is opt-in rather than gating commits.
 
 ## Troubleshooting
 

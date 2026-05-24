@@ -179,7 +179,9 @@ and examples that don't disambiguate.
 ## Vale
 
 - `.vale.ini` work (audit, write, troubleshoot silent passes,
-  vocabularies, pre-commit wiring): `vale` skill.
+  vocabularies, pre-commit wiring) and vale findings cleanup:
+  `vale` skill. Cleanup proceeds suggestion → warning → error;
+  reverse risks re-introducing what you just cleared.
 
 ## Changelogs
 
