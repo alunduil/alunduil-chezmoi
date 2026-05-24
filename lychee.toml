@@ -2,3 +2,9 @@ cache = true
 max_cache_age = "14d"
 retry_wait_time = 5
 include_fragments = true
+
+# GitHub doesn't render #issuecomment-* anchors in the initial DOM,
+# so lychee can't verify them even when the comment exists.
+exclude = [
+  "^https://github\\.com/.*#issuecomment-",
+]
