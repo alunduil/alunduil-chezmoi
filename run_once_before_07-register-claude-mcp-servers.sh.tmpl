@@ -35,4 +35,16 @@ else
     https://api.githubcopilot.com/mcp/
 fi
 
+# ------------------------------------------------------------------- Context7
+# Upstash's docs-for-LLMs MCP. Anonymous use is rate-limited; an API key would
+# raise the ceiling and unlock usage analytics. Tracked in the repo issues for
+# a future switch to the encrypted-token pattern (see uptimerobot).
+if claude mcp list 2>/dev/null | grep -q "^context7:"; then
+  log "context7: already registered"
+else
+  log "context7: registering"
+  claude mcp add context7 --transport http --scope user \
+    https://mcp.context7.com/mcp
+fi
+
 log "claude mcp servers complete"
