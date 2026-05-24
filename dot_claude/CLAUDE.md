@@ -176,6 +176,11 @@ and examples that don't disambiguate.
 - `renovate.json` work (audit, write, troubleshoot dashboard, regex
   managers): `renovate` skill.
 
+## Vale
+
+- `.vale.ini` work (audit, write, troubleshoot silent passes,
+  vocabularies, pre-commit wiring): `vale` skill.
+
 ## Changelogs
 
 - `CHANGELOG.md` work (bootstrap, review against commits) following
