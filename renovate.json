@@ -75,6 +75,13 @@
     },
     {
       "customType": "regex",
+      "managerFilePatterns": ["/^script/install/trivy$/"],
+      "matchStrings": ["TRIVY_VERSION=\"(?<currentValue>v[\\d.]+)\""],
+      "depNameTemplate": "aquasecurity/trivy",
+      "datasourceTemplate": "github-releases"
+    },
+    {
+      "customType": "regex",
       "managerFilePatterns": ["/^run_once_before_05-install-standalone-tools\\.sh\\.tmpl$/"],
       "matchStrings": ["GH_POI_VERSION=\"(?<currentValue>v[\\d.]+)\""],
       "depNameTemplate": "seachicken/gh-poi",

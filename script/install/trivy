@@ -1,0 +1,33 @@
+#!/usr/bin/env bash
+set -euo pipefail
+
+TRIVY_VERSION="v0.70.0"
+ARCH="Linux-64bit"
+
+# shellcheck source-path=SCRIPTDIR source=lib.sh
+. "$(dirname "$0")/lib.sh"
+
+parse_bin_dir "$@"
+
+bin="$BIN_DIR/trivy"
+if [ -x "$bin" ] && "$bin" --version 2>/dev/null | grep -qF "${TRIVY_VERSION#v}"; then
+  printf '==> trivy: %s already installed at %s\n' "$TRIVY_VERSION" "$bin" >&2
+  exit 0
+fi
+
+printf '==> trivy: downloading %s\n' "$TRIVY_VERSION" >&2
+tmp="$(mktemp -d)"
+trap 'rm -rf "$tmp"' EXIT
+
+base="https://github.com/aquasecurity/trivy/releases/download/${TRIVY_VERSION}"
+asset="trivy_${TRIVY_VERSION#v}_${ARCH}.tar.gz"
+checksums="trivy_${TRIVY_VERSION#v}_checksums.txt"
+curl -fsSL -o "$tmp/$asset" "$base/$asset"
+curl -fsSL -o "$tmp/$checksums" "$base/$checksums"
+
+expected="$(expected_from_checksums "$tmp/$checksums" "$asset")"
+verify_sha256 "$tmp/$asset" "$expected"
+
+tar -xzf "$tmp/$asset" -C "$tmp" trivy
+mkdir -p "$BIN_DIR"
+install -m 0755 "$tmp/trivy" "$bin"

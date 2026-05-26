@@ -7,6 +7,7 @@
 # signal-cli content: {{ include "script/install/signal-cli" | sha256sum }}
 # yq content:         {{ include "script/install/yq" | sha256sum }}
 # truenas-mcp content:{{ include "script/install/truenas-mcp" | sha256sum }}
+# trivy content:      {{ include "script/install/trivy" | sha256sum }}
 # lib.sh content:     {{ include "script/install/lib.sh" | sha256sum }}
 # The hashes above embed the install scripts' content into this file's
 # rendered output so chezmoi re-runs this script when any of them change
@@ -23,6 +24,7 @@ INSTALL_DIR="{{ .chezmoi.sourceDir }}/script/install"
 "$INSTALL_DIR/signal-cli" --bin-dir "$HOME/.local/bin"
 "$INSTALL_DIR/yq" --bin-dir "$HOME/.local/bin"
 "$INSTALL_DIR/truenas-mcp" --bin-dir "$HOME/.local/bin"
+"$INSTALL_DIR/trivy" --bin-dir "$HOME/.local/bin"
 
 # gcx ships its skill bundle inside the binary; `agent skills install
 # --all` extracts it to ~/.agents/skills (the cross-harness convention
