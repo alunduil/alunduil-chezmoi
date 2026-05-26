@@ -25,6 +25,7 @@ signal-cli -a +<phone> register            # SMS-verified, ~/.local/share/signal
 zellij --version && lazygit --version && act --version && rtk --version
 lychee --version                           # markdown link checker (mirrors CI)
 yq --version                               # YAML processor (mikefarah/yq)
+just --version                             # command runner (justfiles)
 ghc --version && cabal --version           # ghcup-managed Haskell toolchain
 golang-petname                             # repo-picker worktree namer
 command -v nethack                         # roguelike (nethack-console)
