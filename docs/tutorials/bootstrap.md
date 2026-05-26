@@ -26,6 +26,7 @@ zellij --version && lazygit --version && act --version && rtk --version
 lychee --version                           # markdown link checker (mirrors CI)
 yq --version                               # YAML processor (mikefarah/yq)
 vale --version                             # prose linter (vale-cli/vale)
+just --version                             # command runner (justfiles)
 ghc --version && cabal --version           # ghcup-managed Haskell toolchain
 golang-petname                             # repo-picker worktree namer
 command -v nethack                         # roguelike (nethack-console)

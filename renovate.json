@@ -95,6 +95,13 @@
     },
     {
       "customType": "regex",
+      "managerFilePatterns": ["/^script/install/just$/"],
+      "matchStrings": ["JUST_VERSION=\"(?<currentValue>[\\d.]+)\""],
+      "depNameTemplate": "casey/just",
+      "datasourceTemplate": "github-releases"
+    },
+    {
+      "customType": "regex",
       "managerFilePatterns": ["/^run_once_before_05-install-standalone-tools\\.sh\\.tmpl$/"],
       "matchStrings": ["GH_POI_VERSION=\"(?<currentValue>v[\\d.]+)\""],
       "depNameTemplate": "seachicken/gh-poi",
