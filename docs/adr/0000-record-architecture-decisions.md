@@ -20,13 +20,13 @@ Decision Records under `docs/adr/`, using the Nygard format (Title,
 Status, Context, Decision, Consequences). Files are named
 `NNNN-kebab-title.md`, numbered sequentially starting at `0000`.
 
-New ADRs land with `Status: Accepted` — the PR review that merges them
+New ADRs land with `Status: Accepted`—the PR review that merges them
 is the acceptance step. Later transitions to `Superseded by NNNN` or
 `Deprecated` happen by edit. `Proposed` is reserved for the rare case
 where an ADR is published as a discussion artifact ahead of any
 implementing PR.
 
-We will not file ADRs for tactical implementation choices, framework
+We won't file ADRs for tactical implementation choices, framework
 defaults, or anything a commit message carries adequately. Sprawl makes
 the collection worth less.
 
@@ -36,7 +36,7 @@ the collection worth less.
   in play when it was made, instead of inferring intent from diffs.
 - Adding an ADR is a small discipline cost on the proposer; reading the
   set is a small load on anyone touching an area with prior decisions.
-- Deferred decisions (e.g. "stay bash for now, revisit when X fires")
+- Deferred decisions (for example, "stay bash for now, revisit when X fires")
   have a place to record the trigger condition, so re-litigation starts
   from the recorded state rather than from scratch.
 - Risk of sprawl if used for tactical choices. The warranted/not check
