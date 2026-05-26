@@ -8,6 +8,12 @@
   "pre-commit": {
     "enabled": true
   },
+  "minimumReleaseAge": "3 days",
+  "internalChecksFilter": "strict",
+  "vulnerabilityAlerts": {
+    "minimumReleaseAge": "0 days"
+  },
+  "osvVulnerabilityAlerts": true,
   "customManagers": [
     {
       "customType": "regex",
@@ -71,6 +77,13 @@
       "managerFilePatterns": ["/^script/install/truenas-mcp$/"],
       "matchStrings": ["TRUENAS_MCP_VERSION=\"(?<currentValue>v[\\d.]+)\""],
       "depNameTemplate": "truenas/truenas-mcp",
+      "datasourceTemplate": "github-releases"
+    },
+    {
+      "customType": "regex",
+      "managerFilePatterns": ["/^script/install/vale$/"],
+      "matchStrings": ["VALE_VERSION=\"(?<currentValue>v[\\d.]+)\""],
+      "depNameTemplate": "vale-cli/vale",
       "datasourceTemplate": "github-releases"
     },
     {

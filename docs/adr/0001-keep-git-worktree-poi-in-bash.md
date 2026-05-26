@@ -14,8 +14,8 @@ is open.
 
 Two pressures motivate the question (#150):
 
-- **UX.** `gh poi`'s output — color, ✔/✕ progress, bold sections,
-  dimmed metadata, single line per branch — is denser and easier to
+- **UX.** `gh poi`'s output—color, ✔/✕ progress, bold sections,
+  dimmed metadata, single line per branch—is denser and easier to
   scan than the current two-line `└─` tree, especially with many
   worktrees in flight.
 - **Complexity drift.** 234 lines of bash with more state, more
@@ -27,9 +27,9 @@ distributed via `gh extension install`. The host already runs it
 (pinned in `run_once_before_05-install-standalone-tools.sh.tmpl`), so a
 `gh-worktree-poi` rewrite would slot into the same install pass.
 
-Three options were considered: (a) stay bash and port the UX in place,
-(b) Go rewrite as `gh-worktree-poi`, (c) Rust rewrite. Option (c) is
-ruled out by ecosystem fit — Go is the de facto language for `gh`
+Three options were considered: a) stay bash and port the UX in place,
+b) Go rewrite as `gh-worktree-poi`, c) Rust rewrite. Option c is
+ruled out by ecosystem fit—Go is the de facto language for `gh`
 extensions, and a Rust binary buys little here.
 
 The reversibility asymmetry between (a) and (b) is the dominant force.
@@ -51,8 +51,9 @@ deferred, not rejected.
 
 We will revisit when any of these triggers fire:
 
-- A feature needs more than roughly 100 lines of bash addition —
-  interactive selection, a real TUI, or anything beyond report-and-act.
+- A feature needs more than roughly 100 lines of bash addition—for
+  example, interactive selection, a real TUI, or anything beyond
+  report-and-act.
 - Test scenarios start straining the PATH-shim stub model in
   `test/git_worktree_poi.bats` past what `bats` handles cleanly.
 - GraphQL batching (#147) or any successor classifier change ends up
@@ -65,7 +66,7 @@ the post-trigger surface.
 
 ## Consequences
 
-- Chezmoi-managed deployment via `dot_local/bin/` stays in place;
+- chezmoi-managed deployment via `dot_local/bin/` stays in place;
   existing `bats` coverage and the small dependency surface are
   preserved.
 - UX work (color, single-line rows, dimmed metadata, progress markers)
@@ -77,4 +78,4 @@ the post-trigger surface.
   mocks remain unavailable; complexity drift continues, just bounded by
   the re-evaluation triggers above.
 - The triggers are the load-bearing part: without them this becomes
-  "stay bash forever," which is not the decision being made.
+  "stay bash forever," which isn't the decision being made.
