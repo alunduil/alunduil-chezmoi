@@ -30,6 +30,7 @@ ghc --version && cabal --version           # ghcup-managed Haskell toolchain
 golang-petname                             # repo-picker worktree namer
 command -v nethack                         # roguelike (nethack-console)
 command -v truenas-mcp                     # TrueNAS MCP server binary
+trivy --version                            # vulnerability scanner (aquasecurity/trivy)
 gh extension list                          # confirms gh-poi (squash-merge pruner)
 claude mcp list                            # confirms registered MCP servers
 ```
