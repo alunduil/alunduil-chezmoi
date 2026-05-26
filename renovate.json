@@ -88,6 +88,13 @@
     },
     {
       "customType": "regex",
+      "managerFilePatterns": ["/^script/install/trivy$/"],
+      "matchStrings": ["TRIVY_VERSION=\"(?<currentValue>v[\\d.]+)\""],
+      "depNameTemplate": "aquasecurity/trivy",
+      "datasourceTemplate": "github-releases"
+    },
+    {
+      "customType": "regex",
       "managerFilePatterns": ["/^script/install/just$/"],
       "matchStrings": ["JUST_VERSION=\"(?<currentValue>[\\d.]+)\""],
       "depNameTemplate": "casey/just",
