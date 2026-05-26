@@ -1,0 +1,72 @@
+# Starter Vale.Terms list. Copy into <StylesPath>/config/vocabularies/<Project>/
+# and extend per-project. One regex per line; case-sensitive; prefix (?i) for
+# case-insensitive. Lines starting with # are comments.
+
+# Identity
+Alunduil
+alunduil
+
+# Host tooling
+chezmoi
+Crostini
+Zellij
+TrueNAS
+Cloudflare
+Renovate
+Dependabot
+Codecov
+markdownlint
+pre-commit
+Diátaxis
+devcontainer
+DevContainer
+Codespaces
+ghcup
+Keybase
+paperkey
+
+# Editors and OSes
+VSCode
+macOS
+Linux
+
+# AI and Claude ecosystem
+Claude
+Anthropic
+Claustre
+claustre
+Copilot
+
+# Languages and ecosystems
+TypeScript
+JavaScript
+Haskell
+Erlang
+Cabal
+pnpm
+corepack
+
+# Doc conventions
+README
+CHANGELOG
+ADR
+ADRs
+Nygard
+MADR
+frontmatter
+nayafia
+worktree
+worktrees
+
+# Common tech terms
+config
+dev
+dotfile
+dotfiles
+heredoc
+keybinds
+namespaced
+repo
+repos
+toolchains
+facto

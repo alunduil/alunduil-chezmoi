@@ -20,6 +20,10 @@ A per-repo `CLAUDE.md` overrides anything here.
 - End multi-step work with a 1-2 line summary naming any non-obvious
   choices made. "Revisit if you don't like it" doesn't substitute for
   surfacing the choice.
+- Avoid invented or domain-specific acronyms. Spell out terms like
+  "acceptance criteria" rather than introducing "AC". Only acronyms
+  unambiguous to a general technical reader (API, URL, CLI, PR, CI)
+  are safe.
 
 ## Pull requests
 
@@ -175,6 +179,13 @@ and examples that don't disambiguate.
 
 - `renovate.json` work (audit, write, troubleshoot dashboard, regex
   managers): `renovate` skill.
+
+## Vale
+
+- `.vale.ini` work (audit, write, troubleshoot silent passes,
+  vocabularies, pre-commit wiring) and vale findings cleanup:
+  `vale` skill. Cleanup proceeds suggestion → warning → error;
+  reverse risks re-introducing what you just cleared.
 
 ## Changelogs
 
