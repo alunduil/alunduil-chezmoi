@@ -8,12 +8,11 @@
 // anyway. The pair layout adds a zjstatus line for PR-aware status; default
 // stays minimal.
 
-// Sessions never serialize. On filesystems where btime isn't exposed
-// (Crostini's ext4 path through 9p), the resurrection-file scan logs
-// "creation time is not available" twice a second per saved session and
-// eventually saturates the screen/plugin threads — see zellij-org/zellij#4165
-// and PR #5057. Until the fix lands upstream, keep the cache empty so the
-// loop has nothing to iterate.
+// Sessions never serialize. Before Rust 1.87, std::fs::Metadata::created()
+// returns "creation time is not available" on Linux even on filesystems
+// that store btime — zellij's resurrection scan logs the error twice a
+// second per saved session and eventually saturates the screen/plugin
+// threads (zellij-org/zellij#4165, PR #5057). Empty cache → empty loop.
 session_serialization false
 
 plugins {
