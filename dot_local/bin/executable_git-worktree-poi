@@ -1,18 +1,28 @@
 #!/usr/bin/env bash
-# gh-poi for local worktrees: removes worktrees whose work has already merged
-# or been closed upstream, plus empty worktrees with no PR (misclicks and
-# abandoned exploration). Leaves dirty/active/in-use ones alone. Walks
-# $XDG_DATA_HOME/git-worktrees/ — the picker's worktree root.
-#
-# In-use guard: any worktree containing a process cwd (zellij pane, editor,
-# tmux, dev server, ...) is annotated `in-use` and never removed. Detection
-# reads /proc/*/cwd, so it generalises beyond zellij's CLI surface.
-#
-# Usage:
-#   git worktree-poi              # remove safe worktrees (merged/closed PR + pushed, or no commits + no PR)
-#   git worktree-poi -n|--dry-run # preview without removing
 
 set -euo pipefail
+
+# usage: the script's documentation and its -h/--help output, in one place.
+# Laid out the way Click renders a command's help — Usage synopsis, the full
+# description, then an aligned Options block.
+usage() {
+    cat <<'EOF'
+Usage: git worktree-poi [OPTIONS]
+
+  gh-poi for local worktrees: removes worktrees whose work has already
+  merged or been closed upstream, plus empty worktrees with no PR (misclicks
+  and abandoned exploration). Leaves dirty/active/in-use ones alone. Walks
+  $XDG_DATA_HOME/git-worktrees/ — the picker's worktree root.
+
+  In-use guard: any worktree containing a process cwd (zellij pane, editor,
+  tmux, dev server, ...) is annotated `in-use` and never removed. Detection
+  reads /proc/*/cwd, so it generalises beyond zellij's CLI surface.
+
+Options:
+  -n, --dry-run  Preview without removing.
+  -h, --help     Show this message and exit.
+EOF
+}
 
 # NO_COLOR (https://no-color.org): any non-empty value disables colour.
 if [[ -t 1 && -z "${NO_COLOR:-}" ]]; then
@@ -146,6 +156,18 @@ fetch_pr_states_for_repo() {
     done <<<"$resp"
 }
 
+# walk_worktrees: emit each candidate worktree dir under $WORKTREE_ROOT, one
+# per line, sorted. Worktrees sit at <root>/<org>/<repo>/<petname> (depth 3)
+# and carry a .git file; other dirs at that depth are skipped. Both the
+# PR-state pass and classification iterate this set.
+walk_worktrees() {
+    local wt
+    while IFS= read -r wt; do
+        [[ -e "$wt/.git" ]] || continue
+        printf '%s\n' "$wt"
+    done < <(find "$WORKTREE_ROOT" -mindepth 3 -maxdepth 3 -type d 2>/dev/null | sort)
+}
+
 # batch_fetch_pr_states: walk every worktree under $WORKTREE_ROOT, group by
 # canonical (one canonical = one GitHub repo), and dispatch one GraphQL query
 # per group. Detached-HEAD worktrees are skipped — classify() leaves their
@@ -155,12 +177,11 @@ batch_fetch_pr_states() {
     declare -A by_canonical=()
 
     while IFS= read -r wt; do
-        [[ -e "$wt/.git" ]] || continue
         canonical=$(git -C "$wt" rev-parse --path-format=absolute --git-common-dir 2>/dev/null) || continue
         canonical=${canonical%/.git}
         branch=$(git -C "$wt" symbolic-ref --short HEAD 2>/dev/null) || continue
         by_canonical[$canonical]+="$wt"$'\t'"$branch"$'\n'
-    done < <(find "$WORKTREE_ROOT" -mindepth 3 -maxdepth 3 -type d 2>/dev/null | sort)
+    done < <(walk_worktrees)
 
     for canonical in "${!by_canonical[@]}"; do
         fetch_pr_states_for_repo "$canonical" "${by_canonical[$canonical]}"
@@ -275,10 +296,10 @@ classify() {
 }
 
 gather() {
+    local wt
     while IFS= read -r wt; do
-        [[ -e "$wt/.git" ]] || continue
         classify "$wt"
-    done < <(find "$WORKTREE_ROOT" -mindepth 3 -maxdepth 3 -type d 2>/dev/null | sort)
+    done < <(walk_worktrees)
 }
 
 # colour_reason <reason>: emit one comma-joined reason coloured by category.
@@ -299,6 +320,27 @@ colour_reason() {
                                     printf '%s%s%s' "$YELLOW" "$r" "$RESET" ;;
         *)                          printf '%s%s%s' "$DIM" "$r" "$RESET" ;;
     esac
+}
+
+# colour_detail <verdict> <detail>: colour the bracketed detail column.
+# Remove-row details are single atoms (some, like "no commits, no PR", contain
+# commas) and colour whole. Keep-row details are comma-joined blockers, split
+# on ", " so each reason colours independently.
+colour_detail() {
+    local verdict=$1 detail=$2
+    if [[ "$verdict" == remove ]]; then
+        colour_reason "$detail"
+        return
+    fi
+    local rest=$detail sep='' part coloured=''
+    while [[ "$rest" == *", "* ]]; do
+        part=${rest%%, *}
+        coloured+="${sep}$(colour_reason "$part")"
+        sep="${DIM}, ${RESET}"
+        rest=${rest#*, }
+    done
+    coloured+="${sep}$(colour_reason "$rest")"
+    printf '%s' "$coloured"
 }
 
 # print_section <heading> <tsv-rows>
@@ -348,23 +390,7 @@ print_section() {
         left_coloured+=("$left")
         left_widths+=("${#plain}")
 
-        # Remove-row details are single atoms (some, like "no commits, no
-        # PR", contain commas). Keep-row details are comma-joined and need
-        # splitting before per-reason colouring.
-        local coloured=''
-        if [[ "$verdict" == remove ]]; then
-            coloured=$(colour_reason "$detail")
-        else
-            local rest=$detail sep='' part
-            while [[ "$rest" == *", "* ]]; do
-                part=${rest%%, *}
-                coloured+="${sep}$(colour_reason "$part")"
-                sep="${DIM}, ${RESET}"
-                rest=${rest#*, }
-            done
-            coloured+="${sep}$(colour_reason "$rest")"
-        fi
-        right_coloured+=("${DIM}[${RESET}${coloured}${DIM}]${RESET}")
+        right_coloured+=("${DIM}[${RESET}$(colour_detail "$verdict" "$detail")${DIM}]${RESET}")
     done <<<"$data"
 
     # Soft cap on the alignment column. Without it, one row with a long
@@ -405,7 +431,7 @@ dry_run=0
 case "${1:-}" in
     -n | --dry-run) dry_run=1 ;;
     -h | --help)
-        sed -n '2,12p' "$0" | sed 's|^# \?||'
+        usage
         exit 0
         ;;
     "") ;;

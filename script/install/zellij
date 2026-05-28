@@ -10,7 +10,7 @@ ARCH="x86_64-unknown-linux-musl"
 parse_bin_dir "$@"
 
 bin="$BIN_DIR/zellij"
-if [ -x "$bin" ] && "$bin" --version 2>/dev/null | grep -qF "${ZELLIJ_VERSION#v}"; then
+if installed_version_matches "$bin" "$ZELLIJ_VERSION"; then
   printf '==> zellij: %s already installed at %s\n' "$ZELLIJ_VERSION" "$bin" >&2
   exit 0
 fi

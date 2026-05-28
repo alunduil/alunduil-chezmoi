@@ -10,7 +10,7 @@ ARCH="linux_amd64"
 parse_bin_dir "$@"
 
 bin="$BIN_DIR/gcx"
-if [ -x "$bin" ] && "$bin" --version 2>/dev/null | grep -qF "${GCX_VERSION#v}"; then
+if installed_version_matches "$bin" "$GCX_VERSION"; then
   printf '==> gcx: %s already installed at %s\n' "$GCX_VERSION" "$bin" >&2
   exit 0
 fi

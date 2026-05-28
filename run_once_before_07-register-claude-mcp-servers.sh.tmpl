@@ -4,6 +4,12 @@
 # doesn't manage -- which is why registration happens in the bootstrap rather
 # than via a chezmoi-deployed config file. OAuth pops a browser on first use.
 # Requires `claude` (installed in script 03).
+#
+# Idempotency here is check-and-skip (grep `claude mcp list`), not the
+# remove-and-re-add the run_onchange_after_07-* MCP scripts use. These are
+# static endpoint URLs, so skipping when already present is safe; the
+# run_onchange scripts re-add because they carry rotating secrets whose
+# change must take effect.
 
 set -euo pipefail
 

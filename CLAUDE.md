@@ -16,8 +16,9 @@ effect on `apply` until committed and pulled into the apply clone. Use
 
 - Bootstrap scripts (`run_once_before_NN-*.sh.tmpl`) are idempotent;
   re-running is safe. Numeric prefix orders them.
-- Tool versions live in `script/install/{zellij,lazygit,act,gcx}` and are
-  reused by both bootstrap and CI. Bump in one place. Zellij *plugins*
+- Tool versions live in `script/install/*` (one script per tool, each
+  pinning its own `*_VERSION`) and are reused by both bootstrap and CI.
+  Bump in one place. Zellij *plugins*
   (`zellaude`, `zjstatus`) are pinned separately as alias tags in
   `dot_config/zellij/config.kdl`.
 - `gh` extensions install in script 05 alongside other bespoke
