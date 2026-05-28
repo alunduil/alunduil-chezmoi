@@ -1,0 +1,34 @@
+#!/usr/bin/env bash
+# Registers GitHub's official Copilot MCP server with Claude Code. GitHub's
+# OAuth endpoint requires a pre-registered client, which Claude Code's dynamic
+# client registration flow doesn't satisfy -- so we use bearer-token auth via
+# a fine-grained PAT, mirroring the uptimerobot script in the same slot. Tools
+# land under mcp__github__*, which pr-draft-guard.sh keys on.
+#
+# Why run_onchange_after instead of run_once_before:
+#   - _after_: the chezmoi-encrypted token must be decrypted to
+#     ~/.config/github/token before we read it, which only happens after files
+#     are applied.
+#   - run_onchange (keyed on the encrypted file's hash below): when the token
+#     rotates, the source file's hash changes, this script reruns, and the
+#     stale token in ~/.claude.json gets replaced.
+#
+# token-hash: {{ with (glob (joinPath .chezmoi.sourceDir "dot_config/github/encrypted_private_token.age")) }}{{ include "dot_config/github/encrypted_private_token.age" | sha256sum }}{{ else }}not-yet-encrypted{{ end }}
+
+set -euo pipefail
+
+log() { printf '==> %s\n' "$*" >&2; }
+
+token_file="$HOME/.config/github/token"
+if [ ! -r "$token_file" ]; then
+  log "github: token not deployed at $token_file, skipping"
+  exit 0
+fi
+
+token="$(<"$token_file")"
+
+claude mcp remove github --scope user >/dev/null 2>&1 || true
+log "github: registering"
+claude mcp add github --transport http --scope user \
+  https://api.githubcopilot.com/mcp/ \
+  --header "Authorization: Bearer ${token}"
