@@ -46,6 +46,15 @@ die() { printf 'git-repo-picker: %s\n' "$*" >&2; exit 1; }
 
 WORKTREE_ROOT="${XDG_DATA_HOME:-$HOME/.local/share}/git-worktrees"
 
+# split_petdir PETDIR: emit "<org>\t<repo>\t<petname>" for a worktree at
+# $WORKTREE_ROOT/<org>/<repo>/<petname>.
+split_petdir() {
+    printf '%s\t%s\t%s\n' \
+        "$(basename "$(dirname "$(dirname "$1")")")" \
+        "$(basename "$(dirname "$1")")" \
+        "$(basename "$1")"
+}
+
 fmt_repo() {
     local org=$1 repo=$2
     if [[ "$org" == "$ME" ]]; then printf '%s' "$repo"; else printf '%s/%s' "$org" "$repo"; fi
@@ -84,9 +93,7 @@ print_worktrees() {
     opens=$(open_tabs)
     while IFS= read -r petdir; do
         [[ -e "$petdir/.git" ]] || continue
-        petname=$(basename "$petdir")
-        repo=$(basename "$(dirname "$petdir")")
-        org=$(basename "$(dirname "$(dirname "$petdir")")")
+        IFS=$'\t' read -r org repo petname <<<"$(split_petdir "$petdir")"
         tab=$(fmt_tab "$org" "$repo" "$petname")
         if grep -Fxq "$tab" <<<"$opens"; then
             display=$(printf '\033[2mworktree:%s\033[0m' "$tab")
@@ -120,8 +127,7 @@ print_worktrees_with_prs() {
     local -A seen_repo=()
     local repo org repo_key branch num
     for petdir in "${petdirs[@]}"; do
-        repo=$(basename "$(dirname "$petdir")")
-        org=$(basename "$(dirname "$(dirname "$petdir")")")
+        IFS=$'\t' read -r org repo _ <<<"$(split_petdir "$petdir")"
         repo_key="$org/$repo"
         [[ -n "${seen_repo[$repo_key]:-}" ]] && continue
         seen_repo[$repo_key]=1
@@ -136,9 +142,7 @@ print_worktrees_with_prs() {
     local opens petname tab display pr_n
     opens=$(open_tabs)
     for petdir in "${petdirs[@]}"; do
-        petname=$(basename "$petdir")
-        repo=$(basename "$(dirname "$petdir")")
-        org=$(basename "$(dirname "$(dirname "$petdir")")")
+        IFS=$'\t' read -r org repo petname <<<"$(split_petdir "$petdir")"
         branch=$(git -C "$petdir" branch --show-current 2>/dev/null) || continue
         pr_n=${pr_for["$org/$repo:$branch"]:-}
         [[ -n "$pr_n" ]] || continue
