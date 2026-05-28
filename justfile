@@ -1,5 +1,8 @@
-# Local sensor entrypoint. CI runs each of these in its own workflow;
-# `just check` is the single command to run them all before claiming done.
+# Local sensor entrypoint: the fast pre-claim sweep. CI is the source of
+# truth — each sensor also runs in its own workflow, so a stale list here
+# can only cause a local false-pass that CI then catches, never a bad
+# merge. lychee (link-checking) runs in CI only; it's not a pre-claim
+# sensor and needs its own binary.
 
 # List available recipes.
 default:
