@@ -32,7 +32,7 @@ effect on `apply` until committed and pulled into the apply clone. Use
 CI is authoritative. Run all sensors locally before claiming done:
 
 ```bash
-just check                     # runs every sensor below, fail-fast
+just check                     # runs every sensor below, reports all failures
 ```
 
 Each runs in its own CI workflow and can be invoked alone:
