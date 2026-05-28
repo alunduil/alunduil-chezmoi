@@ -1,18 +1,28 @@
 #!/usr/bin/env bash
-# gh-poi for local worktrees: removes worktrees whose work has already merged
-# or been closed upstream, plus empty worktrees with no PR (misclicks and
-# abandoned exploration). Leaves dirty/active/in-use ones alone. Walks
-# $XDG_DATA_HOME/git-worktrees/ — the picker's worktree root.
-#
-# In-use guard: any worktree containing a process cwd (zellij pane, editor,
-# tmux, dev server, ...) is annotated `in-use` and never removed. Detection
-# reads /proc/*/cwd, so it generalises beyond zellij's CLI surface.
-#
-# Usage:
-#   git worktree-poi              # remove safe worktrees (merged/closed PR + pushed, or no commits + no PR)
-#   git worktree-poi -n|--dry-run # preview without removing
 
 set -euo pipefail
+
+# usage: the script's documentation and its -h/--help output, in one place.
+# Laid out the way Click renders a command's help — Usage synopsis, the full
+# description, then an aligned Options block.
+usage() {
+    cat <<'EOF'
+Usage: git worktree-poi [OPTIONS]
+
+  gh-poi for local worktrees: removes worktrees whose work has already
+  merged or been closed upstream, plus empty worktrees with no PR (misclicks
+  and abandoned exploration). Leaves dirty/active/in-use ones alone. Walks
+  $XDG_DATA_HOME/git-worktrees/ — the picker's worktree root.
+
+  In-use guard: any worktree containing a process cwd (zellij pane, editor,
+  tmux, dev server, ...) is annotated `in-use` and never removed. Detection
+  reads /proc/*/cwd, so it generalises beyond zellij's CLI surface.
+
+Options:
+  -n, --dry-run  Preview without removing.
+  -h, --help     Show this message and exit.
+EOF
+}
 
 # NO_COLOR (https://no-color.org): any non-empty value disables colour.
 if [[ -t 1 && -z "${NO_COLOR:-}" ]]; then
@@ -421,7 +431,7 @@ dry_run=0
 case "${1:-}" in
     -n | --dry-run) dry_run=1 ;;
     -h | --help)
-        sed -n '2,13p' "$0" | sed 's|^# \?||'
+        usage
         exit 0
         ;;
     "") ;;
