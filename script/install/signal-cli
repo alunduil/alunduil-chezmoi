@@ -16,7 +16,7 @@ KEY_FPR="FA10826A74907F9EC6BBB7FC2BA2CD21B5B09570"
 parse_bin_dir "$@"
 
 bin="$BIN_DIR/signal-cli"
-if [ -x "$bin" ] && "$bin" --version 2>/dev/null | grep -qF "${SIGNAL_CLI_VERSION#v}"; then
+if installed_version_matches "$bin" "$SIGNAL_CLI_VERSION"; then
   printf '==> signal-cli: %s already installed at %s\n' "$SIGNAL_CLI_VERSION" "$bin" >&2
   exit 0
 fi

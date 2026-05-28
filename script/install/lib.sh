@@ -27,6 +27,15 @@ parse_bin_dir() {
   }
 }
 
+# installed_version_matches BIN VERSION: succeeds when BIN is executable and
+# its `--version` output contains VERSION with any leading `v` stripped.
+# Release tags carry the `v` (v0.2.88); the binary's own --version usually
+# reports it without. Lets every installer share one already-installed guard.
+installed_version_matches() {
+  local bin="$1" version="$2"
+  [ -x "$bin" ] && "$bin" --version 2>/dev/null | grep -qF "${version#v}"
+}
+
 # Look up the SHA256 of ASSET in a `<hash>  <filename>` style checksums
 # file. Prints the hash on stdout. Returns 1 if no entry is found.
 expected_from_checksums() {

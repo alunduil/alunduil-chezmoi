@@ -10,7 +10,7 @@ ARCH="x86_64-unknown-linux-musl"
 parse_bin_dir "$@"
 
 bin="$BIN_DIR/lychee"
-if [ -x "$bin" ] && "$bin" --version 2>/dev/null | grep -qF "${LYCHEE_VERSION#v}"; then
+if installed_version_matches "$bin" "$LYCHEE_VERSION"; then
   printf '==> lychee: %s already installed at %s\n' "$LYCHEE_VERSION" "$bin" >&2
   exit 0
 fi

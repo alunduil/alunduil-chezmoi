@@ -10,7 +10,7 @@ ARCH="linux-amd64"
 parse_bin_dir "$@"
 
 bin="$BIN_DIR/truenas-mcp"
-if [ -x "$bin" ] && "$bin" --version 2>/dev/null | grep -qF "${TRUENAS_MCP_VERSION#v}"; then
+if installed_version_matches "$bin" "$TRUENAS_MCP_VERSION"; then
   printf '==> truenas-mcp: %s already installed at %s\n' "$TRUENAS_MCP_VERSION" "$bin" >&2
   exit 0
 fi

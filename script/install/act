@@ -10,7 +10,7 @@ ARCH="Linux_x86_64"
 parse_bin_dir "$@"
 
 bin="$BIN_DIR/act"
-if [ -x "$bin" ] && "$bin" --version 2>/dev/null | grep -qF "${ACT_VERSION#v}"; then
+if installed_version_matches "$bin" "$ACT_VERSION"; then
   printf '==> act: %s already installed at %s\n' "$ACT_VERSION" "$bin" >&2
   exit 0
 fi
