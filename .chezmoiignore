@@ -1,6 +1,7 @@
 .lycheecache
 CLAUDE.md
 docs
+justfile
 LICENSE
 README.md
 lychee.toml

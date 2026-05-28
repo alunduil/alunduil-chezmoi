@@ -29,7 +29,13 @@ effect on `apply` until committed and pulled into the apply clone. Use
 
 ## Sensors
 
-CI is authoritative. Run locally before claiming done:
+CI is authoritative. Run all sensors locally before claiming done:
+
+```bash
+just check                     # runs every sensor below, fail-fast
+```
+
+Each runs in its own CI workflow and can be invoked alone:
 
 ```bash
 pre-commit run --all-files     # shellcheck, shfmt, check-json
