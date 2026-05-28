@@ -33,4 +33,4 @@ gh extension list                          # confirms gh-poi (squash-merge prune
 claude mcp list                            # confirms registered MCP servers
 ```
 
-SSH keys deploy from age-encrypted chezmoi source on apply — `~/.ssh/{id_rsa,id_rsa.pub,config}` land alongside the age-key paste step, so SSH to GitHub works as soon as `chezmoi init --apply` finishes. The bootstrap clones over HTTPS to bridge the gap before keys exist; swap the apply clone's remote back to SSH if preferred: `git -C ~/.local/share/chezmoi remote set-url origin git@github.com:alunduil/alunduil-chezmoi.git`.
+SSH keys deploy from age-encrypted chezmoi source on apply — `~/.ssh/{id_rsa,config}` land alongside the age-key paste step, so SSH to GitHub works as soon as `chezmoi init --apply` finishes. The bootstrap clones over HTTPS to bridge the gap before keys exist; swap the apply clone's remote back to SSH if preferred: `git -C ~/.local/share/chezmoi remote set-url origin git@github.com:alunduil/alunduil-chezmoi.git`.
