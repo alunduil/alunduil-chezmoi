@@ -16,7 +16,12 @@
 session_serialization false
 
 plugins {
-    zellaude location="https://github.com/ishefi/zellaude/releases/download/v0.5.0/zellaude.wasm"
+    // TEMP (alunduil-chezmoi#211): local build carrying the CLI-pipe unblock
+    // fix. Stock zellaude never unblocks CLI pipes, so each Claude-hook
+    // `zellij pipe` leaks a server connection until the server deadlocks.
+    // Verifying over a week-long session that the patched build holds; revert
+    // to a pinned release URL once the fix is upstreamed and tagged.
+    zellaude location="file:/home/alunduil/.local/share/zellij/plugins/zellaude.wasm"
     zjstatus location="https://github.com/dj95/zjstatus/releases/download/v0.22.0/zjstatus.wasm"
 }
 
