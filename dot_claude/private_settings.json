@@ -276,5 +276,8 @@
       "Read(/home/alunduil/.ssh/**)"
     ]
   },
-  "theme": "auto"
+  "theme": "auto",
+  "enabledPlugins": {
+    "rust-analyzer-lsp@claude-plugins-official": true
+  }
 }
