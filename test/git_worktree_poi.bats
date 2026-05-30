@@ -275,3 +275,96 @@ STUB
   [ "$status" -eq 0 ]
   [[ "$output" == *$'\033[32m'"no commits, no PR"$'\033[0m'* ]]
 }
+
+# --- resolve_target: NAME → single worktree ---
+
+# Bare directories with a .git file are enough: walk_worktrees and
+# resolve_target only test names, never invoke git on the path.
+_mk_stub_wt() {
+  local p="$XDG_DATA_HOME/git-worktrees/$1"
+  mkdir -p "$p"
+  : >"$p/.git"
+}
+
+@test "resolve_target: bare petname across two repos errors with candidates" {
+  _mk_stub_wt me/alpha/dup
+  _mk_stub_wt me/beta/dup
+  run bash -c 'source "$1"; resolve_target dup' _ "$POI"
+  [ "$status" -ne 0 ]
+  [[ "$output" == *"alpha/dup"* ]]
+  [[ "$output" == *"beta/dup"* ]]
+}
+
+@test "resolve_target: <repo>/<name> disambiguates the collision" {
+  _mk_stub_wt me/alpha/dup
+  _mk_stub_wt me/beta/dup
+  run bash -c 'source "$1"; resolve_target alpha/dup; printf %s "$TARGET_WT"' _ "$POI"
+  [ "$status" -eq 0 ]
+  [[ "$output" == *"/me/alpha/dup" ]]
+}
+
+@test "resolve_target: unique petname resolves to its path" {
+  _mk_stub_wt me/repo/solo
+  run bash -c 'source "$1"; resolve_target solo; printf %s "$TARGET_WT"' _ "$POI"
+  [ "$status" -eq 0 ]
+  [[ "$output" == *"/me/repo/solo" ]]
+}
+
+@test "resolve_target: no match errors" {
+  _mk_stub_wt me/repo/solo
+  run bash -c 'source "$1"; resolve_target nope' _ "$POI"
+  [ "$status" -ne 0 ]
+  [[ "$output" == *"no worktree matches 'nope'"* ]]
+}
+
+# --- --force: override the keep verdict for a named worktree ---
+
+# Real gh is absent in CI (other tests stub it), so the binary-presence check
+# at the top of the script needs something on PATH. The forced paths below
+# classify UNKNOWN — origin is a file:// bare repo, so github_slug bails and
+# no gh call is made — leaving this stub uninvoked.
+_stub_gh_absent() {
+  local d="$TMPROOT/stubs"
+  mkdir -p "$d"
+  printf '#!/usr/bin/env bash\nexit 1\n' >"$d/gh"
+  chmod +x "$d/gh"
+  printf '%s' "$d"
+}
+
+@test "force without NAME is rejected" {
+  run bash "$POI" -f
+  [ "$status" -ne 0 ]
+  [[ "$output" == *"--force requires a worktree NAME"* ]]
+}
+
+@test "force removes a kept worktree and force-deletes its branch" {
+  _mkworktree  # non-GitHub origin → PR state UNKNOWN → classifier keeps it
+  local stub; stub=$(_stub_gh_absent)
+
+  # Without force the target is kept, not removed.
+  PATH="$stub:$PATH" run bash "$POI" -n feature
+  [ "$status" -eq 0 ]
+  [[ "$output" == *"Would keep"* ]]
+  [[ "$output" == *"PR state unknown"* ]]
+  [ -e "$WT" ]
+
+  # With force it goes, branch and all.
+  PATH="$stub:$PATH" run bash "$POI" -f feature
+  [ "$status" -eq 0 ]
+  [[ "$output" == *"Removed"* ]]
+  [ ! -e "$WT" ]
+  run git -C "$HOME/me/repo" rev-parse --verify --quiet refs/heads/feature
+  [ "$status" -ne 0 ]
+}
+
+@test "NAME scopes the run to the matched worktree" {
+  _mkworktree
+  git -C "$HOME/me/repo" worktree add -B other \
+    "$XDG_DATA_HOME/git-worktrees/me/repo/other" >/dev/null 2>&1
+  local stub; stub=$(_stub_gh_absent)
+
+  PATH="$stub:$PATH" run bash "$POI" -n feature
+  [ "$status" -eq 0 ]
+  [[ "$output" == *"repo/feature"* ]]
+  [[ "$output" != *"repo/other"* ]]
+}

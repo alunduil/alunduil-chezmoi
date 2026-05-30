@@ -7,7 +7,7 @@ set -euo pipefail
 # description, then an aligned Options block.
 usage() {
     cat <<'EOF'
-Usage: git worktree-poi [OPTIONS]
+Usage: git worktree-poi [OPTIONS] [NAME]
 
   gh-poi for local worktrees: removes worktrees whose work has already
   merged or been closed upstream, plus empty worktrees with no PR (misclicks
@@ -18,7 +18,13 @@ Usage: git worktree-poi [OPTIONS]
   tmux, dev server, ...) is annotated `in-use` and never removed. Detection
   reads /proc/*/cwd, so it generalises beyond zellij's CLI surface.
 
+  NAME scopes the run to a single worktree, matched by petname (the leaf
+  dir), <repo>/<petname>, or absolute path. --force then removes it even
+  when it would otherwise be kept (in-use, dirty, unpushed, open PR),
+  force-deleting its branch too. Safe to run from inside the target.
+
 Options:
+  -f, --force    Remove NAME even if classified keep. Requires NAME.
   -n, --dry-run  Preview without removing.
   -h, --help     Show this message and exit.
 EOF
@@ -41,6 +47,11 @@ fi
 die() { printf 'git-worktree-poi: %s\n' "$*" >&2; exit 1; }
 
 WORKTREE_ROOT="${XDG_DATA_HOME:-$HOME/.local/share}/git-worktrees"
+
+# Set by resolve_target when a NAME is given on the command line; empty means
+# "operate on every worktree". candidate_worktrees() narrows the PR-state pass
+# and classification to this single path when set.
+TARGET_WT=
 
 # Process cwds whose target lives under $WORKTREE_ROOT. Populated once before
 # classification; every classify() call consults this set via is_in_use.
@@ -168,6 +179,50 @@ walk_worktrees() {
     done < <(find "$WORKTREE_ROOT" -mindepth 3 -maxdepth 3 -type d 2>/dev/null | sort)
 }
 
+# candidate_worktrees: the worktree set every pass operates on. Just the
+# resolved target when a NAME narrowed the run, else the full walk. Routing
+# both the PR-state pass and classification through this keeps a NAME run from
+# querying GitHub for unrelated repos.
+candidate_worktrees() {
+    if [[ -n "$TARGET_WT" ]]; then
+        printf '%s\n' "$TARGET_WT"
+    else
+        walk_worktrees
+    fi
+}
+
+# resolve_target <name>: set TARGET_WT to the single worktree NAME identifies,
+# matched by absolute path, <repo>/<petname>, or bare petname (leaf dir). Dies
+# with the candidate list when a bare name is ambiguous across repos, or when
+# nothing matches.
+resolve_target() {
+    local name=$1 wt rel
+    local -a matches=()
+    while IFS= read -r wt; do
+        rel="${wt#"$WORKTREE_ROOT"/}"
+        rel="${rel#*/}"
+        if [[ "$wt" == "$name" || "$rel" == "$name" || "${wt##*/}" == "$name" ]]; then
+            matches+=("$wt")
+        fi
+    done < <(walk_worktrees)
+
+    ((${#matches[@]})) || die "no worktree matches '$name' under $WORKTREE_ROOT"
+
+    if ((${#matches[@]} > 1)); then
+        {
+            printf "git-worktree-poi: '%s' matches multiple worktrees:\n" "$name"
+            for wt in "${matches[@]}"; do
+                rel="${wt#"$WORKTREE_ROOT"/}"
+                printf '  %s\n' "${rel#*/}"
+            done
+            printf 'disambiguate with <repo>/<name>\n'
+        } >&2
+        exit 1
+    fi
+
+    TARGET_WT=${matches[0]}
+}
+
 # batch_fetch_pr_states: walk every worktree under $WORKTREE_ROOT, group by
 # canonical (one canonical = one GitHub repo), and dispatch one GraphQL query
 # per group. Detached-HEAD worktrees are skipped — classify() leaves their
@@ -181,7 +236,7 @@ batch_fetch_pr_states() {
         canonical=${canonical%/.git}
         branch=$(git -C "$wt" symbolic-ref --short HEAD 2>/dev/null) || continue
         by_canonical[$canonical]+="$wt"$'\t'"$branch"$'\n'
-    done < <(walk_worktrees)
+    done < <(candidate_worktrees)
 
     for canonical in "${!by_canonical[@]}"; do
         fetch_pr_states_for_repo "$canonical" "${by_canonical[$canonical]}"
@@ -299,7 +354,7 @@ gather() {
     local wt
     while IFS= read -r wt; do
         classify "$wt"
-    done < <(walk_worktrees)
+    done < <(candidate_worktrees)
 }
 
 # colour_reason <reason>: emit one comma-joined reason coloured by category.
@@ -428,19 +483,43 @@ for cmd in git gh; do
 done
 
 dry_run=0
-case "${1:-}" in
-    -n | --dry-run) dry_run=1 ;;
-    -h | --help)
-        usage
-        exit 0
-        ;;
-    "") ;;
-    *) die "unknown argument: $1" ;;
-esac
+force=0
+target_name=
+while (($#)); do
+    case "$1" in
+        -n | --dry-run) dry_run=1 ;;
+        -f | --force) force=1 ;;
+        -h | --help)
+            usage
+            exit 0
+            ;;
+        --)
+            shift
+            break
+            ;;
+        -*) die "unknown option: $1" ;;
+        *)
+            [[ -z "$target_name" ]] || die "unexpected extra argument: $1"
+            target_name=$1
+            ;;
+    esac
+    shift
+done
+while (($#)); do
+    [[ -z "$target_name" ]] || die "unexpected extra argument: $1"
+    target_name=$1
+    shift
+done
+
+if ((force)) && [[ -z "$target_name" ]]; then
+    die "--force requires a worktree NAME"
+fi
 
 [[ -d "$WORKTREE_ROOT" ]] || die "no worktrees under $WORKTREE_ROOT"
 
 CWD="$(pwd -P)"
+
+[[ -n "$target_name" ]] && resolve_target "$target_name"
 
 mapfile -t IN_USE_CWDS < <(collect_in_use_cwds)
 
@@ -452,36 +531,56 @@ rows=$(gather)
 remove_rows=$(printf '%s\n' "$rows" | awk -F'\t' '$1=="remove"')
 keep_rows=$(printf '%s\n' "$rows" | awk -F'\t' '$1=="keep"')
 
+# --force overrides the keep verdict for the scoped target: act on every
+# gathered row (the single resolved worktree) and escalate git to remove
+# dirty/in-use trees and delete unmerged branches. Without it, only the
+# classifier's remove verdicts act, and -d/worktree-remove stay gentle.
+if ((force)); then
+    act_rows=$rows
+    del_flag=-D
+    remove_force=(--force)
+else
+    act_rows=$remove_rows
+    del_flag=-d
+    remove_force=()
+fi
+
 if ((dry_run)); then
     printf '%s== DRY RUN ==%s\n\n' "$BOLD" "$RESET"
-    print_section 'Would remove' "$remove_rows"
-    print_section 'Would keep' "$keep_rows"
+    if ((force)); then
+        print_section 'Would remove (forced)' "$act_rows"
+    else
+        print_section 'Would remove' "$remove_rows"
+        print_section 'Would keep' "$keep_rows"
+    fi
     exit 0
 fi
 
 removed_rows=""
 failed_rows=""
-if [[ -n "$remove_rows" ]]; then
+if [[ -n "$act_rows" ]]; then
     while IFS=$'\t' read -r verdict rel branch detail wt; do
         # Ask git for the canonical's path rather than reconstructing it from
         # $wt: canonicals don't always live at $HOME/<org>/<repo> (own-org
         # repos live at $HOME/<repo>, and the picker honors origin-URL hints
         # for arbitrary checkout locations). --git-common-dir resolves through
         # the worktree's .git file regardless. Capture before removal — once
-        # $wt is gone, branch -d needs somewhere else to operate from.
+        # $wt is gone, branch deletion needs somewhere else to operate from.
         canonical=$(git -C "$wt" rev-parse --path-format=absolute --git-common-dir 2>/dev/null || true)
         canonical=${canonical%/.git}
         row=$(printf '%s\t%s\t%s\t%s\t%s' "$verdict" "$rel" "$branch" "$detail" "$wt")
-        if git -C "$wt" worktree remove "$wt" 2>/dev/null; then
-            # branch -d is best-effort: refuses unmerged, which we don't force
-            # since the safety gate already required MERGED|CLOSED upstream
+        if git -C "$wt" worktree remove "${remove_force[@]}" "$wt" 2>/dev/null; then
+            # Branch deletion is best-effort. Unforced, -d refuses unmerged —
+            # but the remove gate already required MERGED|CLOSED upstream, so
+            # that never bites. Forced, -D deletes regardless, matching the
+            # caller's explicit intent to discard the worktree wholesale.
             [[ "$branch" != '(detached HEAD)' && -n "$canonical" ]] \
-                && git -C "$canonical" branch -d "$branch" 2>/dev/null || true
+                && git -C "$canonical" branch "$del_flag" "$branch" 2>/dev/null || true
             removed_rows+="${row}"$'\n'
         else
             failed_rows+="${row}"$'\n'
         fi
-    done <<<"$remove_rows"
+    done <<<"$act_rows"
 fi
 removed_rows=${removed_rows%$'\n'}
 failed_rows=${failed_rows%$'\n'}
@@ -489,4 +588,6 @@ failed_rows=${failed_rows%$'\n'}
 print_section 'Removed' "$removed_rows"
 # shellcheck disable=SC2016 # backticks in heading are literal display text
 [[ -n "$failed_rows" ]] && print_section 'Failed (use `git worktree remove --force` if intended)' "$failed_rows"
-print_section 'Kept' "$keep_rows"
+# Forced runs target one worktree and just removed it; a "Kept" section would
+# only ever echo the verdict we deliberately overrode.
+((force)) || print_section 'Kept' "$keep_rows"
