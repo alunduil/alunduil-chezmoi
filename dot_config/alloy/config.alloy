@@ -1,0 +1,72 @@
+// Alloy: the unified collector for the zellij-freeze observability stack.
+// Three pipelines feed the always-on local backends:
+//
+//   1. metrics  zellijstat /metrics  -> Prometheus            (live now)
+//   2. logs     $ZELLIJ_DIAG/*.log    -> Loki                  (zellaude fork, #224)
+//   3. OTLP     forks -> {Prometheus, Loki, Tempo}             (zellij fork, #223)
+//
+// Only pipeline 1 carries data today; the log tail finds no files and the
+// OTLP receiver no clients until the forks emit, but wiring them now means no
+// re-plumbing when they land. ZELLIJ_DIAG is set by the systemd unit.
+
+// --- 1. zellijstat metrics ---------------------------------------------------
+prometheus.scrape "zellijstat" {
+  targets         = [{ __address__ = "127.0.0.1:9095", job = "zellijstat" }]
+  scrape_interval = "2s"
+  scrape_timeout  = "1s"
+  forward_to      = [prometheus.remote_write.local.receiver]
+}
+
+prometheus.remote_write "local" {
+  endpoint {
+    url = "http://127.0.0.1:9090/api/v1/write"
+  }
+}
+
+// --- 2. zellij-diag log files ------------------------------------------------
+local.file_match "zellij_diag" {
+  path_targets = [{ __path__ = sys.env("ZELLIJ_DIAG") + "/*.log" }]
+}
+
+loki.source.file "zellij_diag" {
+  targets    = local.file_match.zellij_diag.targets
+  forward_to = [loki.write.local.receiver]
+}
+
+loki.write "local" {
+  endpoint {
+    url = "http://127.0.0.1:3100/loki/api/v1/push"
+  }
+}
+
+// --- 3. OTLP from the forks --------------------------------------------------
+otelcol.receiver.otlp "forks" {
+  grpc {
+    endpoint = "127.0.0.1:4317"
+  }
+  http {
+    endpoint = "127.0.0.1:4318"
+  }
+  output {
+    metrics = [otelcol.exporter.prometheus.forks.input]
+    logs    = [otelcol.exporter.loki.forks.input]
+    traces  = [otelcol.exporter.otlp.tempo.input]
+  }
+}
+
+otelcol.exporter.prometheus "forks" {
+  forward_to = [prometheus.remote_write.local.receiver]
+}
+
+otelcol.exporter.loki "forks" {
+  forward_to = [loki.write.local.receiver]
+}
+
+otelcol.exporter.otlp "tempo" {
+  client {
+    endpoint = "127.0.0.1:4417"
+    tls {
+      insecure = true
+    }
+  }
+}

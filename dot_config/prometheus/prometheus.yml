@@ -1,0 +1,12 @@
+# Prometheus for the zellij-freeze observability stack.
+# Metrics arrive via remote-write from Alloy (the systemd unit starts
+# Prometheus with --web.enable-remote-write-receiver); the only scrape here
+# is Prometheus watching itself. Storage path is set on the command line.
+global:
+  scrape_interval: 15s
+  scrape_timeout: 10s
+
+scrape_configs:
+  - job_name: prometheus
+    static_configs:
+      - targets: ['127.0.0.1:9090']

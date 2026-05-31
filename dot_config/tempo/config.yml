@@ -1,0 +1,28 @@
+# Tempo for the zellij-freeze observability stack: monolithic, local-block
+# storage, localhost only. Alloy forwards traces here over OTLP, so Tempo's
+# own OTLP receiver listens on 4417/4418 to stay clear of Alloy's 4317/4318.
+# ${ZELLIJ_OBS_STATE} is expanded at runtime (the unit passes
+# -config.expand-env=true and sets the variable).
+server:
+  http_listen_address: 127.0.0.1
+  http_listen_port: 3200
+  grpc_listen_address: 127.0.0.1
+  grpc_listen_port: 9097
+  log_level: warn
+
+distributor:
+  receivers:
+    otlp:
+      protocols:
+        grpc:
+          endpoint: 127.0.0.1:4417
+        http:
+          endpoint: 127.0.0.1:4418
+
+storage:
+  trace:
+    backend: local
+    local:
+      path: ${ZELLIJ_OBS_STATE}/tempo/blocks
+    wal:
+      path: ${ZELLIJ_OBS_STATE}/tempo/wal

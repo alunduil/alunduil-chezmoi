@@ -1,0 +1,12 @@
+# Load the zellij-freeze dashboard from ~/.config/grafana/dashboards. The path
+# must be absolute, so chezmoi injects the home directory at apply time.
+apiVersion: 1
+
+providers:
+  - name: zellij-observability
+    type: file
+    disableDeletion: false
+    allowUiUpdates: true
+    options:
+      path: {{ .chezmoi.homeDir }}/.config/grafana/dashboards
+      foldersFromFilesStructure: false
