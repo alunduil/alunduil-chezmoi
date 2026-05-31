@@ -36,7 +36,7 @@ keybinds {
         // it shadows readline's yank-last-arg in unlocked panes, which `!$`
         // covers.
         bind "Alt ." {
-            Run "git-repo-picker" "--all" {
+            Run "git-repo-picker" "--all-worktrees" {
                 floating true
                 close_on_exit true
             }
