@@ -1,0 +1,12 @@
+[Unit]
+Description=zellij-freeze observability capture stack (always-on)
+Documentation=https://github.com/alunduil/alunduil-chezmoi/blob/main/docs/how-to/zellij-observability.md
+# Wants pulls the capture services in when the target starts, so a single
+# `systemctl --user enable --now zellij-observability.target` brings up (and
+# auto-restarts at login) the whole stack. Grafana is deliberately absent —
+# it is an on-demand viewer, started only when looking.
+Wants=zellijstat.service prometheus.service loki.service tempo.service alloy.service
+After=zellijstat.service prometheus.service loki.service tempo.service alloy.service
+
+[Install]
+WantedBy=default.target

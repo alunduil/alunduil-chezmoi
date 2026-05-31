@@ -1,0 +1,14 @@
+[Unit]
+Description=Tempo (zellij-freeze trace store)
+Documentation=https://github.com/alunduil/alunduil-chezmoi/blob/main/docs/how-to/zellij-observability.md
+PartOf=zellij-observability.target
+
+[Service]
+Environment=ZELLIJ_OBS_STATE=%S/zellij-observability
+ExecStart=%h/.local/bin/tempo -config.file=%h/.config/tempo/config.yml -config.expand-env=true
+StateDirectory=zellij-observability/tempo
+Restart=always
+RestartSec=2
+
+[Install]
+WantedBy=zellij-observability.target

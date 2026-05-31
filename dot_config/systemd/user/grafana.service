@@ -1,0 +1,18 @@
+[Unit]
+Description=Grafana (zellij-freeze dashboards, on-demand viewer)
+Documentation=https://github.com/alunduil/alunduil-chezmoi/blob/main/docs/how-to/zellij-observability.md
+
+[Service]
+Environment=GF_PATHS_HOME=%h/.local/share/grafana/current
+Environment=GF_PATHS_DATA=%S/zellij-observability/grafana
+Environment=GF_PATHS_LOGS=%S/zellij-observability/grafana/log
+Environment=GF_PATHS_PROVISIONING=%h/.config/grafana/provisioning
+Environment=GF_SERVER_HTTP_ADDR=127.0.0.1
+Environment=GF_SERVER_HTTP_PORT=3000
+ExecStart=%h/.local/share/grafana/current/bin/grafana server --homepath %h/.local/share/grafana/current
+StateDirectory=zellij-observability/grafana
+Restart=on-failure
+RestartSec=2
+
+[Install]
+WantedBy=default.target

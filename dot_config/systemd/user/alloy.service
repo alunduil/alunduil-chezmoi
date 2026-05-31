@@ -1,0 +1,17 @@
+[Unit]
+Description=Grafana Alloy (zellij-freeze collector)
+Documentation=https://github.com/alunduil/alunduil-chezmoi/blob/main/docs/how-to/zellij-observability.md
+PartOf=zellij-observability.target
+After=prometheus.service loki.service tempo.service
+
+[Service]
+Environment=ZELLIJ_DIAG=%S/zellij-diag
+ExecStart=%h/.local/bin/alloy run %h/.config/alloy/config.alloy \
+  --storage.path=%S/zellij-observability/alloy \
+  --server.http.listen-addr=127.0.0.1:12345
+StateDirectory=zellij-observability/alloy zellij-diag
+Restart=always
+RestartSec=2
+
+[Install]
+WantedBy=zellij-observability.target
