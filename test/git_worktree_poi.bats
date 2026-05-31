@@ -276,7 +276,7 @@ STUB
   [[ "$output" == *$'\033[32m'"no commits, no PR"$'\033[0m'* ]]
 }
 
-# --- resolve_target: NAME → single worktree ---
+# --- resolve_target: NAME → worktree path ---
 
 # Bare directories with a .git file are enough: walk_worktrees and
 # resolve_target only test names, never invoke git on the path.
@@ -298,26 +298,26 @@ _mk_stub_wt() {
 @test "resolve_target: <repo>/<name> disambiguates the collision" {
   _mk_stub_wt me/alpha/dup
   _mk_stub_wt me/beta/dup
-  run bash -c 'source "$1"; resolve_target alpha/dup; printf %s "$TARGET_WT"' _ "$POI"
+  run bash -c 'source "$1"; resolve_target alpha/dup' _ "$POI"
   [ "$status" -eq 0 ]
   [[ "$output" == *"/me/alpha/dup" ]]
 }
 
 @test "resolve_target: unique petname resolves to its path" {
   _mk_stub_wt me/repo/solo
-  run bash -c 'source "$1"; resolve_target solo; printf %s "$TARGET_WT"' _ "$POI"
+  run bash -c 'source "$1"; resolve_target solo' _ "$POI"
   [ "$status" -eq 0 ]
   [[ "$output" == *"/me/repo/solo" ]]
 }
 
-@test "resolve_target: no match errors" {
+@test "resolve_target: no match returns nonzero with a diagnostic" {
   _mk_stub_wt me/repo/solo
   run bash -c 'source "$1"; resolve_target nope' _ "$POI"
   [ "$status" -ne 0 ]
   [[ "$output" == *"no worktree matches 'nope'"* ]]
 }
 
-# --- --force: override the keep verdict for a named worktree ---
+# --- --force: override the keep verdict for named worktrees ---
 
 # Real gh is absent in CI (other tests stub it), so the binary-presence check
 # at the top of the script needs something on PATH. The forced paths below
@@ -334,7 +334,7 @@ _stub_gh_absent() {
 @test "force without NAME is rejected" {
   run bash "$POI" -f
   [ "$status" -ne 0 ]
-  [[ "$output" == *"--force requires a worktree NAME"* ]]
+  [[ "$output" == *"--force requires at least one worktree NAME"* ]]
 }
 
 @test "force removes a kept worktree and force-deletes its branch" {
@@ -367,4 +367,54 @@ _stub_gh_absent() {
   [ "$status" -eq 0 ]
   [[ "$output" == *"repo/feature"* ]]
   [[ "$output" != *"repo/other"* ]]
+}
+
+@test "force removes every named worktree in one run" {
+  _mkworktree
+  git -C "$HOME/me/repo" worktree add -B other \
+    "$XDG_DATA_HOME/git-worktrees/me/repo/other" >/dev/null 2>&1
+  local stub; stub=$(_stub_gh_absent)
+
+  PATH="$stub:$PATH" run bash "$POI" -f feature other
+  [ "$status" -eq 0 ]
+  [ ! -e "$XDG_DATA_HOME/git-worktrees/me/repo/feature" ]
+  [ ! -e "$XDG_DATA_HOME/git-worktrees/me/repo/other" ]
+  run git -C "$HOME/me/repo" rev-parse --verify --quiet refs/heads/feature
+  [ "$status" -ne 0 ]
+  run git -C "$HOME/me/repo" rev-parse --verify --quiet refs/heads/other
+  [ "$status" -ne 0 ]
+}
+
+@test "force acts on resolvable names and reports the unresolvable ones" {
+  _mkworktree
+  local stub; stub=$(_stub_gh_absent)
+
+  PATH="$stub:$PATH" run bash "$POI" -f feature bogus
+  # Partial run: feature removed, but a bad name makes the run a failure.
+  [ "$status" -ne 0 ]
+  [[ "$output" == *"Removed"* ]]
+  [[ "$output" == *"no worktree matches 'bogus'"* ]]
+  [ ! -e "$WT" ]
+}
+
+@test "force with only unresolvable names removes nothing" {
+  # Guards the load-bearing bail: an all-failed resolve must not fall through
+  # to the full walk and force-remove every worktree.
+  _mkworktree
+  local stub; stub=$(_stub_gh_absent)
+
+  PATH="$stub:$PATH" run bash "$POI" -f bogus
+  [ "$status" -ne 0 ]
+  [[ "$output" == *"no worktree matches 'bogus'"* ]]
+  [ -e "$WT" ]
+}
+
+@test "duplicate names resolve to one removal" {
+  _mkworktree
+  local stub; stub=$(_stub_gh_absent)
+
+  PATH="$stub:$PATH" run bash "$POI" -n feature feature
+  [ "$status" -eq 0 ]
+  # One row, not two: dedup collapsed the repeated name.
+  [ "$(grep -c 'repo/feature' <<<"$output")" -eq 1 ]
 }

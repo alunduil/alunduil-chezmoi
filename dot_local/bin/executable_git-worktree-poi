@@ -7,7 +7,7 @@ set -euo pipefail
 # description, then an aligned Options block.
 usage() {
     cat <<'EOF'
-Usage: git worktree-poi [OPTIONS] [NAME]
+Usage: git worktree-poi [OPTIONS] [NAME...]
 
   gh-poi for local worktrees: removes worktrees whose work has already
   merged or been closed upstream, plus empty worktrees with no PR (misclicks
@@ -18,13 +18,15 @@ Usage: git worktree-poi [OPTIONS] [NAME]
   tmux, dev server, ...) is annotated `in-use` and never removed. Detection
   reads /proc/*/cwd, so it generalises beyond zellij's CLI surface.
 
-  NAME scopes the run to a single worktree, matched by petname (the leaf
-  dir), <repo>/<petname>, or absolute path. --force then removes it even
-  when it would otherwise be kept (in-use, dirty, unpushed, open PR),
-  force-deleting its branch too. Safe to run from inside the target.
+  NAME args scope the run to those worktrees, each matched by petname (the
+  leaf dir), <repo>/<petname>, or absolute path. --force then removes them
+  even when they would otherwise be kept (in-use, dirty, unpushed, open PR),
+  force-deleting their branches too. Names that don't resolve are reported
+  after the run; the rest still act. Safe to run from inside a target.
 
 Options:
-  -f, --force    Remove NAME even if classified keep. Requires NAME.
+  -f, --force    Remove the named worktrees even if classified keep.
+                 Requires at least one NAME.
   -n, --dry-run  Preview without removing.
   -h, --help     Show this message and exit.
 EOF
@@ -46,12 +48,27 @@ fi
 
 die() { printf 'git-worktree-poi: %s\n' "$*" >&2; exit 1; }
 
+# report_resolve_errors: emit accumulated NAME-resolution failures to stderr
+# and exit 1. No-op (returns) when none — so callers can invoke it
+# unconditionally at each exit point. Exit status flags the partial run even
+# when some worktrees were removed successfully.
+report_resolve_errors() {
+    ((${#resolve_errors[@]})) || return 0
+    local e
+    for e in "${resolve_errors[@]}"; do
+        printf 'git-worktree-poi: %s\n' "$e" >&2
+    done
+    exit 1
+}
+
 WORKTREE_ROOT="${XDG_DATA_HOME:-$HOME/.local/share}/git-worktrees"
 
-# Set by resolve_target when a NAME is given on the command line; empty means
-# "operate on every worktree". candidate_worktrees() narrows the PR-state pass
-# and classification to this single path when set.
-TARGET_WT=
+# Worktrees the NAME args resolved to; empty means "operate on every
+# worktree". candidate_worktrees() narrows the PR-state pass and
+# classification to this set. resolve_errors collects per-name resolution
+# failures so a batch reports them after acting on what did resolve.
+declare -a TARGET_WTS=()
+declare -a resolve_errors=()
 
 # Process cwds whose target lives under $WORKTREE_ROOT. Populated once before
 # classification; every classify() call consults this set via is_in_use.
@@ -179,22 +196,23 @@ walk_worktrees() {
     done < <(find "$WORKTREE_ROOT" -mindepth 3 -maxdepth 3 -type d 2>/dev/null | sort)
 }
 
-# candidate_worktrees: the worktree set every pass operates on. Just the
-# resolved target when a NAME narrowed the run, else the full walk. Routing
-# both the PR-state pass and classification through this keeps a NAME run from
+# candidate_worktrees: the worktree set every pass operates on. The resolved
+# targets when NAME args narrowed the run, else the full walk. Routing both
+# the PR-state pass and classification through this keeps a NAME run from
 # querying GitHub for unrelated repos.
 candidate_worktrees() {
-    if [[ -n "$TARGET_WT" ]]; then
-        printf '%s\n' "$TARGET_WT"
+    if ((${#TARGET_WTS[@]})); then
+        printf '%s\n' "${TARGET_WTS[@]}"
     else
         walk_worktrees
     fi
 }
 
-# resolve_target <name>: set TARGET_WT to the single worktree NAME identifies,
-# matched by absolute path, <repo>/<petname>, or bare petname (leaf dir). Dies
-# with the candidate list when a bare name is ambiguous across repos, or when
-# nothing matches.
+# resolve_target <name>: print the absolute path of the single worktree NAME
+# identifies, matched by absolute path, <repo>/<petname>, or bare petname
+# (leaf dir). On no match or a bare name ambiguous across repos, print a
+# diagnostic to stdout and return non-zero — the caller collects these so a
+# multi-name batch can report all failures after acting on what resolved.
 resolve_target() {
     local name=$1 wt rel
     local -a matches=()
@@ -206,21 +224,22 @@ resolve_target() {
         fi
     done < <(walk_worktrees)
 
-    ((${#matches[@]})) || die "no worktree matches '$name' under $WORKTREE_ROOT"
-
-    if ((${#matches[@]} > 1)); then
-        {
-            printf "git-worktree-poi: '%s' matches multiple worktrees:\n" "$name"
-            for wt in "${matches[@]}"; do
-                rel="${wt#"$WORKTREE_ROOT"/}"
-                printf '  %s\n' "${rel#*/}"
-            done
-            printf 'disambiguate with <repo>/<name>\n'
-        } >&2
-        exit 1
+    if ((${#matches[@]} == 0)); then
+        printf "no worktree matches '%s'\n" "$name"
+        return 1
     fi
 
-    TARGET_WT=${matches[0]}
+    if ((${#matches[@]} > 1)); then
+        printf "'%s' matches multiple worktrees:\n" "$name"
+        for wt in "${matches[@]}"; do
+            rel="${wt#"$WORKTREE_ROOT"/}"
+            printf '  %s\n' "${rel#*/}"
+        done
+        printf 'disambiguate with <repo>/<name>\n'
+        return 1
+    fi
+
+    printf '%s\n' "${matches[0]}"
 }
 
 # batch_fetch_pr_states: walk every worktree under $WORKTREE_ROOT, group by
@@ -484,7 +503,7 @@ done
 
 dry_run=0
 force=0
-target_name=
+declare -a target_names=()
 while (($#)); do
     case "$1" in
         -n | --dry-run) dry_run=1 ;;
@@ -498,28 +517,46 @@ while (($#)); do
             break
             ;;
         -*) die "unknown option: $1" ;;
-        *)
-            [[ -z "$target_name" ]] || die "unexpected extra argument: $1"
-            target_name=$1
-            ;;
+        *) target_names+=("$1") ;;
     esac
     shift
 done
 while (($#)); do
-    [[ -z "$target_name" ]] || die "unexpected extra argument: $1"
-    target_name=$1
+    target_names+=("$1")
     shift
 done
 
-if ((force)) && [[ -z "$target_name" ]]; then
-    die "--force requires a worktree NAME"
+if ((force)) && ((${#target_names[@]} == 0)); then
+    die "--force requires at least one worktree NAME"
 fi
 
 [[ -d "$WORKTREE_ROOT" ]] || die "no worktrees under $WORKTREE_ROOT"
 
 CWD="$(pwd -P)"
 
-[[ -n "$target_name" ]] && resolve_target "$target_name"
+# Resolve each NAME independently, collecting failures rather than aborting:
+# act on what resolved, report the rest at the end. Dedup so the same worktree
+# named twice (or via two spellings) is removed once.
+if ((${#target_names[@]})); then
+    for name in "${target_names[@]}"; do
+        if resolved=$(resolve_target "$name"); then
+            dup=0
+            for existing in "${TARGET_WTS[@]}"; do
+                [[ "$existing" == "$resolved" ]] && {
+                    dup=1
+                    break
+                }
+            done
+            ((dup)) || TARGET_WTS+=("$resolved")
+        else
+            resolve_errors+=("$resolved")
+        fi
+    done
+    # Every NAME failed → nothing to scope to. Bailing here is load-bearing:
+    # an empty TARGET_WTS makes candidate_worktrees fall back to the full
+    # walk, which under --force would remove every worktree.
+    ((${#TARGET_WTS[@]})) || report_resolve_errors
+fi
 
 mapfile -t IN_USE_CWDS < <(collect_in_use_cwds)
 
@@ -531,10 +568,10 @@ rows=$(gather)
 remove_rows=$(printf '%s\n' "$rows" | awk -F'\t' '$1=="remove"')
 keep_rows=$(printf '%s\n' "$rows" | awk -F'\t' '$1=="keep"')
 
-# --force overrides the keep verdict for the scoped target: act on every
-# gathered row (the single resolved worktree) and escalate git to remove
-# dirty/in-use trees and delete unmerged branches. Without it, only the
-# classifier's remove verdicts act, and -d/worktree-remove stay gentle.
+# --force overrides the keep verdict for the scoped targets: act on every
+# gathered row (the resolved worktrees) and escalate git to remove dirty/
+# in-use trees and delete unmerged branches. Without it, only the classifier's
+# remove verdicts act, and -d/worktree-remove stay gentle.
 if ((force)); then
     act_rows=$rows
     del_flag=-D
@@ -553,6 +590,7 @@ if ((dry_run)); then
         print_section 'Would remove' "$remove_rows"
         print_section 'Would keep' "$keep_rows"
     fi
+    report_resolve_errors
     exit 0
 fi
 
@@ -588,6 +626,8 @@ failed_rows=${failed_rows%$'\n'}
 print_section 'Removed' "$removed_rows"
 # shellcheck disable=SC2016 # backticks in heading are literal display text
 [[ -n "$failed_rows" ]] && print_section 'Failed (use `git worktree remove --force` if intended)' "$failed_rows"
-# Forced runs target one worktree and just removed it; a "Kept" section would
-# only ever echo the verdict we deliberately overrode.
+# Forced runs target named worktrees and just removed them; a "Kept" section
+# would only ever echo the verdict we deliberately overrode.
 ((force)) || print_section 'Kept' "$keep_rows"
+
+report_resolve_errors
