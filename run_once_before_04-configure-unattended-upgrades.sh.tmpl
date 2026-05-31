@@ -1,13 +1,21 @@
 #!/usr/bin/env bash
-# Installs and configures unattended-upgrades so updates apply on their own via
-# the apt-daily-upgrade timer. Covers Debian security + updates and every
-# third-party apt repo this bootstrap adds (script 01). Results land in
-# /var/log/unattended-upgrades/ and the systemd journal -- no email or desktop
-# notification (the box is attended). Automatic reboot stays off. See #228.
+# Installs unattended-upgrades and places its config so updates apply on their
+# own via the apt-daily-upgrade timer. The config files live in etc-apt/ as
+# whole files (chezmoi can't target /etc, which is outside $HOME) and are
+# copied in with sudo. Results land in /var/log/unattended-upgrades/ and the
+# journal -- no email or desktop notification (the box is attended), and
+# automatic reboot stays off. See #228.
+#
+# run_once hashes the rendered script, so changes to the config files alone
+# would not re-trigger it. Embed their hashes here to force a re-run on edit:
+# 20auto-upgrades content:       {{ include "etc-apt/20auto-upgrades" | sha256sum }}
+# 50unattended-upgrades content: {{ include "etc-apt/50unattended-upgrades" | sha256sum }}
 
 set -euo pipefail
 
 log() { printf '==> %s\n' "$*" >&2; }
+
+APT_CONF_SRC="{{ .chezmoi.sourceDir }}/etc-apt"
 
 # -------------------------------------------------------------------- install
 if ! dpkg -s unattended-upgrades >/dev/null 2>&1; then
@@ -18,34 +26,10 @@ else
   log "unattended-upgrades: already installed"
 fi
 
-# ----------------------------------------------------------- enable periodic
-log "unattended-upgrades: writing periodic + origins config"
-sudo tee /etc/apt/apt.conf.d/20auto-upgrades >/dev/null <<'EOF'
-APT::Periodic::Update-Package-Lists "1";
-APT::Periodic::Unattended-Upgrade "1";
-EOF
-
-# ----------------------------------------------------------- origins + policy
-# ${distro_codename} is expanded by unattended-upgrades at run time, so the
-# Debian and codename-tracking repos (HashiCorp, Tailscale) stay correct across
-# releases. The remaining third-party origins pin the codename their repos ship.
-# Keybase publishes no Origin/Label metadata, so it is matched by site.
-sudo tee /etc/apt/apt.conf.d/50unattended-upgrades >/dev/null <<'EOF'
-Unattended-Upgrade::Origins-Pattern {
-        "origin=Debian,codename=${distro_codename}-updates";
-        "origin=Debian,codename=${distro_codename}-proposed-updates";
-        "origin=Debian,codename=${distro_codename},label=Debian";
-        "origin=Debian,codename=${distro_codename},label=Debian-Security";
-        "origin=Debian,codename=${distro_codename}-security,label=Debian-Security";
-        "origin=Artifactory,codename=${distro_codename}";       // HashiCorp (Terraform)
-        "origin=gh,codename=stable";                            // GitHub CLI
-        "origin=Tailscale,codename=${distro_codename}";         // Tailscale
-        "origin=. xenial,codename=xenial";                      // Signal
-        "site=prerelease.keybase.io";                           // Keybase
-};
-Unattended-Upgrade::Remove-Unused-Dependencies "true";
-Unattended-Upgrade::Automatic-Reboot "false";
-EOF
+# --------------------------------------------------------------------- config
+log "unattended-upgrades: installing apt config"
+sudo install -m 0644 "$APT_CONF_SRC/20auto-upgrades" /etc/apt/apt.conf.d/20auto-upgrades
+sudo install -m 0644 "$APT_CONF_SRC/50unattended-upgrades" /etc/apt/apt.conf.d/50unattended-upgrades
 
 # --------------------------------------------------------------------- timers
 sudo systemctl enable --now apt-daily.timer apt-daily-upgrade.timer
