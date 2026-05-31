@@ -12,6 +12,9 @@ import unittest
 from importlib.machinery import SourceFileLoader
 from pathlib import Path
 
+# Don't drop a __pycache__ beside the chezmoi-managed source when importing it.
+sys.dont_write_bytecode = True
+
 _SRC = Path(__file__).resolve().parent.parent / "dot_local" / "bin" / "executable_zellijstat"
 # The deployed file has no .py suffix, so name the loader explicitly rather
 # than letting importlib infer it from the extension. Register it in
