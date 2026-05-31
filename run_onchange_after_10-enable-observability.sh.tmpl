@@ -1,0 +1,23 @@
+#!/usr/bin/env bash
+# Unit hashes below re-run this script whenever a unit changes, so edits
+# (new ExecStart flags, added services) re-apply via daemon-reload + enable.
+# zellijstat unit:  {{ include "dot_config/systemd/user/zellijstat.service" | sha256sum }}
+# prometheus unit:  {{ include "dot_config/systemd/user/prometheus.service" | sha256sum }}
+# loki unit:        {{ include "dot_config/systemd/user/loki.service" | sha256sum }}
+# tempo unit:       {{ include "dot_config/systemd/user/tempo.service" | sha256sum }}
+# alloy unit:       {{ include "dot_config/systemd/user/alloy.service" | sha256sum }}
+# grafana unit:     {{ include "dot_config/systemd/user/grafana.service" | sha256sum }}
+# target unit:      {{ include "dot_config/systemd/user/zellij-observability.target" | sha256sum }}
+
+set -euo pipefail
+
+# Skip where there is no user systemd manager to talk to (headless apply over
+# SSH without lingering, container builds). The units are still deployed; a
+# later interactive apply, or a manual enable, brings the stack up.
+if ! systemctl --user show-environment >/dev/null 2>&1; then
+  echo "==> observability: no user systemd session; leaving units disabled" >&2
+  exit 0
+fi
+
+systemctl --user daemon-reload
+systemctl --user enable --now zellij-observability.target

@@ -1,4 +1,5 @@
 .lycheecache
+**/__pycache__
 CLAUDE.md
 docs
 etc

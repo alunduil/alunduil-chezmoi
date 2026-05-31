@@ -1,4 +1,5 @@
 .lycheecache
+__pycache__/
 key.txt
 .credentials.json
 **/id_rsa*

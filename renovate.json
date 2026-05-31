@@ -102,6 +102,41 @@
     },
     {
       "customType": "regex",
+      "managerFilePatterns": ["/^script/install/alloy$/"],
+      "matchStrings": ["ALLOY_VERSION=\"(?<currentValue>v[\\d.]+)\""],
+      "depNameTemplate": "grafana/alloy",
+      "datasourceTemplate": "github-releases"
+    },
+    {
+      "customType": "regex",
+      "managerFilePatterns": ["/^script/install/prometheus$/"],
+      "matchStrings": ["PROMETHEUS_VERSION=\"(?<currentValue>v[\\d.]+)\""],
+      "depNameTemplate": "prometheus/prometheus",
+      "datasourceTemplate": "github-releases"
+    },
+    {
+      "customType": "regex",
+      "managerFilePatterns": ["/^script/install/loki$/"],
+      "matchStrings": ["LOKI_VERSION=\"(?<currentValue>v[\\d.]+)\""],
+      "depNameTemplate": "grafana/loki",
+      "datasourceTemplate": "github-releases"
+    },
+    {
+      "customType": "regex",
+      "managerFilePatterns": ["/^script/install/tempo$/"],
+      "matchStrings": ["TEMPO_VERSION=\"(?<currentValue>v[\\d.]+)\""],
+      "depNameTemplate": "grafana/tempo",
+      "datasourceTemplate": "github-releases"
+    },
+    {
+      "customType": "regex",
+      "managerFilePatterns": ["/^script/install/grafana$/"],
+      "matchStrings": ["GRAFANA_VERSION=\"(?<currentValue>v[\\d.]+)\""],
+      "depNameTemplate": "grafana/grafana",
+      "datasourceTemplate": "github-releases"
+    },
+    {
+      "customType": "regex",
       "managerFilePatterns": ["/^run_once_before_05-install-standalone-tools\\.sh\\.tmpl$/"],
       "matchStrings": ["GH_POI_VERSION=\"(?<currentValue>v[\\d.]+)\""],
       "depNameTemplate": "seachicken/gh-poi",

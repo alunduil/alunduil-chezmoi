@@ -1,0 +1,38 @@
+# Loki for the zellij-freeze observability stack: single-binary, filesystem
+# storage, no auth, localhost only. ${ZELLIJ_OBS_STATE} is expanded at runtime
+# (the systemd unit passes -config.expand-env=true and sets the variable).
+auth_enabled: false
+
+server:
+  http_listen_address: 127.0.0.1
+  http_listen_port: 3100
+  grpc_listen_address: 127.0.0.1
+  grpc_listen_port: 9096
+  log_level: warn
+
+common:
+  instance_addr: 127.0.0.1
+  path_prefix: ${ZELLIJ_OBS_STATE}/loki
+  storage:
+    filesystem:
+      chunks_directory: ${ZELLIJ_OBS_STATE}/loki/chunks
+      rules_directory: ${ZELLIJ_OBS_STATE}/loki/rules
+  replication_factor: 1
+  ring:
+    kvstore:
+      store: inmemory
+
+schema_config:
+  configs:
+    - from: 2020-10-24
+      store: tsdb
+      object_store: filesystem
+      schema: v13
+      index:
+        prefix: index_
+        period: 24h
+
+# Single-user local instance: keep everything, never reject for age/rate.
+limits_config:
+  retention_period: 0s
+  reject_old_samples: false

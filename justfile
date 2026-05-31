@@ -18,7 +18,7 @@ check:
     #!/usr/bin/env bash
     set -uo pipefail
     rc=0
-    for c in check-pre-commit check-bats check-zellij check-chezmoi; do
+    for c in check-pre-commit check-bats check-python check-zellij check-chezmoi check-observability; do
       just "$c" || rc=1
     done
     exit "$rc"
@@ -31,6 +31,10 @@ check-pre-commit:
 check-bats:
     bats test/
 
+# Python unit tests (zellijstat parsers).
+check-python:
+    python3 test/zellijstat_test.py
+
 # Zellij KDL validation (needs zellij on PATH).
 check-zellij:
     script/checks/zellij-config
@@ -38,3 +42,8 @@ check-zellij:
 # Apply round-trip (needs chezmoi + age on PATH).
 check-chezmoi:
     script/checks/chezmoi-apply
+
+# Observability config validation (skips when the stack binaries are absent;
+# the live metrics smoke is CI-only — it binds the running stack's ports).
+check-observability:
+    script/checks/observability-config

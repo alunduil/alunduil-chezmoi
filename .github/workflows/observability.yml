@@ -1,0 +1,58 @@
+name: Observability
+
+# Heavy: installs the ~400 MB telemetry binaries, so it only runs when the
+# observability stack itself changes. Validates every service config and
+# smoke-tests the live metrics path (zellijstat -> Alloy -> Prometheus).
+on:
+  push:
+    branches: [main]
+    paths: &paths
+      - 'dot_config/alloy/**'
+      - 'dot_config/prometheus/**'
+      - 'dot_config/loki/**'
+      - 'dot_config/tempo/**'
+      - 'dot_config/grafana/**'
+      - 'dot_config/systemd/user/**'
+      - 'dot_local/bin/executable_zellijstat'
+      - 'script/install/alloy'
+      - 'script/install/prometheus'
+      - 'script/install/loki'
+      - 'script/install/tempo'
+      - 'script/install/grafana'
+      - 'script/checks/observability-config'
+      - 'script/checks/observability-smoke'
+      - '.github/workflows/observability.yml'
+  pull_request:
+    paths: *paths
+
+permissions:
+  contents: read
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  # Cancel superseded PR runs; never cancel main so each commit completes.
+  cancel-in-progress: ${{ github.ref != 'refs/heads/main' }}
+
+jobs:
+  run:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6
+      - uses: actions/setup-python@a309ff8b426b58ec0e2a45f0f869d46889d02405 # v6
+        with:
+          python-version: '3.x'
+
+      - name: Install stack binaries
+        run: |
+          mkdir -p "$HOME/.local/bin"
+          for t in prometheus alloy loki tempo; do
+            script/install/"$t" --bin-dir "$HOME/.local/bin"
+          done
+          echo "$HOME/.local/bin" >>"$GITHUB_PATH"
+
+      - name: Validate configs
+        run: script/checks/observability-config
+
+      - name: Smoke the metrics path
+        run: script/checks/observability-smoke

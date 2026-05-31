@@ -1,0 +1,37 @@
+# Datasources for the zellij-freeze observability stack. All three backends
+# run on localhost; the correlation links (trace -> logs, trace -> metrics,
+# log -> trace) are where the OTEL stack pays off once the forks emit.
+apiVersion: 1
+
+datasources:
+  - name: Prometheus
+    type: prometheus
+    uid: zellij-prometheus
+    access: proxy
+    url: http://127.0.0.1:9090
+    isDefault: true
+
+  - name: Loki
+    type: loki
+    uid: zellij-loki
+    access: proxy
+    url: http://127.0.0.1:3100
+    jsonData:
+      # Jump from a log line's trace_id to the trace in Tempo.
+      derivedFields:
+        - name: trace_id
+          matcherType: label
+          matcherRegex: trace_id
+          datasourceUid: zellij-tempo
+          url: '${__value.raw}'
+
+  - name: Tempo
+    type: tempo
+    uid: zellij-tempo
+    access: proxy
+    url: http://127.0.0.1:3200
+    jsonData:
+      tracesToLogsV2:
+        datasourceUid: zellij-loki
+      tracesToMetrics:
+        datasourceUid: zellij-prometheus

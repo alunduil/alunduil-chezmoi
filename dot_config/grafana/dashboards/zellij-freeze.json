@@ -1,0 +1,161 @@
+{
+  "uid": "zellij-freeze",
+  "title": "Zellij freeze",
+  "tags": ["zellij", "freeze"],
+  "timezone": "browser",
+  "schemaVersion": 39,
+  "version": 1,
+  "refresh": "5s",
+  "time": { "from": "now-1h", "to": "now" },
+  "templating": {
+    "list": [
+      {
+        "name": "session",
+        "label": "Session",
+        "type": "query",
+        "datasource": { "type": "prometheus", "uid": "zellij-prometheus" },
+        "query": { "query": "label_values(zellijstat_server_threads, session)", "refId": "session" },
+        "refresh": 2,
+        "includeAll": true,
+        "multi": true,
+        "allValue": ".*"
+      }
+    ]
+  },
+  "panels": [
+    {
+      "id": 1,
+      "type": "timeseries",
+      "title": "Threads per server",
+      "datasource": { "type": "prometheus", "uid": "zellij-prometheus" },
+      "gridPos": { "h": 8, "w": 12, "x": 0, "y": 0 },
+      "fieldConfig": { "defaults": { "custom": { "drawStyle": "line", "showPoints": "never" } }, "overrides": [] },
+      "targets": [
+        {
+          "refId": "A",
+          "datasource": { "type": "prometheus", "uid": "zellij-prometheus" },
+          "expr": "zellijstat_server_threads{session=~\"$session\"}",
+          "legendFormat": "{{session}}"
+        }
+      ]
+    },
+    {
+      "id": 2,
+      "type": "timeseries",
+      "title": "Threads by name (server_listener / server_router growth)",
+      "datasource": { "type": "prometheus", "uid": "zellij-prometheus" },
+      "gridPos": { "h": 8, "w": 12, "x": 12, "y": 0 },
+      "fieldConfig": { "defaults": { "custom": { "drawStyle": "line", "showPoints": "never" } }, "overrides": [] },
+      "targets": [
+        {
+          "refId": "A",
+          "datasource": { "type": "prometheus", "uid": "zellij-prometheus" },
+          "expr": "zellijstat_server_threads_by_comm{session=~\"$session\"}",
+          "legendFormat": "{{session}} {{comm}}"
+        }
+      ]
+    },
+    {
+      "id": 3,
+      "type": "timeseries",
+      "title": "Threads by wait-channel (futex pile-up)",
+      "datasource": { "type": "prometheus", "uid": "zellij-prometheus" },
+      "gridPos": { "h": 8, "w": 12, "x": 0, "y": 8 },
+      "fieldConfig": { "defaults": { "custom": { "drawStyle": "line", "showPoints": "never", "stacking": { "mode": "normal" } } }, "overrides": [] },
+      "targets": [
+        {
+          "refId": "A",
+          "datasource": { "type": "prometheus", "uid": "zellij-prometheus" },
+          "expr": "zellijstat_server_threads_by_wchan{session=~\"$session\"}",
+          "legendFormat": "{{session}} {{wchan}}"
+        }
+      ]
+    },
+    {
+      "id": 4,
+      "type": "timeseries",
+      "title": "Unix connections per server",
+      "datasource": { "type": "prometheus", "uid": "zellij-prometheus" },
+      "gridPos": { "h": 8, "w": 12, "x": 12, "y": 8 },
+      "fieldConfig": { "defaults": { "custom": { "drawStyle": "line", "showPoints": "never" } }, "overrides": [] },
+      "targets": [
+        {
+          "refId": "A",
+          "datasource": { "type": "prometheus", "uid": "zellij-prometheus" },
+          "expr": "zellijstat_server_unix_connections{session=~\"$session\"}",
+          "legendFormat": "{{session}}"
+        }
+      ]
+    },
+    {
+      "id": 5,
+      "type": "timeseries",
+      "title": "Socket queue depth",
+      "datasource": { "type": "prometheus", "uid": "zellij-prometheus" },
+      "gridPos": { "h": 8, "w": 12, "x": 0, "y": 16 },
+      "fieldConfig": { "defaults": { "unit": "bytes", "custom": { "drawStyle": "line", "showPoints": "never" } }, "overrides": [] },
+      "targets": [
+        {
+          "refId": "A",
+          "datasource": { "type": "prometheus", "uid": "zellij-prometheus" },
+          "expr": "zellijstat_server_unix_recvq_bytes{session=~\"$session\"}",
+          "legendFormat": "{{session}} recv-q"
+        },
+        {
+          "refId": "B",
+          "datasource": { "type": "prometheus", "uid": "zellij-prometheus" },
+          "expr": "zellijstat_server_unix_sendq_bytes{session=~\"$session\"}",
+          "legendFormat": "{{session}} send-q"
+        }
+      ]
+    },
+    {
+      "id": 6,
+      "type": "timeseries",
+      "title": "Open file descriptors",
+      "datasource": { "type": "prometheus", "uid": "zellij-prometheus" },
+      "gridPos": { "h": 8, "w": 12, "x": 12, "y": 16 },
+      "fieldConfig": { "defaults": { "custom": { "drawStyle": "line", "showPoints": "never" } }, "overrides": [] },
+      "targets": [
+        {
+          "refId": "A",
+          "datasource": { "type": "prometheus", "uid": "zellij-prometheus" },
+          "expr": "zellijstat_server_open_fds{session=~\"$session\"}",
+          "legendFormat": "{{session}}"
+        }
+      ]
+    },
+    {
+      "id": 7,
+      "type": "timeseries",
+      "title": "Resident memory",
+      "datasource": { "type": "prometheus", "uid": "zellij-prometheus" },
+      "gridPos": { "h": 8, "w": 12, "x": 0, "y": 24 },
+      "fieldConfig": { "defaults": { "unit": "bytes", "custom": { "drawStyle": "line", "showPoints": "never" } }, "overrides": [] },
+      "targets": [
+        {
+          "refId": "A",
+          "datasource": { "type": "prometheus", "uid": "zellij-prometheus" },
+          "expr": "zellijstat_server_memory_rss_bytes{session=~\"$session\"}",
+          "legendFormat": "{{session}}"
+        }
+      ]
+    },
+    {
+      "id": 8,
+      "type": "timeseries",
+      "title": "CPU usage",
+      "datasource": { "type": "prometheus", "uid": "zellij-prometheus" },
+      "gridPos": { "h": 8, "w": 12, "x": 12, "y": 24 },
+      "fieldConfig": { "defaults": { "unit": "percentunit", "custom": { "drawStyle": "line", "showPoints": "never" } }, "overrides": [] },
+      "targets": [
+        {
+          "refId": "A",
+          "datasource": { "type": "prometheus", "uid": "zellij-prometheus" },
+          "expr": "rate(zellijstat_server_cpu_seconds_total{session=~\"$session\"}[1m])",
+          "legendFormat": "{{session}}"
+        }
+      ]
+    }
+  ]
+}

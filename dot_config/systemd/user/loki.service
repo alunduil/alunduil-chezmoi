@@ -1,0 +1,14 @@
+[Unit]
+Description=Loki (zellij-freeze log store)
+Documentation=https://github.com/alunduil/alunduil-chezmoi/blob/main/docs/how-to/viewing-zellij-freeze-data.md
+PartOf=zellij-observability.target
+
+[Service]
+Environment=ZELLIJ_OBS_STATE=%S/zellij-observability
+ExecStart=%h/.local/bin/loki -config.file=%h/.config/loki/config.yml -config.expand-env=true
+StateDirectory=zellij-observability/loki
+Restart=always
+RestartSec=2
+
+[Install]
+WantedBy=zellij-observability.target

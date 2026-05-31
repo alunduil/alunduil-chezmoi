@@ -1,0 +1,12 @@
+[Unit]
+Description=zellij server /proc sampler (Prometheus exporter)
+Documentation=https://github.com/alunduil/alunduil-chezmoi/blob/main/docs/how-to/viewing-zellij-freeze-data.md
+PartOf=zellij-observability.target
+
+[Service]
+ExecStart=%h/.local/bin/zellijstat --listen 127.0.0.1:9095
+Restart=always
+RestartSec=2
+
+[Install]
+WantedBy=zellij-observability.target

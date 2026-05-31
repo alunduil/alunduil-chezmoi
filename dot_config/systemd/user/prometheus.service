@@ -1,0 +1,17 @@
+[Unit]
+Description=Prometheus (zellij-freeze metrics store)
+Documentation=https://github.com/alunduil/alunduil-chezmoi/blob/main/docs/how-to/viewing-zellij-freeze-data.md
+PartOf=zellij-observability.target
+
+[Service]
+ExecStart=%h/.local/bin/prometheus \
+  --config.file=%h/.config/prometheus/prometheus.yml \
+  --storage.tsdb.path=%S/zellij-observability/prometheus \
+  --web.listen-address=127.0.0.1:9090 \
+  --web.enable-remote-write-receiver
+StateDirectory=zellij-observability/prometheus
+Restart=always
+RestartSec=2
+
+[Install]
+WantedBy=zellij-observability.target

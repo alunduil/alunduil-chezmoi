@@ -10,6 +10,11 @@
 # vale content:       {{ include "script/install/vale" | sha256sum }}
 # trivy content:      {{ include "script/install/trivy" | sha256sum }}
 # just content:       {{ include "script/install/just" | sha256sum }}
+# alloy content:      {{ include "script/install/alloy" | sha256sum }}
+# prometheus content: {{ include "script/install/prometheus" | sha256sum }}
+# loki content:       {{ include "script/install/loki" | sha256sum }}
+# tempo content:      {{ include "script/install/tempo" | sha256sum }}
+# grafana content:    {{ include "script/install/grafana" | sha256sum }}
 # lib.sh content:     {{ include "script/install/lib.sh" | sha256sum }}
 # The hashes above embed the install scripts' content into this file's
 # rendered output so chezmoi re-runs this script when any of them change
@@ -29,6 +34,15 @@ INSTALL_DIR="{{ .chezmoi.sourceDir }}/script/install"
 "$INSTALL_DIR/vale" --bin-dir "$HOME/.local/bin"
 "$INSTALL_DIR/trivy" --bin-dir "$HOME/.local/bin"
 "$INSTALL_DIR/just" --bin-dir "$HOME/.local/bin"
+
+# zellij-freeze observability stack (see docs/how-to/viewing-zellij-freeze-data.md).
+# Always installed; the systemd services stay inert until enabled per host
+# with `systemctl --user enable --now zellij-observability.target`.
+"$INSTALL_DIR/alloy" --bin-dir "$HOME/.local/bin"
+"$INSTALL_DIR/prometheus" --bin-dir "$HOME/.local/bin"
+"$INSTALL_DIR/loki" --bin-dir "$HOME/.local/bin"
+"$INSTALL_DIR/tempo" --bin-dir "$HOME/.local/bin"
+"$INSTALL_DIR/grafana" --bin-dir "$HOME/.local/bin"
 
 # gcx ships its skill bundle inside the binary; `agent skills install
 # --all` extracts it to ~/.agents/skills (the cross-harness convention
