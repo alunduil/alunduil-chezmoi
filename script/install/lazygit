@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 set -euo pipefail
 
-LAZYGIT_VERSION="v0.62.0"
+LAZYGIT_VERSION="v0.62.1"
 ARCH="linux_x86_64"
 
 # shellcheck source-path=SCRIPTDIR source=lib.sh
