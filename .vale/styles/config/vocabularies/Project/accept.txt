@@ -25,6 +25,17 @@ ghcup
 Keybase
 paperkey
 
+# Observability stack
+Grafana
+Prometheus
+Loki
+Tempo
+Alloy
+zellijstat
+zellaude
+OTLP
+systemd
+
 # Editors and OSes
 VSCode
 macOS
