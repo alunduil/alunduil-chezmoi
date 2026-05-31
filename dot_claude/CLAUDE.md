@@ -53,6 +53,10 @@ A per-repo `CLAUDE.md` overrides anything here.
 - When adding commits to an open PR, regenerate the body from scratch.
   The body describes the merge state, not the commit log; appending
   each round drifts toward changelog narration.
+- Never post a new comment on a PR we're working. Carry the update in
+  the description (regenerate the body) — it's the single source of
+  truth. The only PR comment allowed is a direct reply to an existing
+  comment on that PR.
 
 ## Commits
 
