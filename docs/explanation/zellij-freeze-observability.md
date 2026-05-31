@@ -1,10 +1,10 @@
-# Zellij-freeze observability stack
+# Zellij-freeze observability
 
 Background and rationale for the always-on telemetry stack that instruments
 the Zellij-freeze investigation. To operate it, see
-[../how-to/zellij-observability.md](../how-to/zellij-observability.md); for
-ports, storage, and metric names, see
-[../reference/zellij-observability.md](../reference/zellij-observability.md).
+[../how-to/viewing-zellij-freeze-data.md](../how-to/viewing-zellij-freeze-data.md);
+for ports, storage, and metric names, see
+[../reference/zellij-freeze-observability-reference.md](../reference/zellij-freeze-observability-reference.md).
 
 ## The problem
 

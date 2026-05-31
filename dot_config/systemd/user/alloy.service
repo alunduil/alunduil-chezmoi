@@ -1,6 +1,6 @@
 [Unit]
 Description=Grafana Alloy (zellij-freeze collector)
-Documentation=https://github.com/alunduil/alunduil-chezmoi/blob/main/docs/how-to/zellij-observability.md
+Documentation=https://github.com/alunduil/alunduil-chezmoi/blob/main/docs/how-to/viewing-zellij-freeze-data.md
 PartOf=zellij-observability.target
 After=prometheus.service loki.service tempo.service
 

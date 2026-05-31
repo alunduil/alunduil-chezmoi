@@ -1,6 +1,6 @@
 [Unit]
 Description=zellij-freeze observability capture stack (always-on)
-Documentation=https://github.com/alunduil/alunduil-chezmoi/blob/main/docs/how-to/zellij-observability.md
+Documentation=https://github.com/alunduil/alunduil-chezmoi/blob/main/docs/how-to/viewing-zellij-freeze-data.md
 # Wants pulls the whole stack in when the target starts, so a single
 # `systemctl --user enable --now zellij-observability.target` brings up (and
 # auto-restarts at login) every service. run_onchange_after_10 runs that on

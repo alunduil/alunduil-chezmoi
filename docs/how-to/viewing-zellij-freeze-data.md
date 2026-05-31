@@ -13,6 +13,6 @@ loginctl enable-linger
 ```
 
 For what the stack is and why, see
-[../explanation/zellij-observability.md](../explanation/zellij-observability.md);
+[../explanation/zellij-freeze-observability.md](../explanation/zellij-freeze-observability.md);
 for ports, storage paths, and the metrics it exposes, see
-[../reference/zellij-observability.md](../reference/zellij-observability.md).
+[../reference/zellij-freeze-observability-reference.md](../reference/zellij-freeze-observability-reference.md).

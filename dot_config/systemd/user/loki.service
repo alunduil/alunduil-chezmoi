@@ -1,6 +1,6 @@
 [Unit]
 Description=Loki (zellij-freeze log store)
-Documentation=https://github.com/alunduil/alunduil-chezmoi/blob/main/docs/how-to/zellij-observability.md
+Documentation=https://github.com/alunduil/alunduil-chezmoi/blob/main/docs/how-to/viewing-zellij-freeze-data.md
 PartOf=zellij-observability.target
 
 [Service]

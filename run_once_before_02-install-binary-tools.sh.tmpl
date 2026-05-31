@@ -35,7 +35,7 @@ INSTALL_DIR="{{ .chezmoi.sourceDir }}/script/install"
 "$INSTALL_DIR/trivy" --bin-dir "$HOME/.local/bin"
 "$INSTALL_DIR/just" --bin-dir "$HOME/.local/bin"
 
-# zellij-freeze observability stack (see docs/how-to/zellij-observability.md).
+# zellij-freeze observability stack (see docs/how-to/viewing-zellij-freeze-data.md).
 # Always installed; the systemd services stay inert until enabled per host
 # with `systemctl --user enable --now zellij-observability.target`.
 "$INSTALL_DIR/alloy" --bin-dir "$HOME/.local/bin"

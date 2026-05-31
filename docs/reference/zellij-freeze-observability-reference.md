@@ -1,9 +1,10 @@
-# Zellij-freeze observability stack reference
+# Zellij-freeze observability reference
 
 Ports, storage locations, and the metrics `zellijstat` exposes. To operate the
-stack see [../how-to/zellij-observability.md](../how-to/zellij-observability.md);
+stack see
+[../how-to/viewing-zellij-freeze-data.md](../how-to/viewing-zellij-freeze-data.md);
 for the rationale see
-[../explanation/zellij-observability.md](../explanation/zellij-observability.md).
+[../explanation/zellij-freeze-observability.md](../explanation/zellij-freeze-observability.md).
 
 ## Services
 
