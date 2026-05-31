@@ -1,6 +1,7 @@
 #!/usr/bin/env bash
-# Installs unattended-upgrades and places its config so updates apply on their
-# own via the apt-daily-upgrade timer. The config files live in etc-apt/ as
+# Installs unattended-upgrades (plus powermgmt-base for the OnlyOnACPower gate)
+# and places its config so updates apply on their own via the
+# apt-daily-upgrade timer. The config files live in etc-apt/ as
 # whole files (chezmoi can't target /etc, which is outside $HOME) and are
 # copied in with sudo. Results land in /var/log/unattended-upgrades/ and the
 # journal -- no email or desktop notification (the box is attended), and
@@ -18,12 +19,19 @@ log() { printf '==> %s\n' "$*" >&2; }
 APT_CONF_SRC="{{ .chezmoi.sourceDir }}/etc-apt"
 
 # -------------------------------------------------------------------- install
-if ! dpkg -s unattended-upgrades >/dev/null 2>&1; then
-  log "unattended-upgrades: installing"
+# powermgmt-base provides on_ac_power, which the OnlyOnACPower gate in
+# 50unattended-upgrades needs to read the AC line; without it u-u fails open.
+PACKAGES=(unattended-upgrades powermgmt-base)
+missing=()
+for pkg in "${PACKAGES[@]}"; do
+  dpkg -s "$pkg" >/dev/null 2>&1 || missing+=("$pkg")
+done
+if ((${#missing[@]} > 0)); then
+  log "installing ${missing[*]}"
   sudo apt-get update
-  sudo apt-get install -y unattended-upgrades
+  sudo apt-get install -y "${missing[@]}"
 else
-  log "unattended-upgrades: already installed"
+  log "packages already present"
 fi
 
 # --------------------------------------------------------------------- config
