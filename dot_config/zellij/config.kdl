@@ -31,6 +31,16 @@ keybinds {
                 close_on_exit true
             }
         }
+        // Non-interactive sibling: fan out a pair tab for every worktree at
+        // once (idempotent — open tabs are skipped). Alt . neighbours Alt /;
+        // it shadows readline's yank-last-arg in unlocked panes, which `!$`
+        // covers.
+        bind "Alt ." {
+            Run "git-repo-picker" "--all" {
+                floating true
+                close_on_exit true
+            }
+        }
         // Pure tab navigation. Default `MoveFocusOrTab` switches panes when
         // one exists in the direction, which surprises during tab-hopping.
         bind "Alt Left"  { GoToPreviousTab; }

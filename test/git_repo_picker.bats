@@ -268,3 +268,34 @@ mkcanonical() {
   grep -Fxq "action new-tab --layout pair --cwd $wt" "$ZELLIJ_RECORDER"
   grep -Fxq "action rename-tab hello (cloned-petname)" "$ZELLIJ_RECORDER"
 }
+
+# --- --all: non-interactive fan-out ---
+
+@test "--all: spawns a pair tab for every worktree without an open tab" {
+  mkworktree me hello kind-newt
+  mkworktree grafana k6 happy-mole
+  export ZELLIJ_TAB_NAMES=""
+  run bash "$PICKER" --all
+  [ "$status" -eq 0 ]
+  local h="$XDG_DATA_HOME/git-worktrees/me/hello/kind-newt"
+  local k="$XDG_DATA_HOME/git-worktrees/grafana/k6/happy-mole"
+  grep -Fxq "action new-tab --layout pair --cwd $h" "$ZELLIJ_RECORDER"
+  grep -Fxq "action rename-tab hello (kind-newt)" "$ZELLIJ_RECORDER"
+  grep -Fxq "action new-tab --layout pair --cwd $k" "$ZELLIJ_RECORDER"
+  grep -Fxq "action rename-tab grafana/k6 (happy-mole)" "$ZELLIJ_RECORDER"
+}
+
+@test "--all: skips worktrees that already have an open tab (idempotent)" {
+  mkworktree me hello kind-newt
+  mkworktree me world busy-gnat
+  export ZELLIJ_TAB_NAMES=$'hello (kind-newt)\n'
+  run bash "$PICKER" --all
+  [ "$status" -eq 0 ]
+  # Open tab → no respawn for that worktree.
+  ! grep -Fq "new-tab --layout pair --cwd $XDG_DATA_HOME/git-worktrees/me/hello/kind-newt" \
+    "$ZELLIJ_RECORDER"
+  # Closed tab → spawned.
+  grep -Fxq "action new-tab --layout pair --cwd $XDG_DATA_HOME/git-worktrees/me/world/busy-gnat" \
+    "$ZELLIJ_RECORDER"
+  grep -Fxq "action rename-tab world (busy-gnat)" "$ZELLIJ_RECORDER"
+}
