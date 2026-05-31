@@ -30,6 +30,7 @@ just --version                             # command runner (justfiles)
 ghc --version && cabal --version           # ghcup-managed Haskell toolchain
 golang-petname                             # repo-picker worktree namer
 command -v nethack                         # roguelike (nethack-console)
+command -v calibre                         # ebook library manager
 command -v truenas-mcp                     # TrueNAS MCP server binary
 trivy --version                            # vulnerability scanner (aquasecurity/trivy)
 gh extension list                          # confirms gh-poi (squash-merge pruner)
