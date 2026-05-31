@@ -20,16 +20,18 @@ zellaude forks emit (issues #223 and #224).
 
 ## Bring up the capture stack
 
-`chezmoi apply` installs the binaries and deploys the units; it does **not**
-start them. Enable the always-on target once per host:
+`chezmoi apply` installs the binaries, deploys the units, and enables the
+`zellij-observability.target` (a `run_onchange_after` script runs
+`daemon-reload` + `enable --now`). A fresh host comes up capturing with no
+manual steps. The equivalent by hand, if you ever need it:
 
 ```bash
 systemctl --user daemon-reload
 systemctl --user enable --now zellij-observability.target
 ```
 
-To keep it running while you are logged out (so it captures an unattended
-wedge), enable lingering:
+To keep the stack running while you are logged out (so it captures an
+unattended wedge), enable lingering:
 
 ```bash
 loginctl enable-linger
@@ -37,13 +39,8 @@ loginctl enable-linger
 
 ## View the dashboards
 
-Grafana is a separate on-demand viewer—start it only when looking:
-
-```bash
-systemctl --user start grafana
-```
-
-Open <http://127.0.0.1:3000> (default login `admin`/`admin`) and find the
+Grafana runs as part of the stack, so it's already up. Open
+<http://127.0.0.1:3000> (default login `admin`/`admin`) and find the
 provisioned **Zellij freeze** dashboard. The Session variable filters to one
 or more sessions.
 
