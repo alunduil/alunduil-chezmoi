@@ -37,6 +37,11 @@
 # Tabs are named "<repo-or-org/repo> (petname)" so go-to-tab-name round-trips.
 # Worktrees are durable — closing a tab does not remove them; that is
 # git-worktree-poi's job.
+#
+# `--all-worktrees` is a non-interactive fan-out: instead of prompting, it opens
+# a pair tab for every worktree that lacks one, reusing print_worktrees'
+# spawn/focus split so already-open worktrees are skipped (idempotent). Bound to
+# Alt . for rehydrating the full set after a fresh session.
 
 set -euo pipefail
 
@@ -188,6 +193,12 @@ print_remotes() {
     done
 }
 
+spawn_pair_tab() {
+    local cwd=$1 tab=$2
+    zellij action new-tab --layout pair --cwd "$cwd"
+    zellij action rename-tab "$tab"
+}
+
 # Tests source this script to exercise helpers above without triggering the
 # --rows handler or main entry below.
 if [[ "${BASH_SOURCE[0]}" != "$0" ]]; then return 0; fi
@@ -218,6 +229,28 @@ if [[ "${1:-}" == "--rows" ]]; then
         fi
         cat "$REMOTES_FILE" 2>/dev/null || true
     fi
+    exit 0
+fi
+
+# Non-interactive fan-out (Alt .): open a pair tab for every worktree without
+# one. print_worktrees emits spawn rows only for worktrees whose tab is closed,
+# so consuming just those rows makes re-running idempotent for free.
+if [[ "${1:-}" == "--all-worktrees" ]]; then
+    # close_on_exit closes the floating pane regardless of exit code, so a
+    # failure would vanish before it could be read. Pause on error under
+    # zellij to keep the stderr on screen until dismissed.
+    trap 'rc=$?; (( rc )) && [[ -n "${ZELLIJ:-}" ]] && {
+        printf "\ngit-repo-picker --all-worktrees: failed (exit %d). Press Enter to dismiss..." "$rc" >&2
+        read -r _ </dev/tty 2>/dev/null || sleep 10
+    }' EXIT
+    for cmd in zellij gh git; do
+        command -v "$cmd" >/dev/null 2>&1 || die "$cmd required but not found"
+    done
+    ME=$(gh api user -q .login)
+    while IFS=$'\t' read -r _display verb petdir tab; do
+        [[ "$verb" == spawn ]] || continue
+        spawn_pair_tab "$petdir" "$tab"
+    done < <(print_worktrees)
     exit 0
 fi
 
@@ -317,12 +350,6 @@ make_worktree() {
     fi
     mkdir -p "$(dirname "$wt_dir")"
     git -C "$canonical" worktree add "$wt_dir" -b "$ME/worktree/$petname" "$default_branch"
-}
-
-spawn_pair_tab() {
-    local cwd=$1 tab=$2
-    zellij action new-tab --layout pair --cwd "$cwd"
-    zellij action rename-tab "$tab"
 }
 
 # fzf reads its initial candidates from STATIC_FILE — no upstream pipeline

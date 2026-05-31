@@ -21,7 +21,9 @@ setup() {
   export ZELLIJ_RECORDER="$TMPROOT/zellij.log"
   : >"$ZELLIJ_RECORDER"
   export GH_USER=me
-  unset FZF_OUTPUT ZELLIJ_TAB_NAMES GH_CLONE_SRC GH_REPO_LIST PETNAME
+  # Unset ZELLIJ so the --all-worktrees pause-on-error trap takes its
+  # outside-zellij path regardless of where bats itself runs.
+  unset FZF_OUTPUT ZELLIJ_TAB_NAMES GH_CLONE_SRC GH_REPO_LIST PETNAME ZELLIJ
   # Drop any GH_PR_LIST_* leakage from prior tests.
   while IFS= read -r var; do unset "$var"; done < <(compgen -e | grep '^GH_PR_LIST_' || true)
 }
@@ -33,6 +35,18 @@ mkworktree() {
   local dir="$XDG_DATA_HOME/git-worktrees/$org/$repo/$petname"
   mkdir -p "$dir"
   : >"$dir/.git"
+}
+
+# Mark a worktree's pair tab as already open, the way print_worktrees sees it:
+# append the tab name it would render to ZELLIJ_TAB_NAMES. Reuses the picker's
+# own fmt_tab (sourced in a subshell, since the picker sets `set -e`) so the
+# org-elision format isn't re-derived here. Pairs with mkworktree.
+mark_tab_open() {
+  local name
+  name="$(ME="$GH_USER" bash -c 'source "$1"; fmt_tab "$2" "$3" "$4"' \
+    _ "$PICKER" "$@")"
+  ZELLIJ_TAB_NAMES+="$name"$'\n'
+  export ZELLIJ_TAB_NAMES
 }
 
 teardown() {
@@ -135,7 +149,7 @@ mkcanonical() {
 
 @test "print_worktrees: open tab emits dimmed focus row" {
   mkworktree me hello kind-newt
-  export ZELLIJ_TAB_NAMES=$'hello (kind-newt)\n'
+  mark_tab_open me hello kind-newt
   run bash -c 'source "$1"; ME=me WORKTREE_ROOT="$2" print_worktrees' \
     _ "$PICKER" "$XDG_DATA_HOME/git-worktrees"
   [ "$status" -eq 0 ]
@@ -199,7 +213,7 @@ mkcanonical() {
 @test "print_worktrees_with_prs: open tab dims the enriched row and dispatches focus" {
   mkpr_worktree me hello kind-newt feature/x
   export GH_PR_LIST_me_hello=$'feature/x\t174'
-  export ZELLIJ_TAB_NAMES=$'hello (kind-newt)\n'
+  mark_tab_open me hello kind-newt
   run bash -c 'source "$1"; ME=me WORKTREE_ROOT="$2" print_worktrees_with_prs' \
     _ "$PICKER" "$XDG_DATA_HOME/git-worktrees"
   [ "$status" -eq 0 ]
@@ -267,4 +281,44 @@ mkcanonical() {
   [ -d "$wt" ]
   grep -Fxq "action new-tab --layout pair --cwd $wt" "$ZELLIJ_RECORDER"
   grep -Fxq "action rename-tab hello (cloned-petname)" "$ZELLIJ_RECORDER"
+}
+
+# --- --all-worktrees: non-interactive fan-out ---
+
+@test "--all-worktrees: spawns a pair tab for every worktree without an open tab" {
+  mkworktree me hello kind-newt
+  mkworktree grafana k6 happy-mole
+  export ZELLIJ_TAB_NAMES=""
+  run bash "$PICKER" --all-worktrees
+  [ "$status" -eq 0 ]
+  local h="$XDG_DATA_HOME/git-worktrees/me/hello/kind-newt"
+  local k="$XDG_DATA_HOME/git-worktrees/grafana/k6/happy-mole"
+  grep -Fxq "action new-tab --layout pair --cwd $h" "$ZELLIJ_RECORDER"
+  grep -Fxq "action rename-tab hello (kind-newt)" "$ZELLIJ_RECORDER"
+  grep -Fxq "action new-tab --layout pair --cwd $k" "$ZELLIJ_RECORDER"
+  grep -Fxq "action rename-tab grafana/k6 (happy-mole)" "$ZELLIJ_RECORDER"
+}
+
+@test "--all-worktrees: skips worktrees that already have an open tab (idempotent)" {
+  mkworktree me hello kind-newt
+  mkworktree me world busy-gnat
+  mark_tab_open me hello kind-newt
+  run bash "$PICKER" --all-worktrees
+  [ "$status" -eq 0 ]
+  # Open tab → no respawn for that worktree.
+  ! grep -Fxq "action new-tab --layout pair --cwd $XDG_DATA_HOME/git-worktrees/me/hello/kind-newt" \
+    "$ZELLIJ_RECORDER"
+  # Closed tab → spawned.
+  grep -Fxq "action new-tab --layout pair --cwd $XDG_DATA_HOME/git-worktrees/me/world/busy-gnat" \
+    "$ZELLIJ_RECORDER"
+  grep -Fxq "action rename-tab world (busy-gnat)" "$ZELLIJ_RECORDER"
+}
+
+@test "--all-worktrees: failure outside zellij exits nonzero without hanging" {
+  # STUB_DIR lacks git, so the dependency check dies. ZELLIJ is unset, so the
+  # pause-on-error trap must stay quiet rather than block on /dev/tty. bash is
+  # absolute so only the picker's own dependency check sees the stripped PATH.
+  local bash_bin; bash_bin="$(command -v bash)"
+  run timeout 10 env PATH="$STUB_DIR" "$bash_bin" "$PICKER" --all-worktrees
+  [ "$status" -eq 1 ]    # die's exit, not 124 (timeout → the trap hung)
 }
