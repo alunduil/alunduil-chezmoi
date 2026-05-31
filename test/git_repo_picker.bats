@@ -37,6 +37,18 @@ mkworktree() {
   : >"$dir/.git"
 }
 
+# Mark a worktree's pair tab as already open, the way print_worktrees sees it:
+# append the tab name it would render to ZELLIJ_TAB_NAMES. Reuses the picker's
+# own fmt_tab (sourced in a subshell, since the picker sets `set -e`) so the
+# org-elision format isn't re-derived here. Pairs with mkworktree.
+mark_tab_open() {
+  local name
+  name="$(ME="$GH_USER" bash -c 'source "$1"; fmt_tab "$2" "$3" "$4"' \
+    _ "$PICKER" "$@")"
+  ZELLIJ_TAB_NAMES+="$name"$'\n'
+  export ZELLIJ_TAB_NAMES
+}
+
 teardown() {
   rm -rf "$TMPROOT"
 }
@@ -137,7 +149,7 @@ mkcanonical() {
 
 @test "print_worktrees: open tab emits dimmed focus row" {
   mkworktree me hello kind-newt
-  export ZELLIJ_TAB_NAMES=$'hello (kind-newt)\n'
+  mark_tab_open me hello kind-newt
   run bash -c 'source "$1"; ME=me WORKTREE_ROOT="$2" print_worktrees' \
     _ "$PICKER" "$XDG_DATA_HOME/git-worktrees"
   [ "$status" -eq 0 ]
@@ -201,7 +213,7 @@ mkcanonical() {
 @test "print_worktrees_with_prs: open tab dims the enriched row and dispatches focus" {
   mkpr_worktree me hello kind-newt feature/x
   export GH_PR_LIST_me_hello=$'feature/x\t174'
-  export ZELLIJ_TAB_NAMES=$'hello (kind-newt)\n'
+  mark_tab_open me hello kind-newt
   run bash -c 'source "$1"; ME=me WORKTREE_ROOT="$2" print_worktrees_with_prs' \
     _ "$PICKER" "$XDG_DATA_HOME/git-worktrees"
   [ "$status" -eq 0 ]
@@ -290,11 +302,11 @@ mkcanonical() {
 @test "--all-worktrees: skips worktrees that already have an open tab (idempotent)" {
   mkworktree me hello kind-newt
   mkworktree me world busy-gnat
-  export ZELLIJ_TAB_NAMES=$'hello (kind-newt)\n'
+  mark_tab_open me hello kind-newt
   run bash "$PICKER" --all-worktrees
   [ "$status" -eq 0 ]
   # Open tab → no respawn for that worktree.
-  ! grep -Fq "new-tab --layout pair --cwd $XDG_DATA_HOME/git-worktrees/me/hello/kind-newt" \
+  ! grep -Fxq "action new-tab --layout pair --cwd $XDG_DATA_HOME/git-worktrees/me/hello/kind-newt" \
     "$ZELLIJ_RECORDER"
   # Closed tab → spawned.
   grep -Fxq "action new-tab --layout pair --cwd $XDG_DATA_HOME/git-worktrees/me/world/busy-gnat" \
