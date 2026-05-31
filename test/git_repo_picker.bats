@@ -21,7 +21,9 @@ setup() {
   export ZELLIJ_RECORDER="$TMPROOT/zellij.log"
   : >"$ZELLIJ_RECORDER"
   export GH_USER=me
-  unset FZF_OUTPUT ZELLIJ_TAB_NAMES GH_CLONE_SRC GH_REPO_LIST PETNAME
+  # Unset ZELLIJ so the --all-worktrees pause-on-error trap takes its
+  # outside-zellij path regardless of where bats itself runs.
+  unset FZF_OUTPUT ZELLIJ_TAB_NAMES GH_CLONE_SRC GH_REPO_LIST PETNAME ZELLIJ
   # Drop any GH_PR_LIST_* leakage from prior tests.
   while IFS= read -r var; do unset "$var"; done < <(compgen -e | grep '^GH_PR_LIST_' || true)
 }
@@ -298,4 +300,13 @@ mkcanonical() {
   grep -Fxq "action new-tab --layout pair --cwd $XDG_DATA_HOME/git-worktrees/me/world/busy-gnat" \
     "$ZELLIJ_RECORDER"
   grep -Fxq "action rename-tab world (busy-gnat)" "$ZELLIJ_RECORDER"
+}
+
+@test "--all-worktrees: failure outside zellij exits nonzero without hanging" {
+  # STUB_DIR lacks git, so the dependency check dies. ZELLIJ is unset, so the
+  # pause-on-error trap must stay quiet rather than block on /dev/tty. bash is
+  # absolute so only the picker's own dependency check sees the stripped PATH.
+  local bash_bin; bash_bin="$(command -v bash)"
+  run timeout 10 env PATH="$STUB_DIR" "$bash_bin" "$PICKER" --all-worktrees
+  [ "$status" -eq 1 ]    # die's exit, not 124 (timeout → the trap hung)
 }

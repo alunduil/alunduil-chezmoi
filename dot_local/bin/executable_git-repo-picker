@@ -236,6 +236,13 @@ fi
 # one. print_worktrees emits spawn rows only for worktrees whose tab is closed,
 # so consuming just those rows makes re-running idempotent for free.
 if [[ "${1:-}" == "--all-worktrees" ]]; then
+    # close_on_exit closes the floating pane regardless of exit code, so a
+    # failure would vanish before it could be read. Pause on error under
+    # zellij to keep the stderr on screen until dismissed.
+    trap 'rc=$?; (( rc )) && [[ -n "${ZELLIJ:-}" ]] && {
+        printf "\ngit-repo-picker --all-worktrees: failed (exit %d). Press Enter to dismiss..." "$rc" >&2
+        read -r _ </dev/tty 2>/dev/null || sleep 10
+    }' EXIT
     for cmd in zellij gh git; do
         command -v "$cmd" >/dev/null 2>&1 || die "$cmd required but not found"
     done
