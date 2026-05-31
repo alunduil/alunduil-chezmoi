@@ -15,12 +15,18 @@ from pathlib import Path
 # Don't drop a __pycache__ beside the chezmoi-managed source when importing it.
 sys.dont_write_bytecode = True
 
-_SRC = Path(__file__).resolve().parent.parent / "dot_local" / "bin" / "executable_zellijstat"
+_SRC = (
+    Path(__file__).resolve().parent.parent
+    / "dot_local"
+    / "bin"
+    / "executable_zellijstat"
+)
 # The deployed file has no .py suffix, so name the loader explicitly rather
 # than letting importlib infer it from the extension. Register it in
 # sys.modules before exec so @dataclass can resolve its own module.
 _loader = SourceFileLoader("zellijstat", str(_SRC))
 _spec = importlib.util.spec_from_loader("zellijstat", _loader)
+assert _spec is not None  # spec_from_loader always returns a spec for a loader
 zs = importlib.util.module_from_spec(_spec)
 sys.modules["zellijstat"] = zs
 _loader.exec_module(zs)
@@ -120,7 +126,9 @@ class CollectAndIter(unittest.TestCase):
                 b"zellij\x00--server\x00/run/user/1000/zellij/0.43.1/sess-a\x00"
             )
             srv.joinpath("status").write_text("VmRSS:\t1024 kB\n")
-            srv.joinpath("stat").write_text("18533 (zellij) S 1 1 1 0 -1 0 0 0 0 0 5 5 0 0")
+            srv.joinpath("stat").write_text(
+                "18533 (zellij) S 1 1 1 0 -1 0 0 0 0 0 5 5 0 0"
+            )
             (srv / "fd").mkdir()
             (srv / "fd" / "0").write_text("")
             # A client process (no --server) must be skipped.

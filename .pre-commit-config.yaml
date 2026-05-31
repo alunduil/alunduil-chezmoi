@@ -29,6 +29,31 @@ repos:
         # .tmpl files are Go templates, not valid YAML until chezmoi renders.
         exclude: \.tmpl$
       - id: detect-private-key
+      - id: debug-statements
+      - id: check-ast
+      - id: check-merge-conflict
+
+  # The Python hooks below also lint dot_local/bin/executable_zellijstat. It
+  # carries chezmoi's executable_ prefix, so it has no .py suffix and is stored
+  # non-executable; identify tags it only as `text`, so the default
+  # python-typed matching skips it. Match it by path instead.
+  - repo: https://github.com/astral-sh/ruff-pre-commit
+    rev: v0.15.15
+    hooks:
+      - id: ruff-check
+        args: [--fix]
+        types_or: [text]
+        files: (\.py$|/executable_zellijstat$)
+      - id: ruff-format
+        types_or: [text]
+        files: (\.py$|/executable_zellijstat$)
+
+  - repo: https://github.com/pre-commit/mirrors-mypy
+    rev: v2.1.0
+    hooks:
+      - id: mypy
+        types_or: [text]
+        files: (\.py$|/executable_zellijstat$)
 
   - repo: https://github.com/errata-ai/vale
     rev: v3.14.2
