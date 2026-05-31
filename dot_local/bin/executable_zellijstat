@@ -1,0 +1,372 @@
+#!/usr/bin/env python3
+"""External /proc sampler for zellij servers, exposed as Prometheus metrics.
+
+Enumerates every zellij *server* process (comm == ``zellij`` with a
+``--server`` argument — never a substring match, which would catch the
+sampler's own shell) and, per server, reports the signals the zellij-freeze
+investigation needs to watch climb: thread count by name, per-thread kernel
+wait-channel (the futex pile-up), Unix-socket connection count with
+Recv-Q/Send-Q, open fds, CPU and RSS. Each series is tagged by session.
+
+It is a pull exporter: a scrape samples /proc on demand, so the resolution is
+the scraper's interval (Alloy/Prometheus at ~2s). Reading /proc never touches
+the zellij IPC socket, so the sampler keeps reporting straight through a server
+wedge — which is the whole point of an *external* observer.
+"""
+
+from __future__ import annotations
+
+import argparse
+import os
+import re
+import subprocess
+import sys
+from dataclasses import dataclass, field
+from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
+from pathlib import Path
+
+CLK_TCK = os.sysconf("SC_CLK_TCK")
+PID_RE = re.compile(rb"pid=(\d+)")
+_PID_DIR_RE = re.compile(r"\A\d+\Z")
+
+
+@dataclass
+class ServerSample:
+    """One sampled zellij server."""
+
+    pid: int
+    session: str
+    threads: int = 0
+    threads_by_comm: dict[str, int] = field(default_factory=dict)
+    threads_by_wchan: dict[str, int] = field(default_factory=dict)
+    connections: int = 0
+    recvq_bytes: int = 0
+    sendq_bytes: int = 0
+    open_fds: int = 0
+    cpu_seconds: float = 0.0
+    rss_bytes: int = 0
+
+
+def session_from_cmdline(cmdline: bytes) -> str | None:
+    """Return the session name from a zellij server's /proc cmdline.
+
+    The server is launched as ``zellij --server <socket-path>`` and the socket
+    file is named after the session, so the session is the basename of the
+    argument following ``--server``. Returns None when this is not a server
+    invocation (no ``--server``), which is how client processes are excluded.
+    """
+    args = [a for a in cmdline.split(b"\x00") if a]
+    for i, arg in enumerate(args):
+        if arg == b"--server" and i + 1 < len(args):
+            return os.path.basename(args[i + 1].decode("utf-8", "replace"))
+    return None
+
+
+def _read_bytes(path: Path) -> bytes:
+    try:
+        return path.read_bytes()
+    except OSError:
+        return b""
+
+
+def _read_text(path: Path) -> str:
+    return _read_bytes(path).decode("utf-8", "replace")
+
+
+def collect_threads(task_dir: Path) -> tuple[int, dict[str, int], dict[str, int]]:
+    """Count threads under a process's task/ dir, grouped by comm and wchan."""
+    total = 0
+    by_comm: dict[str, int] = {}
+    by_wchan: dict[str, int] = {}
+    try:
+        tids = list(task_dir.iterdir())
+    except OSError:
+        return 0, by_comm, by_wchan
+    for tid in tids:
+        comm = _read_text(tid / "comm").strip()
+        if not comm:
+            # Thread vanished between listing and read; don't count a ghost.
+            continue
+        total += 1
+        by_comm[comm] = by_comm.get(comm, 0) + 1
+        # wchan is "0" (or empty) for a running thread; bucket those as
+        # "running" so the futex/poll waiters stand out against the baseline.
+        wchan = _read_text(tid / "wchan").strip() or "0"
+        if wchan == "0":
+            wchan = "running"
+        by_wchan[wchan] = by_wchan.get(wchan, 0) + 1
+    return total, by_comm, by_wchan
+
+
+def read_rss_bytes(status_text: str) -> int:
+    """Parse VmRSS (kB) from /proc/<pid>/status into bytes."""
+    for line in status_text.splitlines():
+        if line.startswith("VmRSS:"):
+            parts = line.split()
+            if len(parts) >= 2 and parts[1].isdigit():
+                return int(parts[1]) * 1024
+    return 0
+
+
+def read_cpu_seconds(stat_text: str) -> float:
+    """Parse utime+stime from /proc/<pid>/stat into seconds.
+
+    comm (field 2) may contain spaces and parens, so split on the last ')'
+    before reading the space-delimited fields that follow.
+    """
+    rparen = stat_text.rfind(")")
+    if rparen == -1:
+        return 0.0
+    rest = stat_text[rparen + 2 :].split()
+    # After comm, fields are 1-indexed from "state" (field 3). utime is field
+    # 14 and stime field 15, i.e. indices 11 and 12 of `rest`.
+    if len(rest) < 13:
+        return 0.0
+    try:
+        return (int(rest[11]) + int(rest[12])) / CLK_TCK
+    except ValueError:
+        return 0.0
+
+
+def parse_ss_unix(text: str) -> dict[int, tuple[int, int, int]]:
+    """Aggregate `ss -xp` output to pid -> (connections, recvq, sendq).
+
+    A socket is attributed to every pid named in its process column, so a
+    server's connection count is the number of Unix sockets it holds. Recv-Q
+    and Send-Q are columns 3 and 4 of each data line.
+    """
+    out: dict[int, list[int]] = {}
+    for raw in text.splitlines():
+        line = raw.strip()
+        if not line or line.startswith("Netid"):
+            continue
+        parts = line.split()
+        if len(parts) < 4:
+            continue
+        try:
+            recvq = int(parts[2])
+            sendq = int(parts[3])
+        except ValueError:
+            continue
+        for m in PID_RE.finditer(raw.encode("utf-8", "replace")):
+            pid = int(m.group(1))
+            agg = out.setdefault(pid, [0, 0, 0])
+            agg[0] += 1
+            agg[1] += recvq
+            agg[2] += sendq
+    return {pid: (c, r, s) for pid, (c, r, s) in out.items()}
+
+
+def run_ss() -> str:
+    """Return `ss -xp` output, or "" if ss is missing or fails."""
+    try:
+        proc = subprocess.run(
+            ["ss", "-xp"],
+            capture_output=True,
+            text=True,
+            timeout=10,
+            check=False,
+        )
+    except (OSError, subprocess.SubprocessError):
+        return ""
+    return proc.stdout
+
+
+def iter_server_pids(proc_root: Path):
+    """Yield (pid, session) for every zellij server under proc_root."""
+    try:
+        entries = list(proc_root.iterdir())
+    except OSError:
+        return
+    for entry in entries:
+        if not _PID_DIR_RE.match(entry.name):
+            continue
+        if _read_text(entry / "comm").strip() != "zellij":
+            continue
+        session = session_from_cmdline(_read_bytes(entry / "cmdline"))
+        if session is None:
+            continue
+        yield int(entry.name), session
+
+
+def collect(proc_root: Path = Path("/proc"), ss_text: str | None = None):
+    """Sample every zellij server. ss_text is injectable for tests."""
+    if ss_text is None:
+        ss_text = run_ss()
+    ss_by_pid = parse_ss_unix(ss_text)
+    samples: list[ServerSample] = []
+    for pid, session in iter_server_pids(proc_root):
+        pid_dir = proc_root / str(pid)
+        s = ServerSample(pid=pid, session=session)
+        s.threads, s.threads_by_comm, s.threads_by_wchan = collect_threads(
+            pid_dir / "task"
+        )
+        s.rss_bytes = read_rss_bytes(_read_text(pid_dir / "status"))
+        s.cpu_seconds = read_cpu_seconds(_read_text(pid_dir / "stat"))
+        try:
+            s.open_fds = len(list((pid_dir / "fd").iterdir()))
+        except OSError:
+            s.open_fds = 0
+        s.connections, s.recvq_bytes, s.sendq_bytes = ss_by_pid.get(pid, (0, 0, 0))
+        samples.append(s)
+    return samples
+
+
+def _esc(value: str) -> str:
+    return value.replace("\\", "\\\\").replace('"', '\\"').replace("\n", "\\n")
+
+
+def _labels(pairs: dict[str, str]) -> str:
+    return ",".join(f'{k}="{_esc(v)}"' for k, v in pairs.items())
+
+
+def render(samples: list[ServerSample]) -> str:
+    """Render samples as Prometheus text exposition format."""
+    lines: list[str] = []
+
+    def metric(name: str, mtype: str, help_text: str):
+        lines.append(f"# HELP {name} {help_text}")
+        lines.append(f"# TYPE {name} {mtype}")
+
+    metric("zellijstat_servers", "gauge", "Number of zellij servers sampled.")
+    lines.append(f"zellijstat_servers {len(samples)}")
+
+    metric("zellijstat_server_threads", "gauge", "Threads in the zellij server.")
+    for s in samples:
+        lines.append(
+            f'zellijstat_server_threads{{{_labels({"session": s.session, "pid": str(s.pid)})}}} {s.threads}'
+        )
+
+    metric(
+        "zellijstat_server_threads_by_comm",
+        "gauge",
+        "Server threads grouped by thread name.",
+    )
+    for s in samples:
+        for comm, n in sorted(s.threads_by_comm.items()):
+            lbl = _labels({"session": s.session, "pid": str(s.pid), "comm": comm})
+            lines.append(f"zellijstat_server_threads_by_comm{{{lbl}}} {n}")
+
+    metric(
+        "zellijstat_server_threads_by_wchan",
+        "gauge",
+        "Server threads grouped by kernel wait channel.",
+    )
+    for s in samples:
+        for wchan, n in sorted(s.threads_by_wchan.items()):
+            lbl = _labels({"session": s.session, "pid": str(s.pid), "wchan": wchan})
+            lines.append(f"zellijstat_server_threads_by_wchan{{{lbl}}} {n}")
+
+    metric(
+        "zellijstat_server_unix_connections",
+        "gauge",
+        "Unix-domain sockets held by the zellij server.",
+    )
+    for s in samples:
+        lbl = _labels({"session": s.session, "pid": str(s.pid)})
+        lines.append(f"zellijstat_server_unix_connections{{{lbl}}} {s.connections}")
+
+    metric(
+        "zellijstat_server_unix_recvq_bytes",
+        "gauge",
+        "Summed Recv-Q across the server's Unix sockets.",
+    )
+    for s in samples:
+        lbl = _labels({"session": s.session, "pid": str(s.pid)})
+        lines.append(f"zellijstat_server_unix_recvq_bytes{{{lbl}}} {s.recvq_bytes}")
+
+    metric(
+        "zellijstat_server_unix_sendq_bytes",
+        "gauge",
+        "Summed Send-Q across the server's Unix sockets.",
+    )
+    for s in samples:
+        lbl = _labels({"session": s.session, "pid": str(s.pid)})
+        lines.append(f"zellijstat_server_unix_sendq_bytes{{{lbl}}} {s.sendq_bytes}")
+
+    metric("zellijstat_server_open_fds", "gauge", "Open file descriptors.")
+    for s in samples:
+        lbl = _labels({"session": s.session, "pid": str(s.pid)})
+        lines.append(f"zellijstat_server_open_fds{{{lbl}}} {s.open_fds}")
+
+    metric(
+        "zellijstat_server_cpu_seconds_total",
+        "counter",
+        "Server CPU time (utime+stime) in seconds.",
+    )
+    for s in samples:
+        lbl = _labels({"session": s.session, "pid": str(s.pid)})
+        lines.append(f"zellijstat_server_cpu_seconds_total{{{lbl}}} {s.cpu_seconds}")
+
+    metric("zellijstat_server_memory_rss_bytes", "gauge", "Resident set size.")
+    for s in samples:
+        lbl = _labels({"session": s.session, "pid": str(s.pid)})
+        lines.append(f"zellijstat_server_memory_rss_bytes{{{lbl}}} {s.rss_bytes}")
+
+    return "\n".join(lines) + "\n"
+
+
+def _make_handler(proc_root: Path):
+    class Handler(BaseHTTPRequestHandler):
+        def do_GET(self):  # noqa: N802 (http.server API)
+            if self.path.rstrip("/") not in ("", "/metrics"):
+                self.send_error(404)
+                return
+            body = render(collect(proc_root)).encode("utf-8")
+            self.send_response(200)
+            self.send_header(
+                "Content-Type", "text/plain; version=0.0.4; charset=utf-8"
+            )
+            self.send_header("Content-Length", str(len(body)))
+            self.end_headers()
+            self.wfile.write(body)
+
+        def log_message(self, *args):  # silence per-request stderr noise
+            pass
+
+    return Handler
+
+
+def main(argv: list[str] | None = None) -> int:
+    parser = argparse.ArgumentParser(
+        prog="zellijstat",
+        description="Sample zellij servers from /proc and expose Prometheus metrics.",
+    )
+    parser.add_argument(
+        "--listen",
+        default=os.environ.get("ZELLIJSTAT_LISTEN", "127.0.0.1:9095"),
+        metavar="HOST:PORT",
+        help="address to serve /metrics on (default: 127.0.0.1:9095)",
+    )
+    parser.add_argument(
+        "--proc-root",
+        default="/proc",
+        metavar="DIR",
+        help="procfs root to sample (default: /proc)",
+    )
+    parser.add_argument(
+        "--once",
+        action="store_true",
+        help="print one sample to stdout and exit (no server)",
+    )
+    args = parser.parse_args(argv)
+    proc_root = Path(args.proc_root)
+
+    if args.once:
+        sys.stdout.write(render(collect(proc_root)))
+        return 0
+
+    host, _, port = args.listen.rpartition(":")
+    server = ThreadingHTTPServer((host or "127.0.0.1", int(port)), _make_handler(proc_root))
+    sys.stderr.write(f"zellijstat: serving /metrics on {args.listen}\n")
+    try:
+        server.serve_forever()
+    except KeyboardInterrupt:
+        pass
+    finally:
+        server.server_close()
+    return 0
+
+
+if __name__ == "__main__":
+    raise SystemExit(main())

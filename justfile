@@ -18,7 +18,7 @@ check:
     #!/usr/bin/env bash
     set -uo pipefail
     rc=0
-    for c in check-pre-commit check-bats check-zellij check-chezmoi; do
+    for c in check-pre-commit check-bats check-python check-zellij check-chezmoi; do
       just "$c" || rc=1
     done
     exit "$rc"
@@ -30,6 +30,10 @@ check-pre-commit:
 # Unit tests.
 check-bats:
     bats test/
+
+# Python unit tests (zellijstat parsers).
+check-python:
+    python3 test/zellijstat_test.py
 
 # Zellij KDL validation (needs zellij on PATH).
 check-zellij:
