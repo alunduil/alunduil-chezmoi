@@ -1,0 +1,53 @@
+#!/usr/bin/env bash
+# Installs and configures unattended-upgrades so updates apply on their own via
+# the apt-daily-upgrade timer. Covers Debian security + updates and every
+# third-party apt repo this bootstrap adds (script 01). Results land in
+# /var/log/unattended-upgrades/ and the systemd journal -- no email or desktop
+# notification (the box is attended). Automatic reboot stays off. See #228.
+
+set -euo pipefail
+
+log() { printf '==> %s\n' "$*" >&2; }
+
+# -------------------------------------------------------------------- install
+if ! dpkg -s unattended-upgrades >/dev/null 2>&1; then
+  log "unattended-upgrades: installing"
+  sudo apt-get update
+  sudo apt-get install -y unattended-upgrades
+else
+  log "unattended-upgrades: already installed"
+fi
+
+# ----------------------------------------------------------- enable periodic
+log "unattended-upgrades: writing periodic + origins config"
+sudo tee /etc/apt/apt.conf.d/20auto-upgrades >/dev/null <<'EOF'
+APT::Periodic::Update-Package-Lists "1";
+APT::Periodic::Unattended-Upgrade "1";
+EOF
+
+# ----------------------------------------------------------- origins + policy
+# ${distro_codename} is expanded by unattended-upgrades at run time, so the
+# Debian and codename-tracking repos (HashiCorp, Tailscale) stay correct across
+# releases. The remaining third-party origins pin the codename their repos ship.
+# Keybase publishes no Origin/Label metadata, so it is matched by site.
+sudo tee /etc/apt/apt.conf.d/50unattended-upgrades >/dev/null <<'EOF'
+Unattended-Upgrade::Origins-Pattern {
+        "origin=Debian,codename=${distro_codename}-updates";
+        "origin=Debian,codename=${distro_codename}-proposed-updates";
+        "origin=Debian,codename=${distro_codename},label=Debian";
+        "origin=Debian,codename=${distro_codename},label=Debian-Security";
+        "origin=Debian,codename=${distro_codename}-security,label=Debian-Security";
+        "origin=Artifactory,codename=${distro_codename}";       // HashiCorp (Terraform)
+        "origin=gh,codename=stable";                            // GitHub CLI
+        "origin=Tailscale,codename=${distro_codename}";         // Tailscale
+        "origin=. xenial,codename=xenial";                      // Signal
+        "site=prerelease.keybase.io";                           // Keybase
+};
+Unattended-Upgrade::Remove-Unused-Dependencies "true";
+Unattended-Upgrade::Automatic-Reboot "false";
+EOF
+
+# --------------------------------------------------------------------- timers
+sudo systemctl enable --now apt-daily.timer apt-daily-upgrade.timer
+
+log "unattended-upgrades configured"

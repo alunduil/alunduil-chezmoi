@@ -33,7 +33,7 @@ The split exists so a half-finished edit in the dev clone can't corrupt a live `
 
 ## Ordered idempotent bootstrap
 
-Bootstrap lives in `run_once_before_NN-*.sh.tmpl` scripts. Each script is responsible for one logical concern (system packages, language toolchains, third-party binaries, login-required tools, etc.) and is safe to re-run.
+Bootstrap lives in `run_once_before_NN-*.sh.tmpl` scripts. Each script is responsible for one logical concern (system packages, language toolchains, third-party binaries, login-required tools, automatic security updates, etc.) and is safe to re-run.
 
 - **Idempotent** because chezmoi's `run_once_before` hashes the rendered script and only executes when the hash changes. A re-run on the same content is a no-op; a re-run after a content change re-executes. Scripts must therefore tolerate "already installed" without bailing.
 - **Numerically ordered** because some installs depend on others (for example, ghcup must exist before `cabal` can build anything). The two-digit prefix is a stable sort key, not a reservation system—gaps are fine.
