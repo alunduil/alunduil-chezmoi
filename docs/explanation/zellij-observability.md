@@ -19,7 +19,7 @@ thing that can record up to and through the wedge is an external observer.
 flowchart LR
     zj["zellijstat\n/proc sampler"] -->|/metrics| alloy[Alloy collector]
     logs["zellij-diag logs"] -->|tail| alloy
-    otlp["fork OTLP"] --> alloy
+    otlp["OTLP"] --> alloy
     alloy --> prom[Prometheus]
     alloy --> loki[Loki]
     alloy --> tempo[Tempo]
@@ -48,19 +48,20 @@ Loki, and Tempo on the host keep recording regardless. An Alloy buffer alone
 would not survive the viewer being absent: it's a forwarding queue, not a
 store.
 
-## Why metrics flow but logs and traces wait
+## Logs and traces
 
-Only the metrics path carries data today. `zellijstat` runs on stock Zellij,
-so it collects immediately. The log path (`zellij-diag` files into Loki) and
-the trace path (OTLP into Tempo) are wired but idle until the forks emit:
-Zellij native OTEL (#223) and zellaude structured logs (#224). Wiring them now
-means no re-plumbing when they land.
+The stack covers all three signal types, not just metrics. Alloy tails a
+diagnostics log directory (`$XDG_STATE_HOME/zellij-diag`) into Loki and accepts
+OTLP into Tempo, so any in-process instrumentation that writes those logs or
+emits OTLP is stored alongside the `/proc` metrics. The external sampler and
+in-process instrumentation are complementary: the sampler sees thread,
+connection, and resource state but not Zellij's internal connection and pipe
+lifecycle, which only instrumentation inside the process can record.
 
 ## Why loopback OTLP rather than a Unix socket
 
 The OTLP receiver listens on loopback TCP (`4317`/`4318`) rather than a Unix
-socket. Using loopback is equally local and carries no external-network
-exposure, it's the documented Alloy configuration, and it matches the endpoint the
-Zellij fork's OTLP exporter will target. None of these daemons support native
-systemd socket activation, so a `.socket` unit would not help without a
-`systemd-socket-proxyd` hop.
+socket. Using loopback is equally local and carries no external-network exposure,
+it's the documented Alloy configuration, and `4317`/`4318` are the OTLP
+defaults. None of these daemons support native systemd socket activation, so a
+`.socket` unit would not help without a `systemd-socket-proxyd` hop.

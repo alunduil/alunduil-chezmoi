@@ -16,9 +16,8 @@ for the rationale see
 | Alloy      | `127.0.0.1:12345` | `zellij-observability/alloy` (WAL) |
 | Grafana    | `127.0.0.1:3000`  | `zellij-observability/grafana`     |
 
-Alloy's OTLP receiver listens on `127.0.0.1:4317` (gRPC) and `4318` (HTTP).
-The forks write logs to `~/.local/state/zellij-diag/*.log`, which Alloy tails
-into Loki.
+Alloy's OTLP receiver listens on `127.0.0.1:4317` (gRPC) and `4318` (HTTP), and
+tails `~/.local/state/zellij-diag/*.log` into Loki.
 
 ## Metrics
 
