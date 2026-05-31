@@ -1,7 +1,7 @@
 .lycheecache
 CLAUDE.md
 docs
-etc-apt
+etc
 justfile
 LICENSE
 README.md

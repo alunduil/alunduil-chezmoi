@@ -1,22 +1,22 @@
 #!/usr/bin/env bash
 # Installs unattended-upgrades (plus powermgmt-base for the OnlyOnACPower gate)
 # and places its config so updates apply on their own via the
-# apt-daily-upgrade timer. The config files live in etc-apt/ as
-# whole files (chezmoi can't target /etc, which is outside $HOME) and are
-# copied in with sudo. Results land in /var/log/unattended-upgrades/ and the
-# journal -- no email or desktop notification (the box is attended), and
-# automatic reboot stays off. See #228.
+# apt-daily-upgrade timer. The config files live in etc/apt/ as whole files
+# (chezmoi can't target /etc, which is outside $HOME) and are copied in with
+# sudo. Results land in /var/log/unattended-upgrades/ and the journal -- no
+# email or desktop notification (the box is attended), and automatic reboot
+# stays off. See #228.
 #
 # run_once hashes the rendered script, so changes to the config files alone
 # would not re-trigger it. Embed their hashes here to force a re-run on edit:
-# 20auto-upgrades content:       {{ include "etc-apt/20auto-upgrades" | sha256sum }}
-# 50unattended-upgrades content: {{ include "etc-apt/50unattended-upgrades" | sha256sum }}
+# 20auto-upgrades content:       {{ include "etc/apt/20auto-upgrades" | sha256sum }}
+# 50unattended-upgrades content: {{ include "etc/apt/50unattended-upgrades" | sha256sum }}
 
 set -euo pipefail
 
 log() { printf '==> %s\n' "$*" >&2; }
 
-APT_CONF_SRC="{{ .chezmoi.sourceDir }}/etc-apt"
+APT_CONF_SRC="{{ .chezmoi.sourceDir }}/etc/apt"
 
 # -------------------------------------------------------------------- install
 # powermgmt-base provides on_ac_power, which the OnlyOnACPower gate in
