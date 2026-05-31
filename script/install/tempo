@@ -1,0 +1,32 @@
+#!/usr/bin/env bash
+set -euo pipefail
+
+TEMPO_VERSION="v3.0.0"
+ARCH="linux_amd64"
+
+# shellcheck source-path=SCRIPTDIR source=lib.sh
+. "$(dirname "$0")/lib.sh"
+
+parse_bin_dir "$@"
+
+bin="$BIN_DIR/tempo"
+if installed_version_matches "$bin" "$TEMPO_VERSION"; then
+  printf '==> tempo: %s already installed at %s\n' "$TEMPO_VERSION" "$bin" >&2
+  exit 0
+fi
+
+printf '==> tempo: downloading %s\n' "$TEMPO_VERSION" >&2
+tmp="$(mktemp -d)"
+trap 'rm -rf "$tmp"' EXIT
+
+base="https://github.com/grafana/tempo/releases/download/${TEMPO_VERSION}"
+asset="tempo_${TEMPO_VERSION#v}_${ARCH}.tar.gz"
+curl -fsSL -o "$tmp/$asset" "$base/$asset"
+curl -fsSL -o "$tmp/SHA256SUMS" "$base/SHA256SUMS"
+
+expected="$(expected_from_checksums "$tmp/SHA256SUMS" "$asset")"
+verify_sha256 "$tmp/$asset" "$expected"
+
+tar -xzf "$tmp/$asset" -C "$tmp" tempo
+mkdir -p "$BIN_DIR"
+install -m 0755 "$tmp/tempo" "$bin"

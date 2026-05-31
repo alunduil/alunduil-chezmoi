@@ -1,0 +1,32 @@
+#!/usr/bin/env bash
+set -euo pipefail
+
+LOKI_VERSION="v3.7.2"
+ARCH="linux-amd64"
+
+# shellcheck source-path=SCRIPTDIR source=lib.sh
+. "$(dirname "$0")/lib.sh"
+
+parse_bin_dir "$@"
+
+bin="$BIN_DIR/loki"
+if installed_version_matches "$bin" "$LOKI_VERSION"; then
+  printf '==> loki: %s already installed at %s\n' "$LOKI_VERSION" "$bin" >&2
+  exit 0
+fi
+
+printf '==> loki: downloading %s\n' "$LOKI_VERSION" >&2
+tmp="$(mktemp -d)"
+trap 'rm -rf "$tmp"' EXIT
+
+base="https://github.com/grafana/loki/releases/download/${LOKI_VERSION}"
+asset="loki-${ARCH}.zip"
+curl -fsSL -o "$tmp/$asset" "$base/$asset"
+curl -fsSL -o "$tmp/SHA256SUMS" "$base/SHA256SUMS"
+
+expected="$(expected_from_checksums "$tmp/SHA256SUMS" "$asset")"
+verify_sha256 "$tmp/$asset" "$expected"
+
+unzip -q "$tmp/$asset" -d "$tmp"
+mkdir -p "$BIN_DIR"
+install -m 0755 "$tmp/loki-${ARCH}" "$bin"

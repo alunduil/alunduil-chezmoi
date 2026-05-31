@@ -1,0 +1,40 @@
+#!/usr/bin/env bash
+set -euo pipefail
+
+GRAFANA_VERSION="v13.0.1"
+ARCH="linux-amd64"
+
+# shellcheck source-path=SCRIPTDIR source=lib.sh
+. "$(dirname "$0")/lib.sh"
+
+# Accept --bin-dir for a uniform installer interface, but Grafana ships a
+# whole tree (conf/, public/), not a lone binary, so it installs under
+# XDG_DATA_HOME instead of BIN_DIR.
+parse_bin_dir "$@"
+
+data_root="${XDG_DATA_HOME:-$HOME/.local/share}/grafana"
+home_path="$data_root/grafana-${GRAFANA_VERSION}"
+if [ -x "$home_path/bin/grafana" ]; then
+  printf '==> grafana: %s already installed at %s\n' "$GRAFANA_VERSION" "$home_path" >&2
+  exit 0
+fi
+
+printf '==> grafana: downloading %s\n' "$GRAFANA_VERSION" >&2
+tmp="$(mktemp -d)"
+trap 'rm -rf "$tmp"' EXIT
+
+base="https://dl.grafana.com/oss/release"
+asset="grafana-${GRAFANA_VERSION#v}.${ARCH}.tar.gz"
+curl -fsSL -o "$tmp/$asset" "$base/$asset"
+curl -fsSL -o "$tmp/$asset.sha256" "$base/$asset.sha256"
+
+# The sidecar lists the hash against an internal dist/ path, so take the
+# hash field directly rather than matching by asset name.
+expected="$(awk '{print $1}' "$tmp/$asset.sha256")"
+verify_sha256 "$tmp/$asset" "$expected"
+
+# Tarball top dir is grafana-v<version>/; extract beside it and pin a
+# stable `current` symlink the systemd unit points its homepath at.
+mkdir -p "$data_root"
+tar -xzf "$tmp/$asset" -C "$data_root"
+ln -sfn "$home_path" "$data_root/current"
