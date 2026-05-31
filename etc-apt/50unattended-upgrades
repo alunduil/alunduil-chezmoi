@@ -147,14 +147,20 @@ Unattended-Upgrade::Automatic-Reboot "false";
 
 // Download and install upgrades only on AC power
 // (i.e. skip or gracefully stop updates on battery)
-// Unattended-Upgrade::OnlyOnACPower "true";
+// Inert under Crostini (no powermgmt-base/on_ac_power -> u-u fails open
+// and proceeds); takes effect on a real laptop. Left on so this config
+// stays correct if a future role lands on battery-powered hardware.
+Unattended-Upgrade::OnlyOnACPower "true";
 
 // Download and install upgrades only on non-metered connection
 // (i.e. skip or gracefully stop updates on a metered connection)
-// Unattended-Upgrade::Skip-Updates-On-Metered-Connections "true";
+// Inert under Crostini (no NetworkManager -> u-u fails open); meaningful
+// on a host with NetworkManager, e.g. a tethered laptop.
+Unattended-Upgrade::Skip-Updates-On-Metered-Connections "true";
 
-// Verbose logging
-// Unattended-Upgrade::Verbose "false";
+// Verbose logging -- richer /var/log/unattended-upgrades/ output, which is
+// the only inspection surface we keep (no mail/toast; see #228).
+Unattended-Upgrade::Verbose "true";
 
 // Print debugging information both in unattended-upgrades and
 // in unattended-upgrade-shutdown
