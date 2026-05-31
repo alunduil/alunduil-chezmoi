@@ -28,6 +28,7 @@ repos:
       - id: check-yaml
         # .tmpl files are Go templates, not valid YAML until chezmoi renders.
         exclude: \.tmpl$
+      - id: check-toml
       - id: detect-private-key
       - id: debug-statements
       - id: check-ast
@@ -54,6 +55,11 @@ repos:
       - id: mypy
         types_or: [text]
         files: (\.py$|/executable_zellijstat$)
+
+  - repo: https://github.com/rhysd/actionlint
+    rev: v1.7.12
+    hooks:
+      - id: actionlint
 
   - repo: https://github.com/errata-ai/vale
     rev: v3.14.2
