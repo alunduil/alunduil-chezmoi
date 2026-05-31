@@ -1,0 +1,65 @@
+#!/usr/bin/env bash
+# End-to-end smoke for the metrics path: launch zellijstat, Prometheus, and
+# Alloy on their real ports and assert a zellijstat sample reaches Prometheus
+# through Alloy. Catches runtime wiring bugs that static validation misses
+# (e.g. scrape_timeout > scrape_interval, which `alloy validate` accepts but
+# `alloy run` rejects). No zellij server is needed — zellijstat always emits
+# the zellijstat_servers gauge, so its arrival in Prometheus proves the whole
+# scrape -> remote_write -> store path.
+#
+# Binds 9090/9095/12345, so it is CI-only (a live local stack already holds
+# them). Needs alloy and prometheus on PATH; skips cleanly when absent.
+set -uo pipefail
+
+ROOT="$(git -C "$(dirname "${BASH_SOURCE[0]}")" rev-parse --show-toplevel)"
+cd "$ROOT"
+
+for tool in alloy prometheus; do
+  if ! command -v "$tool" >/dev/null 2>&1; then
+    printf '==> observability-smoke: %s not on PATH; skipping\n' "$tool" >&2
+    exit 0
+  fi
+done
+
+work="$(mktemp -d)"
+pids=()
+cleanup() {
+  for pid in "${pids[@]}"; do kill "$pid" 2>/dev/null; done
+  rm -rf "$work"
+}
+trap cleanup EXIT
+
+export ZELLIJ_OBS_STATE="$work" ZELLIJ_DIAG="$work/diag"
+mkdir -p "$work/diag" "$work/prometheus" "$work/alloy"
+
+python3 dot_local/bin/executable_zellijstat --listen 127.0.0.1:9095 \
+  >"$work/zellijstat.log" 2>&1 &
+pids+=($!)
+prometheus --config.file=dot_config/prometheus/prometheus.yml \
+  --storage.tsdb.path="$work/prometheus" \
+  --web.listen-address=127.0.0.1:9090 \
+  --web.enable-remote-write-receiver >"$work/prometheus.log" 2>&1 &
+pids+=($!)
+alloy run dot_config/alloy/config.alloy \
+  --storage.path="$work/alloy" \
+  --server.http.listen-addr=127.0.0.1:12345 >"$work/alloy.log" 2>&1 &
+pids+=($!)
+
+for _ in $(seq 1 30); do
+  curl -fsS http://127.0.0.1:9090/-/ready >/dev/null 2>&1 && break
+  sleep 1
+done
+
+query='http://127.0.0.1:9090/api/v1/query?query=zellijstat_servers'
+for _ in $(seq 1 30); do
+  if curl -fsS "$query" 2>/dev/null | grep -q '"__name__":"zellijstat_servers"'; then
+    echo "OK: zellijstat metrics reached Prometheus through Alloy"
+    exit 0
+  fi
+  sleep 1
+done
+
+echo "FAIL: zellijstat_servers never reached Prometheus" >&2
+echo "--- alloy.log (tail) ---" >&2
+tail -20 "$work/alloy.log" >&2
+exit 1

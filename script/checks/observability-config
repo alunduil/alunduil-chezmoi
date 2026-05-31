@@ -1,0 +1,40 @@
+#!/usr/bin/env bash
+# Validate the observability service configs with each tool's own checker.
+# Needs promtool, alloy, loki, and tempo on PATH (installed by
+# script/install/*); skips cleanly when they are absent so a pre-bootstrap
+# `just check` does not fail. CI installs them, so there it actually runs.
+set -uo pipefail
+
+ROOT="$(git -C "$(dirname "${BASH_SOURCE[0]}")" rev-parse --show-toplevel)"
+cd "$ROOT"
+
+for tool in promtool alloy loki tempo; do
+  if ! command -v "$tool" >/dev/null 2>&1; then
+    printf '==> observability-config: %s not on PATH; skipping\n' "$tool" >&2
+    exit 0
+  fi
+done
+
+# Loki/Tempo expand these at parse time; Alloy reads ZELLIJ_DIAG via sys.env.
+state="${XDG_STATE_HOME:-$HOME/.local/state}"
+export ZELLIJ_OBS_STATE="${ZELLIJ_OBS_STATE:-$state/zellij-observability}"
+export ZELLIJ_DIAG="${ZELLIJ_DIAG:-$state/zellij-diag}"
+
+rc=0
+check() {
+  local name="$1"
+  shift
+  if "$@"; then
+    printf 'OK: %s\n' "$name"
+  else
+    printf 'FAIL: %s config invalid\n' "$name" >&2
+    rc=1
+  fi
+}
+
+check prometheus promtool check config dot_config/prometheus/prometheus.yml
+check alloy alloy validate dot_config/alloy/config.alloy
+check loki loki -config.file=dot_config/loki/config.yml -config.expand-env=true -verify-config
+check tempo tempo -config.file=dot_config/tempo/config.yml -config.expand-env=true -config.verify=true
+
+exit "$rc"
