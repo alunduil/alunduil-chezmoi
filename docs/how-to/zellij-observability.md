@@ -1,68 +1,55 @@
-# Zellij-freeze observability stack
+# Running the observability stack
 
-An always-on, out-of-band telemetry stack for the Zellij-freeze
-investigation. `zellijstat` samples every Zellij server from `/proc`
-(thread count, per-thread wait-channel, Unix-socket connections and queue
-depth, file descriptors, CPU, RSS) and exposes Prometheus metrics; Alloy
-collects them into a local Prometheus, and Grafana draws the per-session
-curves. Because `zellijstat` only reads `/proc`, it keeps recording
-straight through a server wedge—the point of an *external* observer.
+The Zellij-freeze observability stack comes up on `chezmoi apply`: the
+binaries install, the units deploy, and `zellij-observability.target` is
+enabled and started. On a fresh host there's nothing to do but look. For what
+the stack is and why it's shaped this way, see
+[../explanation/zellij-observability.md](../explanation/zellij-observability.md);
+for ports, storage paths, and the metrics it exposes, see
+[../reference/zellij-observability.md](../reference/zellij-observability.md).
 
-```
-zellijstat ─/metrics─▶ Alloy ─▶ Prometheus ─┐
-zellij-diag logs ─────▶ Alloy ─▶ Loki ───────┼─▶ Grafana
-fork OTLP ────────────▶ Alloy ─▶ Tempo ──────┘
-```
+## View the dashboards
 
-It runs on stock Zellij. Today only the metrics path carries data; the log
-(Loki) and trace (Tempo) paths are wired but idle until the Zellij and
-zellaude forks emit (issues #223 and #224).
+Grafana runs as part of the stack, so open <http://127.0.0.1:3000> (default
+login `admin`/`admin`) and select the **Zellij freeze** dashboard. The Session
+variable filters to one or more sessions.
 
-## Bring up the capture stack
+## Keep capturing while logged out
 
-`chezmoi apply` installs the binaries, deploys the units, and enables the
-`zellij-observability.target` (a `run_onchange_after` script runs
-`daemon-reload` + `enable --now`). A fresh host comes up capturing with no
-manual steps. The equivalent by hand, if you ever need it:
-
-```bash
-systemctl --user daemon-reload
-systemctl --user enable --now zellij-observability.target
-```
-
-To keep the stack running while you are logged out (so it captures an
-unattended wedge), enable lingering:
+The user services stop when your session ends. To capture an unattended wedge,
+enable lingering so they keep running:
 
 ```bash
 loginctl enable-linger
 ```
 
-## View the dashboards
+## Check what's being captured
 
-Grafana runs as part of the stack, so it's already up. Open
-<http://127.0.0.1:3000> (default login `admin`/`admin`) and find the
-provisioned **Zellij freeze** dashboard. The Session variable filters to one
-or more sessions.
-
-## Ports and storage
-
-| Service    | Address           | Data under `~/.local/state/`        |
-|------------|-------------------|-------------------------------------|
-| zellijstat | `127.0.0.1:9095`  | —                                   |
-| Prometheus | `127.0.0.1:9090`  | `zellij-observability/prometheus`   |
-| Loki       | `127.0.0.1:3100`  | `zellij-observability/loki`         |
-| Tempo      | `127.0.0.1:3200`  | `zellij-observability/tempo`        |
-| Alloy      | `127.0.0.1:12345` | `zellij-observability/alloy` (WAL)  |
-| Grafana    | `127.0.0.1:3000`  | `zellij-observability/grafana`      |
-
-The forks write logs to `~/.local/state/zellij-diag/*.log`, which Alloy
-tails into Loki, and send OTLP to Alloy on `127.0.0.1:4317`.
-
-## Stop or inspect
+Straight from the sampler, no stack required:
 
 ```bash
-systemctl --user stop zellij-observability.target   # stop the capture stack
-systemctl --user status alloy.service               # one service
-journalctl --user -u zellijstat.service -f          # follow its log
-curl -s 127.0.0.1:9095/metrics                       # raw sample, no stack needed
+curl -s 127.0.0.1:9095/metrics
+```
+
+Follow a service's log, or check its state:
+
+```bash
+journalctl --user -u zellijstat.service -f
+systemctl --user status alloy.service
+```
+
+## Stop or restart
+
+```bash
+systemctl --user stop zellij-observability.target
+systemctl --user restart zellij-observability.target
+```
+
+## Bring it up by hand
+
+The enable step that `chezmoi apply` runs, if you ever need it directly:
+
+```bash
+systemctl --user daemon-reload
+systemctl --user enable --now zellij-observability.target
 ```

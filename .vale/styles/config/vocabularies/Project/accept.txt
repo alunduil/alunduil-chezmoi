@@ -35,6 +35,10 @@ zellijstat
 zellaude
 OTLP
 systemd
+loopback
+substring
+wchan
+futex
 
 # Editors and OSes
 VSCode
