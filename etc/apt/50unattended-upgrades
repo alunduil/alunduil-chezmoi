@@ -14,6 +14,7 @@ Unattended-Upgrade::Origins-Pattern {
         "origin=gh,codename=stable";                            // GitHub CLI
         "origin=Tailscale,codename=${distro_codename}";         // Tailscale
         "origin=. xenial,codename=xenial";                      // Signal
+        "origin=Docker,archive=${distro_codename}";             // Docker CE (publishes Suite, not Codename)
         "site=prerelease.keybase.io";                           // Keybase (no repo metadata)
 };
 
