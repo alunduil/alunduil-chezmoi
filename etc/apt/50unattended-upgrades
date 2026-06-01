@@ -21,8 +21,9 @@ Unattended-Upgrade::Origins-Pattern {
 Unattended-Upgrade::Remove-Unused-Dependencies "true";
 
 // Attended box -- never reboot automatically (see #228). Moot on Crostini
-// regardless: nothing flags /var/run/reboot-required (kernel is ChromeOS's,
-// no needrestart/update-notifier installed).
+// regardless: the kernel is ChromeOS's, so a reboot can't pick up a new one.
+// needrestart (run_once_before_04) restarts services onto upgraded libraries
+// in place instead, which is the part that actually matters here. See #238.
 Unattended-Upgrade::Automatic-Reboot "false";
 
 // Pause on battery. Real here -- powermgmt-base (installed by
