@@ -45,12 +45,21 @@ if [ ! -f /etc/apt/sources.list.d/keybase.list ]; then
     sudo tee /etc/apt/sources.list.d/keybase.list >/dev/null
 fi
 
+# --------------------------------------------------------------- vscode (code)
+if [ ! -f /usr/share/keyrings/packages.microsoft.gpg ]; then
+  log "vscode: adding apt repository"
+  curl -fsSL https://packages.microsoft.com/keys/microsoft.asc |
+    sudo gpg --dearmor -o /usr/share/keyrings/packages.microsoft.gpg
+  printf 'deb [arch=%s signed-by=/usr/share/keyrings/packages.microsoft.gpg] https://packages.microsoft.com/repos/code stable main\n' \
+    "$(dpkg --print-architecture)" | sudo tee /etc/apt/sources.list.d/vscode.list >/dev/null
+fi
+
 # -------------------------------------------------------------------- apt pkgs
 APT_PACKAGES=(
   gh zsh ripgrep fd-find fzf jq unzip age terraform libnotify-bin
   build-essential libffi-dev libgmp-dev libncurses-dev zlib1g-dev
   golang-petname
-  keybase signal-desktop calibre
+  keybase signal-desktop calibre code
   nethack-console
 )
 missing=()
