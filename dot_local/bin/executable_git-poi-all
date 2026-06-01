@@ -1,0 +1,118 @@
+#!/usr/bin/env bash
+
+set -euo pipefail
+
+# usage: the script's documentation and its -h/--help output, in one place.
+# Laid out the way Click renders a command's help — Usage synopsis, the full
+# description, then an aligned Options block.
+usage() {
+    cat <<'EOF'
+Usage: git poi-all [GH_POI_ARGS...]
+
+  Sweep `gh poi` across every GitHub clone on the host: prune merged local
+  branches everywhere at once instead of one cd + `gh poi` at a time. Walks
+  $HOME for canonical clones (a .git directory with a github.com origin),
+  then runs `gh poi` in each, reporting per-repo so one failure (no GitHub
+  remote, auth, detached HEAD) doesn't abort the sweep.
+
+  Worktrees share their canonical's .git as a *file*, not a directory, so the
+  walk skips them — branch refs are repo-wide and a per-worktree run would be
+  redundant. git-worktree-poi handles the worktree axis.
+
+  Any arguments are forwarded verbatim to each `gh poi`, so the upstream flags
+  apply across the whole sweep:
+
+    git poi-all --dry-run            preview deletions in every repo
+    git poi-all --state closed       prune closed-PR branches too
+
+Options:
+  -h, --help     Show this message and exit (gh poi's own flags pass through).
+EOF
+}
+
+# NO_COLOR (https://no-color.org): any non-empty value disables colour.
+if [[ -t 1 && -z "${NO_COLOR:-}" ]]; then
+    BOLD=$'\033[1m'
+    DIM=$'\033[2m'
+    RESET=$'\033[0m'
+    RED=$'\033[31m'
+    GREEN=$'\033[32m'
+else
+    BOLD='' DIM='' RESET='' RED='' GREEN=''
+fi
+
+die() { printf 'git-poi-all: %s\n' "$*" >&2; exit 1; }
+
+# github_slug <remote-url>: emit "owner/repo" from a GitHub remote URL,
+# stripping any trailing .git. Returns non-zero for non-GitHub remotes so the
+# caller drops the clone from the sweep — `gh poi` needs a GitHub remote.
+github_slug() {
+    local url=$1
+    url=${url%.git}
+    case "$url" in
+    *github.com/*) printf '%s\n' "${url##*github.com/}" ;;
+    *github.com:*) printf '%s\n' "${url##*github.com:}" ;;
+    *) return 1 ;;
+    esac
+}
+
+# discover_repos: emit "<slug>\t<dir>" for each canonical GitHub clone under
+# $HOME, sorted and de-duplicated. The find prunes hidden directories (so it
+# never descends into ~/.cache, ~/.local, ...) but keeps .git itself, and
+# matches .git *directories* only — worktree .git files are excluded, giving
+# the once-per-repository guarantee for free. Clones with a non-GitHub or
+# missing origin are dropped by github_slug.
+discover_repos() {
+    local gitdir dir url slug
+    while IFS= read -r gitdir; do
+        dir=${gitdir%/.git}
+        url=$(git -C "$dir" remote get-url origin 2>/dev/null) || continue
+        slug=$(github_slug "$url") || continue
+        printf '%s\t%s\n' "$slug" "$dir"
+    done < <(find "$HOME" -maxdepth 4 \
+        \( -name '.*' ! -name '.git' -prune \) -o \
+        \( -name .git -type d -print \) 2>/dev/null) \
+        | sort -u
+}
+
+# Tests source this script to exercise helpers above without running the
+# main flow.
+if [[ "${BASH_SOURCE[0]}" != "$0" ]]; then return 0; fi
+
+if [[ "${1:-}" == "-h" || "${1:-}" == "--help" ]]; then
+    usage
+    exit 0
+fi
+
+for cmd in git gh; do
+    command -v "$cmd" >/dev/null 2>&1 || die "$cmd required but not found"
+done
+
+declare -a failures=()
+count=0
+while IFS=$'\t' read -r slug dir; do
+    [[ -z "$dir" ]] && continue
+    ((++count))
+    printf '%s==> %s%s %s(%s)%s\n' "$BOLD" "$slug" "$RESET" "$DIM" "$dir" "$RESET"
+    # Subshell cd keeps each `gh poi` in its own repo; the `if !` exempts the
+    # call from set -e so a failing repo is recorded and skipped, not fatal.
+    if ! (cd "$dir" && gh poi "$@"); then
+        failures+=("$slug ($dir)")
+    fi
+    printf '\n'
+done < <(discover_repos)
+
+if ((count == 0)); then
+    printf 'no GitHub clones found under %s\n' "$HOME"
+    exit 0
+fi
+
+if ((${#failures[@]})); then
+    printf '%s%d of %d repo(s) failed:%s\n' "$BOLD" "${#failures[@]}" "$count" "$RESET"
+    for f in "${failures[@]}"; do
+        printf '  %s%s%s\n' "$RED" "$f" "$RESET"
+    done
+    exit 1
+fi
+
+printf '%sswept %d repo(s)%s\n' "$GREEN" "$count" "$RESET"
