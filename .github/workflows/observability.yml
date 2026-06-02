@@ -63,7 +63,7 @@ jobs:
       # path doesn't need them, so they install here.
       - name: Verify systemd units
         run: |
-          script/install/grafana
+          script/install/grafana --bin-dir "$HOME/.local/bin"
           install -m 0755 dot_local/bin/executable_zellijstat \
             "$HOME/.local/bin/zellijstat"
           script/checks/systemd-units
