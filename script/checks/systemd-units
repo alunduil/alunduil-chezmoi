@@ -1,0 +1,50 @@
+#!/usr/bin/env bash
+# Validate the systemd user units with `systemd-analyze verify`: every
+# directive must be known and every ExecStart binary must resolve. verify
+# resolves %h/%S from the calling user, so the referenced binaries must exist
+# at their real paths — CI installs the whole stack (incl. Grafana and
+# zellijstat) first. Skips cleanly when systemd-analyze or the stack binaries
+# are absent, so a pre-bootstrap `just check` does not fail.
+#
+# verify only *warns* (and still exits 0) on an unknown directive, so any
+# stderr is treated as failure; a missing ExecStart already exits non-zero.
+set -uo pipefail
+
+ROOT="$(git -C "$(dirname "${BASH_SOURCE[0]}")" rev-parse --show-toplevel)"
+cd "$ROOT"
+
+if ! command -v systemd-analyze >/dev/null 2>&1; then
+  printf '==> systemd-units: systemd-analyze not on PATH; skipping\n' >&2
+  exit 0
+fi
+
+# Gate on the canonical install locations, not the units' ExecStart paths, so
+# a typo'd ExecStart still reaches verify (and fails it) instead of skipping.
+bins=(
+  "$HOME/.local/bin/zellijstat"
+  "$HOME/.local/bin/prometheus"
+  "$HOME/.local/bin/alloy"
+  "$HOME/.local/bin/loki"
+  "$HOME/.local/bin/tempo"
+  "$HOME/.local/share/grafana/current/bin/grafana"
+)
+for b in "${bins[@]}"; do
+  if [ ! -x "$b" ]; then
+    printf '==> systemd-units: %s not installed; skipping\n' "$b" >&2
+    exit 0
+  fi
+done
+
+units=(dot_config/systemd/user/*.service dot_config/systemd/user/*.target)
+
+errfile="$(mktemp)"
+trap 'rm -f "$errfile"' EXIT
+systemd-analyze --user verify "${units[@]}" >/dev/null 2>"$errfile"
+rc=$?
+if [ "$rc" -ne 0 ] || [ -s "$errfile" ]; then
+  printf 'FAIL: systemd unit verification\n' >&2
+  cat "$errfile" >&2
+  exit 1
+fi
+
+printf 'OK: systemd user units verify\n'

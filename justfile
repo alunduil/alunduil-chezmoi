@@ -43,7 +43,9 @@ check-zellij:
 check-chezmoi:
     script/checks/chezmoi-apply
 
-# Observability config validation (skips when the stack binaries are absent;
-# the live metrics smoke is CI-only — it binds the running stack's ports).
+# Observability config + systemd unit validation (skips when the stack
+# binaries are absent; the live metrics smoke is CI-only — it binds the
+# running stack's ports).
 check-observability:
     script/checks/observability-config
+    script/checks/systemd-units
