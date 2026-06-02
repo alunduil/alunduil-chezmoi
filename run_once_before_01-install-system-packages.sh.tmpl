@@ -45,6 +45,15 @@ if [ ! -f /etc/apt/sources.list.d/keybase.list ]; then
     sudo tee /etc/apt/sources.list.d/keybase.list >/dev/null
 fi
 
+# --------------------------------------------------------------- vscode (code)
+if [ ! -f /usr/share/keyrings/packages.microsoft.gpg ]; then
+  log "vscode: adding apt repository"
+  curl -fsSL https://packages.microsoft.com/keys/microsoft.asc |
+    sudo gpg --dearmor -o /usr/share/keyrings/packages.microsoft.gpg
+  printf 'deb [arch=%s signed-by=/usr/share/keyrings/packages.microsoft.gpg] https://packages.microsoft.com/repos/code stable main\n' \
+    "$(dpkg --print-architecture)" | sudo tee /etc/apt/sources.list.d/vscode.list >/dev/null
+fi
+
 # --------------------------------------------------------------------- docker
 if [ ! -f /usr/share/keyrings/docker-archive-keyring.gpg ]; then
   log "docker: adding apt repository"
@@ -61,7 +70,7 @@ APT_PACKAGES=(
   build-essential libffi-dev libgmp-dev libncurses-dev zlib1g-dev
   protobuf-compiler
   golang-petname
-  keybase signal-desktop calibre
+  keybase signal-desktop calibre code
   nethack-console
   docker-ce docker-ce-cli docker-ce-rootless-extras containerd.io
   docker-buildx-plugin docker-compose-plugin
