@@ -7,21 +7,29 @@
 # email or desktop notification (the box is attended), and automatic reboot
 # stays off. See #228.
 #
+# Also installs needrestart, which complements u-u: auto-reboot is off, so when
+# an upgrade replaces a shared library the daemons mapping the old copy keep
+# running it until they happen to restart. needrestart's apt DPkg::Post-Invoke
+# hook restarts them in place after each upgrade, so the security fix takes hold
+# without a reboot. See #238.
+#
 # run_once hashes the rendered script, so changes to the config files alone
 # would not re-trigger it. Embed their hashes here to force a re-run on edit:
 # 20auto-upgrades content:       {{ include "etc/apt/20auto-upgrades" | sha256sum }}
 # 50unattended-upgrades content: {{ include "etc/apt/50unattended-upgrades" | sha256sum }}
+# needrestart drop-in content:   {{ include "etc/needrestart/conf.d/zz-alunduil.conf" | sha256sum }}
 
 set -euo pipefail
 
 log() { printf '==> %s\n' "$*" >&2; }
 
 APT_CONF_SRC="{{ .chezmoi.sourceDir }}/etc/apt"
+NEEDRESTART_CONF_SRC="{{ .chezmoi.sourceDir }}/etc/needrestart"
 
 # -------------------------------------------------------------------- install
 # powermgmt-base provides on_ac_power, which the OnlyOnACPower gate in
 # 50unattended-upgrades needs to read the AC line; without it u-u fails open.
-PACKAGES=(unattended-upgrades powermgmt-base)
+PACKAGES=(unattended-upgrades powermgmt-base needrestart)
 missing=()
 for pkg in "${PACKAGES[@]}"; do
   dpkg -s "$pkg" >/dev/null 2>&1 || missing+=("$pkg")
@@ -38,6 +46,12 @@ fi
 log "unattended-upgrades: installing apt config"
 sudo install -m 0644 "$APT_CONF_SRC/20auto-upgrades" /etc/apt/apt.conf.d/20auto-upgrades
 sudo install -m 0644 "$APT_CONF_SRC/50unattended-upgrades" /etc/apt/apt.conf.d/50unattended-upgrades
+
+# needrestart drop-in: a conf.d snippet so the package's own needrestart.conf
+# stays untouched. -D creates /etc/needrestart/conf.d/ if the package layout
+# ever drops it.
+log "needrestart: installing drop-in config"
+sudo install -D -m 0644 "$NEEDRESTART_CONF_SRC/conf.d/zz-alunduil.conf" /etc/needrestart/conf.d/zz-alunduil.conf
 
 # --------------------------------------------------------------------- timers
 sudo systemctl enable --now apt-daily.timer apt-daily-upgrade.timer

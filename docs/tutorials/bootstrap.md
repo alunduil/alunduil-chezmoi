@@ -32,6 +32,7 @@ golang-petname                             # repo-picker worktree namer
 command -v nethack                         # roguelike (nethack-console)
 command -v calibre                         # ebook library manager
 command -v code                            # VS Code (Microsoft apt repo)
+docker --version                           # container engine (docker-ce, auto-updated)
 command -v truenas-mcp                     # TrueNAS MCP server binary
 trivy --version                            # vulnerability scanner (aquasecurity/trivy)
 gh extension list                          # confirms gh-poi (squash-merge pruner)
