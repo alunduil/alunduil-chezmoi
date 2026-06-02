@@ -1,4 +1,13 @@
-{
+#!/usr/bin/env bash
+# Manage ~/.claude/settings.json without re-syncing when a new key appears.
+# Claude rewrites this file in its own key order; chezmoi reads that live
+# copy on stdin and overwrites only the keys it owns (policy plus paths to
+# chezmoi-deployed scripts), leaving theme and enabledPlugins for Claude to
+# mutate at runtime. jq + preserves on-disk key order and appends new keys,
+# so chezmoi's target matches Claude's serialization regardless of insertion.
+set -euo pipefail
+
+jq --slurp '(.[0] // {}) + {
   "$schema": "https://json.schemastore.org/claude-code-settings.json",
   "permissions": {
     "allow": [
@@ -93,9 +102,9 @@
       "Bash(git push -f*)",
       "Bash(git push* -f*)",
       "Bash(git push*main*)",
-      "Read(/home/alunduil/.claude/.credentials.json)",
-      "Read(/home/alunduil/.gnupg/**)",
-      "Read(/home/alunduil/.ssh/**)"
+      "Read({{ .chezmoi.homeDir }}/.claude/.credentials.json)",
+      "Read({{ .chezmoi.homeDir }}/.gnupg/**)",
+      "Read({{ .chezmoi.homeDir }}/.ssh/**)"
     ],
     "ask": [
       "Bash(bash -c*)",
@@ -130,7 +139,7 @@
         "hooks": [
           {
             "type": "command",
-            "command": "/home/alunduil/.claude/hooks/pr-draft-guard.sh"
+            "command": "{{ .chezmoi.homeDir }}/.claude/hooks/pr-draft-guard.sh"
           }
         ]
       },
@@ -138,7 +147,7 @@
         "hooks": [
           {
             "type": "command",
-            "command": "/home/alunduil/.config/zellij/plugins/zellaude-hook.sh",
+            "command": "{{ .chezmoi.homeDir }}/.config/zellij/plugins/zellaude-hook.sh",
             "timeout": 5,
             "async": true
           }
@@ -159,7 +168,7 @@
         "hooks": [
           {
             "type": "command",
-            "command": "/home/alunduil/.config/zellij/plugins/zellaude-hook.sh",
+            "command": "{{ .chezmoi.homeDir }}/.config/zellij/plugins/zellaude-hook.sh",
             "timeout": 5,
             "async": true
           }
@@ -170,7 +179,7 @@
         "hooks": [
           {
             "type": "command",
-            "command": "/home/alunduil/.claude/hooks/pre-commit-edit-guard.sh"
+            "command": "{{ .chezmoi.homeDir }}/.claude/hooks/pre-commit-edit-guard.sh"
           }
         ]
       }
@@ -180,7 +189,7 @@
         "hooks": [
           {
             "type": "command",
-            "command": "/home/alunduil/.config/zellij/plugins/zellaude-hook.sh",
+            "command": "{{ .chezmoi.homeDir }}/.config/zellij/plugins/zellaude-hook.sh",
             "timeout": 5,
             "async": true
           }
@@ -192,7 +201,7 @@
         "hooks": [
           {
             "type": "command",
-            "command": "/home/alunduil/.config/zellij/plugins/zellaude-hook.sh",
+            "command": "{{ .chezmoi.homeDir }}/.config/zellij/plugins/zellaude-hook.sh",
             "timeout": 5,
             "async": true
           }
@@ -204,7 +213,7 @@
         "hooks": [
           {
             "type": "command",
-            "command": "/home/alunduil/.config/zellij/plugins/zellaude-hook.sh",
+            "command": "{{ .chezmoi.homeDir }}/.config/zellij/plugins/zellaude-hook.sh",
             "timeout": 5,
             "async": true
           }
@@ -216,7 +225,7 @@
         "hooks": [
           {
             "type": "command",
-            "command": "/home/alunduil/.config/zellij/plugins/zellaude-hook.sh",
+            "command": "{{ .chezmoi.homeDir }}/.config/zellij/plugins/zellaude-hook.sh",
             "timeout": 5,
             "async": true
           }
@@ -228,7 +237,7 @@
         "hooks": [
           {
             "type": "command",
-            "command": "/home/alunduil/.config/zellij/plugins/zellaude-hook.sh",
+            "command": "{{ .chezmoi.homeDir }}/.config/zellij/plugins/zellaude-hook.sh",
             "timeout": 5,
             "async": true
           }
@@ -240,7 +249,7 @@
         "hooks": [
           {
             "type": "command",
-            "command": "/home/alunduil/.config/zellij/plugins/zellaude-hook.sh",
+            "command": "{{ .chezmoi.homeDir }}/.config/zellij/plugins/zellaude-hook.sh",
             "timeout": 5,
             "async": true
           }
@@ -252,7 +261,7 @@
         "hooks": [
           {
             "type": "command",
-            "command": "/home/alunduil/.config/zellij/plugins/zellaude-hook.sh",
+            "command": "{{ .chezmoi.homeDir }}/.config/zellij/plugins/zellaude-hook.sh",
             "timeout": 5,
             "async": true
           }
@@ -264,7 +273,7 @@
         "hooks": [
           {
             "type": "command",
-            "command": "/home/alunduil/.config/zellij/plugins/zellaude-hook.sh",
+            "command": "{{ .chezmoi.homeDir }}/.config/zellij/plugins/zellaude-hook.sh",
             "timeout": 5,
             "async": true
           }
@@ -274,10 +283,7 @@
   },
   "statusLine": {
     "type": "command",
-    "command": "/home/alunduil/.claude/statusline.sh"
-  },
-  "theme": "auto",
-  "enabledPlugins": {
-    "rust-analyzer-lsp@claude-plugins-official": true
+    "command": "{{ .chezmoi.homeDir }}/.claude/statusline.sh"
   }
 }
+'
