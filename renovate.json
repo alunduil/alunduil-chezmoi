@@ -145,6 +145,14 @@
     {
       "customType": "regex",
       "managerFilePatterns": ["/^run_once_before_03-install-node-ecosystem\\.sh\\.tmpl$/"],
+      "matchStrings": ["NODE_VERSION=\"(?<currentValue>[\\d.]+)\""],
+      "depNameTemplate": "node",
+      "datasourceTemplate": "node-version",
+      "versioningTemplate": "node"
+    },
+    {
+      "customType": "regex",
+      "managerFilePatterns": ["/^run_once_before_03-install-node-ecosystem\\.sh\\.tmpl$/"],
       "matchStrings": ["READWISE_CLI_VERSION=\"(?<currentValue>[\\d.]+)\""],
       "depNameTemplate": "@readwise/cli",
       "datasourceTemplate": "npm"
