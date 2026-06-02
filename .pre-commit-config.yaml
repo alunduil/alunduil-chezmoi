@@ -69,7 +69,7 @@ repos:
         exclude: ^(CLAUDE\.md|dot_claude/|\.claude/|\.vale/styles/)
 
   - repo: https://github.com/renovatebot/pre-commit-hooks
-    rev: 43.204.0
+    rev: 43.204.1
     hooks:
       - id: renovate-config-validator
         args: [--strict, --no-global]
