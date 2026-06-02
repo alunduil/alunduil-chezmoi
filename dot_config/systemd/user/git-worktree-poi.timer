@@ -1,0 +1,11 @@
+[Unit]
+Description=Hourly prune of merged and empty git worktrees
+
+[Timer]
+OnCalendar=*-*-* *:00:00
+# This host (Crostini) is frequently suspended; Persistent coalesces the
+# windows missed while asleep into a single catch-up run on next wake.
+Persistent=true
+
+[Install]
+WantedBy=timers.target
