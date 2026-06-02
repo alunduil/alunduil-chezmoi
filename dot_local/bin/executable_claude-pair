@@ -1,0 +1,22 @@
+#!/usr/bin/env bash
+# claude launcher for ~/.config/zellij/layouts/pair.kdl.
+#
+# Resumes the worktree's most recent conversation when one exists, else
+# starts fresh. `claude --continue` cannot do this itself: in interactive
+# mode it errors with "no conversations to continue" when the directory
+# has no history, so a new worktree's pair tab would die on open. (Print
+# mode -p falls back to fresh, which is why #265 missed this.)
+#
+# claude stores history under ~/.claude/projects/<cwd with every
+# non-alphanumeric byte replaced by ->. Presence of a *.jsonl there is
+# the resume signal.
+
+set -euo pipefail
+
+project_dir="$HOME/.claude/projects/$(pwd | sed 's/[^a-zA-Z0-9]/-/g')"
+
+if compgen -G "$project_dir/*.jsonl" >/dev/null; then
+    exec claude --continue "$@"
+fi
+
+exec claude "$@"
