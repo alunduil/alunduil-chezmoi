@@ -1,3 +1,7 @@
+# .vale/styles/ is vendored by `vale sync`; only config/ (our Project vocab)
+# is ours. Keep the vendored packages out of every hook.
+exclude: ^\.vale/styles/(?!config/)
+
 repos:
   - repo: https://github.com/shellcheck-py/shellcheck-py
     rev: v0.11.0.1
@@ -21,13 +25,9 @@ repos:
   - repo: https://github.com/pre-commit/pre-commit-hooks
     rev: v6.0.0
     hooks:
-      # .vale/styles/ is vendored (vale sync); leave its hygiene to upstream.
       - id: trailing-whitespace
-        exclude: ^\.vale/styles/
       - id: end-of-file-fixer
-        exclude: ^\.vale/styles/
       - id: mixed-line-ending
-        exclude: ^\.vale/styles/
       - id: check-json
         # malformed.json is intentionally invalid — a fixture for the
         # pr-draft-guard hook's fail-closed-on-bad-input test.
@@ -79,8 +79,6 @@ repos:
     rev: v0.22.1
     hooks:
       - id: markdownlint-cli2
-        # Vendored vale package docs are upstream's, not ours to restructure.
-        exclude: ^\.vale/styles/
 
   - repo: https://github.com/renovatebot/pre-commit-hooks
     rev: 43.202.1
