@@ -21,6 +21,13 @@ repos:
   - repo: https://github.com/pre-commit/pre-commit-hooks
     rev: v6.0.0
     hooks:
+      # .vale/styles/ is vendored (vale sync); leave its hygiene to upstream.
+      - id: trailing-whitespace
+        exclude: ^\.vale/styles/
+      - id: end-of-file-fixer
+        exclude: ^\.vale/styles/
+      - id: mixed-line-ending
+        exclude: ^\.vale/styles/
       - id: check-json
         # malformed.json is intentionally invalid — a fixture for the
         # pr-draft-guard hook's fail-closed-on-bad-input test.
@@ -67,6 +74,13 @@ repos:
       - id: vale
         args: [--output=line, --minAlertLevel=error]
         exclude: ^(CLAUDE\.md|dot_claude/|\.claude/|\.vale/styles/)
+
+  - repo: https://github.com/DavidAnson/markdownlint-cli2
+    rev: v0.22.1
+    hooks:
+      - id: markdownlint-cli2
+        # Vendored vale package docs are upstream's, not ours to restructure.
+        exclude: ^\.vale/styles/
 
   - repo: https://github.com/renovatebot/pre-commit-hooks
     rev: 43.202.1

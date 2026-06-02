@@ -37,7 +37,7 @@ Auth and install axes are independent: `gcx` is auth-required *and*
 uses `script/install/`; `gh-poi` is fire-and-forget *and* uses
 `gh extension install`.
 
-## script/install/<tool> template
+## `script/install/<tool>` template
 
 Mirror `script/install/{zellij,lazygit,act,gcx}`. Mode 0755:
 

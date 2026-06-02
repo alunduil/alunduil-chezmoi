@@ -31,7 +31,7 @@ sub-issue.
 
 In the PR body or commit message:
 
-```
+```text
 Closes #123
 ```
 

@@ -26,7 +26,7 @@ tails `~/.local/state/zellij-diag/*.log` into Loki.
 carries `session` and `pid` labels.
 
 | Metric | Type | Description |
-|--------|------|-------------|
+| ------ | ---- | ----------- |
 | `zellijstat_servers` | gauge | Number of Zellij servers sampled. |
 | `zellijstat_server_threads` | gauge | Threads in the server process. |
 | `zellijstat_server_threads_by_comm` | gauge | Threads grouped by thread name (`comm` label). |
