@@ -20,6 +20,9 @@ fi
 
 # Gate on the canonical install locations, not the units' ExecStart paths, so
 # a typo'd ExecStart still reaches verify (and fails it) instead of skipping.
+# Locally a missing binary means an unbootstrapped host, so skip; CI installs
+# the whole stack first, so there a missing binary is a real failure (e.g. an
+# installer that left a dangling symlink) and must not be silently skipped.
 bins=(
   "$HOME/.local/bin/zellijstat"
   "$HOME/.local/bin/prometheus"
@@ -30,6 +33,10 @@ bins=(
 )
 for b in "${bins[@]}"; do
   if [ ! -x "$b" ]; then
+    if [ -n "${CI:-}" ]; then
+      printf 'FAIL: %s not installed (CI installs the stack before this)\n' "$b" >&2
+      exit 1
+    fi
     printf '==> systemd-units: %s not installed; skipping\n' "$b" >&2
     exit 0
   fi
