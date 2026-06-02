@@ -12,7 +12,6 @@ on:
       - 'dot_config/loki/**'
       - 'dot_config/tempo/**'
       - 'dot_config/grafana/**'
-      - 'dot_config/systemd/user/**'
       - 'dot_local/bin/executable_zellijstat'
       - 'script/install/alloy'
       - 'script/install/prometheus'
@@ -21,7 +20,6 @@ on:
       - 'script/install/grafana'
       - 'script/checks/observability-config'
       - 'script/checks/observability-smoke'
-      - 'script/checks/systemd-units'
       - '.github/workflows/observability.yml'
   pull_request:
     paths: *paths
@@ -57,13 +55,3 @@ jobs:
 
       - name: Smoke the metrics path
         run: script/checks/observability-smoke
-
-      # systemd-analyze verify resolves each unit's ExecStart against %h, so
-      # Grafana and zellijstat must sit at their real paths too — the smoke
-      # path doesn't need them, so they install here.
-      - name: Verify systemd units
-        run: |
-          script/install/grafana --bin-dir "$HOME/.local/bin"
-          install -m 0755 dot_local/bin/executable_zellijstat \
-            "$HOME/.local/bin/zellijstat"
-          script/checks/systemd-units

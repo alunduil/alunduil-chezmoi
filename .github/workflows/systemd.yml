@@ -1,0 +1,49 @@
+name: Systemd
+
+# Verifies the systemd user units with `systemd-analyze verify`. verify
+# resolves each unit's ExecStart against the calling user's %h, so it installs
+# every binary the units reference first — today that is the observability
+# stack, hence the ~400 MB install, but this lives apart from observability.yml
+# so the units keep their checker once that stack is gone.
+on:
+  push:
+    branches: [main]
+    paths: &paths
+      - 'dot_config/systemd/user/**'
+      - 'dot_local/bin/executable_zellijstat'
+      - 'script/install/prometheus'
+      - 'script/install/alloy'
+      - 'script/install/loki'
+      - 'script/install/tempo'
+      - 'script/install/grafana'
+      - 'script/checks/systemd-units'
+      - '.github/workflows/systemd.yml'
+  pull_request:
+    paths: *paths
+
+permissions:
+  contents: read
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  # Cancel superseded PR runs; never cancel main so each commit completes.
+  cancel-in-progress: ${{ github.ref != 'refs/heads/main' }}
+
+jobs:
+  run:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6
+
+      - name: Install referenced binaries
+        run: |
+          mkdir -p "$HOME/.local/bin"
+          for t in prometheus alloy loki tempo grafana; do
+            script/install/"$t" --bin-dir "$HOME/.local/bin"
+          done
+          install -m 0755 dot_local/bin/executable_zellijstat \
+            "$HOME/.local/bin/zellijstat"
+
+      - name: Verify systemd units
+        run: script/checks/systemd-units
