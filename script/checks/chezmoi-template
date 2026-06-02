@@ -1,0 +1,23 @@
+#!/usr/bin/env bash
+# Render every run_*.sh.tmpl with chezmoi execute-template so a broken
+# template or include fails CI. chezmoi-apply runs with --exclude=scripts,
+# so script templates are otherwise never rendered: a typo or bad include
+# path passes apply and only breaks on a real bootstrap.
+#
+# execute-template reads source bytes (include hashes, it doesn't decrypt),
+# so this needs neither a destination dir nor an age key.
+
+set -euo pipefail
+
+SOURCE_DIR="$(git -C "$(dirname "${BASH_SOURCE[0]}")" rev-parse --show-toplevel)"
+
+fail=0
+while IFS= read -r tmpl; do
+  if ! err="$(chezmoi execute-template --source="$SOURCE_DIR" \
+    < "$SOURCE_DIR/$tmpl" 2>&1 >/dev/null)"; then
+    printf 'FAIL: %s\n%s\n' "$tmpl" "$err" >&2
+    fail=1
+  fi
+done < <(git -C "$SOURCE_DIR" ls-files 'run_*.tmpl')
+
+exit "$fail"
