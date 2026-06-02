@@ -10,6 +10,54 @@ ARCH="x86_64-unknown-linux-musl"
 parse_bin_dir "$@"
 
 bin="$BIN_DIR/zellij"
+
+# TEMPORARY (alunduil/alunduil-chezmoi#211): build zellij from source with
+# debug symbols so a live server freeze is debuggable with gdb -- upstream
+# ships only stripped binaries, which dead-ended the last hang autopsy (gdb
+# got 0 symbols, unwinder stalled at the syscall site). Builds the SAME tag we
+# otherwise download, adding only strip=false + debug=2 -- stock release
+# codegen (fat LTO, one codegen unit) is kept, so a reproduced freeze is the
+# same bug, not a build variant. Skipped under CI and wherever the Rust
+# toolchain / protoc are absent, falling back to the verified release download.
+# Revert this whole block once #211 is root-caused.
+ZELLIJ_FORK_URL="https://github.com/alunduil/zellij"
+if [ -z "${CI:-}" ] &&
+  command -v cargo >/dev/null 2>&1 &&
+  command -v protoc >/dev/null 2>&1 &&
+  rustup target list --installed 2>/dev/null | grep -qx wasm32-wasip1; then
+  marker="$BIN_DIR/.zellij-source-ref"
+  if [ -x "$bin" ] && [ "$(cat "$marker" 2>/dev/null)" = "$ZELLIJ_VERSION" ]; then
+    printf '==> zellij: debug build %s already installed at %s\n' "$ZELLIJ_VERSION" "$bin" >&2
+    exit 0
+  fi
+
+  src="${XDG_CACHE_HOME:-$HOME/.cache}/chezmoi-src/zellij"
+  if [ -d "$src/.git" ]; then
+    git -C "$src" fetch --quiet --tags origin
+  else
+    mkdir -p "$(dirname "$src")"
+    git clone --quiet "$ZELLIJ_FORK_URL" "$src"
+  fi
+  git -C "$src" -c advice.detachedHead=false checkout --quiet "$ZELLIJ_VERSION"
+
+  printf '==> zellij: building %s from source with debug symbols (slow)\n' "$ZELLIJ_VERSION" >&2
+  # debuginfo=2 atop the release profile's fat LTO peaks ~10-14 GiB in one
+  # rustc process; a wedged zellij server holds ~8 GiB, so kill it first or
+  # this OOMs. v0.43.1 builds with `xtask build --release` (not the newer
+  # `ci build-release`, which exists only on main).
+  (
+    cd "$src"
+    CARGO_PROFILE_RELEASE_STRIP=false CARGO_PROFILE_RELEASE_DEBUG=true \
+      cargo xtask build --release
+  )
+
+  mkdir -p "$BIN_DIR"
+  install -m 0755 "$src/target/release/zellij" "$bin"
+  printf '%s' "$ZELLIJ_VERSION" >"$marker"
+  exit 0
+fi
+
+# Default (and CI): verified upstream release download.
 if installed_version_matches "$bin" "$ZELLIJ_VERSION"; then
   printf '==> zellij: %s already installed at %s\n' "$ZELLIJ_VERSION" "$bin" >&2
   exit 0
