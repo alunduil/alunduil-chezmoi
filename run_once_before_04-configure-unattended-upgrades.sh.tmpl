@@ -7,14 +7,29 @@
 # email or desktop notification (the box is attended), and automatic reboot
 # stays off. See #228.
 #
-# run_once hashes the rendered script, so changes to the config files alone
-# would not re-trigger it. Embed their hashes here to force a re-run on edit:
+# run_once hashes the rendered script, so changes to the config files (or the
+# sourced helper) alone would not re-trigger it. Embed their hashes here to
+# force a re-run on edit:
 # 20auto-upgrades content:       {{ include "etc/apt/20auto-upgrades" | sha256sum }}
 # 50unattended-upgrades content: {{ include "etc/apt/50unattended-upgrades" | sha256sum }}
+# lib.sh content:                {{ include "script/lib.sh" | sha256sum }}
 
 set -euo pipefail
 
 log() { printf '==> %s\n' "$*" >&2; }
+
+# shellcheck source=/dev/null
+. "{{ .chezmoi.sourceDir }}/script/lib.sh"
+
+# Every step here needs root (apt install, /etc writes, timer enable). Without
+# escalation, skip the script so the rest of bootstrap still runs rather than
+# aborting at the first sudo. Exit is success, so run_once marks it done;
+# re-run after gaining sudo with the command below.
+if ! can_escalate; then
+  log "no sudo capability; skipping unattended-upgrades setup (security updates stay manual)."
+  log "complete later: chezmoi state delete-bucket --bucket=scriptState && chezmoi apply"
+  exit 0
+fi
 
 APT_CONF_SRC="{{ .chezmoi.sourceDir }}/etc/apt"
 

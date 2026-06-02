@@ -2,10 +2,28 @@
 # Installs system-level packages via apt and adds third-party apt repos as
 # needed. Must run before other bootstrap scripts so that system tools (curl,
 # jq, gpg, etc.) are available.
+#
+# Every step here needs root. run_once hashes the rendered script, so a change
+# to the sourced helper alone would not re-trigger it -- embed lib.sh's hash to
+# force a re-run on edit:
+# lib.sh content: {{ include "script/lib.sh" | sha256sum }}
 
 set -euo pipefail
 
 log() { printf '==> %s\n' "$*" >&2; }
+
+# shellcheck source=/dev/null
+. "{{ .chezmoi.sourceDir }}/script/lib.sh"
+
+# This whole script is privileged. Without escalation, skip it (so the
+# user-space bootstrap scripts still run) rather than aborting at the first
+# sudo. The exit is success, so chezmoi marks run_once done; re-run after
+# gaining sudo with the command below.
+if ! can_escalate; then
+  log "no sudo capability; skipping system packages (apt repos, apt packages, tailscale)."
+  log "complete later: chezmoi state delete-bucket --bucket=scriptState && chezmoi apply"
+  exit 0
+fi
 
 # ----------------------------------------------------------- hashicorp repo
 if [ ! -f /usr/share/keyrings/hashicorp-archive-keyring.gpg ]; then
