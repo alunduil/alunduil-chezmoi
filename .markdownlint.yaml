@@ -1,0 +1,7 @@
+# markdownlint lints doc structure; vale (.vale.ini) lints prose.
+# MD013 line-length: docs here use long prose lines by design (see voice.md,
+# dot_claude/CLAUDE.md). MD041 first-line-h1: SKILL.md files are frontmatter-led
+# and the AI-targeted docs open with prose, not a title.
+default: true
+MD013: false
+MD041: false
