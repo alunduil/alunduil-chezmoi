@@ -27,7 +27,7 @@ fi
 # this once-script when the pin changes, so a bump applies on apply. Match by
 # explicit version rather than `command -v node`, which could find a system
 # /usr/bin/node and skip installation, leaving nvm with zero versions.
-NODE_VERSION="24.15.0"
+NODE_VERSION="24.16.0"
 if ! nvm ls "$NODE_VERSION" >/dev/null 2>&1; then
   log "node: installing $NODE_VERSION via nvm"
   nvm install "$NODE_VERSION"
