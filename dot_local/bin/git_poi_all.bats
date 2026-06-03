@@ -2,7 +2,7 @@
 bats_require_minimum_version 1.5.0
 
 setup() {
-  REPO_ROOT="$(cd "$BATS_TEST_DIRNAME/.." && pwd)"
+  REPO_ROOT="$(cd "$BATS_TEST_DIRNAME/../.." && pwd)"
   POI_ALL="$REPO_ROOT/dot_local/bin/executable_git-poi-all"
 
   TMPROOT="$(mktemp -d)"

@@ -98,6 +98,6 @@ releases — see the `renovate` skill for the regex-manager pattern.
 
    ```bash
    pre-commit run --all-files
-   bats test/
+   bats --recursive dot_local dot_claude script
    script/checks/chezmoi-apply
    ```

@@ -2,7 +2,7 @@
 bats_require_minimum_version 1.5.0
 
 setup() {
-  REPO_ROOT="$(cd "$BATS_TEST_DIRNAME/.." && pwd)"
+  REPO_ROOT="$(cd "$BATS_TEST_DIRNAME/../.." && pwd)"
   PICKER="$REPO_ROOT/dot_local/bin/executable_git-repo-picker"
   FIXTURES="$BATS_TEST_DIRNAME/fixtures/git_repo_picker"
 

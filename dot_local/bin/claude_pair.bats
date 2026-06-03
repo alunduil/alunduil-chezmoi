@@ -5,7 +5,7 @@ bats_require_minimum_version 1.5.0
 # A stub `claude` echoes its args so we can assert which mode was chosen.
 
 setup() {
-  REPO_ROOT="$(cd "$BATS_TEST_DIRNAME/.." && pwd)"
+  REPO_ROOT="$(cd "$BATS_TEST_DIRNAME/../.." && pwd)"
 
   STUB_DIR="$(mktemp -d)"
   WRAPPER_DIR="$(mktemp -d)"

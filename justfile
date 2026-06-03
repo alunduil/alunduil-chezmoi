@@ -29,11 +29,11 @@ check-pre-commit:
 
 # Unit tests.
 check-bats:
-    bats test/
+    bats --recursive dot_local dot_claude script
 
 # Python unit tests (zellijstat parsers).
 check-python:
-    python3 test/zellijstat_test.py
+    python3 dot_local/bin/zellijstat_test.py
 
 # Zellij KDL validation (needs zellij on PATH).
 check-zellij:

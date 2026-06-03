@@ -31,7 +31,7 @@ repos:
       - id: check-json
         # malformed.json is intentionally invalid — a fixture for the
         # pr-draft-guard hook's fail-closed-on-bad-input test.
-        exclude: ^test/fixtures/pr_draft_guard/malformed\.json$
+        exclude: ^dot_claude/hooks/fixtures/pr_draft_guard/malformed\.json$
       - id: check-yaml
         # .tmpl files are Go templates, not valid YAML until chezmoi renders.
         exclude: \.tmpl$

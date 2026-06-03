@@ -2,7 +2,7 @@
 bats_require_minimum_version 1.5.0
 
 setup() {
-  REPO_ROOT="$(cd "$BATS_TEST_DIRNAME/.." && pwd)"
+  REPO_ROOT="$(cd "$BATS_TEST_DIRNAME/../.." && pwd)"
   FIXTURES="$BATS_TEST_DIRNAME/fixtures/pr_draft_guard"
   HOOK="$(mktemp)"
   install -m 0755 "$REPO_ROOT/dot_claude/hooks/executable_pr-draft-guard.sh" "$HOOK"
