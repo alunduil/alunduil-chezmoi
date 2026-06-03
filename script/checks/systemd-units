@@ -1,10 +1,8 @@
 #!/usr/bin/env bash
 # Validate the systemd user units with `systemd-analyze verify`: every
 # directive must be known and every ExecStart binary must resolve. verify
-# resolves %h/%S from the calling user, so the referenced binaries must exist
-# at their real paths — CI installs the whole stack (incl. Grafana and
-# zellijstat) first. Skips cleanly when systemd-analyze or the stack binaries
-# are absent, so a pre-bootstrap `just check` does not fail.
+# resolves %h/%S against the calling user, so the binaries the units reference
+# must exist at their real paths first — systemd.yml installs them in CI.
 #
 # verify only *warns* (and still exits 0) on an unknown directive, so any
 # stderr is treated as failure; a missing ExecStart already exits non-zero.
@@ -18,31 +16,26 @@ if ! command -v systemd-analyze >/dev/null 2>&1; then
   exit 0
 fi
 
-# Gate on the canonical install locations, not the units' ExecStart paths, so
-# a typo'd ExecStart still reaches verify (and fails it) instead of skipping.
-# Locally a missing binary means an unbootstrapped host, so skip; CI installs
-# the whole stack first, so there a missing binary is a real failure (e.g. an
-# installer that left a dangling symlink) and must not be silently skipped.
-bins=(
-  "$HOME/.local/bin/zellijstat"
-  "$HOME/.local/bin/prometheus"
-  "$HOME/.local/bin/alloy"
-  "$HOME/.local/bin/loki"
-  "$HOME/.local/bin/tempo"
-  "$HOME/.local/share/grafana/current/bin/grafana"
-)
-for b in "${bins[@]}"; do
-  if [ ! -x "$b" ]; then
-    if [ -n "${CI:-}" ]; then
-      printf 'FAIL: %s not installed (CI installs the stack before this)\n' "$b" >&2
-      exit 1
-    fi
-    printf '==> systemd-units: %s not installed; skipping\n' "$b" >&2
-    exit 0
-  fi
-done
+units_dir="dot_config/systemd/user"
 
-units=(dot_config/systemd/user/*.service dot_config/systemd/user/*.target)
+# verify needs every ExecStart binary present. Derive them from the units
+# (the first token after ExecStart=, %h expanded) instead of a hand-kept list,
+# so adding a unit needs no change here. A missing binary locally just means an
+# unbootstrapped host, so skip; CI installs the stack first, so there it is a
+# real failure (a broken installer, or a new unit whose binary nobody added to
+# systemd.yml) and must not be skipped into a false pass.
+while IFS= read -r bin; do
+  bin="${bin/'%h'/$HOME}"
+  [ -x "$bin" ] && continue
+  if [ -n "${CI:-}" ]; then
+    printf 'FAIL: %s not installed (systemd.yml installs the stack before this)\n' "$bin" >&2
+    exit 1
+  fi
+  printf '==> systemd-units: %s not installed; skipping\n' "$bin" >&2
+  exit 0
+done < <(grep -hoP '^ExecStart=\K[^ ]+' "$units_dir"/*.service)
+
+units=("$units_dir"/*.service "$units_dir"/*.target "$units_dir"/*.timer)
 
 errfile="$(mktemp)"
 trap 'rm -f "$errfile"' EXIT

@@ -2,15 +2,17 @@ name: Systemd
 
 # Verifies the systemd user units with `systemd-analyze verify`. verify
 # resolves each unit's ExecStart against the calling user's %h, so it installs
-# every binary the units reference first — today that is the observability
-# stack, hence the ~400 MB install, but this lives apart from observability.yml
-# so the units keep their checker once that stack is gone.
+# every binary the units reference first (the observability stack pushes this
+# to a ~400 MB install). Kept apart from observability.yml so the units keep
+# their checker once that stack is gone.
 on:
   push:
     branches: [main]
     paths: &paths
       - 'dot_config/systemd/user/**'
       - 'dot_local/bin/executable_zellijstat'
+      - 'dot_local/bin/executable_git-poi-all'
+      - 'dot_local/bin/executable_git-worktree-poi'
       - 'script/install/prometheus'
       - 'script/install/alloy'
       - 'script/install/loki'
@@ -42,8 +44,9 @@ jobs:
           for t in prometheus alloy loki tempo grafana; do
             script/install/"$t" --bin-dir "$HOME/.local/bin"
           done
-          install -m 0755 dot_local/bin/executable_zellijstat \
-            "$HOME/.local/bin/zellijstat"
+          for s in zellijstat git-poi-all git-worktree-poi; do
+            install -m 0755 "dot_local/bin/executable_$s" "$HOME/.local/bin/$s"
+          done
 
       - name: Verify systemd units
         run: script/checks/systemd-units
