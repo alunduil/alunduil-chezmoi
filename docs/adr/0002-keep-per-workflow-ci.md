@@ -6,84 +6,47 @@ Accepted
 
 ## Context
 
-CI runs one workflow per sensor (`bats`, `python`, `zellij`, `chezmoi`,
-`pre-commit`, `lychee`, `observability`), and each repeats the same
-`on`/`permissions`/`concurrency` boilerplate. The justfile defines most
-of the same checks as recipes (`check-bats`, `check-observability`, …),
-so the two can drift. The structural choice is between this per-workflow
-layout and a single `ci.yml` with one job per check calling
-`just <check>`, making the justfile the single source of truth CI reads
-from (#274).
+Each CI sensor runs in its own workflow, duplicating the
+`on`/`permissions`/`concurrency` boilerplate, and most are also justfile
+recipes, so the two can drift. The recurring temptation (#274) is to
+collapse them into a single `ci.yml` whose jobs each call `just <check>`,
+making the justfile the one source of truth.
 
-Two pressures motivate the question:
+The temptation is weaker than it looks. Consolidation removes only the
+trigger boilerplate (~10 lines per file); the bulk of each workflow is
+per-job setup (tool installs, language toolchains, secret material) that
+stays distinct wherever the jobs live. Not every check is a
+`just <check>` one-liner: some install and run through marketplace
+actions, and link-checking isn't a recipe at all. And GitHub gates paths
+only per workflow, not per job, so a single `ci.yml` would reintroduce
+path filtering as in-job conditionals, machinery the per-workflow layout
+gets for free along with an independent status check per sensor.
 
-- **Drift.** Workflow and justfile encode the same check twice; a recipe
-  rename or new sensor has to be made in both places.
-- **An actual gap.** `observability.yml` is path-gated to stack-file
-  changes, so the cheap `script/checks/observability-config` never runs
-  on an unrelated PR, and observability coverage looks absent on most PRs.
-
-Consolidation is weaker than it first appears:
-
-- The only genuinely duplicated boilerplate is the
-  `on`/`permissions`/`concurrency` blocks (~10 lines each). The bulk,
-  per-job setup, stays distinct regardless: age for `check-chezmoi`,
-  Zellij for `check-zellij`, the stack binaries for observability, Python
-  for `check-python`.
-- Three of the seven don't map to `just <check>`. `bats`, `pre-commit`,
-  and `lychee` drive both install and run through marketplace actions
-  (`bats-core/bats-action`, `pre-commit/action`,
-  `lycheeverse/lychee-action` with its own cache), and `lychee` isn't a
-  justfile recipe at all (it's CI-only).
-- GitHub supports `paths:` only at the workflow trigger, not per job. A
-  single `ci.yml` would need `dorny/paths-filter` or per-job `if` to keep
-  the observability smoke gated, more machinery than the per-workflow
-  `paths:` it replaces.
-
-The drift risk is already bounded: the justfile header notes each sensor
-also runs in its own workflow, so a stale recipe list causes a local
-false-pass that CI then catches, never a bad merge. CI is authoritative.
+A related question is when a workflow should be path-gated. Gating hides
+a check on unrelated PRs; gating a check whose only cost is fast
+validation silently drops coverage, which is how the observability config
+validation came to never run on most PRs.
 
 ## Decision
 
-We will keep one CI workflow per sensor. New checks land as new
-workflows, not as jobs in a shared `ci.yml`. Consolidation into a single
-`ci.yml` is rejected, not deferred.
+We keep one workflow per sensor. New checks land as new workflows, not as
+jobs in a shared `ci.yml`. Consolidation is rejected, not deferred.
 
-The observability gap is fixed within this structure by splitting the one
-workflow in two:
+A workflow is path-gated only when its setup is expensive, such as a
+heavy install or binding real ports. A check whose only cost is fast
+validation runs unconditionally, so coverage is never silently absent.
 
-- `observability-config.yml`: static config validation, no path gate,
-  runs on every PR. It installs the binaries those checks need (cached on
-  their pinned versions to keep the always-on cost low).
-- `observability-smoke.yml`: the heavy live-metrics smoke, still
-  path-gated to the metrics path it exercises.
-
-Issue #241 (`systemd-analyze verify` on the user units) lands as its own
-`script/checks/*` + `just` recipe + workflow, consistent with this
-structure.
-
-We will revisit when any of these triggers fire:
-
-- A new check is genuinely a `just <check>` one-liner with no bespoke
-  setup, and three or more such checks accumulate; at that point a
-  shared `ci.yml` job matrix stops duplicating boilerplate without the
-  per-job-gating tax.
-- Workflow/justfile drift causes a real miss (a check silently stops
-  running in CI), not just a theoretical one.
+We revisit if enough checks become genuine `just <check>` one-liners with
+no bespoke setup that a shared job matrix would remove real duplication,
+or if workflow/justfile drift ever causes a check to silently stop
+running in CI.
 
 ## Consequences
 
-- `observability-config` runs on every PR; a broken service config fails
-  the build regardless of which files changed. The always-on binary
-  install is the cost, mitigated by version-keyed caching.
 - Each sensor keeps an independent status check and a native `paths:`
-  filter. No `dorny/paths-filter`, no per-job `if`.
-- The per-workflow boilerplate (`on`/`permissions`/`concurrency`) stays
-  duplicated across files. A new sensor means a new file copied from an
-  existing one.
-- justfile recipes and workflows continue to encode checks twice; they
-  can drift, caught by CI rather than prevented structurally.
-- The smoke workflow installs only the binaries it uses (Prometheus,
-  Alloy); Loki/Tempo/Grafana config validation moved to the always-on
-  config workflow.
+  filter, with no per-job path conditionals.
+- The trigger boilerplate stays duplicated across files: a new sensor is
+  a new file copied from an existing one, and recipe/workflow drift is
+  caught by CI rather than prevented structurally.
+- Cheap checks pay a small cost on every PR in exchange for never going
+  silently uncovered; only expensive setup is gated.
