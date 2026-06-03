@@ -77,7 +77,7 @@ fi
 # PATH.
 DEVCONTAINER_CLI_VERSION="0.87.0"
 installed="$(npm ls -g --depth=0 --parseable=false @devcontainers/cli 2>/dev/null |
-  sed -n 's,.*@devcontainers/cli@\([0-9][0-9.]*\).*,\1,p' | head -1)"
+  sed -n 's,.*@devcontainers/cli@\([0-9][0-9.]*\).*,\1,p' | head -1 || true)"
 if [ "$installed" != "$DEVCONTAINER_CLI_VERSION" ]; then
   if [ -n "$installed" ]; then
     log "devcontainers-cli: replacing $installed with $DEVCONTAINER_CLI_VERSION"
