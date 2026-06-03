@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 set -euo pipefail
 
-ZELLIJ_VERSION="v0.43.1"
+ZELLIJ_VERSION="v0.44.3"
 ARCH="x86_64-unknown-linux-musl"
 
 # shellcheck source-path=SCRIPTDIR source=lib.sh
@@ -11,16 +11,18 @@ parse_bin_dir "$@"
 
 bin="$BIN_DIR/zellij"
 
-# TEMPORARY (alunduil/alunduil-chezmoi#211): build zellij from source with
-# debug symbols so a live server freeze is debuggable with gdb -- upstream
-# ships only stripped binaries, which dead-ended the last hang autopsy (gdb
-# got 0 symbols, unwinder stalled at the syscall site). Builds the SAME tag we
-# otherwise download, adding only strip=false + debug=2 -- stock release
-# codegen (fat LTO, one codegen unit) is kept, so a reproduced freeze is the
-# same bug, not a build variant. Skipped under CI and wherever the Rust
-# toolchain / protoc are absent, falling back to the verified release download.
-# Revert this whole block once #211 is root-caused.
-ZELLIJ_FORK_URL="https://github.com/alunduil/zellij"
+# TEMPORARY (alunduil/alunduil-chezmoi#211): the freeze was root-caused to an
+# upstream route_thread_main deadlock (session_data read lock held across a
+# bounded send_to_server), fixed in v0.44.3 by zellij-org/zellij#5152. This
+# moves off the 0.43.1 pin (#144) to that fix and builds it with debug symbols
+# so we keep a debuggable binary while baking -- if 0.44.x's still-open plugin
+# panic (zellij-org/zellij#4960, the reason 0.43.1 was pinned) surfaces
+# instead, we get a live backtrace for it. Only strip=false + debug=2 are added;
+# stock release codegen (fat LTO, one codegen unit) is kept so behaviour matches
+# the release. Skipped under CI and where the Rust toolchain / protoc are
+# absent, falling back to the verified release download. Revert this whole block
+# (back to a plain release download) once the bake is clean and #211 is closed.
+ZELLIJ_SOURCE_URL="https://github.com/zellij-org/zellij"
 if [ -z "${CI:-}" ] &&
   command -v cargo >/dev/null 2>&1 &&
   command -v protoc >/dev/null 2>&1 &&
@@ -36,15 +38,14 @@ if [ -z "${CI:-}" ] &&
     git -C "$src" fetch --quiet --tags origin
   else
     mkdir -p "$(dirname "$src")"
-    git clone --quiet "$ZELLIJ_FORK_URL" "$src"
+    git clone --quiet "$ZELLIJ_SOURCE_URL" "$src"
   fi
   git -C "$src" -c advice.detachedHead=false checkout --quiet "$ZELLIJ_VERSION"
 
   printf '==> zellij: building %s from source with debug symbols (slow)\n' "$ZELLIJ_VERSION" >&2
   # debuginfo=2 atop the release profile's fat LTO peaks ~10-14 GiB in one
-  # rustc process; a wedged zellij server holds ~8 GiB, so kill it first or
-  # this OOMs. v0.43.1 builds with `xtask build --release` (not the newer
-  # `ci build-release`, which exists only on main).
+  # rustc process; a wedged zellij server can hold ~5-8 GiB, so kill it first or
+  # this OOMs.
   (
     cd "$src"
     CARGO_PROFILE_RELEASE_STRIP=false CARGO_PROFILE_RELEASE_DEBUG=true \
