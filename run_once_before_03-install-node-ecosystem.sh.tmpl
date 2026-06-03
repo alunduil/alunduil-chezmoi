@@ -54,10 +54,12 @@ fi
 # ----------------------------------------------------------- Readwise CLI
 # Pin enforced (mirrors gh-poi in script 05): if a different version is
 # already installed, npm replaces it so renovate-tracked bumps actually
-# take effect. `npm ls -g` is the local query, no network round-trip.
+# take effect. `npm ls -g` is the local query, no network round-trip. It
+# exits 1 when the package is absent (e.g. fresh prefix after a node bump),
+# so `|| true` keeps set -e from killing the run before the install branch.
 READWISE_CLI_VERSION="0.5.6"
 installed="$(npm ls -g --depth=0 --parseable=false @readwise/cli 2>/dev/null |
-  sed -n 's,.*@readwise/cli@\([0-9][0-9.]*\).*,\1,p' | head -1)"
+  sed -n 's,.*@readwise/cli@\([0-9][0-9.]*\).*,\1,p' | head -1 || true)"
 if [ "$installed" != "$READWISE_CLI_VERSION" ]; then
   if [ -n "$installed" ]; then
     log "readwise-cli: replacing $installed with $READWISE_CLI_VERSION"
@@ -67,6 +69,24 @@ if [ "$installed" != "$READWISE_CLI_VERSION" ]; then
   npm install -g "@readwise/cli@$READWISE_CLI_VERSION"
 else
   log "readwise-cli: $READWISE_CLI_VERSION already installed"
+fi
+
+# --------------------------------------------------------- devcontainers CLI
+# Same pin-enforced replace as readwise-cli above. Backs the global guide's
+# devcontainer-exec helper; nvm owns the runtime so this is the only copy on
+# PATH.
+DEVCONTAINER_CLI_VERSION="0.87.0"
+installed="$(npm ls -g --depth=0 --parseable=false @devcontainers/cli 2>/dev/null |
+  sed -n 's,.*@devcontainers/cli@\([0-9][0-9.]*\).*,\1,p' | head -1 || true)"
+if [ "$installed" != "$DEVCONTAINER_CLI_VERSION" ]; then
+  if [ -n "$installed" ]; then
+    log "devcontainers-cli: replacing $installed with $DEVCONTAINER_CLI_VERSION"
+  else
+    log "devcontainers-cli: installing $DEVCONTAINER_CLI_VERSION"
+  fi
+  npm install -g "@devcontainers/cli@$DEVCONTAINER_CLI_VERSION"
+else
+  log "devcontainers-cli: $DEVCONTAINER_CLI_VERSION already installed"
 fi
 
 log "node ecosystem complete"

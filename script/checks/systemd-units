@@ -1,0 +1,50 @@
+#!/usr/bin/env bash
+# Validate the systemd user units with `systemd-analyze verify`: every
+# directive must be known and every ExecStart binary must resolve. verify
+# resolves %h/%S against the calling user, so the binaries the units reference
+# must exist at their real paths first — systemd.yml installs them in CI.
+#
+# verify only *warns* (and still exits 0) on an unknown directive, so any
+# stderr is treated as failure; a missing ExecStart already exits non-zero.
+set -uo pipefail
+
+ROOT="$(git -C "$(dirname "${BASH_SOURCE[0]}")" rev-parse --show-toplevel)"
+cd "$ROOT"
+
+if ! command -v systemd-analyze >/dev/null 2>&1; then
+  printf '==> systemd-units: systemd-analyze not on PATH; skipping\n' >&2
+  exit 0
+fi
+
+units_dir="dot_config/systemd/user"
+
+# verify needs every ExecStart binary present. Derive them from the units
+# (the first token after ExecStart=, %h expanded) instead of a hand-kept list,
+# so adding a unit needs no change here. A missing binary locally just means an
+# unbootstrapped host, so skip; CI installs the stack first, so there it is a
+# real failure (a broken installer, or a new unit whose binary nobody added to
+# systemd.yml) and must not be skipped into a false pass.
+while IFS= read -r bin; do
+  bin="${bin/'%h'/$HOME}"
+  [ -x "$bin" ] && continue
+  if [ -n "${CI:-}" ]; then
+    printf 'FAIL: %s not installed (systemd.yml installs the stack before this)\n' "$bin" >&2
+    exit 1
+  fi
+  printf '==> systemd-units: %s not installed; skipping\n' "$bin" >&2
+  exit 0
+done < <(grep -hoP '^ExecStart=\K[^ ]+' "$units_dir"/*.service)
+
+units=("$units_dir"/*.service "$units_dir"/*.target "$units_dir"/*.timer)
+
+errfile="$(mktemp)"
+trap 'rm -f "$errfile"' EXIT
+systemd-analyze --user verify "${units[@]}" >/dev/null 2>"$errfile"
+rc=$?
+if [ "$rc" -ne 0 ] || [ -s "$errfile" ]; then
+  printf 'FAIL: systemd unit verification\n' >&2
+  cat "$errfile" >&2
+  exit 1
+fi
+
+printf 'OK: systemd user units verify\n'
