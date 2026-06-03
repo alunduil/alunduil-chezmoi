@@ -12,7 +12,6 @@ on:
       - 'dot_config/loki/**'
       - 'dot_config/tempo/**'
       - 'dot_config/grafana/**'
-      - 'dot_config/systemd/user/**'
       - 'dot_local/bin/executable_zellijstat'
       - 'script/install/alloy'
       - 'script/install/prometheus'

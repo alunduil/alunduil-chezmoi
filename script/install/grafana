@@ -13,7 +13,7 @@ ARCH="linux-amd64"
 parse_bin_dir "$@"
 
 data_root="${XDG_DATA_HOME:-$HOME/.local/share}/grafana"
-home_path="$data_root/grafana-${GRAFANA_VERSION}"
+home_path="$data_root/grafana-${GRAFANA_VERSION#v}"
 if [ -x "$home_path/bin/grafana" ]; then
   printf '==> grafana: %s already installed at %s\n' "$GRAFANA_VERSION" "$home_path" >&2
   exit 0
@@ -33,8 +33,8 @@ curl -fsSL -o "$tmp/$asset.sha256" "$base/$asset.sha256"
 expected="$(awk '{print $1}' "$tmp/$asset.sha256")"
 verify_sha256 "$tmp/$asset" "$expected"
 
-# Tarball top dir is grafana-v<version>/; extract beside it and pin a
-# stable `current` symlink the systemd unit points its homepath at.
+# Tarball top dir is grafana-<version>/ (no leading v); extract beside it and
+# pin a stable `current` symlink the systemd unit points its homepath at.
 mkdir -p "$data_root"
 tar -xzf "$tmp/$asset" -C "$data_root"
 ln -sfn "$home_path" "$data_root/current"

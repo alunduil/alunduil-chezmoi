@@ -18,7 +18,7 @@ check:
     #!/usr/bin/env bash
     set -uo pipefail
     rc=0
-    for c in check-pre-commit check-bats check-python check-zellij check-chezmoi check-chezmoi-templates check-observability; do
+    for c in check-pre-commit check-bats check-python check-zellij check-chezmoi check-chezmoi-templates check-observability check-systemd; do
       just "$c" || rc=1
     done
     exit "$rc"
@@ -51,3 +51,9 @@ check-chezmoi-templates:
 # the live metrics smoke is CI-only — it binds the running stack's ports).
 check-observability:
     script/checks/observability-config
+
+# systemd user unit validation (skips when the units' referenced binaries are
+# absent — kept apart from observability so the units keep their checker once
+# that stack is gone).
+check-systemd:
+    script/checks/systemd-units
