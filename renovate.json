@@ -17,6 +17,20 @@
   "customManagers": [
     {
       "customType": "regex",
+      "managerFilePatterns": ["/^script/install/bats-libs$/"],
+      "matchStrings": ["BATS_SUPPORT_VERSION=\"(?<currentValue>v[\\d.]+)\""],
+      "depNameTemplate": "bats-core/bats-support",
+      "datasourceTemplate": "github-releases"
+    },
+    {
+      "customType": "regex",
+      "managerFilePatterns": ["/^script/install/bats-libs$/"],
+      "matchStrings": ["BATS_ASSERT_VERSION=\"(?<currentValue>v[\\d.]+)\""],
+      "depNameTemplate": "bats-core/bats-assert",
+      "datasourceTemplate": "github-releases"
+    },
+    {
+      "customType": "regex",
       "managerFilePatterns": ["/^script/install/zellij$/"],
       "matchStrings": ["ZELLIJ_VERSION=\"(?<currentValue>v[\\d.]+)\""],
       "depNameTemplate": "zellij-org/zellij",

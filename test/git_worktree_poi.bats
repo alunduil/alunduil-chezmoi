@@ -1,5 +1,6 @@
 #!/usr/bin/env bats
 bats_require_minimum_version 1.5.0
+load test_helper
 
 setup() {
   REPO_ROOT="$(cd "$BATS_TEST_DIRNAME/.." && pwd)"
@@ -20,31 +21,31 @@ teardown() {
 @test "is_in_use: exact match succeeds" {
   run bash -c 'source "$1"; IN_USE_CWDS=("$2"); is_in_use "$2"' \
     _ "$POI" /foo/bar
-  [ "$status" -eq 0 ]
+  assert_success
 }
 
 @test "is_in_use: nested cwd succeeds" {
   run bash -c 'source "$1"; IN_USE_CWDS=("$3"); is_in_use "$2"' \
     _ "$POI" /foo/bar /foo/bar/sub/dir
-  [ "$status" -eq 0 ]
+  assert_success
 }
 
 @test "is_in_use: prefix without path boundary fails" {
   run bash -c 'source "$1"; IN_USE_CWDS=("$3"); is_in_use "$2"' \
     _ "$POI" /foo/bar /foo/bar2
-  [ "$status" -eq 1 ]
+  assert_failure 1
 }
 
 @test "is_in_use: unrelated cwd fails" {
   run bash -c 'source "$1"; IN_USE_CWDS=("$3"); is_in_use "$2"' \
     _ "$POI" /foo/bar /elsewhere
-  [ "$status" -eq 1 ]
+  assert_failure 1
 }
 
 @test "is_in_use: empty IN_USE_CWDS fails" {
   run bash -c 'source "$1"; IN_USE_CWDS=(); is_in_use "$2"' \
     _ "$POI" /foo/bar
-  [ "$status" -eq 1 ]
+  assert_failure 1
 }
 
 # --- classify: in-use override ---
@@ -79,9 +80,9 @@ _mkworktree() {
     IN_USE_CWDS=()
     classify "$2"
   ' _ "$POI" "$WT"
-  [ "$status" -eq 0 ]
-  [[ "${lines[0]}" == remove$'\t'* ]]
-  [[ "$output" == *"PR #99 merged"* ]]
+  assert_success
+  assert_line --index 0 --regexp $'^remove\t'
+  assert_output --partial "PR #99 merged"
 }
 
 @test "classify: in-use worktree with merged PR is kept" {
@@ -93,10 +94,10 @@ _mkworktree() {
     IN_USE_CWDS=("$3")
     classify "$2"
   ' _ "$POI" "$WT" "$WT/nested/subdir"
-  [ "$status" -eq 0 ]
-  [[ "${lines[0]}" == keep$'\t'* ]]
-  [[ "$output" == *"in-use"* ]]
-  [[ "$output" == *"PR #99 merged"* ]]
+  assert_success
+  assert_line --index 0 --regexp $'^keep\t'
+  assert_output --partial "in-use"
+  assert_output --partial "PR #99 merged"
 }
 
 # --- classify: gone vs. never-pushed upstreams ---
@@ -114,9 +115,9 @@ _mkworktree() {
     IN_USE_CWDS=()
     classify "$2"
   ' _ "$POI" "$WT"
-  [ "$status" -eq 0 ]
-  [[ "${lines[0]}" == remove$'\t'* ]]
-  [[ "$output" == *"PR #42 merged"* ]]
+  assert_success
+  assert_line --index 0 --regexp $'^remove\t'
+  assert_output --partial "PR #42 merged"
 }
 
 @test "classify: merged PR with no upstream config is kept" {
@@ -132,9 +133,9 @@ _mkworktree() {
     IN_USE_CWDS=()
     classify "$2"
   ' _ "$POI" "$WT"
-  [ "$status" -eq 0 ]
-  [[ "${lines[0]}" == keep$'\t'* ]]
-  [[ "$output" == *"no upstream"* ]]
+  assert_success
+  assert_line --index 0 --regexp $'^keep\t'
+  assert_output --partial "no upstream"
 }
 
 # --- batch_fetch_pr_states: one query per repo ---
@@ -186,22 +187,22 @@ STUB
     GH_STUB_COUNT_FILE="$count_file" \
     GH_STUB_TSV_FILE="$tsv_file" \
     run bash "$POI" -n
-  [ "$status" -eq 0 ]
+  assert_success
 
   local invocations
   invocations=$(wc -l <"$count_file")
   [ "$invocations" -eq 1 ]
 
-  [[ "$output" == *"== DRY RUN =="* ]]
-  [[ "$output" == *"Would remove"* ]]
-  [[ "$output" == *"Would keep"* ]]
-  [[ "$output" != *"Would remove (2)"* ]]
-  [[ "$output" != *"Would keep (1)"* ]]
-  [[ "$output" == *"PR #1 merged"* ]]
-  [[ "$output" == *"PR #2 open"* ]]
-  [[ "$output" == *"no commits, no PR"* ]]
+  assert_output --partial "== DRY RUN =="
+  assert_output --partial "Would remove"
+  assert_output --partial "Would keep"
+  refute_output --partial "Would remove (2)"
+  refute_output --partial "Would keep (1)"
+  assert_output --partial "PR #1 merged"
+  assert_output --partial "PR #2 open"
+  assert_output --partial "no commits, no PR"
   # Inline layout: no second-line tree glyph (cardinality is always 1).
-  [[ "$output" != *"└─"* ]]
+  refute_output --partial "└─"
 }
 
 # --- print_section: verdict-branched splitter ---
@@ -218,9 +219,9 @@ STUB
     CWD=/tmp
     print_section 'Would remove' ''
   "
-  [ "$status" -eq 0 ]
-  [[ "$output" == *"Would remove"* ]]
-  [[ "$output" == *$'\033[2m'"(none)"$'\033[0m'* ]]
+  assert_success
+  assert_output --partial "Would remove"
+  assert_output --partial "$(printf '\033[2m(none)\033[0m')"
 }
 
 @test "print_section: row whose wt matches CWD gets BOLD_YELLOW asterisk marker" {
@@ -231,8 +232,8 @@ STUB
     row=\$(printf 'keep\\trepo/feature\\tu/worktree/feature\\tin-use\\t/tmp/wt')
     print_section 'Kept' \"\$row\"
   "
-  [ "$status" -eq 0 ]
-  [[ "$output" == *$'\033[1;33m'"*"$'\033[0m'* ]]
+  assert_success
+  assert_output --partial "$(printf '\033[1;33m*\033[0m')"
 }
 
 @test "print_section: branch matching rel slug is elided" {
@@ -245,8 +246,8 @@ STUB
     row=\$(printf 'keep\\trepo/feature\\tu/worktree/feature\\tin-use\\t/tmp/wt')
     print_section 'Kept' \"\$row\"
   "
-  [ "$status" -eq 0 ]
-  [[ "$output" != *"u/worktree/feature"* ]]
+  assert_success
+  refute_output --partial "u/worktree/feature"
 }
 
 @test "print_section: branch with divergent slug is shown" {
@@ -259,8 +260,8 @@ STUB
     row=\$(printf 'keep\\trepo/feature\\tunrelated-name\\tin-use\\t/tmp/wt')
     print_section 'Kept' \"\$row\"
   "
-  [ "$status" -eq 0 ]
-  [[ "$output" == *"(unrelated-name)"* ]]
+  assert_success
+  assert_output --partial "(unrelated-name)"
 }
 
 @test "print_section: remove-row detail with embedded comma stays one coloured atom" {
@@ -272,8 +273,8 @@ STUB
     row=\$(printf 'remove\\tx/y\\tbranch\\tno commits, no PR\\t/tmp/wt')
     print_section 'Would remove' \"\$row\"
   "
-  [ "$status" -eq 0 ]
-  [[ "$output" == *$'\033[32m'"no commits, no PR"$'\033[0m'* ]]
+  assert_success
+  assert_output --partial "$(printf '\033[32mno commits, no PR\033[0m')"
 }
 
 # --- resolve_target: NAME → worktree path ---
@@ -290,31 +291,31 @@ _mk_stub_wt() {
   _mk_stub_wt me/alpha/dup
   _mk_stub_wt me/beta/dup
   run bash -c 'source "$1"; resolve_target dup' _ "$POI"
-  [ "$status" -ne 0 ]
-  [[ "$output" == *"alpha/dup"* ]]
-  [[ "$output" == *"beta/dup"* ]]
+  assert_failure
+  assert_output --partial "alpha/dup"
+  assert_output --partial "beta/dup"
 }
 
 @test "resolve_target: <repo>/<name> disambiguates the collision" {
   _mk_stub_wt me/alpha/dup
   _mk_stub_wt me/beta/dup
   run bash -c 'source "$1"; resolve_target alpha/dup' _ "$POI"
-  [ "$status" -eq 0 ]
-  [[ "$output" == *"/me/alpha/dup" ]]
+  assert_success
+  assert_output --regexp '/me/alpha/dup$'
 }
 
 @test "resolve_target: unique petname resolves to its path" {
   _mk_stub_wt me/repo/solo
   run bash -c 'source "$1"; resolve_target solo' _ "$POI"
-  [ "$status" -eq 0 ]
-  [[ "$output" == *"/me/repo/solo" ]]
+  assert_success
+  assert_output --regexp '/me/repo/solo$'
 }
 
 @test "resolve_target: no match returns nonzero with a diagnostic" {
   _mk_stub_wt me/repo/solo
   run bash -c 'source "$1"; resolve_target nope' _ "$POI"
-  [ "$status" -ne 0 ]
-  [[ "$output" == *"no worktree matches 'nope'"* ]]
+  assert_failure
+  assert_output --partial "no worktree matches 'nope'"
 }
 
 # --- --force: override the keep verdict for named worktrees ---
@@ -333,8 +334,8 @@ _stub_gh_absent() {
 
 @test "force without NAME is rejected" {
   run bash "$POI" -f
-  [ "$status" -ne 0 ]
-  [[ "$output" == *"--force requires at least one worktree NAME"* ]]
+  assert_failure
+  assert_output --partial "--force requires at least one worktree NAME"
 }
 
 @test "force removes a kept worktree and force-deletes its branch" {
@@ -343,18 +344,18 @@ _stub_gh_absent() {
 
   # Without force the target is kept, not removed.
   PATH="$stub:$PATH" run bash "$POI" -n feature
-  [ "$status" -eq 0 ]
-  [[ "$output" == *"Would keep"* ]]
-  [[ "$output" == *"PR state unknown"* ]]
+  assert_success
+  assert_output --partial "Would keep"
+  assert_output --partial "PR state unknown"
   [ -e "$WT" ]
 
   # With force it goes, branch and all.
   PATH="$stub:$PATH" run bash "$POI" -f feature
-  [ "$status" -eq 0 ]
-  [[ "$output" == *"Removed"* ]]
+  assert_success
+  assert_output --partial "Removed"
   [ ! -e "$WT" ]
   run git -C "$HOME/me/repo" rev-parse --verify --quiet refs/heads/feature
-  [ "$status" -ne 0 ]
+  assert_failure
 }
 
 @test "NAME scopes the run to the matched worktree" {
@@ -364,9 +365,9 @@ _stub_gh_absent() {
   local stub; stub=$(_stub_gh_absent)
 
   PATH="$stub:$PATH" run bash "$POI" -n feature
-  [ "$status" -eq 0 ]
-  [[ "$output" == *"repo/feature"* ]]
-  [[ "$output" != *"repo/other"* ]]
+  assert_success
+  assert_output --partial "repo/feature"
+  refute_output --partial "repo/other"
 }
 
 @test "force removes every named worktree in one run" {
@@ -376,13 +377,13 @@ _stub_gh_absent() {
   local stub; stub=$(_stub_gh_absent)
 
   PATH="$stub:$PATH" run bash "$POI" -f feature other
-  [ "$status" -eq 0 ]
+  assert_success
   [ ! -e "$XDG_DATA_HOME/git-worktrees/me/repo/feature" ]
   [ ! -e "$XDG_DATA_HOME/git-worktrees/me/repo/other" ]
   run git -C "$HOME/me/repo" rev-parse --verify --quiet refs/heads/feature
-  [ "$status" -ne 0 ]
+  assert_failure
   run git -C "$HOME/me/repo" rev-parse --verify --quiet refs/heads/other
-  [ "$status" -ne 0 ]
+  assert_failure
 }
 
 @test "force acts on resolvable names and reports the unresolvable ones" {
@@ -391,9 +392,9 @@ _stub_gh_absent() {
 
   PATH="$stub:$PATH" run bash "$POI" -f feature bogus
   # Partial run: feature removed, but a bad name makes the run a failure.
-  [ "$status" -ne 0 ]
-  [[ "$output" == *"Removed"* ]]
-  [[ "$output" == *"no worktree matches 'bogus'"* ]]
+  assert_failure
+  assert_output --partial "Removed"
+  assert_output --partial "no worktree matches 'bogus'"
   [ ! -e "$WT" ]
 }
 
@@ -404,8 +405,8 @@ _stub_gh_absent() {
   local stub; stub=$(_stub_gh_absent)
 
   PATH="$stub:$PATH" run bash "$POI" -f bogus
-  [ "$status" -ne 0 ]
-  [[ "$output" == *"no worktree matches 'bogus'"* ]]
+  assert_failure
+  assert_output --partial "no worktree matches 'bogus'"
   [ -e "$WT" ]
 }
 
@@ -414,7 +415,7 @@ _stub_gh_absent() {
   local stub; stub=$(_stub_gh_absent)
 
   PATH="$stub:$PATH" run bash "$POI" -n feature feature
-  [ "$status" -eq 0 ]
+  assert_success
   # One row, not two: dedup collapsed the repeated name.
   [ "$(grep -c 'repo/feature' <<<"$output")" -eq 1 ]
 }

@@ -1,0 +1,69 @@
+#!/usr/bin/env bash
+set -euo pipefail
+
+# bats-support + bats-assert: the generic assertion helpers test/ loads via
+# bats_load_library. bats-assert depends on bats-support, so they install as a
+# unit. Unlike the binary tools, these ship only as GitHub auto-generated
+# source tarballs -- no SHA256SUMS asset and no signatures -- so each sha256 is
+# pinned inline and verified per lib.sh's verify_sha256. Renovate bumps the
+# *_VERSION lines; the matching *_SHA256 has no automated source, so a version
+# bump trips the sha check in CI until the hash is refreshed by hand (the
+# deliberate supply-chain checkpoint on every upgrade).
+BATS_SUPPORT_VERSION="v0.3.0"
+BATS_SUPPORT_SHA256="7815237aafeb42ddcc1b8c698fc5808026d33317d8701d5ec2396e9634e2918f"
+BATS_ASSERT_VERSION="v2.2.4"
+BATS_ASSERT_SHA256="e305df20c4c36cba4570e10f1cd824efb1ae71d88b5ef474550781ebee04192f"
+
+# shellcheck source-path=SCRIPTDIR source=lib.sh
+. "$(dirname "$0")/lib.sh"
+
+# These are bash libraries, not binaries, so they land in a lib dir on
+# BATS_LIB_PATH rather than a bin dir. Mirrors parse_bin_dir's contract.
+LIB_DIR=""
+while [ $# -gt 0 ]; do
+  case "$1" in
+    --lib-dir)
+      [ $# -ge 2 ] || {
+        echo "${0##*/}: --lib-dir requires an argument" >&2
+        exit 2
+      }
+      LIB_DIR="$2"
+      shift 2
+      ;;
+    *)
+      echo "${0##*/}: unknown argument: $1" >&2
+      exit 2
+      ;;
+  esac
+done
+[ -n "$LIB_DIR" ] || {
+  echo "${0##*/}: --lib-dir DIR required" >&2
+  exit 2
+}
+
+tmp="$(mktemp -d)"
+trap 'rm -rf "$tmp"' EXIT
+
+install_lib() {
+  local name="$1" version="$2" sha="$3"
+  local dest="$LIB_DIR/$name"
+
+  if [ -f "$dest/.version" ] && [ "$(cat "$dest/.version")" = "$version" ]; then
+    printf '==> %s: %s already installed at %s\n' "$name" "$version" "$dest" >&2
+    return 0
+  fi
+
+  printf '==> %s: downloading %s\n' "$name" "$version" >&2
+  local asset="$tmp/$name.tar.gz"
+  curl -fsSL -o "$asset" \
+    "https://github.com/bats-core/$name/archive/refs/tags/$version.tar.gz"
+  verify_sha256 "$asset" "$sha"
+
+  rm -rf "$dest"
+  mkdir -p "$dest"
+  tar -xzf "$asset" -C "$dest" --strip-components=1
+  printf '%s' "$version" >"$dest/.version"
+}
+
+install_lib bats-support "$BATS_SUPPORT_VERSION" "$BATS_SUPPORT_SHA256"
+install_lib bats-assert "$BATS_ASSERT_VERSION" "$BATS_ASSERT_SHA256"
