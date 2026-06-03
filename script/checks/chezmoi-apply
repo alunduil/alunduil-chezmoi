@@ -15,11 +15,11 @@ chezmoi apply --source="$SOURCE_DIR" --destination="$dest" --exclude=scripts,enc
 
 fail=0
 while IFS= read -r cmd; do
-  resolved="${cmd/\$HOME/$dest}"
+  resolved="${cmd/#$HOME/$dest}"
   if [ ! -f "$resolved" ]; then
     printf 'FAIL: hook command %s not found at %s\n' "$cmd" "$resolved" >&2
     fail=1
   fi
-done < <(jq -r '.. | .command? // empty | select(startswith("$HOME/.claude/"))' "$dest/.claude/settings.json")
+done < <(jq -r --arg home "$HOME" '.. | .command? // empty | select(startswith($home + "/.claude/"))' "$dest/.claude/settings.json")
 
 exit "$fail"
