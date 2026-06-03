@@ -14,7 +14,7 @@ on:
       - 'script/install/alloy'
       - 'script/install/prometheus'
       - 'script/checks/observability-smoke'
-      - '.github/workflows/observability.yml'
+      - '.github/workflows/observability-smoke.yml'
   pull_request:
     paths: *paths
 

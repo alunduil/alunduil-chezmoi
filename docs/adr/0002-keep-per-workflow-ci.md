@@ -10,9 +10,10 @@ CI runs one workflow per sensor (`bats`, `python`, `zellij`, `chezmoi`,
 `pre-commit`, `lychee`, `observability`), and each repeats the same
 `on`/`permissions`/`concurrency` boilerplate. The justfile defines most
 of the same checks as recipes (`check-bats`, `check-observability`, …),
-so the two can drift. #274 asks whether to collapse the workflows into a
-single `ci.yml` with one job per check calling `just <check>`, making the
-justfile the single source of truth CI reads from.
+so the two can drift. The structural choice is between this per-workflow
+layout and a single `ci.yml` with one job per check calling
+`just <check>`, making the justfile the single source of truth CI reads
+from (#274).
 
 Two pressures motivate the question:
 
@@ -46,8 +47,8 @@ false-pass that CI then catches, never a bad merge. CI is authoritative.
 ## Decision
 
 We will keep one CI workflow per sensor. New checks land as new
-workflows, not as jobs in a shared `ci.yml`. The
-consolidation in #274 is rejected, not deferred.
+workflows, not as jobs in a shared `ci.yml`. Consolidation into a single
+`ci.yml` is rejected, not deferred.
 
 The observability gap is fixed within this structure by splitting the one
 workflow in two:
@@ -55,8 +56,8 @@ workflow in two:
 - `observability-config.yml`: static config validation, no path gate,
   runs on every PR. It installs the binaries those checks need (cached on
   their pinned versions to keep the always-on cost low).
-- `observability.yml`: the heavy live-metrics smoke, still path-gated to
-  the metrics path it exercises.
+- `observability-smoke.yml`: the heavy live-metrics smoke, still
+  path-gated to the metrics path it exercises.
 
 Issue #241 (`systemd-analyze verify` on the user units) lands as its own
 `script/checks/*` + `just` recipe + workflow, consistent with this
