@@ -75,6 +75,7 @@ worktrees
 
 # Common tech terms
 config
+justfile
 dev
 dotfile
 dotfiles
