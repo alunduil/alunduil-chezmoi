@@ -69,4 +69,22 @@ else
   log "readwise-cli: $READWISE_CLI_VERSION already installed"
 fi
 
+# --------------------------------------------------------- devcontainers CLI
+# Same pin-enforced replace as readwise-cli above. Backs the global guide's
+# devcontainer-exec helper; nvm owns the runtime so this is the only copy on
+# PATH.
+DEVCONTAINER_CLI_VERSION="0.87.0"
+installed="$(npm ls -g --depth=0 --parseable=false @devcontainers/cli 2>/dev/null |
+  sed -n 's,.*@devcontainers/cli@\([0-9][0-9.]*\).*,\1,p' | head -1)"
+if [ "$installed" != "$DEVCONTAINER_CLI_VERSION" ]; then
+  if [ -n "$installed" ]; then
+    log "devcontainers-cli: replacing $installed with $DEVCONTAINER_CLI_VERSION"
+  else
+    log "devcontainers-cli: installing $DEVCONTAINER_CLI_VERSION"
+  fi
+  npm install -g "@devcontainers/cli@$DEVCONTAINER_CLI_VERSION"
+else
+  log "devcontainers-cli: $DEVCONTAINER_CLI_VERSION already installed"
+fi
+
 log "node ecosystem complete"
