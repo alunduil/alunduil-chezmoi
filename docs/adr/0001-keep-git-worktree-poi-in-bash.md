@@ -2,7 +2,11 @@
 
 ## Status
 
-Accepted
+Superseded by [0002](0002-port-git-worktree-poi-to-rust.md).
+
+The triggers below fired: the script reached 633 lines and #147 landed
+as bash in #154. The bash-vs-rewrite question was re-evaluated in #205;
+0002 records the decision to port to Rust.
 
 ## Context
 
