@@ -22,7 +22,7 @@ jobs:
 
       - uses: bats-core/bats-action@77d6fb60505b4d0d1d73e48bd035b55074bbfb43 # 4.0.0
         with:
-          # Override defaults of true; tests in test/ don't load helper libs.
+          # Override defaults of true; the suite doesn't load helper libs.
           support-install: false
           assert-install: false
           detik-install: false
@@ -31,4 +31,4 @@ jobs:
           github-token: ${{ secrets.GITHUB_TOKEN }}
 
       - name: Test
-        run: bats test/
+        run: bats --recursive dot_local dot_claude script

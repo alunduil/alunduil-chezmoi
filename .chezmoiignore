@@ -9,4 +9,9 @@ README.md
 lychee.toml
 renovate.json
 script
-test
+# Tests sit beside the scripts they exercise, including under applied trees
+# (dot_local/bin, dot_claude/hooks). Skip them by pattern so apply installs
+# the scripts but not their tests or fixtures.
+**/*.bats
+**/*_test.py
+**/fixtures
