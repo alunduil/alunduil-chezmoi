@@ -64,9 +64,28 @@ if [ ! -f /usr/share/keyrings/docker-archive-keyring.gpg ]; then
     sudo tee /etc/apt/sources.list.d/docker.list >/dev/null
 fi
 
+# ------------------------------------------------------------------ 1password
+# CLI only (1password-cli), not the desktop app. The debsig policy is how apt
+# verifies the package signature at install; 1Password publishes it separately
+# from the apt signing key, keyed by their fixed origin id AC2D62742012EA22.
+if [ ! -f /usr/share/keyrings/1password-archive-keyring.gpg ]; then
+  log "1password: adding apt repository"
+  curl -fsSL https://downloads.1password.com/linux/keys/1password.asc |
+    sudo gpg --dearmor -o /usr/share/keyrings/1password-archive-keyring.gpg
+  printf 'deb [arch=%s signed-by=/usr/share/keyrings/1password-archive-keyring.gpg] https://downloads.1password.com/linux/debian/%s stable main\n' \
+    "$(dpkg --print-architecture)" "$(dpkg --print-architecture)" |
+    sudo tee /etc/apt/sources.list.d/1password.list >/dev/null
+  sudo mkdir -p /etc/debsig/policies/AC2D62742012EA22/
+  curl -fsSL https://downloads.1password.com/linux/debian/debsig/1password.pol |
+    sudo tee /etc/debsig/policies/AC2D62742012EA22/1password.pol >/dev/null
+  sudo mkdir -p /usr/share/debsig/keyrings/AC2D62742012EA22
+  curl -fsSL https://downloads.1password.com/linux/keys/1password.asc |
+    sudo gpg --dearmor -o /usr/share/debsig/keyrings/AC2D62742012EA22/debsig.gpg
+fi
+
 # -------------------------------------------------------------------- apt pkgs
 APT_PACKAGES=(
-  gh zsh ripgrep fd-find fzf jq unzip age terraform libnotify-bin
+  gh zsh ripgrep fd-find fzf jq unzip age terraform libnotify-bin 1password-cli
   build-essential libffi-dev libgmp-dev libncurses-dev zlib1g-dev
   protobuf-compiler
   golang-petname
