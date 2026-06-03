@@ -1,0 +1,11 @@
+[Unit]
+Description=Weekly gh-poi sweep across all GitHub clones
+
+[Timer]
+OnCalendar=Sun *-*-* 03:30:00
+# This host (Crostini) is frequently suspended; without Persistent a missed
+# window is lost. Persistent runs the catch-up on next wake.
+Persistent=true
+
+[Install]
+WantedBy=timers.target

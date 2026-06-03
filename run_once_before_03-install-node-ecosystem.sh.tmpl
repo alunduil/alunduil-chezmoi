@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
-# Installs nvm, a Node LTS via nvm, and npm global packages. Canonical
-# installers only: nvm for Node, npm for packages. Debian apt Node is
-# avoided by design (it lags upstream).
+# Installs nvm, a pinned Node version via nvm, and npm global packages.
+# Canonical installers only: nvm for Node, npm for packages. Debian apt Node
+# is avoided by design (it lags upstream).
 
 set -euo pipefail
 
@@ -23,14 +23,16 @@ fi
 # shellcheck disable=SC1091
 [ -s "$NVM_DIR/nvm.sh" ] && . "$NVM_DIR/nvm.sh"
 
-# Ensure an nvm-managed node exists. The `command -v node` check that was
-# here before could find a system /usr/bin/node and skip installation,
-# leaving nvm with zero versions and npm pointed at /usr/lib.
-if ! nvm ls default >/dev/null 2>&1; then
-  log "node: installing LTS via nvm"
-  nvm install --lts
-  nvm alias default 'lts/*'
+# Pinned (Renovate-tracked via the node-version datasource): chezmoi re-runs
+# this once-script when the pin changes, so a bump applies on apply. Match by
+# explicit version rather than `command -v node`, which could find a system
+# /usr/bin/node and skip installation, leaving nvm with zero versions.
+NODE_VERSION="24.16.0"
+if ! nvm ls "$NODE_VERSION" >/dev/null 2>&1; then
+  log "node: installing $NODE_VERSION via nvm"
+  nvm install "$NODE_VERSION"
 fi
+nvm alias default "$NODE_VERSION"
 nvm use default >/dev/null 2>&1
 log "node: $(node --version) via nvm"
 

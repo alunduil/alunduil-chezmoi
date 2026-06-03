@@ -18,7 +18,7 @@ check:
     #!/usr/bin/env bash
     set -uo pipefail
     rc=0
-    for c in check-pre-commit check-bats check-python check-zellij check-chezmoi check-observability check-systemd; do
+    for c in check-pre-commit check-bats check-python check-zellij check-chezmoi check-chezmoi-templates check-observability check-systemd; do
       just "$c" || rc=1
     done
     exit "$rc"
@@ -42,6 +42,10 @@ check-zellij:
 # Apply round-trip (needs chezmoi + age on PATH).
 check-chezmoi:
     script/checks/chezmoi-apply
+
+# Render run_*.sh.tmpl script templates (needs chezmoi on PATH).
+check-chezmoi-templates:
+    script/checks/chezmoi-template
 
 # Observability config validation (skips when the stack binaries are absent;
 # the live metrics smoke is CI-only — it binds the running stack's ports).

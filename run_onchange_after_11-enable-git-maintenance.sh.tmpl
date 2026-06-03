@@ -1,0 +1,20 @@
+#!/usr/bin/env bash
+# Unit hashes below re-run this script whenever a unit changes, so edits
+# (new ExecStart flags, schedule changes) re-apply via daemon-reload + enable.
+# worktree-poi service: {{ include "dot_config/systemd/user/git-worktree-poi.service" | sha256sum }}
+# worktree-poi timer:   {{ include "dot_config/systemd/user/git-worktree-poi.timer" | sha256sum }}
+# poi-all service:      {{ include "dot_config/systemd/user/git-poi-all.service" | sha256sum }}
+# poi-all timer:        {{ include "dot_config/systemd/user/git-poi-all.timer" | sha256sum }}
+
+set -euo pipefail
+
+# Skip where there is no user systemd manager to talk to (headless apply over
+# SSH without lingering, container builds). The units are still deployed; a
+# later interactive apply, or a manual enable, brings the timers up.
+if ! systemctl --user show-environment >/dev/null 2>&1; then
+  echo "==> git-maintenance: no user systemd session; leaving timers disabled" >&2
+  exit 0
+fi
+
+systemctl --user daemon-reload
+systemctl --user enable --now git-worktree-poi.timer git-poi-all.timer

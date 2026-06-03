@@ -35,3 +35,6 @@ jobs:
 
       - name: Check apply
         run: script/checks/chezmoi-apply
+
+      - name: Check script templates render
+        run: script/checks/chezmoi-template

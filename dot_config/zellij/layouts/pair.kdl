@@ -52,7 +52,10 @@ layout {
     }
     tab name="pair" focus=true {
         pane split_direction="vertical" {
-            pane size="40%" name="claude" command="claude"
+            // claude-pair resumes the worktree's most recent conversation,
+            // or starts fresh when there is none. Covers both Alt+. and
+            // Alt+/ since they share this launch point.
+            pane size="40%" name="claude" command="claude-pair"
             pane size="60%" name="lazygit" command="lazygit"
         }
     }

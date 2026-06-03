@@ -45,13 +45,35 @@ if [ ! -f /etc/apt/sources.list.d/keybase.list ]; then
     sudo tee /etc/apt/sources.list.d/keybase.list >/dev/null
 fi
 
+# --------------------------------------------------------------- vscode (code)
+if [ ! -f /usr/share/keyrings/packages.microsoft.gpg ]; then
+  log "vscode: adding apt repository"
+  curl -fsSL https://packages.microsoft.com/keys/microsoft.asc |
+    sudo gpg --dearmor -o /usr/share/keyrings/packages.microsoft.gpg
+  printf 'deb [arch=%s signed-by=/usr/share/keyrings/packages.microsoft.gpg] https://packages.microsoft.com/repos/code stable main\n' \
+    "$(dpkg --print-architecture)" | sudo tee /etc/apt/sources.list.d/vscode.list >/dev/null
+fi
+
+# --------------------------------------------------------------------- docker
+if [ ! -f /usr/share/keyrings/docker-archive-keyring.gpg ]; then
+  log "docker: adding apt repository"
+  curl -fsSL https://download.docker.com/linux/debian/gpg |
+    sudo gpg --dearmor -o /usr/share/keyrings/docker-archive-keyring.gpg
+  printf 'deb [arch=%s signed-by=/usr/share/keyrings/docker-archive-keyring.gpg] https://download.docker.com/linux/debian %s stable\n' \
+    "$(dpkg --print-architecture)" "$(lsb_release -cs)" |
+    sudo tee /etc/apt/sources.list.d/docker.list >/dev/null
+fi
+
 # -------------------------------------------------------------------- apt pkgs
 APT_PACKAGES=(
   gh zsh ripgrep fd-find fzf jq unzip age terraform libnotify-bin
   build-essential libffi-dev libgmp-dev libncurses-dev zlib1g-dev
+  protobuf-compiler
   golang-petname
-  keybase signal-desktop calibre
+  keybase signal-desktop calibre code
   nethack-console
+  docker-ce docker-ce-cli docker-ce-rootless-extras containerd.io
+  docker-buildx-plugin docker-compose-plugin
 )
 missing=()
 for pkg in "${APT_PACKAGES[@]}"; do

@@ -37,15 +37,40 @@ mkworktree() {
   : >"$dir/.git"
 }
 
+# Render a worktree's pair tab name exactly as the picker would, by sourcing its
+# fmt_tab in a subshell (the picker runs under `set -e`, so it can't be sourced
+# into the test shell). The org-elision format then lives only in the picker.
+tab_name() {
+  ME="$GH_USER" bash -c 'source "$1"; fmt_tab "$2" "$3" "$4"' _ "$PICKER" "$@"
+}
+
+# The on-disk worktree path print_worktrees walks, built the one way the rest of
+# the suite references it. Mirrors mkworktree's layout.
+petdir() {
+  printf '%s' "$XDG_DATA_HOME/git-worktrees/$1/$2/$3"
+}
+
+# Assert the picker spawned this worktree's pair tab: new-tab at its petdir and
+# rename-tab to its rendered name both reached $ZELLIJ_RECORDER.
+assert_spawn() {
+  grep -Fxq "action new-tab --layout pair --cwd $(petdir "$@")" "$ZELLIJ_RECORDER" \
+    && grep -Fxq "action rename-tab $(tab_name "$@")" "$ZELLIJ_RECORDER"
+}
+
+# Assert the picker did not spawn a pair tab for this worktree.
+refute_spawn() {
+  ! grep -Fxq "action new-tab --layout pair --cwd $(petdir "$@")" "$ZELLIJ_RECORDER"
+}
+
+# Assert the picker focused this worktree's existing tab via go-to-tab-name.
+assert_focus() {
+  grep -Fxq "action go-to-tab-name $(tab_name "$@")" "$ZELLIJ_RECORDER"
+}
+
 # Mark a worktree's pair tab as already open, the way print_worktrees sees it:
-# append the tab name it would render to ZELLIJ_TAB_NAMES. Reuses the picker's
-# own fmt_tab (sourced in a subshell, since the picker sets `set -e`) so the
-# org-elision format isn't re-derived here. Pairs with mkworktree.
+# append the tab name it would render to ZELLIJ_TAB_NAMES. Pairs with mkworktree.
 mark_tab_open() {
-  local name
-  name="$(ME="$GH_USER" bash -c 'source "$1"; fmt_tab "$2" "$3" "$4"' \
-    _ "$PICKER" "$@")"
-  ZELLIJ_TAB_NAMES+="$name"$'\n'
+  ZELLIJ_TAB_NAMES+="$(tab_name "$@")"$'\n'
   export ZELLIJ_TAB_NAMES
 }
 
@@ -162,8 +187,7 @@ mkcanonical() {
   run bash -c 'source "$1"; ME=me WORKTREE_ROOT="$2" print_worktrees' \
     _ "$PICKER" "$XDG_DATA_HOME/git-worktrees"
   [ "$status" -eq 0 ]
-  local petdir="$XDG_DATA_HOME/git-worktrees/me/hello/kind-newt"
-  [ "$output" = "$(printf 'worktree:hello (kind-newt)\tspawn\t%s\thello (kind-newt)' "$petdir")" ]
+  [ "$output" = "$(printf 'worktree:hello (kind-newt)\tspawn\t%s\thello (kind-newt)' "$(petdir me hello kind-newt)")" ]
 }
 
 # --- TSV dispatch (end-to-end) ---
@@ -172,16 +196,14 @@ mkcanonical() {
   export FZF_OUTPUT=$'\033[2mworktree:hello (kind-newt)\033[0m\tfocus\thello (kind-newt)'
   run bash "$PICKER"
   [ "$status" -eq 0 ]
-  grep -Fxq "action go-to-tab-name hello (kind-newt)" "$ZELLIJ_RECORDER"
+  assert_focus me hello kind-newt
 }
 
 @test "dispatch spawn: zellij new-tab + rename-tab fire with petdir and tab name" {
-  local petdir="$XDG_DATA_HOME/git-worktrees/me/hello/kind-newt"
-  export FZF_OUTPUT=$'worktree:hello (kind-newt)\tspawn\t'"$petdir"$'\thello (kind-newt)'
+  export FZF_OUTPUT=$'worktree:hello (kind-newt)\tspawn\t'"$(petdir me hello kind-newt)"$'\thello (kind-newt)'
   run bash "$PICKER"
   [ "$status" -eq 0 ]
-  grep -Fxq "action new-tab --layout pair --cwd $petdir" "$ZELLIJ_RECORDER"
-  grep -Fxq "action rename-tab hello (kind-newt)" "$ZELLIJ_RECORDER"
+  assert_spawn me hello kind-newt
 }
 
 @test "dispatch spawn-fresh: reuses canonical hint, creates worktree, spawns tab" {
@@ -191,11 +213,10 @@ mkcanonical() {
   run bash "$PICKER"
   [ "$status" -eq 0 ]
 
-  local wt="$XDG_DATA_HOME/git-worktrees/me/hello/fresh-petname"
+  local wt; wt="$(petdir me hello fresh-petname)"
   [ -d "$wt" ]
   [ "$(git -C "$wt" rev-parse --abbrev-ref HEAD)" = "me/worktree/fresh-petname" ]
-  grep -Fxq "action new-tab --layout pair --cwd $wt" "$ZELLIJ_RECORDER"
-  grep -Fxq "action rename-tab hello (fresh-petname)" "$ZELLIJ_RECORDER"
+  assert_spawn me hello fresh-petname
 }
 
 # --- print_worktrees_with_prs: pr:<N>-tagged worktree rows ---
@@ -206,8 +227,7 @@ mkcanonical() {
   run bash -c 'source "$1"; ME=me WORKTREE_ROOT="$2" print_worktrees_with_prs' \
     _ "$PICKER" "$XDG_DATA_HOME/git-worktrees"
   [ "$status" -eq 0 ]
-  local petdir="$XDG_DATA_HOME/git-worktrees/me/hello/kind-newt"
-  [ "$output" = "$(printf 'worktree:hello (kind-newt) pr:174\tspawn\t%s\thello (kind-newt)' "$petdir")" ]
+  [ "$output" = "$(printf 'worktree:hello (kind-newt) pr:174\tspawn\t%s\thello (kind-newt)' "$(petdir me hello kind-newt)")" ]
 }
 
 @test "print_worktrees_with_prs: open tab dims the enriched row and dispatches focus" {
@@ -277,10 +297,8 @@ mkcanonical() {
   [ "$status" -eq 0 ]
 
   [ -d "$HOME/hello/.git" ]
-  local wt="$XDG_DATA_HOME/git-worktrees/me/hello/cloned-petname"
-  [ -d "$wt" ]
-  grep -Fxq "action new-tab --layout pair --cwd $wt" "$ZELLIJ_RECORDER"
-  grep -Fxq "action rename-tab hello (cloned-petname)" "$ZELLIJ_RECORDER"
+  [ -d "$(petdir me hello cloned-petname)" ]
+  assert_spawn me hello cloned-petname
 }
 
 # --- --all-worktrees: non-interactive fan-out ---
@@ -291,12 +309,8 @@ mkcanonical() {
   export ZELLIJ_TAB_NAMES=""
   run bash "$PICKER" --all-worktrees
   [ "$status" -eq 0 ]
-  local h="$XDG_DATA_HOME/git-worktrees/me/hello/kind-newt"
-  local k="$XDG_DATA_HOME/git-worktrees/grafana/k6/happy-mole"
-  grep -Fxq "action new-tab --layout pair --cwd $h" "$ZELLIJ_RECORDER"
-  grep -Fxq "action rename-tab hello (kind-newt)" "$ZELLIJ_RECORDER"
-  grep -Fxq "action new-tab --layout pair --cwd $k" "$ZELLIJ_RECORDER"
-  grep -Fxq "action rename-tab grafana/k6 (happy-mole)" "$ZELLIJ_RECORDER"
+  assert_spawn me hello kind-newt
+  assert_spawn grafana k6 happy-mole
 }
 
 @test "--all-worktrees: skips worktrees that already have an open tab (idempotent)" {
@@ -305,13 +319,8 @@ mkcanonical() {
   mark_tab_open me hello kind-newt
   run bash "$PICKER" --all-worktrees
   [ "$status" -eq 0 ]
-  # Open tab → no respawn for that worktree.
-  ! grep -Fxq "action new-tab --layout pair --cwd $XDG_DATA_HOME/git-worktrees/me/hello/kind-newt" \
-    "$ZELLIJ_RECORDER"
-  # Closed tab → spawned.
-  grep -Fxq "action new-tab --layout pair --cwd $XDG_DATA_HOME/git-worktrees/me/world/busy-gnat" \
-    "$ZELLIJ_RECORDER"
-  grep -Fxq "action rename-tab world (busy-gnat)" "$ZELLIJ_RECORDER"
+  refute_spawn me hello kind-newt   # open tab → no respawn
+  assert_spawn me world busy-gnat   # closed tab → spawned
 }
 
 @test "--all-worktrees: failure outside zellij exits nonzero without hanging" {
