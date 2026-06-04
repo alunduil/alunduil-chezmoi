@@ -1,0 +1,17 @@
+" Quick-edit Vim. Start from Vim's own sensible defaults — syntax,
+" filetype plugin indent, incsearch, wildmenu, mouse, and the
+" jump-to-last-cursor-position autocmd — then layer a few niceties.
+unlet! skip_defaults_vim
+source $VIMRUNTIME/defaults.vim
+
+set background=dark          " keep the default highlighting readable on a dark terminal
+set ignorecase smartcase     " case-insensitive search unless a capital is typed
+set number                   " line numbers
+
+" Persistent undo, kept out of the way under ~/.vim/undo.
+set undofile
+set undodir=$HOME/.vim/undo
+silent! call mkdir(&undodir, 'p')
+
+" Trim trailing whitespace on save without moving the cursor.
+autocmd BufWritePre * let s:view = winsaveview() | keeppatterns %s/\s\+$//e | call winrestview(s:view)
