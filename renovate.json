@@ -225,6 +225,20 @@
       "managerFilePatterns": ["/dot_config/zellij/config\\.kdl$/"],
       "matchStrings": ["https://github\\.com/(?<depName>[^/]+/[^/]+)/releases/download/(?<currentValue>v[\\d.]+)/"],
       "datasourceTemplate": "github-releases"
+    },
+    {
+      "customType": "regex",
+      "managerFilePatterns": ["/^\\.github/workflows/chezmoi\\.yml$/"],
+      "matchStrings": ["CHEZMOI_VERSION: \"(?<currentValue>v[\\d.]+)\""],
+      "depNameTemplate": "twpayne/chezmoi",
+      "datasourceTemplate": "github-releases"
+    },
+    {
+      "customType": "regex",
+      "managerFilePatterns": ["/^docs/tutorials/bootstrap\\.md$/"],
+      "matchStrings": ["CHEZMOI_VERSION=\"(?<currentValue>v[\\d.]+)\""],
+      "depNameTemplate": "twpayne/chezmoi",
+      "datasourceTemplate": "github-releases"
     }
   ],
   "packageRules": [

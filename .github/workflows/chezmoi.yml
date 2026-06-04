@@ -21,7 +21,9 @@ jobs:
       - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6
 
       - name: Install chezmoi
-        run: sh -c "$(curl -fsLS get.chezmoi.io)" -- -b /usr/local/bin
+        env:
+          CHEZMOI_VERSION: "v2.70.5"
+        run: sh -c "$(curl -fsLS get.chezmoi.io)" -- -b /usr/local/bin -t "$CHEZMOI_VERSION"
 
       - name: Install age
         run: |
