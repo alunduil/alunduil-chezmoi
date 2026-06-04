@@ -4,6 +4,7 @@
 unlet! skip_defaults_vim
 source $VIMRUNTIME/defaults.vim
 
+set background=dark          " keep the default highlighting readable on a dark terminal
 set ignorecase smartcase     " case-insensitive search unless a capital is typed
 set number                   " line numbers
 
@@ -14,5 +15,3 @@ silent! call mkdir(&undodir, 'p')
 
 " Trim trailing whitespace on save without moving the cursor.
 autocmd BufWritePre * let s:view = winsaveview() | keeppatterns %s/\s\+$//e | call winrestview(s:view)
-
-colorscheme habamax          " ships with Vim 9; no plugin required
