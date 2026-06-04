@@ -31,7 +31,7 @@ ghc --version && cabal --version           # ghcup-managed Haskell toolchain
 golang-petname                             # repo-picker worktree namer
 command -v nethack                         # roguelike (nethack-console)
 command -v calibre                         # ebook library manager
-command -v code                            # VS Code (Microsoft apt repo)
+command -v code                            # VS Code (upstream .deb)
 docker --version                           # container engine (docker-ce, auto-updated)
 command -v truenas-mcp                     # TrueNAS MCP server binary
 trivy --version                            # vulnerability scanner (aquasecurity/trivy)

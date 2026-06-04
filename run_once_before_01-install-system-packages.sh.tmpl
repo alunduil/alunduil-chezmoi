@@ -46,13 +46,12 @@ if [ ! -f /etc/apt/sources.list.d/keybase.list ]; then
 fi
 
 # --------------------------------------------------------------- vscode (code)
-if [ ! -f /usr/share/keyrings/packages.microsoft.gpg ]; then
-  log "vscode: adding apt repository"
-  curl -fsSL https://packages.microsoft.com/keys/microsoft.asc |
-    sudo gpg --dearmor -o /usr/share/keyrings/packages.microsoft.gpg
-  printf 'deb [arch=%s signed-by=/usr/share/keyrings/packages.microsoft.gpg] https://packages.microsoft.com/repos/code stable main\n' \
-    "$(dpkg --print-architecture)" | sudo tee /etc/apt/sources.list.d/vscode.list >/dev/null
-fi
+# We install `code` from its upstream .deb (below), whose postinst manages the
+# apt repo itself (vscode.sources + microsoft.gpg). A hand-rolled vscode.list
+# naming a second keyring path collides with that postinst source and wedges
+# apt with a "Conflicting values set for option Signed-By" error. Drop the
+# stale entry before any apt call so sources stay readable.
+sudo rm -f /etc/apt/sources.list.d/vscode.list /usr/share/keyrings/packages.microsoft.gpg
 
 # --------------------------------------------------------------------- docker
 if [ ! -f /usr/share/keyrings/docker-archive-keyring.gpg ]; then
@@ -70,7 +69,7 @@ APT_PACKAGES=(
   build-essential libffi-dev libgmp-dev libncurses-dev zlib1g-dev
   protobuf-compiler
   golang-petname
-  keybase signal-desktop calibre code
+  keybase signal-desktop calibre
   nethack-console
   docker-ce docker-ce-cli docker-ce-rootless-extras containerd.io
   docker-buildx-plugin docker-compose-plugin
@@ -85,6 +84,17 @@ if ((${#missing[@]} > 0)); then
   sudo apt-get install -y "${missing[@]}"
 else
   log "apt: all packages present"
+fi
+
+# --------------------------------------------------------------- vscode (code)
+# Installed from the upstream .deb rather than the apt batch so its postinst
+# owns the apt repo (see the keyring cleanup above). Pulls dependencies from
+# the now-readable apt sources.
+if ! command -v code >/dev/null 2>&1; then
+  log "vscode: installing from upstream .deb"
+  curl -fsSL 'https://code.visualstudio.com/sha/download?build=stable&os=linux-deb-x64' -o /tmp/code.deb
+  sudo apt-get install -y /tmp/code.deb
+  rm -f /tmp/code.deb
 fi
 
 # ---------------------------------------------------------------- tailscale
