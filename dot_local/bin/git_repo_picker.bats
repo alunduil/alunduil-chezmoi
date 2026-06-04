@@ -1,9 +1,10 @@
 #!/usr/bin/env bats
 bats_require_minimum_version 1.5.0
-load test_helper
+bats_load_library bats-support
+bats_load_library bats-assert
 
 setup() {
-  REPO_ROOT="$(cd "$BATS_TEST_DIRNAME/.." && pwd)"
+  REPO_ROOT="$(cd "$BATS_TEST_DIRNAME/../.." && pwd)"
   PICKER="$REPO_ROOT/dot_local/bin/executable_git-repo-picker"
   FIXTURES="$BATS_TEST_DIRNAME/fixtures/git_repo_picker"
 
@@ -51,11 +52,14 @@ petdir() {
   printf '%s' "$XDG_DATA_HOME/git-worktrees/$1/$2/$3"
 }
 
-# Assert the picker spawned this worktree's pair tab: new-tab at its petdir and
-# rename-tab to its rendered name both reached $ZELLIJ_RECORDER.
+# Assert the picker spawned this worktree's pair tab: new-tab at its petdir, and
+# rename-tab targeting the id new-tab returned for that cwd (the zellij stub
+# derives it as cksum of --cwd), both reached $ZELLIJ_RECORDER.
 assert_spawn() {
+  local id
+  id=$(cksum <<<"$(petdir "$@")" | cut -d' ' -f1)
   grep -Fxq "action new-tab --layout pair --cwd $(petdir "$@")" "$ZELLIJ_RECORDER" \
-    && grep -Fxq "action rename-tab $(tab_name "$@")" "$ZELLIJ_RECORDER"
+    && grep -Fxq "action rename-tab --tab-id $id $(tab_name "$@")" "$ZELLIJ_RECORDER"
 }
 
 # Assert the picker did not spawn a pair tab for this worktree.

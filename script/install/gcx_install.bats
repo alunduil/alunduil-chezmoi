@@ -8,7 +8,7 @@ bats_require_minimum_version 1.5.0
 # args in sync with run_once_before_02-install-binary-tools.sh.tmpl.
 
 setup() {
-  REPO_ROOT="$(cd "$BATS_TEST_DIRNAME/.." && pwd)"
+  REPO_ROOT="$(cd "$BATS_TEST_DIRNAME/../.." && pwd)"
   BIN_DIR="$(mktemp -d)"
 }
 

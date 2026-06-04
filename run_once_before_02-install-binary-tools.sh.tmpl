@@ -36,9 +36,10 @@ INSTALL_DIR="{{ .chezmoi.sourceDir }}/script/install"
 "$INSTALL_DIR/trivy" --bin-dir "$HOME/.local/bin"
 "$INSTALL_DIR/just" --bin-dir "$HOME/.local/bin"
 
-# bats helper libraries (bats-support, bats-assert), loaded by test/ via
-# bats_load_library. The lib dir is appended to BATS_LIB_PATH in
-# test/test_helper.bash, so a bare `bats test/` resolves them.
+# bats helper libraries (bats-support, bats-assert), loaded by the co-located
+# *.bats suites via bats_load_library. The `just check-bats` recipe points
+# BATS_LIB_PATH at this dir so local runs resolve them; CI uses the
+# bats-action lib-path output.
 "$INSTALL_DIR/bats-libs" --lib-dir "$HOME/.local/lib/bats"
 
 # zellij-freeze observability stack (see docs/how-to/viewing-zellij-freeze-data.md).

@@ -1,9 +1,10 @@
 #!/usr/bin/env bats
 bats_require_minimum_version 1.5.0
-load test_helper
+bats_load_library bats-support
+bats_load_library bats-assert
 
 setup() {
-  REPO_ROOT="$(cd "$BATS_TEST_DIRNAME/.." && pwd)"
+  REPO_ROOT="$(cd "$BATS_TEST_DIRNAME/../.." && pwd)"
   POI="$REPO_ROOT/dot_local/bin/executable_git-worktree-poi"
 
   TMPROOT="$(mktemp -d)"

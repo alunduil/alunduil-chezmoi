@@ -2,7 +2,7 @@
 
 ## Status
 
-Accepted
+Superseded by [0002](0002-port-git-worktree-poi-to-rust.md).
 
 ## Context
 
@@ -55,7 +55,7 @@ We will revisit when any of these triggers fire:
   example, interactive selection, a real TUI, or anything beyond
   report-and-act.
 - Test scenarios start straining the PATH-shim stub model in
-  `test/git_worktree_poi.bats` past what `bats` handles cleanly.
+  `dot_local/bin/git_worktree_poi.bats` past what `bats` handles cleanly.
 - GraphQL batching (#147) or any successor classifier change ends up
   needing more `jq`/heredoc surgery than the equivalent Go rewrite
   would cost.

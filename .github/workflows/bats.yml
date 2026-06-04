@@ -36,8 +36,9 @@ jobs:
           github-token: ${{ secrets.GITHUB_TOKEN }}
 
       - name: Test
-        run: bats test/
+        run: bats --recursive dot_local dot_claude script
         env:
           # The action installs to /usr/lib/bats-* but does not export the path;
-          # its lib-path output points BATS_LIB_PATH at them for test_helper.
+          # its lib-path output points BATS_LIB_PATH at the converted suites'
+          # bats_load_library calls.
           BATS_LIB_PATH: ${{ steps.setup-bats.outputs.lib-path }}
