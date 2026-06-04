@@ -1,7 +1,19 @@
 #!/usr/bin/env bash
 # zellij stub: appends "$@" to $ZELLIJ_RECORDER; emits $ZELLIJ_TAB_NAMES
-# (newline-delimited) for `action query-tab-names`, matching real CLI output.
+# (newline-delimited) for `action query-tab-names`, matching real CLI output;
+# emits a --cwd-derived numeric id for `action new-tab`, mirroring real zellij
+# printing the created tab's id. Tests correlate the id the picker feeds back
+# into `rename-tab --tab-id` against this same cksum of the tab's cwd.
 printf '%s\n' "$*" >>"$ZELLIJ_RECORDER"
 if [[ "${1:-}" == "action" && "${2:-}" == "query-tab-names" ]]; then
   printf '%s' "${ZELLIJ_TAB_NAMES:-}"
+elif [[ "${1:-}" == "action" && "${2:-}" == "new-tab" ]]; then
+  cwd=""
+  while [[ $# -gt 0 ]]; do
+    case "$1" in
+      --cwd) cwd="$2"; shift 2 ;;
+      *) shift ;;
+    esac
+  done
+  cksum <<<"$cwd" | cut -d' ' -f1
 fi

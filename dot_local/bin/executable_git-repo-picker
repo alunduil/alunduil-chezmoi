@@ -194,9 +194,12 @@ print_remotes() {
 }
 
 spawn_pair_tab() {
-    local cwd=$1 tab=$2
-    zellij action new-tab --layout pair --cwd "$cwd"
-    zellij action rename-tab "$tab"
+    local cwd=$1 tab=$2 id
+    # new-tab prints the created tab's id; rename it by id rather than the
+    # active tab, so the --all-worktrees loop can't race a rename onto a tab a
+    # later new-tab already pulled focus to.
+    id=$(zellij action new-tab --layout pair --cwd "$cwd")
+    zellij action rename-tab --tab-id "$id" "$tab"
 }
 
 # Tests source this script to exercise helpers above without triggering the
