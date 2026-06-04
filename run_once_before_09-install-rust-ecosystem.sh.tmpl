@@ -1,0 +1,35 @@
+#!/usr/bin/env bash
+# Installs Rust-ecosystem helpers via cargo. Canonical installer only: cargo
+# (crates.io). cargo/rustup themselves are not bootstrap-managed, so this
+# no-ops on a host without Rust rather than installing a toolchain behind the
+# user's back.
+
+set -euo pipefail
+
+log() { printf '==> %s\n' "$*" >&2; }
+
+if ! command -v cargo >/dev/null 2>&1; then
+  log "rust: cargo not found; skipping cargo-cache"
+  exit 0
+fi
+
+# ------------------------------------------------------------------ cargo-cache
+# Backs dev-cache-gc's `cargo cache --autoclean`. cargo-cache ships only on
+# crates.io (no release binaries), so it can't use the script/install/
+# download-and-verify pattern; `cargo install` is the canonical path. Pin
+# enforced (Renovate-tracked, crate datasource): if a different version is
+# installed, --force replaces it so bumps actually take effect.
+CARGO_CACHE_VERSION="0.8.3"
+installed="$(cargo cache --version 2>/dev/null | awk '{print $2}' || true)"
+if [ "$installed" != "$CARGO_CACHE_VERSION" ]; then
+  if [ -n "$installed" ]; then
+    log "cargo-cache: replacing $installed with $CARGO_CACHE_VERSION"
+  else
+    log "cargo-cache: installing $CARGO_CACHE_VERSION"
+  fi
+  cargo install cargo-cache --version "$CARGO_CACHE_VERSION" --force
+else
+  log "cargo-cache: $CARGO_CACHE_VERSION already installed"
+fi
+
+log "rust ecosystem complete"

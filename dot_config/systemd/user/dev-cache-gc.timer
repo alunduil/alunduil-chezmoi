@@ -1,0 +1,11 @@
+[Unit]
+Description=Weekly GC of out-of-~/.cache dev tool caches
+
+[Timer]
+OnCalendar=Sun *-*-* 04:00:00
+# This host (Crostini) is frequently suspended; without Persistent a missed
+# window is lost. Persistent runs the catch-up on next wake.
+Persistent=true
+
+[Install]
+WantedBy=timers.target

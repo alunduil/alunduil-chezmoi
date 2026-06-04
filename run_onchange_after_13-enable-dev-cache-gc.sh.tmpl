@@ -1,0 +1,18 @@
+#!/usr/bin/env bash
+# Unit hashes below re-run this script whenever a unit changes, so edits
+# (new ExecStart flags, schedule changes) re-apply via daemon-reload + enable.
+# dev-cache-gc service: {{ include "dot_config/systemd/user/dev-cache-gc.service" | sha256sum }}
+# dev-cache-gc timer:   {{ include "dot_config/systemd/user/dev-cache-gc.timer" | sha256sum }}
+
+set -euo pipefail
+
+# Skip where there is no user systemd manager to talk to (headless apply over
+# SSH without lingering, container builds). The units are still deployed; a
+# later interactive apply, or a manual enable, brings the timer up.
+if ! systemctl --user show-environment >/dev/null 2>&1; then
+  echo "==> dev-cache-gc: no user systemd session; leaving timer disabled" >&2
+  exit 0
+fi
+
+systemctl --user daemon-reload
+systemctl --user enable --now dev-cache-gc.timer

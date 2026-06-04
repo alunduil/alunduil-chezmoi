@@ -30,6 +30,8 @@ just --version                             # command runner (justfiles)
 uv --version                               # Python-CLI installer (astral-sh/uv)
 pre-commit --version                       # git hook runner (uv tool install)
 ghc --version && cabal --version           # ghcup-managed Haskell toolchain
+pnpm --version                             # pnpm package manager (npm global)
+command -v cargo-cache                     # cargo registry GC helper (needs cargo)
 golang-petname                             # repo-picker worktree namer
 command -v nethack                         # roguelike (nethack-console)
 command -v calibre                         # ebook library manager
