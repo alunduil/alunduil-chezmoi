@@ -1,26 +1,20 @@
-name: Observability
+name: Observability Smoke
 
-# Heavy: installs the ~400 MB telemetry binaries, so it only runs when the
-# observability stack itself changes. Validates every service config and
-# smoke-tests the live metrics path (zellijstat -> Alloy -> Prometheus).
+# Heavy: installs the telemetry binaries and binds their real ports, so it
+# only runs when the metrics path itself changes. Smoke-tests the live path
+# (zellijstat -> Alloy -> Prometheus). Static config validation lives in
+# observability-config.yml, which runs on every PR.
 on:
   push:
     branches: [main]
     paths: &paths
       - 'dot_config/alloy/**'
       - 'dot_config/prometheus/**'
-      - 'dot_config/loki/**'
-      - 'dot_config/tempo/**'
-      - 'dot_config/grafana/**'
       - 'dot_local/bin/executable_zellijstat'
       - 'script/install/alloy'
       - 'script/install/prometheus'
-      - 'script/install/loki'
-      - 'script/install/tempo'
-      - 'script/install/grafana'
-      - 'script/checks/observability-config'
       - 'script/checks/observability-smoke'
-      - '.github/workflows/observability.yml'
+      - '.github/workflows/observability-smoke.yml'
   pull_request:
     paths: *paths
 
@@ -45,13 +39,10 @@ jobs:
       - name: Install stack binaries
         run: |
           mkdir -p "$HOME/.local/bin"
-          for t in prometheus alloy loki tempo; do
+          for t in prometheus alloy; do
             script/install/"$t" --bin-dir "$HOME/.local/bin"
           done
           echo "$HOME/.local/bin" >>"$GITHUB_PATH"
-
-      - name: Validate configs
-        run: script/checks/observability-config
 
       - name: Smoke the metrics path
         run: script/checks/observability-smoke

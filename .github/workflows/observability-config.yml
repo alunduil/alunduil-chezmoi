@@ -1,0 +1,42 @@
+name: Observability Config
+
+# Static config validation for the observability stack. Cheap to run but
+# needs the tools' own validators (promtool, alloy, loki, tempo) on PATH, so
+# it installs the binaries — cached on the pinned versions to keep the
+# always-on cost low. Runs on every PR (unlike the path-gated smoke) so a
+# broken service config fails the build regardless of which files changed.
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  # Cancel superseded PR runs; never cancel main so each commit completes.
+  cancel-in-progress: ${{ github.ref != 'refs/heads/main' }}
+
+jobs:
+  validate:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6
+      - uses: actions/cache@27d5ce7f107fe9357f9df03efb73ab90386fccae # v5
+        with:
+          path: ~/.local/bin
+          key: obs-bins-${{ hashFiles('script/install/prometheus', 'script/install/alloy', 'script/install/loki', 'script/install/tempo', 'script/install/lib.sh') }}
+
+      - name: Install stack binaries
+        run: |
+          mkdir -p "$HOME/.local/bin"
+          for t in prometheus alloy loki tempo; do
+            script/install/"$t" --bin-dir "$HOME/.local/bin"
+          done
+          echo "$HOME/.local/bin" >>"$GITHUB_PATH"
+
+      - name: Validate configs
+        run: script/checks/observability-config
