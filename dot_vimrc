@@ -6,7 +6,6 @@ source $VIMRUNTIME/defaults.vim
 
 set ignorecase smartcase     " case-insensitive search unless a capital is typed
 set number                   " line numbers
-set clipboard^=unnamedplus   " share yanks with the system clipboard (needs a +clipboard build)
 
 " Persistent undo, kept out of the way under ~/.vim/undo.
 set undofile
