@@ -60,6 +60,8 @@ Erlang
 Cabal
 pnpm
 corepack
+rustup
+CLIs
 
 # Doc conventions
 README
@@ -84,5 +86,5 @@ keybinds
 namespaced
 repo
 repos
-toolchains
+(?i)toolchains?
 facto
