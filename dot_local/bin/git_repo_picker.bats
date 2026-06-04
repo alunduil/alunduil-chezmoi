@@ -52,14 +52,10 @@ petdir() {
   printf '%s' "$XDG_DATA_HOME/git-worktrees/$1/$2/$3"
 }
 
-# Assert the picker spawned this worktree's pair tab: new-tab at its petdir, and
-# rename-tab targeting the id new-tab returned for that cwd (the zellij stub
-# derives it as cksum of --cwd), both reached $ZELLIJ_RECORDER.
+# Assert the picker spawned this worktree's pair tab: a single new-tab at its
+# petdir, named via --name in the same call, reached $ZELLIJ_RECORDER.
 assert_spawn() {
-  local id
-  id=$(cksum <<<"$(petdir "$@")" | cut -d' ' -f1)
-  grep -Fxq "action new-tab --layout pair --cwd $(petdir "$@")" "$ZELLIJ_RECORDER" \
-    && grep -Fxq "action rename-tab --tab-id $id $(tab_name "$@")" "$ZELLIJ_RECORDER"
+  grep -Fxq "action new-tab --layout pair --cwd $(petdir "$@") --name $(tab_name "$@")" "$ZELLIJ_RECORDER"
 }
 
 # Assert the picker did not spawn a pair tab for this worktree.
@@ -204,7 +200,7 @@ mkcanonical() {
   assert_focus me hello kind-newt
 }
 
-@test "dispatch spawn: zellij new-tab + rename-tab fire with petdir and tab name" {
+@test "dispatch spawn: zellij new-tab fires with petdir and tab name" {
   export FZF_OUTPUT=$'worktree:hello (kind-newt)\tspawn\t'"$(petdir me hello kind-newt)"$'\thello (kind-newt)'
   run bash "$PICKER"
   assert_success
