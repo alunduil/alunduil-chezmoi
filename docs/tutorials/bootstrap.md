@@ -27,6 +27,8 @@ lychee --version                           # markdown link checker (mirrors CI)
 yq --version                               # YAML processor (mikefarah/yq)
 vale --version                             # prose linter (vale-cli/vale)
 just --version                             # command runner (justfiles)
+uv --version                               # Python-CLI installer (astral-sh/uv)
+pre-commit --version                       # git hook runner (uv tool install)
 ghc --version && cabal --version           # ghcup-managed Haskell toolchain
 golang-petname                             # repo-picker worktree namer
 command -v nethack                         # roguelike (nethack-console)

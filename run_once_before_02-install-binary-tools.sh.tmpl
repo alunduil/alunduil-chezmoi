@@ -10,6 +10,7 @@
 # vale content:       {{ include "script/install/vale" | sha256sum }}
 # trivy content:      {{ include "script/install/trivy" | sha256sum }}
 # just content:       {{ include "script/install/just" | sha256sum }}
+# uv content:         {{ include "script/install/uv" | sha256sum }}
 # alloy content:      {{ include "script/install/alloy" | sha256sum }}
 # prometheus content: {{ include "script/install/prometheus" | sha256sum }}
 # loki content:       {{ include "script/install/loki" | sha256sum }}
@@ -35,6 +36,19 @@ INSTALL_DIR="{{ .chezmoi.sourceDir }}/script/install"
 "$INSTALL_DIR/vale" --bin-dir "$HOME/.local/bin"
 "$INSTALL_DIR/trivy" --bin-dir "$HOME/.local/bin"
 "$INSTALL_DIR/just" --bin-dir "$HOME/.local/bin"
+"$INSTALL_DIR/uv" --bin-dir "$HOME/.local/bin"
+
+# pre-commit ships only as a Python package, so uv owns its install. --force
+# overwrites a pre-existing pip-installed pre-commit on the PATH; the guard
+# keys off `uv tool list` rather than `pre-commit --version`, which can't tell
+# a uv-managed install from the legacy pip one at the same version.
+PRE_COMMIT_VERSION="4.6.0"
+if "$HOME/.local/bin/uv" tool list 2>/dev/null | grep -qx "pre-commit v$PRE_COMMIT_VERSION"; then
+  printf '==> pre-commit: %s already installed via uv\n' "$PRE_COMMIT_VERSION" >&2
+else
+  printf '==> pre-commit: installing %s via uv\n' "$PRE_COMMIT_VERSION" >&2
+  "$HOME/.local/bin/uv" tool install --force "pre-commit==$PRE_COMMIT_VERSION"
+fi
 
 # bats helper libraries (bats-support, bats-assert), loaded by the co-located
 # *.bats suites via bats_load_library. The `just check-bats` recipe points
