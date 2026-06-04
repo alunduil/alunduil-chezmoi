@@ -1,0 +1,36 @@
+#!/usr/bin/env bash
+set -euo pipefail
+
+# astral-sh/uv tags have no `v` prefix (like casey/just), so the version
+# variable and Renovate matcher both use bare semver. uv is the host's
+# Python-CLI installer: `uv tool install` gives pre-commit a reproducible,
+# pinned home without a system `pip --user` (blocked here under PEP 668).
+UV_VERSION="0.11.19"
+ARCH="x86_64-unknown-linux-musl"
+
+# shellcheck source-path=SCRIPTDIR source=lib.sh
+. "$(dirname "$0")/lib.sh"
+
+parse_bin_dir "$@"
+
+bin="$BIN_DIR/uv"
+if [ -x "$bin" ] && "$bin" --version 2>/dev/null | grep -qF "$UV_VERSION"; then
+  printf '==> uv: %s already installed at %s\n' "$UV_VERSION" "$bin" >&2
+  exit 0
+fi
+
+printf '==> uv: downloading %s\n' "$UV_VERSION" >&2
+tmp="$(mktemp -d)"
+trap 'rm -rf "$tmp"' EXIT
+
+base="https://github.com/astral-sh/uv/releases/download/${UV_VERSION}"
+asset="uv-${ARCH}.tar.gz"
+curl -fsSL -o "$tmp/$asset" "$base/$asset"
+curl -fsSL -o "$tmp/$asset.sha256" "$base/$asset.sha256"
+
+expected="$(expected_from_checksums "$tmp/$asset.sha256" "$asset")"
+verify_sha256 "$tmp/$asset" "$expected"
+
+tar -xzf "$tmp/$asset" -C "$tmp" --strip-components=1 "uv-${ARCH}/uv"
+mkdir -p "$BIN_DIR"
+install -m 0755 "$tmp/uv" "$bin"

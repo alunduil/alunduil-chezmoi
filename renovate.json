@@ -130,6 +130,20 @@
     },
     {
       "customType": "regex",
+      "managerFilePatterns": ["/^script/install/uv$/"],
+      "matchStrings": ["UV_VERSION=\"(?<currentValue>[\\d.]+)\""],
+      "depNameTemplate": "astral-sh/uv",
+      "datasourceTemplate": "github-releases"
+    },
+    {
+      "customType": "regex",
+      "managerFilePatterns": ["/^run_once_before_02-install-binary-tools\\.sh\\.tmpl$/"],
+      "matchStrings": ["PRE_COMMIT_VERSION=\"(?<currentValue>[\\d.]+)\""],
+      "depNameTemplate": "pre-commit",
+      "datasourceTemplate": "pypi"
+    },
+    {
+      "customType": "regex",
       "managerFilePatterns": ["/^script/install/alloy$/"],
       "matchStrings": ["ALLOY_VERSION=\"(?<currentValue>v[\\d.]+)\""],
       "depNameTemplate": "grafana/alloy",
