@@ -194,6 +194,20 @@
     },
     {
       "customType": "regex",
+      "managerFilePatterns": ["/^run_once_before_03-install-node-ecosystem\\.sh\\.tmpl$/"],
+      "matchStrings": ["PNPM_VERSION=\"(?<currentValue>[\\d.]+)\""],
+      "depNameTemplate": "pnpm",
+      "datasourceTemplate": "npm"
+    },
+    {
+      "customType": "regex",
+      "managerFilePatterns": ["/^run_once_before_09-install-rust-ecosystem\\.sh\\.tmpl$/"],
+      "matchStrings": ["CARGO_CACHE_VERSION=\"(?<currentValue>[\\d.]+)\""],
+      "depNameTemplate": "cargo-cache",
+      "datasourceTemplate": "crate"
+    },
+    {
+      "customType": "regex",
       "managerFilePatterns": ["/dot_config/zellij/config\\.kdl$/"],
       "matchStrings": ["https://github\\.com/(?<depName>[^/]+/[^/]+)/releases/download/(?<currentValue>v[\\d.]+)/"],
       "datasourceTemplate": "github-releases"
