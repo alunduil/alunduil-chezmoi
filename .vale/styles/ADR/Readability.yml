@@ -1,0 +1,7 @@
+extends: readability
+message: "ADR reading-difficulty score is %s; tighten to 12 or below so the decision stays skimmable months later."
+level: error
+metrics:
+  - Flesch-Kincaid
+  - Automated Readability
+grade: 12
