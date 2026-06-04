@@ -1,5 +1,7 @@
 #!/usr/bin/env bats
 bats_require_minimum_version 1.5.0
+bats_load_library bats-support
+bats_load_library bats-assert
 
 setup() {
   REPO_ROOT="$(cd "$BATS_TEST_DIRNAME/../.." && pwd)"
@@ -122,55 +124,55 @@ mkcanonical() {
 @test "collect_locals: SSH origin parses to org/repo" {
   mklocal "$HOME/me/zfs-replicate" "git@github.com:me/zfs-replicate.git"
   run bash -c 'source "$1"; collect_locals' _ "$PICKER"
-  [ "$status" -eq 0 ]
-  [ "$output" = "$(printf 'me\tzfs-replicate\t%s' "$HOME/me/zfs-replicate")" ]
+  assert_success
+  assert_output "$(printf 'me\tzfs-replicate\t%s' "$HOME/me/zfs-replicate")"
 }
 
 @test "collect_locals: HTTPS origin parses to org/repo" {
   mklocal "$HOME/grafana/k6" "https://github.com/grafana/k6.git"
   run bash -c 'source "$1"; collect_locals' _ "$PICKER"
-  [ "$status" -eq 0 ]
-  [ "$output" = "$(printf 'grafana\tk6\t%s' "$HOME/grafana/k6")" ]
+  assert_success
+  assert_output "$(printf 'grafana\tk6\t%s' "$HOME/grafana/k6")"
 }
 
 @test "collect_locals: token-auth HTTPS origin parses to org/repo" {
   mklocal "$HOME/owner/repo" "https://x-access-token:abc123@github.com/owner/repo.git"
   run bash -c 'source "$1"; collect_locals' _ "$PICKER"
-  [ "$status" -eq 0 ]
-  [ "$output" = "$(printf 'owner\trepo\t%s' "$HOME/owner/repo")" ]
+  assert_success
+  assert_output "$(printf 'owner\trepo\t%s' "$HOME/owner/repo")"
 }
 
 @test "collect_locals: non-github origin is dropped" {
   mklocal "$HOME/elsewhere/repo" "git@gitlab.com:elsewhere/repo.git"
   run bash -c 'source "$1"; collect_locals' _ "$PICKER"
-  [ "$status" -eq 0 ]
-  [ -z "$output" ]
+  assert_success
+  refute_output
 }
 
 # --- fmt_repo / fmt_tab: org elision ---
 
 @test "fmt_repo: elides org when it matches \$ME" {
   run bash -c 'source "$1"; ME=me fmt_repo me hello' _ "$PICKER"
-  [ "$status" -eq 0 ]
-  [ "$output" = "hello" ]
+  assert_success
+  assert_output "hello"
 }
 
 @test "fmt_repo: keeps org/repo when org differs from \$ME" {
   run bash -c 'source "$1"; ME=me fmt_repo grafana k6' _ "$PICKER"
-  [ "$status" -eq 0 ]
-  [ "$output" = "grafana/k6" ]
+  assert_success
+  assert_output "grafana/k6"
 }
 
 @test "fmt_tab: elides own org and appends petname" {
   run bash -c 'source "$1"; ME=me fmt_tab me hello kind-newt' _ "$PICKER"
-  [ "$status" -eq 0 ]
-  [ "$output" = "hello (kind-newt)" ]
+  assert_success
+  assert_output "hello (kind-newt)"
 }
 
 @test "fmt_tab: keeps other-org prefix and appends petname" {
   run bash -c 'source "$1"; ME=me fmt_tab grafana k6 kind-newt' _ "$PICKER"
-  [ "$status" -eq 0 ]
-  [ "$output" = "grafana/k6 (kind-newt)" ]
+  assert_success
+  assert_output "grafana/k6 (kind-newt)"
 }
 
 # --- print_worktrees: dim when a tab is already open ---
@@ -180,8 +182,8 @@ mkcanonical() {
   mark_tab_open me hello kind-newt
   run bash -c 'source "$1"; ME=me WORKTREE_ROOT="$2" print_worktrees' \
     _ "$PICKER" "$XDG_DATA_HOME/git-worktrees"
-  [ "$status" -eq 0 ]
-  [ "$output" = "$(printf '\033[2mworktree:hello (kind-newt)\033[0m\tfocus\thello (kind-newt)')" ]
+  assert_success
+  assert_output "$(printf '\033[2mworktree:hello (kind-newt)\033[0m\tfocus\thello (kind-newt)')"
 }
 
 @test "print_worktrees: closed tab emits undimmed spawn row" {
@@ -189,8 +191,8 @@ mkcanonical() {
   export ZELLIJ_TAB_NAMES=""
   run bash -c 'source "$1"; ME=me WORKTREE_ROOT="$2" print_worktrees' \
     _ "$PICKER" "$XDG_DATA_HOME/git-worktrees"
-  [ "$status" -eq 0 ]
-  [ "$output" = "$(printf 'worktree:hello (kind-newt)\tspawn\t%s\thello (kind-newt)' "$(petdir me hello kind-newt)")" ]
+  assert_success
+  assert_output "$(printf 'worktree:hello (kind-newt)\tspawn\t%s\thello (kind-newt)' "$(petdir me hello kind-newt)")"
 }
 
 # --- TSV dispatch (end-to-end) ---
@@ -198,14 +200,14 @@ mkcanonical() {
 @test "dispatch focus: zellij go-to-tab-name fires with selected tab" {
   export FZF_OUTPUT=$'\033[2mworktree:hello (kind-newt)\033[0m\tfocus\thello (kind-newt)'
   run bash "$PICKER"
-  [ "$status" -eq 0 ]
+  assert_success
   assert_focus me hello kind-newt
 }
 
 @test "dispatch spawn: zellij new-tab + rename-tab fire with petdir and tab name" {
   export FZF_OUTPUT=$'worktree:hello (kind-newt)\tspawn\t'"$(petdir me hello kind-newt)"$'\thello (kind-newt)'
   run bash "$PICKER"
-  [ "$status" -eq 0 ]
+  assert_success
   assert_spawn me hello kind-newt
 }
 
@@ -214,7 +216,7 @@ mkcanonical() {
   export PETNAME=fresh-petname
   export FZF_OUTPUT=$'local:hello\tspawn-fresh\tme\thello\t'"$HOME/hello"
   run bash "$PICKER"
-  [ "$status" -eq 0 ]
+  assert_success
 
   local wt; wt="$(petdir me hello fresh-petname)"
   [ -d "$wt" ]
@@ -229,8 +231,8 @@ mkcanonical() {
   export GH_PR_LIST_me_hello=$'feature/x\t174\nother-branch\t99'
   run bash -c 'source "$1"; ME=me WORKTREE_ROOT="$2" print_worktrees_with_prs' \
     _ "$PICKER" "$XDG_DATA_HOME/git-worktrees"
-  [ "$status" -eq 0 ]
-  [ "$output" = "$(printf 'worktree:hello (kind-newt) pr:174\tspawn\t%s\thello (kind-newt)' "$(petdir me hello kind-newt)")" ]
+  assert_success
+  assert_output "$(printf 'worktree:hello (kind-newt) pr:174\tspawn\t%s\thello (kind-newt)' "$(petdir me hello kind-newt)")"
 }
 
 @test "print_worktrees_with_prs: open tab dims the enriched row and dispatches focus" {
@@ -239,8 +241,8 @@ mkcanonical() {
   mark_tab_open me hello kind-newt
   run bash -c 'source "$1"; ME=me WORKTREE_ROOT="$2" print_worktrees_with_prs' \
     _ "$PICKER" "$XDG_DATA_HOME/git-worktrees"
-  [ "$status" -eq 0 ]
-  [ "$output" = "$(printf '\033[2mworktree:hello (kind-newt) pr:174\033[0m\tfocus\thello (kind-newt)')" ]
+  assert_success
+  assert_output "$(printf '\033[2mworktree:hello (kind-newt) pr:174\033[0m\tfocus\thello (kind-newt)')"
 }
 
 @test "print_worktrees_with_prs: omits worktrees with no PR for their branch" {
@@ -248,8 +250,8 @@ mkcanonical() {
   export GH_PR_LIST_me_hello=$'feature/x\t174'
   run bash -c 'source "$1"; ME=me WORKTREE_ROOT="$2" print_worktrees_with_prs' \
     _ "$PICKER" "$XDG_DATA_HOME/git-worktrees"
-  [ "$status" -eq 0 ]
-  [ -z "$output" ]
+  assert_success
+  refute_output
 }
 
 @test "print_worktrees_with_prs: surfaces PRs across distinct repos" {
@@ -259,9 +261,9 @@ mkcanonical() {
   export GH_PR_LIST_grafana_k6=$'feature/y\t88'
   run bash -c 'source "$1"; ME=me WORKTREE_ROOT="$2" print_worktrees_with_prs' \
     _ "$PICKER" "$XDG_DATA_HOME/git-worktrees"
-  [ "$status" -eq 0 ]
-  [[ "$output" == *"worktree:hello (kind-newt) pr:174"* ]]
-  [[ "$output" == *"worktree:grafana/k6 (happy-mole) pr:88"* ]]
+  assert_success
+  assert_output --partial "worktree:hello (kind-newt) pr:174"
+  assert_output --partial "worktree:grafana/k6 (happy-mole) pr:88"
 }
 
 # --- --rows handler: pr:* gate and cache ---
@@ -274,8 +276,8 @@ mkcanonical() {
   STATIC_FILE="$TMPROOT/static.tsv"; : >"$STATIC_FILE"
   REMOTES_FILE="$TMPROOT/remotes.tsv"; : >"$REMOTES_FILE"
   ME=me run bash "$PICKER" --rows "pr:174"
-  [ "$status" -eq 0 ]
-  [[ "$output" == *"worktree:hello (kind-newt) pr:174"* ]]
+  assert_success
+  assert_output --partial "worktree:hello (kind-newt) pr:174"
   [ -e "$WORKTREE_PR_FILE" ]  # gate file now exists; future reloads skip the fill
 }
 
@@ -285,8 +287,8 @@ mkcanonical() {
   STATIC_FILE="$TMPROOT/static.tsv"; printf 'worktree:foo\tspawn\t/x\tfoo\n' >"$STATIC_FILE"
   REMOTES_FILE="$TMPROOT/remotes.tsv"; : >"$REMOTES_FILE"
   ME=me run bash "$PICKER" --rows "f"
-  [ "$status" -eq 0 ]
-  [ "$output" = "worktree:foo	spawn	/x	foo" ]
+  assert_success
+  assert_output "worktree:foo	spawn	/x	foo"
   [ ! -e "$WORKTREE_PR_FILE" ]
 }
 
@@ -297,7 +299,7 @@ mkcanonical() {
   export PETNAME=cloned-petname
   export FZF_OUTPUT=$'remote:hello\tclone-and-spawn\tme\thello'
   run bash "$PICKER"
-  [ "$status" -eq 0 ]
+  assert_success
 
   [ -d "$HOME/hello/.git" ]
   [ -d "$(petdir me hello cloned-petname)" ]
@@ -311,7 +313,7 @@ mkcanonical() {
   mkworktree grafana k6 happy-mole
   export ZELLIJ_TAB_NAMES=""
   run bash "$PICKER" --all-worktrees
-  [ "$status" -eq 0 ]
+  assert_success
   assert_spawn me hello kind-newt
   assert_spawn grafana k6 happy-mole
 }
@@ -321,7 +323,7 @@ mkcanonical() {
   mkworktree me world busy-gnat
   mark_tab_open me hello kind-newt
   run bash "$PICKER" --all-worktrees
-  [ "$status" -eq 0 ]
+  assert_success
   refute_spawn me hello kind-newt   # open tab → no respawn
   assert_spawn me world busy-gnat   # closed tab → spawned
 }
@@ -332,5 +334,5 @@ mkcanonical() {
   # absolute so only the picker's own dependency check sees the stripped PATH.
   local bash_bin; bash_bin="$(command -v bash)"
   run timeout 10 env PATH="$STUB_DIR" "$bash_bin" "$PICKER" --all-worktrees
-  [ "$status" -eq 1 ]    # die's exit, not 124 (timeout → the trap hung)
+  assert_failure 1    # die's exit, not 124 (timeout → the trap hung)
 }

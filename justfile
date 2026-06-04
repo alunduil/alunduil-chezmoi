@@ -27,9 +27,12 @@ check:
 check-pre-commit:
     pre-commit run --all-files
 
-# Unit tests.
+# Unit tests. bats-support/bats-assert live in ~/.local/lib/bats (installed by
+# script/install/bats-libs); point BATS_LIB_PATH there so bats_load_library
+# resolves them. CI sets the same var from the bats-action lib-path output.
 check-bats:
-    bats --recursive dot_local dot_claude script
+    BATS_LIB_PATH="${BATS_LIB_PATH:+$BATS_LIB_PATH:}$HOME/.local/lib/bats" \
+      bats --recursive dot_local dot_claude script
 
 # Python unit tests (zellijstat parsers).
 check-python:

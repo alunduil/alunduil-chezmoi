@@ -15,6 +15,7 @@
 # loki content:       {{ include "script/install/loki" | sha256sum }}
 # tempo content:      {{ include "script/install/tempo" | sha256sum }}
 # grafana content:    {{ include "script/install/grafana" | sha256sum }}
+# bats-libs content:  {{ include "script/install/bats-libs" | sha256sum }}
 # lib.sh content:     {{ include "script/install/lib.sh" | sha256sum }}
 # The hashes above embed the install scripts' content into this file's
 # rendered output so chezmoi re-runs this script when any of them change
@@ -34,6 +35,12 @@ INSTALL_DIR="{{ .chezmoi.sourceDir }}/script/install"
 "$INSTALL_DIR/vale" --bin-dir "$HOME/.local/bin"
 "$INSTALL_DIR/trivy" --bin-dir "$HOME/.local/bin"
 "$INSTALL_DIR/just" --bin-dir "$HOME/.local/bin"
+
+# bats helper libraries (bats-support, bats-assert), loaded by the co-located
+# *.bats suites via bats_load_library. The `just check-bats` recipe points
+# BATS_LIB_PATH at this dir so local runs resolve them; CI uses the
+# bats-action lib-path output.
+"$INSTALL_DIR/bats-libs" --lib-dir "$HOME/.local/lib/bats"
 
 # zellij-freeze observability stack (see docs/how-to/viewing-zellij-freeze-data.md).
 # Always installed; the systemd services stay inert until enabled per host

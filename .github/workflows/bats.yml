@@ -21,10 +21,15 @@ jobs:
       - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6
 
       - uses: bats-core/bats-action@77d6fb60505b4d0d1d73e48bd035b55074bbfb43 # 4.0.0
+        id: setup-bats
         with:
-          # Override defaults of true; the suite doesn't load helper libs.
-          support-install: false
-          assert-install: false
+          # Versions stay aligned with script/install/bats-libs (the local
+          # path); Renovate bumps both together. assert defaults to 2.1.0, so
+          # pin it explicitly. detik/file stay unused.
+          support-install: true
+          support-version: "0.3.0"
+          assert-install: true
+          assert-version: "2.2.4"
           detik-install: false
           file-install: false
           # bats-action curls api.github.com; auth raises the anonymous rate limit.
@@ -32,3 +37,8 @@ jobs:
 
       - name: Test
         run: bats --recursive dot_local dot_claude script
+        env:
+          # The action installs to /usr/lib/bats-* but does not export the path;
+          # its lib-path output points BATS_LIB_PATH at the converted suites'
+          # bats_load_library calls.
+          BATS_LIB_PATH: ${{ steps.setup-bats.outputs.lib-path }}
