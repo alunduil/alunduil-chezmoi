@@ -1,0 +1,103 @@
+#!/usr/bin/env bash
+
+set -euo pipefail
+
+# usage: the script's documentation and its -h/--help output, in one place.
+# Laid out the way Click renders a command's help — Usage synopsis, the full
+# description, then an aligned Options block.
+usage() {
+    cat <<'EOF'
+Usage: dev-cache-gc
+
+  Reclaim disk by running each dev tool's native garbage collection over the
+  caches that live *outside* ~/.cache, where the systemd-tmpfiles cleaner can't
+  reach them. Each tool's own GC is used rather than a blind age-deleter: these
+  trees mix regenerable cache with installed toolchains, and only the tool
+  knows which is which. Installed toolchains and version stores are left
+  untouched by design.
+
+  A tool whose binary is absent is skipped cleanly; a tool that errors is
+  reported without aborting the rest. Run weekly by dev-cache-gc.timer; safe to
+  run by hand any time.
+
+Options:
+  -h, --help     Show this message and exit.
+EOF
+}
+
+# systemd --user does not source ~/.bashrc, and each toolchain installs its
+# binaries outside the unit's PATH. Load the same environment .bashrc would so
+# `command -v` resolves ghcup, cargo (+ cargo-cache), npm, and pnpm. Each guard
+# no-ops when the toolchain is absent, which is also what lets the tests run
+# against PATH stubs alone.
+export NVM_DIR="${XDG_CONFIG_HOME:-$HOME/.config}/nvm"
+if [[ -s "$NVM_DIR/nvm.sh" ]]; then
+    # shellcheck disable=SC1091
+    . "$NVM_DIR/nvm.sh"
+    nvm use default >/dev/null 2>&1 || true
+fi
+# shellcheck disable=SC1091
+[[ -f "$HOME/.cargo/env" ]] && . "$HOME/.cargo/env"
+# shellcheck disable=SC1091
+[[ -f "$HOME/.ghcup/env" ]] && . "$HOME/.ghcup/env"
+
+# NO_COLOR (https://no-color.org): any non-empty value disables colour.
+if [[ -t 1 && -z "${NO_COLOR:-}" ]]; then
+    BOLD=$'\033[1m'
+    DIM=$'\033[2m'
+    RESET=$'\033[0m'
+    RED=$'\033[31m'
+    GREEN=$'\033[32m'
+else
+    BOLD='' DIM='' RESET='' RED='' GREEN=''
+fi
+
+declare -a failures=()
+
+# run_gc LABEL BIN -- CMD...: run one tool's native GC. Skip cleanly (not a
+# failure) when BIN is missing, so an uninstalled tool is a no-op; record a
+# non-zero exit in `failures` without aborting, so the remaining tools still
+# run. BIN is the guard and may differ from CMD's binary — cargo-cache backs
+# the `cargo cache` subcommand, so it gates a `cargo` invocation.
+run_gc() {
+    local label=$1 bin=$2
+    shift 3 # drop label, bin, and the -- separator
+    if ! command -v "$bin" >/dev/null 2>&1; then
+        printf '%s-- %s: %s absent, skipping%s\n' "$DIM" "$label" "$bin" "$RESET"
+        return 0
+    fi
+    printf '%s==> %s%s\n' "$BOLD" "$label" "$RESET"
+    # The `if !` exempts the call from set -e so a failing tool is recorded and
+    # skipped, not fatal.
+    if ! "$@"; then
+        failures+=("$label")
+    fi
+    printf '\n'
+}
+
+# Tests source this script to exercise run_gc against stubs without running the
+# sweep below.
+if [[ "${BASH_SOURCE[0]}" != "$0" ]]; then return 0; fi
+
+if [[ "${1:-}" == "-h" || "${1:-}" == "--help" ]]; then
+    usage
+    exit 0
+fi
+
+# -c (cache) and -t (tmpdirs) only: -o/-u remove GHC versions and -p/-s strip
+# profiling libs / docs from installed toolchains, all of which the version
+# store stays out of by design.
+run_gc "ghcup cache" ghcup -- ghcup gc -c -t
+run_gc "npm cache" npm -- npm cache verify
+run_gc "cargo registry" cargo-cache -- cargo cache --autoclean
+run_gc "pnpm store" pnpm -- pnpm store prune
+
+if ((${#failures[@]})); then
+    printf '%s%d tool(s) failed:%s\n' "$BOLD" "${#failures[@]}" "$RESET"
+    for f in "${failures[@]}"; do
+        printf '  %s%s%s\n' "$RED" "$f" "$RESET"
+    done
+    exit 1
+fi
+
+printf '%sdev caches reclaimed%s\n' "$GREEN" "$RESET"
