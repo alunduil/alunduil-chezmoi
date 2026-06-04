@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 set -euo pipefail
 
-ZELLIJ_VERSION="v0.43.1"
+ZELLIJ_VERSION="v0.44.3"
 ARCH="x86_64-unknown-linux-musl"
 
 # shellcheck source-path=SCRIPTDIR source=lib.sh
@@ -38,13 +38,22 @@ if [ -z "${CI:-}" ] &&
     mkdir -p "$(dirname "$src")"
     git clone --quiet "$ZELLIJ_FORK_URL" "$src"
   fi
-  git -C "$src" -c advice.detachedHead=false checkout --quiet "$ZELLIJ_VERSION"
+  # The release build regenerates the checked-in wasm plugin assets
+  # (zellij-utils embeds them at compile time), leaving the tree dirty. Only
+  # switch refs when the pinned tag changed -- discarding those assets first,
+  # since a dirty tree aborts the checkout. When already on the tag, leave the
+  # tree alone so the cargo target cache and the regenerated assets carry
+  # forward instead of forcing a fat-LTO relink every apply.
+  target_commit="$(git -C "$src" rev-parse --verify "${ZELLIJ_VERSION}^{commit}")"
+  if [ "$(git -C "$src" rev-parse HEAD)" != "$target_commit" ]; then
+    git -C "$src" checkout --quiet -- .
+    git -C "$src" -c advice.detachedHead=false checkout --quiet "$ZELLIJ_VERSION"
+  fi
 
   printf '==> zellij: building %s from source with debug symbols (slow)\n' "$ZELLIJ_VERSION" >&2
   # debuginfo=2 atop the release profile's fat LTO peaks ~10-14 GiB in one
   # rustc process; a wedged zellij server holds ~8 GiB, so kill it first or
-  # this OOMs. v0.43.1 builds with `xtask build --release` (not the newer
-  # `ci build-release`, which exists only on main).
+  # this OOMs. `xtask build --release` carries the release profile's fat LTO.
   (
     cd "$src"
     CARGO_PROFILE_RELEASE_STRIP=false CARGO_PROFILE_RELEASE_DEBUG=true \
