@@ -18,7 +18,7 @@ check:
     #!/usr/bin/env bash
     set -uo pipefail
     rc=0
-    for c in check-pre-commit check-bats check-python check-zellij check-chezmoi check-chezmoi-templates check-observability check-systemd; do
+    for c in check-pre-commit check-bats check-python check-vale check-zellij check-chezmoi check-chezmoi-templates check-observability check-systemd; do
       just "$c" || rc=1
     done
     exit "$rc"
@@ -34,9 +34,14 @@ check-bats:
     BATS_LIB_PATH="${BATS_LIB_PATH:+$BATS_LIB_PATH:}$HOME/.local/lib/bats" \
       bats --recursive dot_local dot_claude script
 
-# Python unit tests (zellijstat parsers).
+# Python unit tests (zellijstat parsers, vale gate logic).
 check-python:
     python3 dot_local/bin/zellijstat_test.py
+    python3 script/checks/vale_test.py
+
+# Repo-wide prose gate: zero warnings, no suggestion regressions (needs vale).
+check-vale:
+    script/checks/vale
 
 # Zellij KDL validation (needs zellij on PATH).
 check-zellij:

@@ -1,0 +1,14 @@
+{
+  "README.md": 2,
+  "docs/adr/0000-record-architecture-decisions.md": 6,
+  "docs/adr/0001-keep-git-worktree-poi-in-bash.md": 11,
+  "docs/adr/0002-keep-per-workflow-ci.md": 8,
+  "docs/adr/0002-port-git-worktree-poi-to-rust.md": 6,
+  "docs/explanation/architecture.md": 18,
+  "docs/explanation/zellij-freeze-observability.md": 4,
+  "docs/how-to/encrypted-secret.md": 2,
+  "docs/how-to/pgp-signing.md": 1,
+  "docs/how-to/viewing-zellij-freeze-data.md": 2,
+  "docs/reference/zellij-freeze-observability-reference.md": 2,
+  "docs/tutorials/bootstrap.md": 1
+}

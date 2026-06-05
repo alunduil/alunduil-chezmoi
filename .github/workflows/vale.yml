@@ -1,0 +1,36 @@
+name: Vale
+
+# Repo-wide prose gate, stricter than the error-only pre-commit vale hook:
+# fails on any warning-level finding and on per-file suggestion regressions
+# against script/checks/vale-baseline.json. vale's exit code ignores non-error
+# severities, so the gate parses --output=JSON instead (issue #310). The vale
+# styles are vendored under .vale/styles/, so no `vale sync` is needed.
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  # Cancel superseded PR runs; never cancel main so each commit completes.
+  cancel-in-progress: ${{ github.ref != 'refs/heads/main' }}
+
+jobs:
+  run:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6
+
+      - name: Install vale
+        run: |
+          mkdir -p "$HOME/.local/bin"
+          script/install/vale --bin-dir "$HOME/.local/bin"
+          echo "$HOME/.local/bin" >> "$GITHUB_PATH"
+
+      - name: Run vale gate
+        run: script/checks/vale
