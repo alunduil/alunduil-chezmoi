@@ -1,6 +1,5 @@
-# Lint/format config for the repo's Python (dot_local/bin/zellijstat and the
-# script/checks/vale gate, plus their tests). Leading dot keeps chezmoi from
-# deploying it as a dotfile.
+# Lint/format config for the repo's Python (currently dot_local/bin/zellijstat
+# and its test). Leading dot keeps chezmoi from deploying it as a dotfile.
 target-version = "py311"
 
 [lint]

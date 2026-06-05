@@ -51,17 +51,17 @@ repos:
       - id: ruff-check
         args: [--fix]
         types_or: [text]
-        files: (\.py$|/executable_zellijstat$|^script/checks/vale$)
+        files: (\.py$|/executable_zellijstat$)
       - id: ruff-format
         types_or: [text]
-        files: (\.py$|/executable_zellijstat$|^script/checks/vale$)
+        files: (\.py$|/executable_zellijstat$)
 
   - repo: https://github.com/pre-commit/mirrors-mypy
     rev: v2.1.0
     hooks:
       - id: mypy
         types_or: [text]
-        files: (\.py$|/executable_zellijstat$|^script/checks/vale$)
+        files: (\.py$|/executable_zellijstat$)
 
   - repo: https://github.com/rhysd/actionlint
     rev: v1.7.12
