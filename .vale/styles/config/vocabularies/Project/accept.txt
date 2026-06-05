@@ -79,7 +79,6 @@ worktrees
 
 # Common tech terms
 config
-reimplement
 justfile
 dev
 dotfile
