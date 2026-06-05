@@ -1,0 +1,30 @@
+#!/usr/bin/env bash
+# Installs the docker-prune system units into /etc and enables the weekly timer.
+# Docker is a rootful system daemon here, so the prune runs as root on a system
+# timer rather than the per-user pattern of dev-cache-gc -- chezmoi targets
+# $HOME, not /etc, so the units live in etc/ and are copied in with sudo (same
+# shape as the unattended-upgrades config). See #312.
+#
+# run_onchange hashes the rendered script; the unit files alone would not
+# re-trigger it. Embed their hashes so an edit re-applies:
+# docker-prune service: {{ include "etc/systemd/system/docker-prune.service" | sha256sum }}
+# docker-prune timer:   {{ include "etc/systemd/system/docker-prune.timer" | sha256sum }}
+
+set -euo pipefail
+
+log() { printf '==> %s\n' "$*" >&2; }
+
+# Docker is the whole point; a host without it has nothing to prune.
+if ! command -v docker >/dev/null 2>&1; then
+  log "docker-prune: docker absent; skipping"
+  exit 0
+fi
+
+UNIT_SRC="{{ .chezmoi.sourceDir }}/etc/systemd/system"
+
+log "docker-prune: installing system units"
+sudo install -m 0644 "$UNIT_SRC/docker-prune.service" /etc/systemd/system/docker-prune.service
+sudo install -m 0644 "$UNIT_SRC/docker-prune.timer" /etc/systemd/system/docker-prune.timer
+
+sudo systemctl daemon-reload
+sudo systemctl enable --now docker-prune.timer

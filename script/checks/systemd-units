@@ -1,8 +1,12 @@
 #!/usr/bin/env bash
-# Validate the systemd user units with `systemd-analyze verify`: every
-# directive must be known and every ExecStart binary must resolve. verify
-# resolves %h/%S against the calling user, so the binaries the units reference
-# must exist at their real paths first — systemd.yml installs them in CI.
+# Validate the systemd units with `systemd-analyze verify`: every directive must
+# be known and every ExecStart binary must resolve. verify resolves %h/%S
+# against the calling user, so the binaries the units reference must exist at
+# their real paths first — systemd.yml installs them in CI.
+#
+# Two scopes: user units under dot_config/systemd/user (verified --user) and
+# root units under etc/systemd/system (verified system-scope). docker-prune is
+# the only system unit; its /usr/bin/docker is preinstalled on the CI runner.
 #
 # verify only *warns* (and still exits 0) on an unknown directive, so any
 # stderr is treated as failure; a missing ExecStart already exits non-zero.
@@ -16,7 +20,8 @@ if ! command -v systemd-analyze >/dev/null 2>&1; then
   exit 0
 fi
 
-units_dir="dot_config/systemd/user"
+user_dir="dot_config/systemd/user"
+system_dir="etc/systemd/system"
 
 # verify needs every ExecStart binary present. Derive them from the units
 # (the first token after ExecStart=, %h expanded) instead of a hand-kept list,
@@ -33,18 +38,23 @@ while IFS= read -r bin; do
   fi
   printf '==> systemd-units: %s not installed; skipping\n' "$bin" >&2
   exit 0
-done < <(grep -hoP '^ExecStart=\K[^ ]+' "$units_dir"/*.service)
-
-units=("$units_dir"/*.service "$units_dir"/*.target "$units_dir"/*.timer)
+done < <(grep -hoP '^ExecStart=\K[^ ]+' "$user_dir"/*.service "$system_dir"/*.service)
 
 errfile="$(mktemp)"
 trap 'rm -f "$errfile"' EXIT
-systemd-analyze --user verify "${units[@]}" >/dev/null 2>"$errfile"
+# User units carry %h/%S specifiers, so they verify in --user mode; the root
+# units verify system-scope. Both runs append stderr so either scope's warning
+# fails the check.
+systemd-analyze --user verify \
+  "$user_dir"/*.service "$user_dir"/*.target "$user_dir"/*.timer >/dev/null 2>"$errfile"
 rc=$?
+systemd-analyze verify \
+  "$system_dir"/*.service "$system_dir"/*.timer >/dev/null 2>>"$errfile"
+rc=$((rc | $?))
 if [ "$rc" -ne 0 ] || [ -s "$errfile" ]; then
   printf 'FAIL: systemd unit verification\n' >&2
   cat "$errfile" >&2
   exit 1
 fi
 
-printf 'OK: systemd user units verify\n'
+printf 'OK: systemd user and system units verify\n'

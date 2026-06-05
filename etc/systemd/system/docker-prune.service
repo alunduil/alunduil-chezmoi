@@ -1,0 +1,15 @@
+[Unit]
+Description=Reclaim Docker disk (docker system prune)
+
+[Service]
+Type=oneshot
+# Skip cleanly when the daemon is unreachable -- socket absent or daemon down.
+# A non-zero ExecCondition marks the unit skipped, not failed; only an ExecStart
+# failure fails it. Redirect docker info's output so the journal keeps just the
+# prune summary. Runs as root (system unit), so reachability, not docker-group
+# membership, is what's gated.
+ExecCondition=/bin/sh -c 'docker info >/dev/null 2>&1'
+# --all prunes unused (not only dangling) images; until=168h spares anything
+# pulled in the last week, so the weekly sweep never deletes today's images. No
+# --volumes -- that risks data loss.
+ExecStart=/usr/bin/docker system prune --all --force --filter until=168h
