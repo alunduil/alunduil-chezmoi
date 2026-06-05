@@ -39,7 +39,7 @@ wedge.
 ## Storage is separate from the viewer
 
 The capture services run as always-on systemd user services that write to local
-disk. The store is deliberately independent of Grafana: the viewer can be down,
+disk. The store is independent of Grafana by design: the viewer can be down,
 or never opened, without losing data, so capture never depends on someone
 watching.
 

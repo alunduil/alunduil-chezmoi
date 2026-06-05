@@ -13,7 +13,7 @@ explicit re-evaluation triggers. Two have since fired:
 
 - **Size.** ADR 0001 cited the script at 234 lines as evidence it sat
   below the threshold where bash becomes a tax. `dot_local/bin/executable_git-worktree-poi`
-  is now 633 lines—2.7×—past the ADR's own "more than roughly 100 lines
+  is now 633 lines—2.7×—past the ADR's own "more than 100 lines
   of bash addition" trigger.
 - **GraphQL batching.** ADR 0001 named #147 (batched PR-state lookup) as
   a revisit trigger. It landed as bash in #154 via a `gh api graphql`
@@ -21,8 +21,8 @@ explicit re-evaluation triggers. Two have since fired:
   rewrite would cost" trigger.
 
 ADR 0001's reversibility argument was explicit that, at a trigger,
-porting is cheaper then than after further accretion. We're past that
-point.
+porting is cheaper then than after further accretion. This repo is past
+that point.
 
 ADR 0001 also picked Go, on the reasoning that Go is the de facto
 language for `gh` extensions and `gh-poi` is the reference point. That
@@ -35,7 +35,7 @@ with the tools `git-worktree-poi` ships alongside.
 
 ## Decision
 
-We will port `git-worktree-poi` out of chezmoi-managed bash into a
+Port `git-worktree-poi` out of chezmoi-managed bash into a
 standalone Rust binary repository, reversing ADR 0001's "keep bash"
 decision and its Go language pick.
 

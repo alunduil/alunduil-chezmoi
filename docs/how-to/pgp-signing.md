@@ -1,4 +1,4 @@
-# PGP commit signing
+# Commit signing
 
 The age-encrypted secret key in `private_dot_gnupg/` deploys to `~/.gnupg/secret-keys.asc` on apply, and `run_once_before_08-import-pgp-from-chezmoi.sh.tmpl` imports it into the local keyring. New machine: `chezmoi apply` is the only step. The trust chain is age key (in `~/.config/chezmoi/key.txt`) + GPG passphrase.
 

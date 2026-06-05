@@ -1,0 +1,66 @@
+name: Vale
+
+# Diff-aware prose gate. The pre-commit vale hook gates error severity across
+# the whole tree; this layer catches the warning- and error-severity findings a
+# PR introduces on the lines it changes, and surfaces suggestions as
+# non-blocking annotations. vale's exit code ignores non-error severities, so
+# the gate is reviewdog: vale --output=JSON becomes rdjsonl, reviewdog filters
+# to added lines and fails at warning level or above (issue #310).
+#
+# Pull-request only: "added lines" needs a PR diff, and reviewdog's
+# github-pr-check reporter needs the PR context. Pushes to main keep the
+# error-severity gate through the pre-commit workflow. The vale styles are
+# vendored under .vale/styles/, so no `vale sync` is needed.
+
+on:
+  pull_request:
+
+permissions:
+  contents: read
+  checks: write
+  pull-requests: write
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  run:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6
+
+      - name: Install vale
+        run: |
+          mkdir -p "$HOME/.local/bin"
+          script/install/vale --bin-dir "$HOME/.local/bin"
+          echo "$HOME/.local/bin" >> "$GITHUB_PATH"
+
+      - uses: reviewdog/action-setup@d8a7baabd7f3e8544ee4dbde3ee41d0011c3a93f # v1.5.0
+
+      - name: Run vale gate
+        env:
+          REVIEWDOG_GITHUB_API_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          # README.md + docs/ is exactly the pre-commit-linted set, so no
+          # exclude regex is needed; reviewdog then narrows to changed lines.
+          vale --output=JSON README.md docs/ > vale.json || true
+          # Fail the step if vale emitted no valid JSON (a crash), rather than
+          # silently reporting nothing.
+          jq -e . vale.json > /dev/null
+          jq -c '
+            to_entries[] | .key as $p | .value[] | {
+              message: .Message,
+              location: {
+                path: $p,
+                range: {
+                  start: {line: .Line, column: .Span[0]},
+                  end: {line: .Line, column: (.Span[1] + 1)},
+                },
+              },
+              severity: ({error: "ERROR", warning: "WARNING", suggestion: "INFO"}[.Severity]),
+              code: {value: .Check},
+            }' vale.json \
+            | reviewdog -f=rdjsonl -name=vale \
+                -reporter=github-pr-check -filter-mode=added -fail-level=warning

@@ -1,4 +1,4 @@
-# 2. Keep one CI workflow per sensor
+# 2. Keep one workflow per sensor
 
 ## Status
 
@@ -24,22 +24,22 @@ gets for free along with an independent status check per sensor.
 
 A related question is when a workflow should be path-gated. Gating hides
 a check on unrelated PRs; gating a check whose only cost is fast
-validation silently drops coverage, which is how the observability config
+validation drops coverage unnoticed, which is how the observability config
 validation came to never run on most PRs.
 
 ## Decision
 
-We keep one workflow per sensor. New checks land as new workflows, not as
+Keep one workflow per sensor. New checks land as new workflows, not as
 jobs in a shared `ci.yml`. Consolidation is rejected, not deferred.
 
 A workflow is path-gated only when its setup is expensive, such as a
 heavy install or binding real ports. A check whose only cost is fast
-validation runs unconditionally, so coverage is never silently absent.
+validation runs unconditionally, so missing coverage never goes unnoticed.
 
-We revisit if enough checks become genuine `just <check>` one-liners with
+Revisit if enough checks become genuine `just <check>` one-liners with
 no bespoke setup that a shared job matrix would remove real duplication,
-or if workflow/justfile drift ever causes a check to silently stop
-running in CI.
+or if workflow/justfile drift ever causes a check to stop running in CI
+unnoticed.
 
 ## Consequences
 
@@ -48,5 +48,5 @@ running in CI.
 - The trigger boilerplate stays duplicated across files: a new sensor is
   a new file copied from an existing one, and recipe/workflow drift is
   caught by CI rather than prevented structurally.
-- Cheap checks pay a small cost on every PR in exchange for never going
-  silently uncovered; only expensive setup is gated.
+- Cheap checks pay a small cost on every PR in exchange for never losing
+  coverage unnoticed; only expensive setup is gated.

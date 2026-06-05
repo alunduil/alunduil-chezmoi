@@ -15,7 +15,7 @@ hold rules-for-AI, not project decisions.
 
 ## Decision
 
-We will record architecturally significant decisions as Architecture
+Record architecturally significant decisions as Architecture
 Decision Records under `docs/adr/`, using the Nygard format (Title,
 Status, Context, Decision, Consequences). Files are named
 `NNNN-kebab-title.md`, numbered sequentially starting at `0000`.
@@ -26,7 +26,7 @@ is the acceptance step. Later transitions to `Superseded by NNNN` or
 where an ADR is published as a discussion artifact ahead of any
 implementing PR.
 
-We won't file ADRs for tactical implementation choices, framework
+Skip ADRs for tactical implementation choices, framework
 defaults, or anything a commit message carries adequately. Sprawl makes
 the collection worth less.
 
