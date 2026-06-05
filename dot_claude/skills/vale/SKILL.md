@@ -131,6 +131,67 @@ Two hooks, both `id: vale`. The first runs `vale sync` to install declared `Pack
 - `errata-ai/*` repos resolve to `vale-cli/*` on GitHub; vale.sh still publishes `errata-ai/vale` in the canonical example. Both work — match the upstream docs rather than chase the rename in every repo.
 - Pair with `markdownlint-cli2` for prose-heavy repos. Vale catches voice/usage; markdownlint catches structure (heading hierarchy, link syntax). No overlap; wire as separate hooks.
 
+## CI gate (diff-aware, reviewdog)
+
+Pre-commit's `--minAlertLevel=error` only blocks errors: vale exits nonzero solely on error-severity findings, so warnings and suggestions accrete silently. To gate warning+ severity *without* a checked-in baseline, pipe vale JSON through reviewdog filtered to the lines the PR changed. New warnings on touched lines block; main's standing debt is ignored.
+
+Pipeline: `vale --output=JSON <set>` → `jq` to rdjsonl → `reviewdog -f=rdjsonl -filter-mode=added -fail-level=warning`.
+
+```yaml
+name: Vale
+
+on:
+  pull_request:          # added-lines needs a PR diff; reporter needs PR context
+
+permissions:
+  contents: read
+  checks: write          # github-pr-check writes a check run
+  pull-requests: write
+
+jobs:
+  run:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@<sha> # v6
+      - name: Install vale
+        run: |          # however the repo pins vale; no `vale sync` if styles are vendored
+          mkdir -p "$HOME/.local/bin"
+          script/install/vale --bin-dir "$HOME/.local/bin"
+          echo "$HOME/.local/bin" >> "$GITHUB_PATH"
+      - uses: reviewdog/action-setup@<sha> # v1.5.0
+      - name: Run vale gate
+        env:
+          REVIEWDOG_GITHUB_API_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          vale --output=JSON <set> > vale.json || true
+          jq -e . vale.json > /dev/null   # crash guard: fail if vale emitted no valid JSON
+          jq -c '
+            to_entries[] | .key as $p | .value[] | {
+              message: .Message,
+              location: {
+                path: $p,
+                range: {
+                  start: {line: .Line, column: .Span[0]},
+                  end: {line: .Line, column: (.Span[1] + 1)},
+                },
+              },
+              severity: ({error: "ERROR", warning: "WARNING", suggestion: "INFO"}[.Severity]),
+              code: {value: .Check},
+            }' vale.json \
+            | reviewdog -f=rdjsonl -name=vale \
+                -reporter=github-pr-check -filter-mode=added -fail-level=warning
+```
+
+- **Severity map** — `jq` translates vale's `error`/`warning`/`suggestion` to reviewdog's `ERROR`/`WARNING`/`INFO`. `Span[1] + 1` makes the end column exclusive (reviewdog convention).
+- **`-fail-level=warning`** fails on warnings **and** errors. Suggestions map to `INFO`, surface as non-blocking `notice` annotations, and don't fail; a PR whose only changed-line findings are suggestions concludes **`neutral`**, not failure.
+- **`jq -e .` crash guard** — `vale ... || true` swallows vale's exit code so a real crash doesn't masquerade as "no findings". The `jq -e` parse fails the step if `vale.json` isn't valid JSON.
+- **`pull_request` only** — `-filter-mode=added` needs a diff, and `github-pr-check` needs PR context. Pushes to main keep only the pre-commit error gate; that's intended.
+- **`vale sync`** — drop it when styles are vendored under `<StylesPath>/`; keep it (as a step) only if packages download at CI time.
+- **Reporter choice** — `github-pr-check` writes subtle check-run annotations (used above); `github-pr-review` posts visible threaded review comments. Same gate, louder surfacing — pick per repo's review noise tolerance.
+
+**When warranted:** a check with *both* an exit-code gap (the tool won't fail on the severity you care about) *and* real standing debt on main (a whole-tree gate would be a wall of pre-existing findings). vale's warning/suggestion tiers fit both. Don't bolt it onto a linter that already fails on what you care about and runs clean — that's redundant double-enforcement.
+
 ## Cleanup cascade
 
 Sweep findings low-tier to high-tier: suggestions, then warnings, then errors. Fixing a suggestion can introduce a new warning or error (a reworded passive becomes a long sentence; an em-dash adjacent to a link trips `Microsoft.Dashes` via tokenizer normalization). The reverse order risks re-introducing what you just cleared. Suggestions resurfacing during a later pass is fine; warnings or errors resurfacing isn't. Set `MinAlertLevel = suggestion` in-file to see the full backlog on `vale .`; keep `--minAlertLevel=error` in pre-commit so the cascade is opt-in rather than gating commits.
