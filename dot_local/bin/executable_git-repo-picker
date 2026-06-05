@@ -92,12 +92,21 @@ collect_locals() {
         | sort -u
 }
 
+# Emit each .git-bearing worktree dir under $WORKTREE_ROOT, sorted. Mirrors
+# walk_worktrees() in git-worktree-poi.
+walk_worktrees() {
+    local petdir
+    while IFS= read -r petdir; do
+        [[ -e "$petdir/.git" ]] || continue
+        printf '%s\n' "$petdir"
+    done < <(find "$WORKTREE_ROOT" -mindepth 3 -maxdepth 3 -type d 2>/dev/null | sort)
+}
+
 print_worktrees() {
     [[ -d "$WORKTREE_ROOT" ]] || return 0
     local opens petdir petname repo org tab display
     opens=$(open_tabs)
     while IFS= read -r petdir; do
-        [[ -e "$petdir/.git" ]] || continue
         IFS=$'\t' read -r org repo petname <<<"$(split_petdir "$petdir")"
         tab=$(fmt_tab "$org" "$repo" "$petname")
         if grep -Fxq "$tab" <<<"$opens"; then
@@ -107,7 +116,7 @@ print_worktrees() {
             display="worktree:$tab"
             printf '%s\tspawn\t%s\t%s\n' "$display" "$petdir" "$tab"
         fi
-    done < <(find "$WORKTREE_ROOT" -mindepth 3 -maxdepth 3 -type d 2>/dev/null | sort)
+    done < <(walk_worktrees)
 }
 
 # Worktree rows enriched with their associated PR number. Walks
@@ -124,8 +133,8 @@ print_worktrees_with_prs() {
     local petdir
     local -a petdirs=()
     while IFS= read -r petdir; do
-        [[ -e "$petdir/.git" ]] && petdirs+=("$petdir")
-    done < <(find "$WORKTREE_ROOT" -mindepth 3 -maxdepth 3 -type d 2>/dev/null | sort)
+        petdirs+=("$petdir")
+    done < <(walk_worktrees)
     ((${#petdirs[@]})) || return 0
 
     local -A pr_for=()
