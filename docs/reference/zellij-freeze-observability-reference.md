@@ -35,5 +35,10 @@ carries `session` and `pid` labels.
 | `zellijstat_server_unix_recvq_bytes` | gauge | Summed Recv-Q across those sockets. |
 | `zellijstat_server_unix_sendq_bytes` | gauge | Summed Send-Q across those sockets. |
 | `zellijstat_server_open_fds` | gauge | Open file descriptors. |
+| `zellijstat_server_open_fds_by_type` | gauge | Open file descriptors grouped by type (`type` label: `socket`/`pipe`/`pty`/`anon`/`file`); `socket` vs `pipe` separates a connection leak from a pipe leak. |
+| `zellijstat_server_panes` | gauge | Direct child processes of the server, one per pane command. |
+| `zellijstat_server_panes_by_class` | gauge | Pane children grouped by command class (`class` label: `shell`/`claude`/`other`). |
+| `zellijstat_server_uptime_seconds` | gauge | Seconds since the server process started. |
+| `zellijstat_server_state` | gauge | Always 1 while the server exists, labelled with its process state code (`state` label: `R`/`S`/`D`/`Z`/…) so a wedged or zombie server stands out. |
 | `zellijstat_server_cpu_seconds_total` | counter | Server CPU time (`utime` + `stime`), seconds. |
 | `zellijstat_server_memory_rss_bytes` | gauge | Resident set size, bytes. |
