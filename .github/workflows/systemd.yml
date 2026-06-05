@@ -10,6 +10,7 @@ on:
     branches: [main]
     paths: &paths
       - 'dot_config/systemd/user/**'
+      - 'etc/systemd/system/**'
       - 'dot_local/bin/executable_zellijstat'
       - 'dot_local/bin/executable_git-poi-all'
       - 'dot_local/bin/executable_git-worktree-poi'

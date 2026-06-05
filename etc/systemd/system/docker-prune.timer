@@ -1,0 +1,12 @@
+[Unit]
+Description=Weekly Docker disk reclamation (docker system prune)
+
+[Timer]
+OnCalendar=Sun *-*-* 05:00:00
+# This host (Crostini) is frequently suspended; without Persistent a missed
+# window is lost. Persistent runs the catch-up on next wake. An hour after the
+# user-scope dev-cache-gc sweep so the two don't churn disk at once.
+Persistent=true
+
+[Install]
+WantedBy=timers.target
