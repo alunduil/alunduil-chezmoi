@@ -2,10 +2,12 @@
 Description=Weekly Docker disk reclamation (docker system prune)
 
 [Timer]
-OnCalendar=Sun *-*-* 05:00:00
-# This host (Crostini) is frequently suspended; without Persistent a missed
-# window is lost. Persistent runs the catch-up on next wake. An hour after the
-# user-scope dev-cache-gc sweep so the two don't churn disk at once.
+OnCalendar=*-*-* 05:00:00
+# Daily so the until=168h floor collects week-old junk within a day of it
+# becoming eligible, rather than letting it linger up to another week. This host
+# (Crostini) is frequently suspended; without Persistent a missed window is
+# lost, so Persistent runs the catch-up on next wake. 05:00 keeps it an hour
+# clear of the dev-cache-gc sweep on the days they overlap.
 Persistent=true
 
 [Install]
