@@ -8,6 +8,8 @@ alunduil
 
 # Host tooling
 chezmoi
+lazygit
+datasource
 Crostini
 Zellij
 TrueNAS
@@ -77,6 +79,7 @@ worktrees
 
 # Common tech terms
 config
+reimplement
 justfile
 dev
 dotfile
