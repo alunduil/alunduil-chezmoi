@@ -10,5 +10,3 @@ chezmoi add --encrypt --source "$PWD" ~/.config/<service>/token
 ```
 
 Stored as `dot_config/<service>/encrypted_private_token.age` and restored (mode 600) on `chezmoi apply`. See `dot_config/codecov/` for an existing example.
-
-We will deliberately trip the gate here.
