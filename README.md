@@ -25,4 +25,4 @@ Organised by [Diátaxis](https://diataxis.fr):
 
 ## Contributing
 
-Personal configuration—not accepting contributions. Fork freely under [0BSD](LICENSE).
+Personal configuration—not accepting contributions. Fork under [0BSD](LICENSE).

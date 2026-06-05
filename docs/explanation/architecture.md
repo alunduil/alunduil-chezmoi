@@ -39,7 +39,7 @@ Bootstrap lives in `run_once_before_NN-*.sh.tmpl` scripts. Each script is respon
 - **Numerically ordered** because some installs depend on others (for example, ghcup must exist before `cabal` can build anything). The two-digit prefix is a stable sort key, not a reservation system—gaps are fine.
 - **One concern per script** so a failed run names its own scope. Scripts are grouped by product family, not install mechanism—a tool that needs both `apt` and a binary download lives together, not split across the apt and download passes.
 
-Tool versions live in `script/install/*` (one script per tool, each pinning its own `*_VERSION`) and are reused by both bootstrap and CI; there's exactly one place to bump. Zellij *plugins* (`zellaude`, `zjstatus`) are pinned separately as alias tags in `dot_config/zellij/config.kdl` because the plugin registry is independent of the binary.
+Tool versions live in `script/install/*` (one script per tool, each pinning its own `*_VERSION`) and are reused by both bootstrap and CI; there's exactly one place to bump. Zellij *plugins* (`zellaude`, `zjstatus`) are pinned as alias tags in `dot_config/zellij/config.kdl` because the plugin registry is independent of the binary.
 
 ## Layered trust: Everything behind age
 

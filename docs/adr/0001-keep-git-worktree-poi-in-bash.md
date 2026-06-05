@@ -1,4 +1,4 @@
-# 1. Keep git-worktree-poi in bash, port UX in place
+# 1. Keep git-worktree-poi in bash, port its interface in place
 
 ## Status
 
@@ -45,13 +45,13 @@ metadata, progress markers) is reachable from `tput`/ANSI inside
 
 ## Decision
 
-We will keep `git-worktree-poi` in bash and port the `gh-poi`-style UX
+Keep `git-worktree-poi` in bash and port the `gh-poi`-style interface
 in place. The `gh-worktree-poi` Go rewrite (option b in #150) is
 deferred, not rejected.
 
-We will revisit when any of these triggers fire:
+Revisit when any of these triggers fire:
 
-- A feature needs more than roughly 100 lines of bash addition—for
+- A feature needs more than 100 lines of bash addition—for
   example, interactive selection, a real TUI, or anything beyond
   report-and-act.
 - Test scenarios start straining the PATH-shim stub model in
