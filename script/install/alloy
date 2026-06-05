@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 set -euo pipefail
 
-ALLOY_VERSION="v1.16.1"
+ALLOY_VERSION="v1.16.2"
 ARCH="linux-amd64"
 
 # shellcheck source-path=SCRIPTDIR source=lib.sh
