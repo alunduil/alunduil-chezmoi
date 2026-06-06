@@ -17,7 +17,7 @@ Usage: dev-cache-gc
   untouched by design.
 
   A tool whose binary is absent is skipped cleanly; a tool that errors is
-  reported without aborting the rest. Run weekly by dev-cache-gc.timer; safe to
+  reported without aborting the rest. Run daily by dev-cache-gc.timer; safe to
   run by hand any time.
 
 Options:
