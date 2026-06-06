@@ -345,23 +345,27 @@ ensure_canonical() {
 }
 
 # Create a fresh worktree off the canonical's default branch on a new branch
-# <ME>/worktree/<petname>. Pulls the canonical first (best-effort) so the
-# worktree starts on a current base; on failure we branch from whatever the
-# local default ref points at, which both manual pulls and prior picker runs
-# keep current. The user/worktree/ prefix scopes picker-created branches
-# into a personal namespace, distinct from upstream branches in `git branch`
-# and remote refs.
+# <ME>/worktree/<petname>. Fetches origin first (best-effort) so the worktree
+# starts current, then branches off the origin/<default> remote-tracking ref —
+# not the local default branch. The canonical is a clone the human also works
+# in, so its checked-out branch and local main can be on anything (or main may
+# be absent, or carry stale upstream config from a deleted branch). Fetch never
+# touches the current branch and the remote-tracking ref always resolves, so
+# neither failure mode reaches the worktree. --no-track keeps the new branch
+# upstream-free, matching the old branch-off-local-main behavior. The
+# user/worktree/ prefix scopes picker-created branches into a personal
+# namespace, distinct from upstream branches in `git branch` and remote refs.
 make_worktree() {
     local canonical=$1 wt_dir=$2 petname=$3
-    local default_ref default_branch
+    local default_ref
     default_ref=$(git -C "$canonical" symbolic-ref --short refs/remotes/origin/HEAD)
-    default_branch=${default_ref#origin/}
-    if ! git -C "$canonical" pull --ff-only --quiet; then
-        printf 'git-repo-picker: pull failed; branching off possibly stale local %s\n' \
-            "$default_branch" >&2
+    if ! git -C "$canonical" fetch --quiet origin; then
+        printf 'git-repo-picker: fetch failed; branching off possibly stale %s\n' \
+            "$default_ref" >&2
     fi
     mkdir -p "$(dirname "$wt_dir")"
-    git -C "$canonical" worktree add "$wt_dir" -b "$ME/worktree/$petname" "$default_branch"
+    git -C "$canonical" worktree add --no-track "$wt_dir" \
+        -b "$ME/worktree/$petname" "$default_ref"
 }
 
 # fzf reads its initial candidates from STATIC_FILE — no upstream pipeline
