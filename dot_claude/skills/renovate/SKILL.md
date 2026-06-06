@@ -8,7 +8,7 @@ description: Audit, write, or revise renovate.json. Use when adding Renovate, tr
 ```json
 {
   "$schema": "https://docs.renovatebot.com/renovate-schema.json",
-  "extends": ["config:best-practices"],
+  "extends": ["config:best-practices", "schedule:weekly"],
   "baseBranchPatterns": ["<default-branch>"],
   "reviewers": ["<owner>"],
   "pre-commit": { "enabled": true }
@@ -16,6 +16,7 @@ description: Audit, write, or revise renovate.json. Use when adding Renovate, tr
 ```
 
 - `config:best-practices` — adds `helpers:pinGitHubActionDigests` (action SHA pinning) and OpenSSF scorecard alerts on top of `config:recommended`.
+- `schedule:weekly` — batches routine update PRs into one weekly run ("before 4am on Monday", UTC). Security updates are exempt — see Supply-chain hardening.
 - `baseBranchPatterns` — set explicitly to the repo's default branch (`main`, `master`, `trunk`, …); auto-detected otherwise, but explicit travels better across forks.
 - `reviewers` — without it, Renovate PRs land silent. Use `assignees` instead if you only want a creation-time ping (no rebase notifications).
 - `pre-commit: { enabled: true }` — opt-in manager; enable unconditionally. No-op without `.pre-commit-config.yaml`; replaces pre-commit.ci where the file exists.
@@ -37,6 +38,7 @@ description: Audit, write, or revise renovate.json. Use when adding Renovate, tr
 - `internalChecksFilter: "strict"` — PRs wait during the bake. Without it Renovate opens the PR immediately and labels it "pending", defeating the purpose.
 - `vulnerabilityAlerts.minimumReleaseAge: "0 days"` — load-bearing carve-out so known CVEs bypass the delay. Without it, the bake delays security fixes.
 - `osvVulnerabilityAlerts: true` — widens alert source beyond GitHub's advisory database to OSV.
+- Security updates bypass `schedule:weekly` (Defaults) automatically: `vulnerabilityAlerts` defaults to `schedule: []` (any time), which the `minimumReleaseAge` object merges onto, not over — so an explicit `"schedule": []` carve-out is redundant.
 
 ## Custom regex managers
 
@@ -86,5 +88,5 @@ Renovate opens a "Dependency Dashboard" issue. Read it before assuming a bug:
 1. Confirm any field name you plan to write against current docs at `https://docs.renovatebot.com/configuration-options/<field>/` before editing. Renames slip in regularly (`fileMatch` → `managerFilePatterns`, `baseBranches` → `baseBranchPatterns`); memory and prior commits are not authoritative.
 2. Read `renovate.json` if present. Note the repo's default branch (`git symbolic-ref refs/remotes/origin/HEAD` or the GitHub setting).
 3. **Greenfield** — write the Defaults block and the Supply-chain hardening block; fill `<owner>` and `<default-branch>`. Add custom regex managers for shell-script `*_VERSION=` pins or hard-coded release URLs. Add the `renovate-config-validator` pre-commit hook (see Validation).
-4. **Audit existing** — walk the Defaults, Supply-chain hardening, and custom-managers conventions; flag drift (still on `config:recommended`, missing `reviewers`, hard-coded `baseBranchPatterns` not matching the actual default, leftover deprecated fields like `fileMatch` or `baseBranches`, ungoverned `*_VERSION=` pins, missing `renovate-config-validator` pre-commit hook, missing `minimumReleaseAge` bake period or `vulnerabilityAlerts` carve-out).
+4. **Audit existing** — walk the Defaults, Supply-chain hardening, and custom-managers conventions; flag drift (still on `config:recommended`, missing `reviewers`, hard-coded `baseBranchPatterns` not matching the actual default, leftover deprecated fields like `fileMatch` or `baseBranches`, ungoverned `*_VERSION=` pins, missing `renovate-config-validator` pre-commit hook, missing `minimumReleaseAge` bake period or `vulnerabilityAlerts` carve-out, missing `schedule:weekly`).
 5. Surface findings before editing. Apply only after scope is agreed.
