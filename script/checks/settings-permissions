@@ -1,0 +1,43 @@
+#!/usr/bin/env bash
+# Reject permissions.allow MCP rules the Claude Code loader silently drops.
+# Valid MCP forms are mcp__<server>, mcp__<server>__<tool>, and the
+# whole-server wildcard mcp__<server>__*. A * anywhere else (e.g. the prefix
+# glob mcp__github__get_*) is not a recognized form: the loader skips the rule
+# at load with only a /doctor warning, so the read-only tool prompts on every
+# call. Non-MCP entries (Bash(...), Read(*), bare tool names) use the loader's
+# lenient anywhere-wildcard grammar and are out of scope.
+
+set -euo pipefail
+
+SOURCE_DIR="$(git -C "$(dirname "${BASH_SOURCE[0]}")" rev-parse --show-toplevel)"
+dest="$(mktemp -d)"
+trap 'rm -rf "$dest"' EXIT
+
+chezmoi apply --source="$SOURCE_DIR" --destination="$dest" --exclude=scripts,encrypted
+
+fail=0
+while IFS= read -r rule; do
+  case "$rule" in
+    mcp__*) ;;
+    *) continue ;;
+  esac
+
+  stars="${rule//[!*]/}"
+  # No wildcard is always an exact tool or whole-server form. The only legal
+  # glob is a single trailing __* on a non-empty server (mcp__server__*);
+  # anything else the loader drops.
+  if [ -z "$stars" ]; then
+    continue
+  fi
+  base="${rule%__\*}"
+  if [ "$stars" = "*" ] && [ "$base" != "$rule" ]; then
+    case "$base" in
+      mcp__?*) continue ;;
+    esac
+  fi
+
+  printf 'FAIL: permission rule %s has a glob the loader silently drops; MCP allows only mcp__server, mcp__server__tool, or mcp__server__*\n' "$rule" >&2
+  fail=1
+done < <(jq -r '.permissions.allow[]?' "$dest/.claude/settings.json")
+
+exit "$fail"
