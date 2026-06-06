@@ -40,3 +40,6 @@ jobs:
 
       - name: Check script templates render
         run: script/checks/chezmoi-template
+
+      - name: Check settings permission grammar
+        run: script/checks/settings-permissions
