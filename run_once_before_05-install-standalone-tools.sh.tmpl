@@ -24,7 +24,7 @@ fi
 # `git branch --merged` can't see them. `gh poi` requires `gh` (apt,
 # script 01). Pin enforced: if a different version is already
 # installed, replace it so renovate-tracked bumps actually take effect.
-GH_POI_VERSION="v0.17.1"
+GH_POI_VERSION="v0.17.2"
 installed="$(gh extension list 2>/dev/null | awk -F'\t' '$2 == "seachicken/gh-poi" {print $3; exit}')"
 if [ "$installed" != "$GH_POI_VERSION" ]; then
   if [ -n "$installed" ]; then
