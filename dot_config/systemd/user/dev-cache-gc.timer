@@ -1,10 +1,14 @@
 [Unit]
-Description=Weekly GC of out-of-~/.cache dev tool caches
+Description=Daily GC of out-of-~/.cache dev tool caches
 
 [Timer]
-OnCalendar=Sun *-*-* 04:00:00
-# This host (Crostini) is frequently suspended; without Persistent a missed
-# window is lost. Persistent runs the catch-up on next wake.
+OnCalendar=*-*-* 04:00:00
+# Daily, matching docker-prune. These tools reclaim unreferenced/regenerable
+# data (not recency-based), so daily never spares something weekly would have
+# kept — it just collects the same eligible junk sooner, tightening the disk
+# high-water mark. This host (Crostini) is frequently suspended; without
+# Persistent a missed window is lost, so Persistent runs the catch-up on next
+# wake. 04:00 keeps it an hour clear of the docker-prune sweep.
 Persistent=true
 
 [Install]
