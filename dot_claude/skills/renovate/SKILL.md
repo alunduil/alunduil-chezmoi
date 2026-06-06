@@ -16,7 +16,7 @@ description: Audit, write, or revise renovate.json. Use when adding Renovate, tr
 ```
 
 - `config:best-practices` — adds `helpers:pinGitHubActionDigests` (action SHA pinning) and OpenSSF scorecard alerts on top of `config:recommended`.
-- `schedule:weekly` — batches routine update PRs into one weekly run ("before 4am on Monday", UTC) instead of one-per-release. Default cadence; cuts the PR churn a fast-releasing dep otherwise generates (e.g. `renovatebot/pre-commit-hooks` mirrors Renovate's own multiple-times-daily release train, so without this it raised ~12 PRs/week alone). Security updates are exempt — see Supply-chain hardening.
+- `schedule:weekly` — batches routine update PRs into one weekly run ("before 4am on Monday", UTC) instead of one-per-release. Default cadence; the payoff scales with how fast the repo's deps release. Security updates are exempt — see Supply-chain hardening.
 - `baseBranchPatterns` — set explicitly to the repo's default branch (`main`, `master`, `trunk`, …); auto-detected otherwise, but explicit travels better across forks.
 - `reviewers` — without it, Renovate PRs land silent. Use `assignees` instead if you only want a creation-time ping (no rebase notifications).
 - `pre-commit: { enabled: true }` — opt-in manager; enable unconditionally. No-op without `.pre-commit-config.yaml`; replaces pre-commit.ci where the file exists.
