@@ -15,6 +15,7 @@ chmod 600 ~/.config/chezmoi/key.txt
 # Interactive logins (per-machine, never managed):
 gh auth login                              # ~/.config/gh/
 claude                                     # ~/.claude/.credentials.json
+op account add && eval "$(op signin)"      # ~/.config/op/ (account + session)
 gcx login                                  # ~/.config/gcx/
 readwise login                             # ~/.readwise-cli.json
 sudo tailscale up                          # tailnet auth
