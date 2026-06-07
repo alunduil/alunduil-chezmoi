@@ -173,6 +173,13 @@ templates) is loaded every relevant turn. Optimise for tokens, not
 readability: cut filler, decorative connectors, restated headings,
 and examples that don't disambiguate.
 
+## Diátaxis docs
+
+- Tutorial/how-to/reference/explanation work under `docs/` not owned by
+  the artifact skills below: `diataxis` skill. Forces a Diátaxis mode
+  pick before writing, then loads per-mode anti-patterns (the canonical
+  failure: a how-to drifting into explanation).
+
 ## READMEs and CONTRIBUTING
 
 - README work (audit, write, revise, badges): `readme` skill.
