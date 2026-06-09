@@ -14,6 +14,11 @@ gh pr list --state all --limit 20 \
   --search "(<N> in:body) OR (<keywords> in:title,body)" \
   --json number,title,state,url
 # state=OPEN → in-flight PR (takeover candidate); state=MERGED → scope already covered, even if unlinked
+
+# Milestone gate: issue's milestone vs the current (earliest-due open) milestone
+gh issue view <N> --json milestone --jq '.milestone.title // "none"'
+gh api repos/:owner/:repo/milestones --jq 'sort_by(.due_on // "9999")[0].title'
+# none or current → fine to work; a different (later) milestone → no-go
 ```
 
 For recent commits in the area:
@@ -39,6 +44,7 @@ Any one fires a go/no-go before writing code:
 - The issue assumes tooling/files that have since been replaced or removed.
 - The motivating dependency resolved differently (e.g. "waiting on upstream X" — X shipped via a different mechanism).
 - A maintainer comment narrows or vetoes the original scope and the body wasn't updated.
+- The issue is parked on a *later* milestone (not the current, earliest-due open one). Deferred work — don't pull it forward. No milestone or the current milestone is fine to work.
 - Repro fails on the default branch.
 - The issue lacks enough detail to start without guessing.
 
