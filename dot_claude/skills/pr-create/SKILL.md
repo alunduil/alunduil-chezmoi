@@ -39,19 +39,20 @@ Three short blocks. A reviewer should grasp all three in one read; a
 block that runs past a few lines is carrying detail the diff already
 shows.
 
-- **Summary** — *why this change.* 1-2 sentences leading with the
-  user-visible outcome ("X now works"), not the diff ("set Y to Z").
-  Surface mechanism only when the choice isn't obvious. Link the issue;
-  don't re-explain it.
+- **Summary** — *why this change.* Prose, 1-2 sentences leading with
+  the user-visible outcome ("X now works"), not the diff ("set Y to
+  Z"). Surface mechanism only when the choice isn't obvious. Link the
+  issue; don't re-explain it.
   Bad: "Set `format_space \"#[bg=16]\"` in pair.kdl."
   Good: "Bar paints uniformly black across the format gap, closing the
   lighter strip from #68."
-- **Gotchas** — *what'll surprise the reviewer:* where to spend
-  attention and why ("focus on X because Y"), not a risk list. Omit
-  when nothing surprises.
-- **Verification** — *how we know it's correct:* material checks beyond
-  CI, past tense ("ran X, confirmed Y"). Skip trivial steps. Omit when
-  CI covers everything; unverified items go in Gotchas, not here.
+- **Gotchas** — *what'll surprise the reviewer.* A bullet per pointer:
+  where to spend attention and why ("focus on X because Y"), not an
+  exhaustive risk dump. Omit the section when nothing surprises.
+- **Verification** — *how we know it's correct.* A bullet per material
+  check beyond CI, past tense ("ran X, confirmed Y"). Skip trivial
+  steps. Omit the section when CI covers everything; unverified items
+  go in Gotchas, not here.
 
 Optimise for tokens — no filler, no "this PR..." preamble, no restated
 headings.
@@ -104,13 +105,17 @@ HTML-comment prompts the author fills in and deletes:
 
 ## Gotchas
 
-<!-- What'll surprise the reviewer — where to spend attention and why.
+<!-- One bullet per surprise: where to spend attention and why.
      Delete this section if nothing surprises. -->
+
+-
 
 ## Verification
 
-<!-- How we know it's correct: material checks beyond CI, past tense.
+<!-- One bullet per material check beyond CI, past tense.
      Delete this section if CI covers everything. -->
+
+-
 ```
 
 Commit and PR it like any change. Match the repo's existing casing if
