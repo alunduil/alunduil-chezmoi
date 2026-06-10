@@ -33,26 +33,10 @@ A per-repo `CLAUDE.md` overrides anything here.
   missing) and `~/.local/bin/gh` (shadows `gh`, requires
   `--draft`/`-d` on `gh pr create`). Override with
   `GH_DRAFT_GUARD=off gh pr create ...`.
-- Use the repo's PR template when one exists. Otherwise, structure
-  the body (squash-merged, so this becomes the commit context):
-  - **Summary** — 1-2 sentences. Lead with the user-visible
-    outcome ("X now works"), not the diff line ("set Y to Z in
-    foo.kdl"). The diff shows what changed; the Summary explains
-    what now works. Surface mechanism only when the choice isn't
-    obvious from the diff. Link the issue; don't re-explain.
-
-    Bad: "Set `format_space \"#[bg=16]\"` in pair.kdl."
-    Good: "Bar paints uniformly black across the format gap,
-    closing the lighter strip from #68."
-  - **Gotchas** — direct the reviewer: "focus on X because Y." Where
-    to spend time, not just what's risky. Omit when nothing to flag.
-  - **Verification** — material checks beyond CI in past tense ("ran
-    X, confirmed Y"). Skip trivial steps (file reads, listings) unless
-    load-bearing. Omit the section when CI covers everything.
-    Unverified items belong in Gotchas, not here.
-- When adding commits to an open PR, regenerate the body from scratch.
-  The body describes the merge state, not the commit log; appending
-  each round drifts toward changelog narration.
+- Composing a PR body, opening a PR, or adding a PR template to a
+  repo: `pr-create` skill. Holds the tight Summary (why) / Gotchas
+  (surprises) / Verification (how we know it's correct) structure, the
+  repo-template detection, and the regenerate-don't-append rule.
 - Never post a new comment on a PR we're working. Carry the update in
   the description (regenerate the body) — it's the single source of
   truth. The only PR comment allowed is a direct reply to an existing
