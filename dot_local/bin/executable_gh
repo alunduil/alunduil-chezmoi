@@ -30,8 +30,8 @@ if [ "${1:-}" = "pr" ] && [ "${2:-}" = "create" ] && [ "${GH_DRAFT_GUARD:-}" != 
   if [ "$has_draft" -eq 0 ]; then
     cat >&2 <<'EOF'
 gh wrapper (~/.local/bin/gh): `gh pr create` must include --draft (or -d).
-Retry with the flag, or, to open a ready PR on purpose:
-  GH_DRAFT_GUARD=off gh pr create ...
+Retry with the flag. Opening a ready PR is a deliberate human action; the
+override lives in this script's header comment, not for automated use.
 EOF
     exit 1
   fi
