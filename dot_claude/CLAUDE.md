@@ -31,9 +31,8 @@ A per-repo `CLAUDE.md` overrides anything here.
   Enforced by `~/.claude/hooks/pr-draft-guard.sh` (blocks GitHub MCP
   `create_pull_request` and its copilot variant when `draft=true` is
   missing) and `~/.local/bin/gh` (shadows `gh`, requires
-  `--draft`/`-d` on `gh pr create`). Always pass `--draft`; never reach
-  for the override. Opening a ready PR is a human-only action done
-  outside Claude.
+  `--draft`/`-d` on `gh pr create`). Always pass `--draft`; opening a
+  ready PR is a human-only action done outside Claude.
 - Composing a PR body, opening a PR, or adding a PR template to a
   repo: `pr-create` skill. Holds the tight Summary (why) / Gotchas
   (surprises) / Verification (how we know it's correct) structure, the
