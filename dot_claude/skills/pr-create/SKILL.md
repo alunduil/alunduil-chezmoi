@@ -12,9 +12,12 @@ context — write it for the reviewer first, the future reader of
 ## Pre-flight
 
 ```bash
-gh pr status                          # already a PR for this branch?
+# REST reads — see ~/.claude/CLAUDE.md "GitHub API budget".
+branch=$(git branch --show-current)
+gh api repos/:owner/:repo/pulls \
+  --jq ".[] | select(.head.ref==\"$branch\") | {number, state, url}"  # existing PR for this branch?
 git log --oneline main..HEAD          # what this PR actually contains
-gh pr view --json body 2>/dev/null    # iterating? read the current body
+gh api repos/:owner/:repo/pulls/<N> --jq '.body'   # iterating? read the current body
 ```
 
 - Existing PR for the branch → iterate on it, don't open a second.

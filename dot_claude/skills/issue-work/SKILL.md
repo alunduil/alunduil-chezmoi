@@ -8,15 +8,17 @@ description: Pick up an existing GitHub issue in the checked-out repo — implem
 ## Inspect
 
 ```bash
-gh issue view <N> --comments                                # body + comments + cross-refs
-gh issue develop <N> --list                                 # branches linked to this issue
-gh pr list --state all --limit 20 \
-  --search "(<N> in:body) OR (<keywords> in:title,body)" \
+# REST reads — see ~/.claude/CLAUDE.md "GitHub API budget".
+gh api repos/:owner/:repo/issues/<N> \
+  --jq '{title, body, milestone: .milestone.title}'         # body + milestone
+gh api repos/:owner/:repo/issues/<N>/comments --jq '.[].body'  # comments
+gh issue develop <N> --list                                 # linked branches (no REST equivalent, one call/pickup)
+gh search prs "(<N> in:body) OR (<keywords> in:title,body)" \
+  --repo <owner>/<repo> --state all --limit 20 \
   --json number,title,state,url
-# state=OPEN → in-flight PR (takeover candidate); state=MERGED → scope already covered, even if unlinked
+# open → in-flight PR (takeover candidate); merged → scope already covered, even if unlinked
 
-# Milestone gate: issue's milestone vs the current (lowest-version open) milestone
-gh issue view <N> --json milestone --jq '.milestone.title // "none"'
+# Milestone gate: issue's milestone (above) vs the current (lowest-version open) one
 gh api repos/:owner/:repo/milestones --jq '.[].title' | sort -V | head -1
 # none or current → fine to work; a different (later) milestone → no-go
 ```

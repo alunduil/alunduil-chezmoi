@@ -79,30 +79,22 @@ Use `-f` (not `-F`) for `ID!` variables — `-F` coerces to Int/Bool.
 
 ### Parent / sub-issue
 
-Same shape as blocked-by — aliased lookup, then mutation.
+REST (no GraphQL needed). `sub_issue_id` is the sub's **database id**
+(`.id` from the REST issue endpoint), not its number or node id; one
+extra GET resolves it.
 
 ```bash
-read P_ID S_ID <<<"$(gh api graphql \
-  -F owner=OWNER -F repo=REPO -F p=<parent> -F s=<sub> \
-  -f query='
-    query($owner: String!, $repo: String!, $p: Int!, $s: Int!) {
-      repository(owner: $owner, name: $repo) {
-        p: issue(number: $p) { id }
-        s: issue(number: $s) { id }
-      }
-    }' --jq '.data.repository | "\(.p.id) \(.s.id)"')"
-
-gh api graphql -f p="$P_ID" -f s="$S_ID" -f query='
-  mutation($p: ID!, $s: ID!) {
-    addSubIssue(input: { issueId: $p, subIssueId: $s }) {
-      issue { number }
-    }
-  }'
+SUB_ID=$(gh api repos/OWNER/REPO/issues/<sub> --jq '.id')
+gh api --method POST repos/OWNER/REPO/issues/<parent>/sub_issues \
+  -F sub_issue_id="$SUB_ID"
 ```
 
-Removal: `removeSubIssue`. Reorder: `reprioritizeSubIssue`. Reparent
-an existing sub: `addSubIssue` with `replaceParent: true`. Read:
-`Issue.parent`, `Issue.subIssues`, `Issue.subIssuesSummary`.
+Removal: `DELETE .../issues/<parent>/sub_issue` (singular) with the
+same `sub_issue_id`. Reorder: `PATCH .../sub_issues/priority`.
+Reparent: re-add with `-F replace_parent=true`. Read children:
+`gh api repos/OWNER/REPO/issues/<parent>/sub_issues`. The MCP REST
+tools `sub_issue_write` / `issue_read` (get_sub_issues) wrap the same
+endpoints.
 
 ### Plain mention
 
