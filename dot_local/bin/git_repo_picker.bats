@@ -220,6 +220,25 @@ mkcanonical() {
   assert_spawn me hello fresh-petname
 }
 
+@test "dispatch spawn-fresh: recovers from a stale origin/HEAD" {
+  mkcanonical "$HOME/hello" hello >/dev/null
+  # Simulate a default-branch rename upstream (develop -> main): origin/HEAD
+  # dangles at a tracking ref that no longer exists. Pre-fix this aborts
+  # worktree add with "not a valid object name: origin/develop".
+  git -C "$HOME/hello" symbolic-ref refs/remotes/origin/HEAD refs/remotes/origin/develop
+  export PETNAME=stale-petname
+  export FZF_OUTPUT=$'local:hello\tspawn-fresh\tme\thello\t'"$HOME/hello"
+  run bash "$PICKER"
+  assert_success
+
+  local wt; wt="$(petdir me hello stale-petname)"
+  [ -d "$wt" ]
+  [ "$(git -C "$wt" rev-parse --abbrev-ref HEAD)" = "me/worktree/stale-petname" ]
+  # Branched off the remote's real default (main), not the dangling develop.
+  [ "$(git -C "$wt" rev-parse HEAD)" = "$(git -C "$HOME/hello" rev-parse origin/main)" ]
+  assert_spawn me hello stale-petname
+}
+
 # --- print_worktrees_with_prs: pr:<N>-tagged worktree rows ---
 
 @test "print_worktrees_with_prs: tags worktree with the branch's PR number" {
