@@ -75,6 +75,20 @@ A per-repo `CLAUDE.md` overrides anything here.
   `issue-work` skill. Carries the inspect commands, staleness signals,
   and go/no-go format.
 
+## GitHub API budget
+
+- GraphQL is a per-account ~5000pt/hr bucket shared across every
+  session, every parallel agent, and the `git-*-poi` timers; REST is
+  a separate bucket. Parallel agents exhaust GraphQL fast — a depleted
+  bucket also makes `gh auth status` misreport the token as invalid.
+  Prefer REST-backed reads: `mcp__github__issue_read` /
+  `pull_request_read` / `list_pull_requests` / `search_*`, `gh search`,
+  and `gh api` REST endpoints. Avoid GraphQL-backed
+  `gh issue|pr list|view|status`.
+- GraphQL-only, unavoidable: blocked-by edges and Projects v2 (the
+  inbox dashboard). `list_issues` (MCP) is GraphQL too — list issues
+  with `gh search issues` or `gh api .../issues` instead.
+
 ## Feedback preference
 
 - Run the project's computational sensors (tests, linters, type
