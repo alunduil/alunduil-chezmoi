@@ -350,19 +350,28 @@ ensure_canonical() {
 # not the local default branch. The canonical is a clone the human also works
 # in, so its checked-out branch and local main can be on anything (or main may
 # be absent, or carry stale upstream config from a deleted branch). Fetch never
-# touches the current branch and the remote-tracking ref always resolves, so
-# neither failure mode reaches the worktree. --no-track keeps the new branch
-# upstream-free, matching the old branch-off-local-main behavior. The
-# user/worktree/ prefix scopes picker-created branches into a personal
-# namespace, distinct from upstream branches in `git branch` and remote refs.
+# touches the current branch. --no-track keeps the new branch upstream-free,
+# matching the old branch-off-local-main behavior. The user/worktree/ prefix
+# scopes picker-created branches into a personal namespace, distinct from
+# upstream branches in `git branch` and remote refs.
+#
+# origin/HEAD can dangle: after a default-branch rename/delete upstream (e.g.
+# develop -> main) a prune drops refs/remotes/origin/develop but leaves the
+# symref pointing at it, so branching off origin/HEAD fails with "not a valid
+# object name". Refresh it with `set-head --auto`, which re-points the symref at
+# the remote's current default; that needs the tracking ref present, which the
+# fetch just ensured. Gated behind a successful fetch since set-head also queries
+# the remote — offline, we keep the existing (possibly stale) symref and let the
+# worktree add surface any breakage rather than masking the offline cause.
 make_worktree() {
     local canonical=$1 wt_dir=$2 petname=$3
     local default_ref
-    default_ref=$(git -C "$canonical" symbolic-ref --short refs/remotes/origin/HEAD)
-    if ! git -C "$canonical" fetch --quiet origin; then
-        printf 'git-repo-picker: fetch failed; branching off possibly stale %s\n' \
-            "$default_ref" >&2
+    if git -C "$canonical" fetch --quiet origin; then
+        git -C "$canonical" remote set-head origin --auto >/dev/null 2>&1 || true
+    else
+        printf 'git-repo-picker: fetch failed; branching off possibly stale default branch\n' >&2
     fi
+    default_ref=$(git -C "$canonical" symbolic-ref --short refs/remotes/origin/HEAD)
     mkdir -p "$(dirname "$wt_dir")"
     git -C "$canonical" worktree add --no-track "$wt_dir" \
         -b "$ME/worktree/$petname" "$default_ref"
