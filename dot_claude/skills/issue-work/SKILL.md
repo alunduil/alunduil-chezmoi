@@ -8,12 +8,11 @@ description: Pick up an existing GitHub issue in the checked-out repo — implem
 ## Inspect
 
 ```bash
-# REST to spare the shared GraphQL bucket — gh api / gh search, not
-# gh issue|pr view|list. See ~/.claude/CLAUDE.md "GitHub API budget".
+# REST reads — see ~/.claude/CLAUDE.md "GitHub API budget".
 gh api repos/:owner/:repo/issues/<N> \
   --jq '{title, body, milestone: .milestone.title}'         # body + milestone
 gh api repos/:owner/:repo/issues/<N>/comments --jq '.[].body'  # comments
-gh issue develop <N> --list                                 # linked branches (GraphQL; no REST equivalent, one call/pickup)
+gh issue develop <N> --list                                 # linked branches (no REST equivalent, one call/pickup)
 gh search prs "(<N> in:body) OR (<keywords> in:title,body)" \
   --repo <owner>/<repo> --state all --limit 20 \
   --json number,title,state,url

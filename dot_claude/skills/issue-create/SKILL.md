@@ -15,8 +15,7 @@ Open *and* closed:
 gh search issues "<keywords>" --repo <owner>/<repo> --state all --limit 20
 ```
 
-Read near-matches with `gh api repos/:owner/:repo/issues/<N>` (REST;
-`gh issue view` is GraphQL). Decide:
+Read near-matches with `gh api repos/:owner/:repo/issues/<N>`. Decide:
 
 - **Same outcome already open** — update the existing one
   (`gh issue edit <N>` for body, `gh issue comment <N>` for new
@@ -38,7 +37,7 @@ ls .github/ISSUE_TEMPLATE/ 2>/dev/null
 gh label list --limit 100
 gh api repos/:owner/:repo/milestones --jq '.[] | "\(.title)\t\(.state)"'
 gh api 'repos/:owner/:repo/issues?per_page=5&state=all' \
-  --jq '.[].title'           # skim recent house style (REST; gh issue list is GraphQL)
+  --jq '.[].title'           # skim recent house style
 ```
 
 Template present → `gh issue create --template <name>`. Templates

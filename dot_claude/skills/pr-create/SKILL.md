@@ -12,8 +12,7 @@ context — write it for the reviewer first, the future reader of
 ## Pre-flight
 
 ```bash
-# REST to spare the shared GraphQL bucket, not gh pr status|view.
-# See ~/.claude/CLAUDE.md "GitHub API budget".
+# REST reads — see ~/.claude/CLAUDE.md "GitHub API budget".
 branch=$(git branch --show-current)
 gh api repos/:owner/:repo/pulls \
   --jq ".[] | select(.head.ref==\"$branch\") | {number, state, url}"  # existing PR for this branch?

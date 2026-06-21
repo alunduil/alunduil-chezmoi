@@ -79,9 +79,9 @@ Use `-f` (not `-F`) for `ID!` variables — `-F` coerces to Int/Bool.
 
 ### Parent / sub-issue
 
-REST — no GraphQL needed (unlike blocked-by). `sub_issue_id` is the
-sub's **database id** (`.id` from the REST issue endpoint), not its
-number or node id; one extra GET resolves it.
+REST (no GraphQL needed). `sub_issue_id` is the sub's **database id**
+(`.id` from the REST issue endpoint), not its number or node id; one
+extra GET resolves it.
 
 ```bash
 SUB_ID=$(gh api repos/OWNER/REPO/issues/<sub> --jq '.id')
