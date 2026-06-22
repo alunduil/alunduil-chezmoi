@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 set -euo pipefail
 
-TRIVY_VERSION="v0.71.0"
+TRIVY_VERSION="v0.71.1"
 ARCH="Linux-64bit"
 
 # shellcheck source-path=SCRIPTDIR source=lib.sh
