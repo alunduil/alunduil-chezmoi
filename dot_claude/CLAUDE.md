@@ -196,6 +196,17 @@ and examples that don't disambiguate.
   `vale` skill. Cleanup proceeds suggestion → warning → error;
   reverse risks re-introducing what you just cleared.
 
+## AI documentation
+
+- Technical-writing pass on AI-targeted text (this file, repo-local
+  `CLAUDE.md`, `RTK.md`, `voice.md`, skill `SKILL.md` bodies, hook and
+  prompt-template comments, anything under `.claude/`/`dot_claude/`):
+  `ai-docs` skill. The counterpart to Vale's deliberate AI-doc
+  exclusion — optimises for tokens not readability, applies the aligned
+  subset of phrasing fixes, refuses the ones that add tokens, and keeps
+  every edit meaning-preserving (these files are executed as
+  instructions).
+
 ## Changelogs
 
 - `CHANGELOG.md` work (bootstrap, review against commits) following
