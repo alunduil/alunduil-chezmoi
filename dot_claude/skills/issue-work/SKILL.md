@@ -33,7 +33,7 @@ For recent commits in the area:
 Attempt repro on the default branch before writing the fix:
 
 - A confirmed repro becomes the failing test the fix has to flip.
-- A failed repro is itself a staleness signal — issue may be obsolete.
+- A failed repro is a staleness signal — issue may be obsolete.
 - If repro is hard because the harness for this code path doesn't exist, surface it. Tiny harness lifts can land inline; anything bigger files separately and waits for direction.
 
 ## Staleness signals

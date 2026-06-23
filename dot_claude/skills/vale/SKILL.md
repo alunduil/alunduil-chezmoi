@@ -23,7 +23,7 @@ BasedOnStyles = Vale, Microsoft, proselint, alex
 - `MinAlertLevel` — `suggestion` (Vale default), `warning`, `error`. Gates **display only**; Vale exits nonzero whenever any error-severity finding exists regardless of this setting. Set it to the lowest level you want printed on interactive `vale .` runs; pass `--minAlertLevel=error` to pre-commit to suppress non-error noise from hook output.
 - `Packages` — comma-separated. Names from `vale-cli/packages`, URLs to a `.zip`, or local paths. Resolvable bare names today: `Microsoft, Google, write-good, proselint, Joblint, alex, Readability, RedHat, AsciiDoc, OpenShiftAsciiDoc, Elastic, NoAnimalViolence` (style packages), plus `Hugo, MDX` (config packages that teach Vale about non-standard markup, not rule sets). Local files under `<StylesPath>/` override packages; later `Packages` entries override earlier.
 - `Vocab` — see Vocabularies below. References `<Project>` so create the directory plus `accept.txt`/`reject.txt` on greenfield.
-- `[*.md]` `BasedOnStyles` — **without a per-format section, no rules from `Packages` actually run and Vale silently reports zero findings.** Add per format you lint (`[*.{md,mdx}]`, `[*.rst]`). The built-in `Vale` style must be listed for `Vale.Terms`, `Vale.Avoid`, `Vale.Spelling` to fire. Disable individual rules with `Style.Rule = NO`.
+- `[*.md]` `BasedOnStyles` — **without a per-format section, no rules from `Packages` run and Vale silently reports zero findings.** Add per format you lint (`[*.{md,mdx}]`, `[*.rst]`). The built-in `Vale` style must be listed for `Vale.Terms`, `Vale.Avoid`, `Vale.Spelling` to fire. Disable individual rules with `Style.Rule = NO`.
 
 ## Choosing Packages
 

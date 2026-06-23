@@ -7,7 +7,7 @@ description: Audit, write, or update CHANGELOG.md following Keep a Changelog 1.1
 
 References: <https://keepachangelog.com/en/1.1.0/>, <https://semver.org/>, <https://pvp.haskell.org/>.
 
-This skill maintains a hand-curated KAC. It detects auto-managed setups and steps aside; it never proposes adopting tooling. Cutting a release (tagging, version-file edits) is out of scope — bootstrap and review-against-commits only.
+Maintains a hand-curated KAC. Detects auto-managed setups and steps aside; never proposes adopting tooling. Cutting a release (tagging, version-file edits) is out of scope — bootstrap and review-against-commits only.
 
 ## Defer to auto-tooling
 
