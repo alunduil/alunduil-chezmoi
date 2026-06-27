@@ -92,7 +92,7 @@ fi
 # ---------------------------------------------------------------------- pnpm
 # Backs dev-cache-gc's `pnpm store prune`. Same pin-enforced replace as the
 # CLIs above; nvm owns the runtime so this is the only pnpm on PATH.
-PNPM_VERSION="11.5.1"
+PNPM_VERSION="11.8.0"
 installed="$(npm ls -g --depth=0 --parseable=false pnpm 2>/dev/null |
   sed -n 's,.*pnpm@\([0-9][0-9.]*\).*,\1,p' | head -1 || true)"
 if [ "$installed" != "$PNPM_VERSION" ]; then
