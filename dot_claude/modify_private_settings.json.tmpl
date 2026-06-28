@@ -9,6 +9,9 @@ set -euo pipefail
 
 jq --slurp '(.[0] // {}) + {
   "$schema": "https://json.schemastore.org/claude-code-settings.json",
+  "env": {
+    "CLAUDE_CODE_DISABLE_ALTERNATE_SCREEN": "1"
+  },
   "permissions": {
     "allow": [
       "BashOutput(*)",
