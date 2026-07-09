@@ -31,9 +31,9 @@ for name in "${!CLOUDFLARE_MCP[@]}"; do
 done
 
 # ------------------------------------------------------------------- Context7
-# Upstash's docs-for-LLMs MCP. Anonymous use is rate-limited; an API key would
-# raise the ceiling and unlock usage analytics. Tracked in the repo issues for
-# a future switch to the encrypted-token pattern (see uptimerobot).
+# Upstash's docs-for-LLMs MCP. Anonymous use is rate-limited; a key would raise
+# the ceiling, but no limit pressure has shown up, so we run keyless by choice.
+# The encrypted-token pattern (see uptimerobot) is the path if that changes.
 if claude mcp list 2>/dev/null | grep -q "^context7:"; then
   log "context7: already registered"
 else
