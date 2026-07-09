@@ -7,6 +7,17 @@ description: Audit, write, or revise .vale.ini, or work through vale findings on
 
 Config keys: <https://vale.sh/docs/keys/>. Current Vale 3.x key set is: `BasedOnStyles, BlockIgnores, CommentDelimiters, IgnoredClasses, IgnoredScopes, MinAlertLevel, Packages, SkippedScopes, StylesPath, TokenIgnores, Transform, Vocab`. Anything else is stale.
 
+## Comply, don't demote
+
+When a loaded rule fires, **rewrite the prose to comply** — don't demote or disable the rule. A firing rule is usually a real style nit worth adopting; restoring a package default typically costs zero current findings and often surfaces a legitimate fix (`Microsoft.Contractions` catching `does not` → `doesn't`).
+
+Demotion (`= suggestion`), disable (`= NO`), and scoping are the last resort, reserved for rules wrong for the writing style itself:
+
+- `Microsoft.Dashes` wanting tight em-dashes when the project's style uses spaced.
+- `Microsoft.HeadingColons` demanding sentence case after a colon when ADR/Nygard convention differs.
+
+Confirm the rule contradicts an intentional style choice before silencing it — inconvenience isn't enough. Tuning from the issue framing ("Vale fights writing, silence the noisy rules") rather than the actual per-finding cost is the failure mode this guards against.
+
 ## Defaults
 
 ```ini
@@ -99,6 +110,8 @@ Default package rules trip on inline code, tables, and technical strings. Scope 
 - `BlockIgnores` / `TokenIgnores` — regex escape hatches for block and inline content with no HTML tag. **Markdown, reStructuredText, AsciiDoc, Org only.** Use for fenced shell prompts, custom MDX directives, file paths.
 - `IgnoredClasses` — by HTML class. Useful for rendered output linting.
 - `CommentDelimiters` — comment markers Vale honours for `<!-- vale off -->` directives. Default `<!-- -->`; set to `{/* */}` for MDX where HTML comments don't render.
+- `BasedOnStyles` is **additive across sections, not overriding**: a child block's `BasedOnStyles = X, Y` doesn't remove `Z` inherited from a broader block's `BasedOnStyles = X, Y, Z`. To silence a package's rules inside a sub-block, disable each rule explicitly (`Readability.LIX = NO`), not by dropping it from the child's list.
+- **Don't lint machine-generated prose.** Auto-managed files (release-please `CHANGELOG.md`, changesets entries, towncrier fragments) are dense and structured by design. Scope them out with a `[CHANGELOG.md]` block disabling `Readability.*` and the stylistic `Microsoft.*` rules (`Contractions`, `FirstPerson`, `HeadingColons`, `Dashes`).
 
 ## Vocabularies
 
@@ -108,6 +121,8 @@ Default package rules trip on inline code, tables, and technical strings. Scope 
 - `reject.txt` → `Vale.Avoid`. Flags banned terms.
 
 Both files: one regex per line, case-sensitive (prefix `(?i)` for case-insensitive), `#` for comments. The built-in `Vale` style must be in `BasedOnStyles` for these rules to fire.
+
+Backticked tokens skip `Vale.Terms`, so prefer wrapping a package ID or code symbol in backticks (`magpie-root`) over whitelisting the bare token in `accept.txt`. Reserve `accept.txt` for terms that appear unbackticked in prose.
 
 A starter `accept.txt` ships next to this skill at `~/.claude/skills/vale/accept.txt` with cross-repo terms (project names, host tooling, languages). Copy into `<StylesPath>/config/vocabularies/<Project>/` on greenfield; extend per-project.
 
@@ -127,6 +142,7 @@ Two hooks, both `id: vale`. The first runs `vale sync` to install declared `Pack
 ```
 
 - `sync` first — without it, packages declared in `.vale.ini` aren't installed in the hook's cached env and the lint produces zero findings (silent pass that looks clean).
+- **Vendored styles → drop the sync hook.** If the repo commits its packages under `<StylesPath>/` and excludes that path from pre-commit, `sync` has nothing to fetch — keep only the lint hook.
 - `--minAlertLevel=error` — overrides the file's `warning` default so only errors block commits.
 - `errata-ai/*` repos resolve to `vale-cli/*` on GitHub; vale.sh still publishes `errata-ai/vale` in the canonical example. Both work — match the upstream docs rather than chase the rename in every repo.
 - Pair with `markdownlint-cli2` for prose-heavy repos. Vale catches voice/usage; markdownlint catches structure (heading hierarchy, link syntax). No overlap; wire as separate hooks.

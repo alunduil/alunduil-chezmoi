@@ -1,6 +1,22 @@
 # Starter Vale.Terms list. Copy into <StylesPath>/config/vocabularies/<Project>/
-# and extend per-project. One regex per line; case-sensitive; prefix (?i) for
-# case-insensitive. Lines starting with # are comments.
+# and extend per-project.
+#
+# When to add a term here:
+#   - Proper nouns: product names, people, places, organizations.
+#   - Terms that appear unbackticked in prose (rare — prefer backticks for
+#     package IDs and code symbols).
+#   - Established acronyms with no surrounding-text rewrite available
+#     (ADR, MADR).
+#
+# When NOT to add a term here:
+#   - A package ID flagged by Vale.Terms — wrap in backticks instead
+#     (`magpie-root`). Backticked tokens skip Terms.
+#   - A rule fired on standard English the doc should comply with — rewrite
+#     to comply, not whitelist the wording. Demoting a rule so it stops
+#     firing is the wrong fix.
+#
+# One regex per line; case-sensitive; prefix (?i) for case-insensitive.
+# Lines starting with # are comments.
 
 # Identity
 Alunduil
