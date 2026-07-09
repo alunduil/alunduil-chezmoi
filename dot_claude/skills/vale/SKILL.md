@@ -9,14 +9,14 @@ Config keys: <https://vale.sh/docs/keys/>. Current Vale 3.x key set is: `BasedOn
 
 ## Comply, don't demote
 
-When a loaded rule fires, the default fix is to **rewrite the prose to comply**, not to demote or disable the rule. A firing rule is usually the writing improving on contact — the finding is a real style nit worth adopting. Restoring a package default typically costs zero current findings and often surfaces a legitimate fix (`Microsoft.Contractions` catching `does not` → `doesn't`).
+When a loaded rule fires, **rewrite the prose to comply** — don't demote or disable the rule. A firing rule is usually a real style nit worth adopting; restoring a package default typically costs zero current findings and often surfaces a legitimate fix (`Microsoft.Contractions` catching `does not` → `doesn't`).
 
-Demotion (`= suggestion`), disable (`= NO`), and scoping are the last resort, reserved for rules that are wrong for the writing style itself:
+Demotion (`= suggestion`), disable (`= NO`), and scoping are the last resort, reserved for rules wrong for the writing style itself:
 
 - `Microsoft.Dashes` wanting tight em-dashes when the project's style uses spaced.
 - `Microsoft.HeadingColons` demanding sentence case after a colon when ADR/Nygard convention differs.
 
-Reach for them only after confirming the rule contradicts an intentional style choice — not merely that complying is inconvenient. Tuning from the issue framing ("Vale fights writing, silence the noisy rules") instead of the actual per-finding cost is the failure mode this guards against.
+Confirm the rule contradicts an intentional style choice before silencing it — inconvenience isn't enough. Tuning from the issue framing ("Vale fights writing, silence the noisy rules") rather than the actual per-finding cost is the failure mode this guards against.
 
 ## Defaults
 
@@ -110,7 +110,7 @@ Default package rules trip on inline code, tables, and technical strings. Scope 
 - `BlockIgnores` / `TokenIgnores` — regex escape hatches for block and inline content with no HTML tag. **Markdown, reStructuredText, AsciiDoc, Org only.** Use for fenced shell prompts, custom MDX directives, file paths.
 - `IgnoredClasses` — by HTML class. Useful for rendered output linting.
 - `CommentDelimiters` — comment markers Vale honours for `<!-- vale off -->` directives. Default `<!-- -->`; set to `{/* */}` for MDX where HTML comments don't render.
-- `BasedOnStyles` is **additive across sections, not overriding**: a child block's `BasedOnStyles = X, Y` does not remove `Z` inherited from a broader block's `BasedOnStyles = X, Y, Z`. To silence a package's rules inside a sub-block, disable each rule explicitly (`Readability.LIX = NO`), not by dropping it from the child's list.
+- `BasedOnStyles` is **additive across sections, not overriding**: a child block's `BasedOnStyles = X, Y` doesn't remove `Z` inherited from a broader block's `BasedOnStyles = X, Y, Z`. To silence a package's rules inside a sub-block, disable each rule explicitly (`Readability.LIX = NO`), not by dropping it from the child's list.
 - **Don't lint machine-generated prose.** Auto-managed files (release-please `CHANGELOG.md`, changesets entries, towncrier fragments) are dense and structured by design. Scope them out with a `[CHANGELOG.md]` block disabling `Readability.*` and the stylistic `Microsoft.*` rules (`Contractions`, `FirstPerson`, `HeadingColons`, `Dashes`).
 
 ## Vocabularies
