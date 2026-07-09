@@ -8,13 +8,6 @@
 // anyway. The pair layout adds a zjstatus line for PR-aware status; default
 // stays minimal.
 
-// Sessions never serialize. Before Rust 1.87, std::fs::Metadata::created()
-// returns "creation time is not available" on Linux even on filesystems
-// that store btime — zellij's resurrection scan logs the error twice a
-// second per saved session and eventually saturates the screen/plugin
-// threads (zellij-org/zellij#4165, PR #5057). Empty cache → empty loop.
-session_serialization false
-
 plugins {
     zellaude location="https://github.com/ishefi/zellaude/releases/download/v0.5.0/zellaude.wasm"
     zjstatus location="https://github.com/dj95/zjstatus/releases/download/v0.22.0/zjstatus.wasm"
