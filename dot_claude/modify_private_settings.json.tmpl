@@ -132,15 +132,19 @@ jq --slurp '(.[0] // {}) + {
       "Bash(zellij:*)"
     ],
     "deny": [
+      "Bash(cat*.claude.json*)",
       "Bash(cat*.credentials.json*)",
       "Bash(cat*.gnupg/*)",
       "Bash(cat*.ssh/*)",
+      "Bash(head*.claude.json*)",
       "Bash(head*.credentials.json*)",
       "Bash(head*.gnupg/*)",
       "Bash(head*.ssh/*)",
+      "Bash(less*.claude.json*)",
       "Bash(less*.credentials.json*)",
       "Bash(less*.gnupg/*)",
       "Bash(less*.ssh/*)",
+      "Bash(tail*.claude.json*)",
       "Bash(tail*.credentials.json*)",
       "Bash(tail*.gnupg/*)",
       "Bash(tail*.ssh/*)",
@@ -149,6 +153,7 @@ jq --slurp '(.[0] // {}) + {
       "Bash(git push -f*)",
       "Bash(git push* -f*)",
       "Bash(git push*main*)",
+      "Read({{ .chezmoi.homeDir }}/.claude.json)",
       "Read({{ .chezmoi.homeDir }}/.claude/.credentials.json)",
       "Read({{ .chezmoi.homeDir }}/.gnupg/**)",
       "Read({{ .chezmoi.homeDir }}/.ssh/**)"
