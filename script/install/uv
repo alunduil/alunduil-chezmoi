@@ -5,7 +5,7 @@ set -euo pipefail
 # variable and Renovate matcher both use bare semver. uv is the host's
 # Python-CLI installer: `uv tool install` gives pre-commit a reproducible,
 # pinned home without a system `pip --user` (blocked here under PEP 668).
-UV_VERSION="0.11.22"
+UV_VERSION="0.11.28"
 ARCH="x86_64-unknown-linux-musl"
 
 # shellcheck source-path=SCRIPTDIR source=lib.sh
