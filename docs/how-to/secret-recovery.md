@@ -4,13 +4,17 @@ The single out-of-band secret is the 1Password service-account token at `~/.conf
 
 ## Lost the token, account access intact
 
-Generate a fresh service-account token scoped to the `chezmoi` vault, place it, and re-apply:
+Generate a fresh service-account token scoped to the `chezmoi` vault. In an interactive shell, `chezmoi apply` (or `update`) detects the dead token, prompts for the replacement, and persists it to `~/.config/op/token` (mode 600):
+
+```bash
+chezmoi apply                    # paste the new token when prompted
+```
+
+Non-interactively (a script or CI shell has no wrapper), place it by hand instead:
 
 ```bash
 $EDITOR ~/.config/op/token       # paste the new token
 chmod 600 ~/.config/op/token
-export OP_SERVICE_ACCOUNT_TOKEN="$(<~/.config/op/token)"
-chezmoi apply
 ```
 
 Revoke the old service account in 1Password so the lost token is dead.
