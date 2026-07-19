@@ -2,7 +2,9 @@ name: Lychee External
 
 on:
   schedule:
+    # Mondays at 06:00 Europe/London; the timezone field handles BST/GMT.
     - cron: '0 6 * * 1'
+      timezone: Europe/London
   workflow_dispatch:
 
 permissions:
