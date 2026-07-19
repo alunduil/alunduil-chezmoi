@@ -18,7 +18,7 @@
 # ~/.claude.json entry and re-adds the new one. The `with` guard keeps the
 # template renderable before the user has run `chezmoi add` for the first
 # time.
-# token-hash: {{ with (glob (joinPath .chezmoi.sourceDir "dot_config/private_uptimerobot/encrypted_private_token.age")) }}{{ include "dot_config/private_uptimerobot/encrypted_private_token.age" | sha256sum }}{{ else }}not-yet-encrypted{{ end }}
+# token-hash: {{ with (glob (joinPath .chezmoi.sourceDir "dot_config/uptimerobot/encrypted_private_token.age")) }}{{ include "dot_config/uptimerobot/encrypted_private_token.age" | sha256sum }}{{ else }}not-yet-encrypted{{ end }}
 
 set -euo pipefail
 

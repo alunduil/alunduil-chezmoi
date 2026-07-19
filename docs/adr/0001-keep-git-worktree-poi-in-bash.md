@@ -24,7 +24,7 @@ Two pressures motivate the question (#150):
 
 The natural reference point is `gh-poi` itself: Go, `fatih/color`,
 distributed via `gh extension install`. The host already runs it
-(pinned in `run_once_before_05-install-standalone-tools.sh.tmpl`), so a
+(pinned in `.chezmoiscripts/run_once_before_05-install-standalone-tools.sh.tmpl`), so a
 `gh-worktree-poi` rewrite would slot into the same install pass.
 
 Three options were considered: a) stay bash and port the UX in place,

@@ -2,11 +2,11 @@
 bats_require_minimum_version 1.5.0
 
 # Exercises the pinned uv binary directly: the chezmoi CI check excludes
-# scripts, so run_once_before_02 never runs there. Catches a broken release
+# scripts, so .chezmoiscripts/run_onchange_before_02 never runs there. Catches a broken release
 # asset (URL/name/checksum) on a version bump, and a `uv tool install`
 # interface change that would break the bootstrap's pre-commit step, before
 # either reaches `chezmoi apply`. Keep the install flags in sync with
-# run_once_before_02-install-binary-tools.sh.tmpl.
+# .chezmoiscripts/run_onchange_before_02-install-binary-tools.sh.tmpl.
 
 setup() {
   REPO_ROOT="$(cd "$BATS_TEST_DIRNAME/../.." && pwd)"
