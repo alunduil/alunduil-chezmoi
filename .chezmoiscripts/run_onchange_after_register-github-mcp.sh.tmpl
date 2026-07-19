@@ -6,14 +6,15 @@
 # land under mcp__github__*, which pr-draft-guard.sh keys on.
 #
 # Why run_onchange_after instead of run_once_before:
-#   - _after_: the chezmoi-encrypted token must be decrypted to
-#     ~/.config/github/token before we read it, which only happens after files
-#     are applied.
-#   - run_onchange (keyed on the encrypted file's hash below): when the token
-#     rotates, the source file's hash changes, this script reruns, and the
-#     stale token in ~/.claude.json gets replaced.
+#   - _after_: the token template must render to ~/.config/github/token
+#     before we read it, which only happens after files are applied.
+#   - run_onchange (keyed on the vault token's hash below): when the token
+#     rotates in 1Password, the rendered hash changes, this script reruns, and
+#     the stale token in ~/.claude.json gets replaced.
 #
-# token-hash: {{ with (glob (joinPath .chezmoi.sourceDir "dot_config/github/encrypted_private_token.age")) }}{{ include "dot_config/github/encrypted_private_token.age" | sha256sum }}{{ else }}not-yet-encrypted{{ end }}
+# The env guard keeps the hash renderable without an op session (CI applies
+# with --exclude=scripts, so this never evaluates there).
+# token-hash: {{ if env "OP_SERVICE_ACCOUNT_TOKEN" }}{{ onepasswordRead "op://chezmoi/github/token" | sha256sum }}{{ else }}no-op-token{{ end }}
 
 set -euo pipefail
 

@@ -1,0 +1,43 @@
+#!/usr/bin/env bash
+# Run chezmoi with a validated 1Password service-account token in the
+# environment, prompting for a replacement when the token is missing or
+# rejected. Service accounts are non-interactive, so without this a rotated or
+# absent token fails `chezmoi apply` with an op error instead of asking for a
+# new one. Run this in place of `chezmoi apply`/`update`; arguments pass
+# through and default to `apply`. Deployed to ~/.local/bin.
+#
+# Deliberately not a `chezmoi` PATH shim: chezmoi installs into ~/.local/bin
+# itself, so a same-named shim there would overwrite the real binary (unlike
+# the gh shim, which shadows /usr/bin/gh from a different directory). A
+# distinct name keeps the real `chezmoi` reachable for everything else.
+
+set -euo pipefail
+
+TOKEN_FILE="${OP_TOKEN_FILE:-$HOME/.config/op/token}"
+
+die() {
+  printf 'chezmoi-sync: %s\n' "$1" >&2
+  exit 1
+}
+
+command -v op >/dev/null 2>&1 || die 'the 1Password CLI (op) is not on PATH'
+command -v chezmoi >/dev/null 2>&1 || die 'chezmoi is not on PATH'
+
+if [ -r "$TOKEN_FILE" ]; then
+  OP_SERVICE_ACCOUNT_TOKEN="$(<"$TOKEN_FILE")"
+  export OP_SERVICE_ACCOUNT_TOKEN
+fi
+
+if ! op whoami >/dev/null 2>&1; then
+  [ -t 0 ] || die 'token missing or rejected, and no terminal to prompt on'
+  printf 'op: service-account token missing or rejected. Paste a new one: ' >&2
+  IFS= read -rs token
+  printf '\n' >&2
+  [ -n "$token" ] || die 'no token entered'
+  mkdir -p "$(dirname "$TOKEN_FILE")"
+  (umask 077; printf '%s' "$token" >"$TOKEN_FILE")
+  export OP_SERVICE_ACCOUNT_TOKEN="$token"
+  op whoami >/dev/null 2>&1 || die 'token still rejected'
+fi
+
+exec chezmoi "${@:-apply}"

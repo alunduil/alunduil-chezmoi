@@ -1,21 +1,34 @@
 # Bootstrap
 
-Zero to a fully configured host. Requires a Debian/Crostini host and the age key from a password manager.
+Zero to a fully configured host. Requires a Debian/Crostini host and a 1Password service-account token scoped to the `chezmoi` vault.
 
 ```bash
 CHEZMOI_VERSION="v2.70.5"
 sh -c "$(curl -fsLS get.chezmoi.io)" -- -b "$HOME/.local/bin" -t "$CHEZMOI_VERSION"
 
-mkdir -p ~/.config/chezmoi
-$EDITOR ~/.config/chezmoi/key.txt          # paste age key contents
-chmod 600 ~/.config/chezmoi/key.txt
+# The 1Password CLI must exist before the first apply: chezmoi renders every
+# template (the onepasswordRead secrets included) before run_once_before
+# installs anything, so op has to be on PATH up front. run_once_before_01
+# reinstalls it idempotently once the host is managed.
+curl -fsSL https://downloads.1password.com/linux/keys/1password.asc |
+  sudo gpg --dearmor -o /usr/share/keyrings/1password-archive-keyring.gpg
+printf 'deb [arch=%s signed-by=/usr/share/keyrings/1password-archive-keyring.gpg] https://downloads.1password.com/linux/debian/%s stable main\n' \
+  "$(dpkg --print-architecture)" "$(dpkg --print-architecture)" |
+  sudo tee /etc/apt/sources.list.d/1password.list >/dev/null
+sudo apt-get update && sudo apt-get install -y 1password-cli
 
+mkdir -p ~/.config/chezmoi ~/.config/op
+printf '[onepassword]\n  mode = "service"\n' > ~/.config/chezmoi/chezmoi.toml
+$EDITOR ~/.config/op/token                 # paste 1Password service-account token
+chmod 600 ~/.config/op/token
+export OP_SERVICE_ACCOUNT_TOKEN="$(<~/.config/op/token)"
+
+# One apply converges: op is installed, the token is set, secrets resolve.
 ~/.local/bin/chezmoi init --apply https://github.com/alunduil/alunduil-chezmoi.git
 
 # Interactive logins (per-machine, never managed):
 gh auth login                              # ~/.config/gh/
 claude                                     # ~/.claude/.credentials.json
-op account add && eval "$(op signin)"      # ~/.config/op/ (account + session)
 gcx login                                  # ~/.config/gcx/
 readwise login                             # ~/.readwise-cli.json
 sudo tailscale up                          # tailnet auth
@@ -45,4 +58,6 @@ gh extension list                          # confirms gh-poi (squash-merge prune
 claude mcp list                            # confirms registered MCP servers
 ```
 
-SSH keys deploy from age-encrypted chezmoi source on apply, so `~/.ssh/{id_rsa,config}` land alongside the age-key paste step, so SSH to GitHub works as soon as `chezmoi init --apply` finishes. The bootstrap clones over HTTPS to bridge the gap before keys exist; swap the apply clone's remote back to SSH if preferred: `git -C ~/.local/share/chezmoi remote set-url origin git@github.com:alunduil/alunduil-chezmoi.git`.
+SSH keys resolve from 1Password on that apply, so `~/.ssh/{id_ed25519,config}` land and SSH to GitHub works straight away. The bootstrap clones over HTTPS to bridge the gap before keys exist; swap the apply clone's remote back to SSH if preferred: `git -C ~/.local/share/chezmoi remote set-url origin git@github.com:alunduil/alunduil-chezmoi.git`.
+
+For later updates, run `chezmoi-sync` (deployed to `~/.local/bin`) rather than `chezmoi apply`. It validates the service-account token, prompts for a replacement if it's expired or missing, then applies—so a rotated token is a one-command fix, not an out-of-band edit.

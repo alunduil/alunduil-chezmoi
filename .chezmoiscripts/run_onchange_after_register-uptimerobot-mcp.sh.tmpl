@@ -4,21 +4,19 @@
 # is passed via --header and ends up baked into ~/.claude.json.
 #
 # Why run_onchange_after instead of run_once_before:
-#   - _after_: the chezmoi-encrypted token must be decrypted to
-#     ~/.config/uptimerobot/token before we read it, which only happens after
-#     files are applied.
-#   - run_onchange (keyed on the encrypted file's hash below): when the token
-#     rotates, the source file's hash changes, this script reruns, and the
-#     stale token in ~/.claude.json gets replaced.
+#   - _after_: the token template must render to ~/.config/uptimerobot/token
+#     before we read it, which only happens after files are applied.
+#   - run_onchange (keyed on the vault token's hash below): when the token
+#     rotates in 1Password, the rendered hash changes, this script reruns, and
+#     the stale token in ~/.claude.json gets replaced.
 #
-# Rerun-on-rotation trigger: hash of the encrypted source file embedded
-# below. When the user rotates the token and re-runs `chezmoi add --encrypt`,
-# the source file changes, this hash changes, the rendered script content
+# Rerun-on-rotation trigger: hash of the vault token embedded below. When the
+# token rotates in 1Password, this hash changes, the rendered script content
 # changes, and chezmoi reruns this script -- which removes the stale
-# ~/.claude.json entry and re-adds the new one. The `with` guard keeps the
-# template renderable before the user has run `chezmoi add` for the first
-# time.
-# token-hash: {{ with (glob (joinPath .chezmoi.sourceDir "dot_config/uptimerobot/encrypted_private_token.age")) }}{{ include "dot_config/uptimerobot/encrypted_private_token.age" | sha256sum }}{{ else }}not-yet-encrypted{{ end }}
+# ~/.claude.json entry and re-adds the new one. The env guard keeps the hash
+# renderable without an op session (CI applies with --exclude=scripts, so this
+# never evaluates there).
+# token-hash: {{ if env "OP_SERVICE_ACCOUNT_TOKEN" }}{{ onepasswordRead "op://chezmoi/uptimerobot/token" | sha256sum }}{{ else }}no-op-token{{ end }}
 
 set -euo pipefail
 

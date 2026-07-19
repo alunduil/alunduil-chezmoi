@@ -18,7 +18,8 @@ Organised by [Diátaxis](https://diataxis.fr):
 - Tutorials
   - [Bootstrap](docs/tutorials/bootstrap.md)—zero to working host.
 - How-to
-  - [Adding an encrypted secret](docs/how-to/encrypted-secret.md)
+  - [Adding a secret](docs/how-to/adding-a-secret.md)
+  - [Recovering secret access](docs/how-to/secret-recovery.md): lost token, lost account, lost signing key.
   - [PGP commit signing](docs/how-to/pgp-signing.md): includes paper-key backup and key rotation.
 - Explanation
   - [Architecture](docs/explanation/architecture.md)—source vs. apply clone, bootstrap shape, layered trust, the `gh` shim, the two `CLAUDE.md` files.
