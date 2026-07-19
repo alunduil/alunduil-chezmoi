@@ -90,3 +90,7 @@ repo
 repos
 (?i)toolchains?
 facto
+ciphertext
+multiline
+env
+rc
