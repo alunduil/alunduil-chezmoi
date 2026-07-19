@@ -125,15 +125,18 @@ export NVM_DIR="${XDG_CONFIG_HOME:-$HOME/.config}/nvm"
 # ghcup: add ~/.ghcup/bin (ghc, cabal) to PATH when installed.
 [ -f "$HOME/.ghcup/env" ] && . "$HOME/.ghcup/env"
 
-# Codecov API token: deployed by chezmoi from an age-encrypted source to
+# 1Password service-account token: the single out-of-band bootstrap secret,
+# placed at ~/.config/op/token (mode 0600, never chezmoi-managed). Exported
+# here so `chezmoi apply` can resolve onepasswordRead templates in every
+# subsequent shell. No-op until the token file is placed; a fresh host exports
+# it by hand for the first apply (see docs/tutorials/bootstrap.md).
+[ -r "$HOME/.config/op/token" ] && export OP_SERVICE_ACCOUNT_TOKEN="$(<"$HOME/.config/op/token")"
+
+# Codecov API token: deployed by chezmoi from 1Password to
 # ~/.config/codecov/token (mode 0600). No-op on hosts that haven't
 # applied the token yet; codecov-api fails loudly when the env var is
 # missing, so a typo here surfaces immediately.
 [ -r "$HOME/.config/codecov/token" ] && export CODECOV_API_TOKEN="$(<"$HOME/.config/codecov/token")"
-
-# Cloudflare API token: deployed by chezmoi from an age-encrypted source to
-# ~/.config/cloudflare/token (mode 0600). No-op until applied.
-[ -r "$HOME/.config/cloudflare/token" ] && export CLOUDFLARE_API_TOKEN="$(<"$HOME/.config/cloudflare/token")"
 
 # Uptime Robot API token: same pattern. Consumed by the run_onchange MCP
 # registration script and available to ad-hoc shell commands.
