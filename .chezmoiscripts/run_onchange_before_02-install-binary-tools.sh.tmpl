@@ -20,7 +20,7 @@
 # lib.sh content:     {{ include "script/install/lib.sh" | sha256sum }}
 # The hashes above embed the install scripts' content into this file's
 # rendered output so chezmoi re-runs this script when any of them change
-# (e.g. version bumps). Without them, run_once would not re-fire.
+# (e.g. version bumps). Without them, run_onchange would not re-fire.
 
 set -euo pipefail
 

@@ -33,10 +33,10 @@ The split exists so a half-finished edit in the dev clone can't corrupt a live `
 
 ## Ordered idempotent bootstrap
 
-Bootstrap lives in `run_once_before_NN-*.sh.tmpl` scripts. Each script is responsible for one logical concern (system packages, language toolchains, third-party binaries, login-required tools, automatic security updates, etc.) and is safe to re-run.
+Bootstrap lives in `.chezmoiscripts/`: `run_*_before_*.sh.tmpl` install and configure passes (run before files are applied) plus `run_onchange_after_*.sh.tmpl` service-enablement and MCP-registration passes (run after). Each script is responsible for one logical concern (system packages, language toolchains, third-party binaries, login-required tools, automatic security updates, etc.) and is safe to re-run.
 
-- **Idempotent** because chezmoi's `run_once_before` hashes the rendered script and only executes when the hash changes. A re-run on the same content is a no-op; a re-run after a content change re-executes. Scripts must therefore tolerate "already installed" without bailing.
-- **Numerically ordered** because some installs depend on others (for example, ghcup must exist before `cabal` can build anything). The two-digit prefix is a stable sort key, not a reservation system—gaps are fine.
+- **Idempotent** two ways. Most install passes are `run_once_before`: chezmoi runs each unique content once and never again. The passes that must re-fire when their *inputs* change are `run_onchange_before` instead: `run_onchange_before_02` tracks the pinned `script/install/*` versions and `run_onchange_before_04` the `etc/apt/*` config, and both embed those inputs' hashes so an upstream bump re-runs them. Either way, scripts tolerate "already installed" without bailing.
+- **Ordered where order is load-bearing.** The `before` passes carry a two-digit prefix because some installs depend on others (for example, ghcup must exist before `cabal` can build anything); the prefix is a stable sort key, not a reservation system—gaps are fine. The `after` passes (`run_onchange_after_register-*-mcp`, `run_onchange_after_enable-*`) are mutually independent, so they drop the number and name the concept—chezmoi's only ordering lever is the filename, so numbers earn their place only where a real dependency exists.
 - **One concern per script** so a failed run names its own scope. Scripts are grouped by product family, not install mechanism—a tool that needs both `apt` and a binary download lives together, not split across the apt and download passes.
 
 Tool versions live in `script/install/*` (one script per tool, each pinning its own `*_VERSION`) and are reused by both bootstrap and CI; there's exactly one place to bump. Zellij *plugins* (`zellaude`, `zjstatus`) are pinned as alias tags in `dot_config/zellij/config.kdl` because the plugin registry is independent of the binary.
@@ -55,7 +55,7 @@ Age handles "secrets at rest in a public-ish git repo" cleanly but can't sign co
 
 `dot_local/bin/executable_gh` shadows system `gh` to enforce `--draft` on `gh pr create`. The shim exists because Claude Code opens PRs through `gh`, and the project rule is "every PR opens as draft, human promotes to ready." Enforcing this in a wrapper rather than via memory keeps the rule load-bearing even when memory slips. `GH_DRAFT_GUARD=off` overrides for the rare manual case.
 
-`gh` extensions install in `run_once_before_05-*` alongside other bespoke installers, not script 02—they're managed by `gh extension`, not the `script/install/` download-and-verify pattern, so they don't fit that script's shape. Version pin lives inline (for example, `GH_POI_VERSION`).
+`gh` extensions install in `.chezmoiscripts/run_once_before_05-*` alongside other bespoke installers, not script 02—they're managed by `gh extension`, not the `script/install/` download-and-verify pattern, so they don't fit that script's shape. Version pin lives inline (for example, `GH_POI_VERSION`).
 
 ## Two `CLAUDE.md` files
 

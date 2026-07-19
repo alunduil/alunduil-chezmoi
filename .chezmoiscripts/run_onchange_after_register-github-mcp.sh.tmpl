@@ -13,7 +13,7 @@
 #     rotates, the source file's hash changes, this script reruns, and the
 #     stale token in ~/.claude.json gets replaced.
 #
-# token-hash: {{ with (glob (joinPath .chezmoi.sourceDir "dot_config/github/encrypted_private_token.age")) }}{{ include "dot_config/github/encrypted_private_token.age" | sha256sum }}{{ else }}not-yet-encrypted{{ end }}
+# token-hash: {{ with (glob (joinPath .chezmoi.sourceDir "dot_config/private_github/encrypted_private_token.age")) }}{{ include "dot_config/private_github/encrypted_private_token.age" | sha256sum }}{{ else }}not-yet-encrypted{{ end }}
 
 set -euo pipefail
 

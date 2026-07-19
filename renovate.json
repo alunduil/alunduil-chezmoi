@@ -58,7 +58,7 @@
     },
     {
       "customType": "regex",
-      "managerFilePatterns": ["/run_once_before_.*\\.sh\\.tmpl$/"],
+      "managerFilePatterns": ["/^\\.chezmoiscripts/run_once_before_.*\\.sh\\.tmpl$/"],
       "matchStrings": ["NVM_VERSION=\"(?<currentValue>v[\\d.]+)\""],
       "depNameTemplate": "nvm-sh/nvm",
       "datasourceTemplate": "github-releases"
@@ -143,7 +143,7 @@
     },
     {
       "customType": "regex",
-      "managerFilePatterns": ["/^run_once_before_02-install-binary-tools\\.sh\\.tmpl$/"],
+      "managerFilePatterns": ["/^\\.chezmoiscripts/run_onchange_before_02-install-binary-tools\\.sh\\.tmpl$/"],
       "matchStrings": ["PRE_COMMIT_VERSION=\"(?<currentValue>[\\d.]+)\""],
       "depNameTemplate": "pre-commit",
       "datasourceTemplate": "pypi"
@@ -185,14 +185,14 @@
     },
     {
       "customType": "regex",
-      "managerFilePatterns": ["/^run_once_before_05-install-standalone-tools\\.sh\\.tmpl$/"],
+      "managerFilePatterns": ["/^\\.chezmoiscripts/run_once_before_05-install-standalone-tools\\.sh\\.tmpl$/"],
       "matchStrings": ["GH_POI_VERSION=\"(?<currentValue>v[\\d.]+)\""],
       "depNameTemplate": "seachicken/gh-poi",
       "datasourceTemplate": "github-releases"
     },
     {
       "customType": "regex",
-      "managerFilePatterns": ["/^run_once_before_03-install-node-ecosystem\\.sh\\.tmpl$/"],
+      "managerFilePatterns": ["/^\\.chezmoiscripts/run_once_before_03-install-node-ecosystem\\.sh\\.tmpl$/"],
       "matchStrings": ["NODE_VERSION=\"(?<currentValue>[\\d.]+)\""],
       "depNameTemplate": "node",
       "datasourceTemplate": "node-version",
@@ -200,28 +200,28 @@
     },
     {
       "customType": "regex",
-      "managerFilePatterns": ["/^run_once_before_03-install-node-ecosystem\\.sh\\.tmpl$/"],
+      "managerFilePatterns": ["/^\\.chezmoiscripts/run_once_before_03-install-node-ecosystem\\.sh\\.tmpl$/"],
       "matchStrings": ["READWISE_CLI_VERSION=\"(?<currentValue>[\\d.]+)\""],
       "depNameTemplate": "@readwise/cli",
       "datasourceTemplate": "npm"
     },
     {
       "customType": "regex",
-      "managerFilePatterns": ["/^run_once_before_03-install-node-ecosystem\\.sh\\.tmpl$/"],
+      "managerFilePatterns": ["/^\\.chezmoiscripts/run_once_before_03-install-node-ecosystem\\.sh\\.tmpl$/"],
       "matchStrings": ["DEVCONTAINER_CLI_VERSION=\"(?<currentValue>[\\d.]+)\""],
       "depNameTemplate": "@devcontainers/cli",
       "datasourceTemplate": "npm"
     },
     {
       "customType": "regex",
-      "managerFilePatterns": ["/^run_once_before_03-install-node-ecosystem\\.sh\\.tmpl$/"],
+      "managerFilePatterns": ["/^\\.chezmoiscripts/run_once_before_03-install-node-ecosystem\\.sh\\.tmpl$/"],
       "matchStrings": ["PNPM_VERSION=\"(?<currentValue>[\\d.]+)\""],
       "depNameTemplate": "pnpm",
       "datasourceTemplate": "npm"
     },
     {
       "customType": "regex",
-      "managerFilePatterns": ["/^run_once_before_09-install-rust-ecosystem\\.sh\\.tmpl$/"],
+      "managerFilePatterns": ["/^\\.chezmoiscripts/run_once_before_09-install-rust-ecosystem\\.sh\\.tmpl$/"],
       "matchStrings": ["CARGO_CACHE_VERSION=\"(?<currentValue>[\\d.]+)\""],
       "depNameTemplate": "cargo-cache",
       "datasourceTemplate": "crate"
