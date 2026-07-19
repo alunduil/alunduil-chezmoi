@@ -80,6 +80,20 @@ repos:
     hooks:
       - id: markdownlint-cli2
 
+  # System-installed lychee (script/install/lychee, also provisioned by the
+  # bootstrap) rather than an upstream hook: one version pin, and it dodges the
+  # precompiled binary's newer-GLIBC requirement. --offline gates on
+  # internal/relative links only — fast and deterministic. External URLs rot
+  # from time and third parties, not the diff, so weekly.yml checks them
+  # out-of-band (#359).
+  - repo: local
+    hooks:
+      - id: lychee
+        name: lychee
+        entry: lychee --config lychee.toml --no-progress --offline --include-fragments=full
+        language: system
+        files: \.(md|kdl)$
+
   - repo: https://github.com/renovatebot/pre-commit-hooks
     rev: 43.209.4
     hooks:
