@@ -1,21 +1,29 @@
 # Bootstrap
 
-Zero to a fully configured host. Requires a Debian/Crostini host and the age key from a password manager.
+Zero to a fully configured host. Requires a Debian/Crostini host and a 1Password service-account token scoped to the `chezmoi` vault.
 
 ```bash
 CHEZMOI_VERSION="v2.70.5"
 sh -c "$(curl -fsLS get.chezmoi.io)" -- -b "$HOME/.local/bin" -t "$CHEZMOI_VERSION"
 
 mkdir -p ~/.config/chezmoi
-$EDITOR ~/.config/chezmoi/key.txt          # paste age key contents
-chmod 600 ~/.config/chezmoi/key.txt
+printf '[onepassword]\n  mode = "service"\n' > ~/.config/chezmoi/chezmoi.toml
 
+# First apply installs all tooling, including the 1Password CLI. Secrets render
+# empty until the token is placed, so this apply needs no op session.
 ~/.local/bin/chezmoi init --apply https://github.com/alunduil/alunduil-chezmoi.git
+
+# Place the service-account token, then re-apply so the 1Password-sourced
+# secrets (tokens, GPG key, SSH key + config) resolve now that op is installed.
+mkdir -p ~/.config/op
+$EDITOR ~/.config/op/token                 # paste 1Password service-account token
+chmod 600 ~/.config/op/token
+export OP_SERVICE_ACCOUNT_TOKEN="$(<~/.config/op/token)"
+chezmoi apply
 
 # Interactive logins (per-machine, never managed):
 gh auth login                              # ~/.config/gh/
 claude                                     # ~/.claude/.credentials.json
-op account add && eval "$(op signin)"      # ~/.config/op/ (account + session)
 gcx login                                  # ~/.config/gcx/
 readwise login                             # ~/.readwise-cli.json
 sudo tailscale up                          # tailnet auth
@@ -45,4 +53,4 @@ gh extension list                          # confirms gh-poi (squash-merge prune
 claude mcp list                            # confirms registered MCP servers
 ```
 
-SSH keys deploy from age-encrypted chezmoi source on apply, so `~/.ssh/{id_rsa,config}` land alongside the age-key paste step, so SSH to GitHub works as soon as `chezmoi init --apply` finishes. The bootstrap clones over HTTPS to bridge the gap before keys exist; swap the apply clone's remote back to SSH if preferred: `git -C ~/.local/share/chezmoi remote set-url origin git@github.com:alunduil/alunduil-chezmoi.git`.
+SSH keys resolve from 1Password on the second apply, so `~/.ssh/{id_ed25519,config}` land once the token is placed, and SSH to GitHub works from then on. The bootstrap clones over HTTPS to bridge the gap before keys exist; swap the apply clone's remote back to SSH if preferred: `git -C ~/.local/share/chezmoi remote set-url origin git@github.com:alunduil/alunduil-chezmoi.git`.

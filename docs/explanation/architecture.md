@@ -4,7 +4,7 @@ Background and rationale for how this repo is shaped. For step-by-step setup, se
 
 ## At a glance
 
-[C4](https://c4model.com) Container view, steady state—bootstrap-only edges (password-manager → age key) are covered in prose below.
+[C4](https://c4model.com) Container view, steady state—bootstrap-only edges (1Password → secret templates) are covered in prose below.
 
 ```mermaid
 C4Container
@@ -16,7 +16,7 @@ C4Container
     System_Boundary(host, "Debian/Crostini host") {
         Container(source, "Source clone", "git working tree", "Where edits happen")
         Container(apply, "Apply clone", "~/.local/share/chezmoi", "What chezmoi reads on diff/apply")
-        Container(home, "Deployed files", "$HOME/{.config,.gnupg,.ssh,.local/bin,...}", "Written by chezmoi apply, age-decrypted on the way in")
+        Container(home, "Deployed files", "$HOME/{.config,.gnupg,.ssh,.local/bin,...}", "Written by chezmoi apply, secrets resolved from 1Password on the way in")
     }
 
     Rel(user, source, "edits, commits")
@@ -41,15 +41,15 @@ Bootstrap lives in `run_once_before_NN-*.sh.tmpl` scripts. Each script is respon
 
 Tool versions live in `script/install/*` (one script per tool, each pinning its own `*_VERSION`) and are reused by both bootstrap and CI; there's exactly one place to bump. Zellij *plugins* (`zellaude`, `zjstatus`) are pinned as alias tags in `dot_config/zellij/config.kdl` because the plugin registry is independent of the binary.
 
-## Layered trust: Everything behind age
+## Layered trust: Secrets behind 1Password
 
-Long-lived secrets are stored as age-encrypted blobs in the source tree and unlocked at `apply` time:
+Long-lived secrets aren't in the source tree at all. Each ships as a template that calls `onepasswordRead "op://chezmoi/…"` and resolves at `apply` time from a dedicated 1Password vault ([ADR 0004](../adr/0004-resolve-secrets-from-1password-at-apply.md) records why the tree moved off age-encrypted blobs):
 
-- **age key** lives at `~/.config/chezmoi/key.txt` and is restored from a password manager on a fresh host. It's the one out-of-band secret the bootstrap needs.
-- **GPG** signs commits. The secret key ships as an age-encrypted blob in `private_dot_gnupg/`; trust chain is *age key + GPG passphrase*.
-- **SSH** keys (`~/.ssh/{id_rsa,config}`) ship the same way under `private_dot_ssh/`; trust chain is just the age key. This is what makes `chezmoi init --apply` over HTTPS bootstrap straight into a working SSH-to-GitHub state.
+- **service-account token** lives at `~/.config/op/token` and is placed by hand on a fresh host. It's the one out-of-band secret the bootstrap needs, scoped read-only to the `chezmoi` vault—the direct replacement for the old age key.
+- **GPG** signs commits. The armored secret key is a vault field, deployed to `~/.gnupg/secret-keys.asc` and imported by `run_once_before_08`; trust chain is *vault token + GPG passphrase*, the passphrase kept as defence in depth on top of the vault.
+- **SSH** keys (`~/.ssh/{id_ed25519,config}`) resolve the same way; trust chain is the vault token. This is what makes a second `chezmoi apply` bootstrap straight into a working SSH-to-GitHub state.
 
-Age handles "secrets at rest in a public-ish git repo" cleanly but can't sign commits or authenticate to SSH servers. GPG and SSH each need somewhere safe to live. Putting both behind the same age-key recovery flow means a fresh host needs exactly one out-of-band secret to bootstrap everything else. The paper-key backup (see [how-to/pgp-signing.md](../how-to/pgp-signing.md)) is the independent fallback if both clouds and repo are lost together.
+Rotation is now a single vault edit rather than an encrypt-commit-push dance, and the repo carries no ciphertext history. The cost is a dependency the age model didn't have: `op` must be on `PATH` before an apply can resolve a template, and chezmoi has no bundled equivalent to age decryption. The bootstrap works around this in two applies—the first installs `op` with every secret rendering empty, the second resolves them once the token is placed (see [tutorials/bootstrap.md](../tutorials/bootstrap.md)). Every secret template guards on `OP_SERVICE_ACCOUNT_TOKEN`, so an apply with no token (CI, or a host before the token is placed) renders empty instead of failing. Recovery from lost vault access leans on the 1Password Emergency Kit (see [how-to/secret-recovery.md](../how-to/secret-recovery.md)); the PGP paper-key backup ([how-to/pgp-signing.md](../how-to/pgp-signing.md)) remains the independent fallback for the signing key if both clouds and repo are lost together.
 
 ## `gh` shim
 
