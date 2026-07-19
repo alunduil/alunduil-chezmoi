@@ -132,35 +132,6 @@ export NVM_DIR="${XDG_CONFIG_HOME:-$HOME/.config}/nvm"
 # it by hand for the first apply (see docs/tutorials/bootstrap.md).
 [ -r "$HOME/.config/op/token" ] && export OP_SERVICE_ACCOUNT_TOKEN="$(<"$HOME/.config/op/token")"
 
-# Service accounts are non-interactive, so a missing or rotated token would
-# just fail `chezmoi apply` with an op error. Wrap the token-consuming chezmoi
-# subcommands to validate the token first and prompt for a replacement when
-# it's absent or rejected, persisting it to the same 0600 file. Interactive
-# shells only (this file returns early above for non-interactive ones), so CI,
-# scripts, and the chezmoi checks always reach the real binary.
-_op_ensure_token() {
-    command -v op >/dev/null 2>&1 || return 0
-    local token_file="$HOME/.config/op/token" new
-    if [ -n "${OP_SERVICE_ACCOUNT_TOKEN:-}" ] && op whoami >/dev/null 2>&1; then
-        return 0
-    fi
-    printf 'op: service-account token missing or rejected. Paste a new one: ' >&2
-    read -rs new
-    printf '\n' >&2
-    [ -n "$new" ] || { printf 'op: no token entered.\n' >&2; return 1; }
-    mkdir -p "$(dirname "$token_file")"
-    (umask 077; printf '%s' "$new" >"$token_file")
-    export OP_SERVICE_ACCOUNT_TOKEN="$new"
-    op whoami >/dev/null 2>&1 || { printf 'op: token still rejected.\n' >&2; return 1; }
-}
-
-chezmoi() {
-    case "${1:-}" in
-        apply | update | init | diff) _op_ensure_token || return 1 ;;
-    esac
-    command chezmoi "$@"
-}
-
 # Codecov API token: deployed by chezmoi from 1Password to
 # ~/.config/codecov/token (mode 0600). No-op on hosts that haven't
 # applied the token yet; codecov-api fails loudly when the env var is
