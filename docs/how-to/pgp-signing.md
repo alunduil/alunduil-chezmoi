@@ -1,6 +1,6 @@
 # Commit signing
 
-The armored secret key lives in the `chezmoi` 1Password vault (`op://chezmoi/gpg/secret_key`), renders to `~/.gnupg/secret-keys.asc` on apply, and `run_once_before_08-import-pgp-from-chezmoi.sh.tmpl` imports it into the local keyring. New machine: `chezmoi apply` with the token placed is the only step. The trust chain is vault token + GPG passphrase.
+The armored secret key lives in the `chezmoi` 1Password vault (`op://chezmoi/gpg/secret_key`), renders to `~/.gnupg/secret-keys.asc` on apply, and `.chezmoiscripts/run_once_before_08-import-pgp-from-chezmoi.sh.tmpl` imports it into the local keyring. New machine: `chezmoi apply` with the token placed is the only step. The trust chain is vault token + GPG passphrase.
 
 Upload the public key to GitHub once per account so signed commits show "Verified":
 

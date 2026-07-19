@@ -3,7 +3,7 @@ Description=zellij-freeze observability capture stack (always-on)
 Documentation=https://github.com/alunduil/alunduil-chezmoi/blob/main/docs/how-to/viewing-zellij-freeze-data.md
 # Wants pulls the whole stack in when the target starts, so a single
 # `systemctl --user enable --now zellij-observability.target` brings up (and
-# auto-restarts at login) every service. run_onchange_after_10 runs that on
+# auto-restarts at login) every service. run_onchange_after_enable-observability runs that on
 # `chezmoi apply`, so a fresh host comes up capturing without manual steps.
 Wants=zellijstat.service prometheus.service loki.service tempo.service alloy.service grafana.service
 After=zellijstat.service prometheus.service loki.service tempo.service alloy.service grafana.service

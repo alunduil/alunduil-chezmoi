@@ -2,7 +2,7 @@
 
 Chezmoi source directory. Files deploy to `$HOME` via `chezmoi apply`;
 names follow chezmoi rules (`dot_` → `.`, `executable_` → +x, `.tmpl` →
-Go template, `run_once_before_NN-…` → ordered idempotent bootstrap).
+Go template, `.chezmoiscripts/run_*_before_NN-…` → ordered idempotent bootstrap).
 `docs/tutorials/bootstrap.md` has the bootstrap walkthrough; `docs/explanation/architecture.md` has the human-facing rationale.
 
 ## Source vs. apply path
@@ -14,8 +14,12 @@ effect on `apply` until committed and pulled into the apply clone. Use
 
 ## Invariants
 
-- Bootstrap scripts (`run_once_before_NN-*.sh.tmpl`) are idempotent;
-  re-running is safe. Numeric prefix orders them.
+- Bootstrap scripts live in `.chezmoiscripts/` and are idempotent;
+  re-running is safe. `run_*_before_NN-*` install/config passes carry a
+  numeric prefix that orders them (dependencies); `run_onchange_after_*`
+  passes are order-independent and named by concept, not numbered. Passes
+  that must re-fire when their inputs change (`run_onchange_before_02`,
+  `_04`) are `run_onchange` and embed those inputs' hashes.
 - Tool versions live in `script/install/*` (one script per tool, each
   pinning its own `*_VERSION`) and are reused by both bootstrap and CI.
   Bump in one place. Zellij *plugins*

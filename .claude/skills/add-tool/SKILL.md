@@ -24,14 +24,16 @@ to do real work?
 
 Pick the canonical installer for the ecosystem:
 
-| Source                | Pass                                            | Pattern                          |
-| --------------------- | ----------------------------------------------- | -------------------------------- |
-| Debian package        | `run_once_before_01`                            | append to `APT_PACKAGES`         |
-| Pinned binary release | `run_once_before_02` + `script/install/<tool>`  | template below                   |
-| npm package           | `run_once_before_03`                            | `npm install -g`, `command -v`   |
-| Cargo crate           | `run_once_before_04`                            | `cargo install`, `command -v`    |
-| `gh` extension        | `run_once_before_05`                            | `gh extension install --pin`     |
-| `curl \| sh`          | `run_once_before_05`                            | guard with `command -v`          |
+All passes live under `.chezmoiscripts/`.
+
+| Source                | Pass                                                | Pattern                          |
+| --------------------- | --------------------------------------------------- | -------------------------------- |
+| Debian package        | `run_once_before_01`                                | append to `APT_PACKAGES`         |
+| Pinned binary release | `run_onchange_before_02` + `script/install/<tool>`  | template below                   |
+| npm package           | `run_once_before_03`                                | `npm install -g`, `command -v`   |
+| Cargo crate           | `run_once_before_09`                                | `cargo install`, `command -v`    |
+| `gh` extension        | `run_once_before_05`                                | `gh extension install --pin`     |
+| `curl \| sh`          | `run_once_before_05`                                | guard with `command -v`          |
 
 Auth and install axes are independent: `gcx` is auth-required *and*
 uses `script/install/`; `gh-poi` is fire-and-forget *and* uses
@@ -76,7 +78,7 @@ mkdir -p "$BIN_DIR"
 install -m 0755 "$tmp/<tool>" "$bin"
 ```
 
-In `run_once_before_02-install-binary-tools.sh.tmpl`, add both:
+In `.chezmoiscripts/run_onchange_before_02-install-binary-tools.sh.tmpl`, add both:
 
 - `# <tool> content: {{ include "script/install/<tool>" | sha256sum }}`
   to the hash-include block — without this, chezmoi won't re-fire
@@ -89,7 +91,7 @@ releases — see the `renovate` skill for the regex-manager pattern.
 ## Procedure
 
 1. Identify the auth axis and install mechanism.
-2. Wire the installer into the right `run_once_before_NN` pass.
+2. Wire the installer into the right `.chezmoiscripts/run_*_before_NN` pass.
 3. Update README:
    - Auth-required → add to "Interactive logins" with config-path comment
    - Fire-and-forget → add to "PATH check" line

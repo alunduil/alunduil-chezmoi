@@ -18,6 +18,6 @@ while IFS= read -r tmpl; do
     printf 'FAIL: %s\n%s\n' "$tmpl" "$err" >&2
     fail=1
   fi
-done < <(git -C "$SOURCE_DIR" ls-files 'run_*.tmpl')
+done < <(git -C "$SOURCE_DIR" ls-files '.chezmoiscripts/run_*.tmpl')
 
 exit "$fail"

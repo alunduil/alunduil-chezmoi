@@ -13,8 +13,8 @@
 # hook restarts them in place after each upgrade, so the security fix takes hold
 # without a reboot. See #238.
 #
-# run_once hashes the rendered script, so changes to the config files alone
-# would not re-trigger it. Embed their hashes here to force a re-run on edit:
+# run_onchange re-runs when this script's rendered content changes; edits to
+# the config files alone would not. Embed their hashes here so an edit re-fires:
 # 20auto-upgrades content:       {{ include "etc/apt/20auto-upgrades" | sha256sum }}
 # 50unattended-upgrades content: {{ include "etc/apt/50unattended-upgrades" | sha256sum }}
 # needrestart drop-in content:   {{ include "etc/needrestart/conf.d/zz-alunduil.conf" | sha256sum }}
