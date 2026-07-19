@@ -1,4 +1,4 @@
-name: Lychee External
+name: Weekly
 
 on:
   schedule:
@@ -11,18 +11,24 @@ permissions:
   contents: read
 
 concurrency:
+  # Ref-less group so a manual dispatch and the schedule can't run
+  # concurrently and race on the shared report issue; cancel rather than
+  # queue so a fresh dispatch supersedes an in-flight run.
   group: ${{ github.workflow }}
+  cancel-in-progress: true
 
 jobs:
-  # External URLs rot independently of our changes, so checking them per-PR
+  # External URLs rot independently of our diffs, so checking them per-PR
   # produces flaky failures. Verify them weekly and open an issue on breakage
-  # rather than blocking a PR. Never blocks (fail: false).
-  external:
+  # rather than blocking the line. Never fails the run (fail: false).
+  external-links:
+    name: Check external links
     runs-on: ubuntu-24.04
     timeout-minutes: 10
     permissions:
       contents: read
       issues: write
+
     steps:
       - uses: actions/checkout@df4cb1c069e1874edd31b4311f1884172cec0e10 # v6
       - uses: actions/cache@caa296126883cff596d87d8935842f9db880ef25 # v5
@@ -30,8 +36,12 @@ jobs:
           path: .lycheecache
           key: lychee-cache-${{ hashFiles('lychee.toml', '**/*.md', '**/*.kdl') }}
           restore-keys: lychee-cache-
-      - uses: lycheeverse/lychee-action@8646ba30535128ac92d33dfc9133794bfdd9b411 # v2.8.0
+
+      # Reads lychee.toml from the repo root, so the exclude/retry/fragment
+      # settings apply to this run too.
+      - name: Check all links
         id: lychee
+        uses: lycheeverse/lychee-action@8646ba30535128ac92d33dfc9133794bfdd9b411 # v2.8.0
         with:
           args: '--no-progress **/*.md **/*.kdl'
           fail: false
