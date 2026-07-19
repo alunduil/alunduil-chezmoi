@@ -7,7 +7,6 @@ mkdir -p ~/.config/<service>
 umask 077
 $EDITOR ~/.config/<service>/token          # paste secret, no trailing newline
 chezmoi add --encrypt --source "$PWD" ~/.config/<service>/token
-chezmoi chattr --source "$PWD" +private ~/.config/<service>   # 700 dir, matching siblings
 ```
 
-Stored as `dot_config/private_<service>/encrypted_private_token.age` and restored (mode 600) on `chezmoi apply`. The `chattr +private` renames the source dir to `private_<service>`, so the deployed `~/.config/<service>/` is 700 like the other secret directories. See `dot_config/private_codecov/` for an existing example.
+Stored as `dot_config/<service>/encrypted_private_token.age` and restored (mode 600) on `chezmoi apply`. The `private_` on the file makes the token 600; the service directory stays the conventional 755. See `dot_config/codecov/` for an existing example.

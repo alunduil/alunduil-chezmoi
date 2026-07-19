@@ -15,8 +15,8 @@
 # below. The `with` guard on the encrypted key keeps the template
 # renderable before the user has run `chezmoi add --encrypt` for the
 # first time.
-# key-hash: {{ with (glob (joinPath .chezmoi.sourceDir "dot_config/private_truenas/encrypted_private_api_key.age")) }}{{ include "dot_config/private_truenas/encrypted_private_api_key.age" | sha256sum }}{{ else }}not-yet-encrypted{{ end }}
-# url-hash: {{ include "dot_config/private_truenas/url" | sha256sum }}
+# key-hash: {{ with (glob (joinPath .chezmoi.sourceDir "dot_config/truenas/encrypted_private_api_key.age")) }}{{ include "dot_config/truenas/encrypted_private_api_key.age" | sha256sum }}{{ else }}not-yet-encrypted{{ end }}
+# url-hash: {{ include "dot_config/truenas/url" | sha256sum }}
 
 set -euo pipefail
 
