@@ -1,6 +1,5 @@
-# Renders to ~/.config/chezmoi/chezmoi.toml on `chezmoi init`; edit here, not the
-# deployed copy. recipient is the public half of the age key, safe to commit; the
-# private half stays in key.txt. encryption must sit above [age].
+# recipient is the public half of the age key (private half lives in key.txt,
+# uncommitted), so exposing it here leaks nothing.
 encryption = "age"
 
 [age]
