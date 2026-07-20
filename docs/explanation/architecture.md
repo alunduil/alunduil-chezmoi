@@ -45,7 +45,7 @@ Tool versions live in `script/install/*` (one script per tool, each pinning its 
 
 The source tree stores long-lived secrets as age-encrypted blobs that unlock at `apply` time:
 
-- **age key** lives at `~/.config/chezmoi/key.txt`, and a password manager restores it on a fresh host. It's the one out-of-band secret the bootstrap needs.
+- **age key** lives at `~/.config/chezmoi/key.txt`, and a password manager restores it on a fresh host. It's the one out-of-band secret the bootstrap needs. The encryption config that tells chezmoi to *use* age (and for which recipient) is rendered to `~/.config/chezmoi/chezmoi.toml` from `.chezmoi.toml.tmpl` on `chezmoi init`, so pasting the key is the only manual config step. The recipient in that template is a public key; only `key.txt`'s private half is out-of-band.
 - **GPG** signs commits. The secret key ships as an age-encrypted blob in `private_dot_gnupg/`; trust chain is *age key + GPG passphrase*.
 - **SSH** keys (`~/.ssh/{id_rsa,config}`) ship the same way under `private_dot_ssh/`; trust chain is just the age key. This is what makes `chezmoi init --apply` over HTTPS bootstrap straight into a working SSH-to-GitHub state.
 
