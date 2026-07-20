@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 set -euo pipefail
 
-SIGNAL_CLI_VERSION="v0.14.5"
+SIGNAL_CLI_VERSION="v0.14.6"
 ARCH="Linux-native"
 
 # AsamK's release signing key. Published at keys.openpgp.org with UID
