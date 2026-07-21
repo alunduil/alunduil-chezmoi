@@ -15,3 +15,21 @@ script
 **/*.bats
 **/*_test.py
 **/fixtures
+{{- if and (hasKey . "role") (eq .role "ha-terminal") }}
+
+# ha-terminal (HA SSH addon: Alpine/musl, ephemeral /root) is a lean
+# Claude-session profile. Ignore workstation-only sources: the Debian/systemd
+# bootstrap, service configs, long-lived signing/SSH secrets, and the
+# GPG-signing gitconfig. What stays is the Claude session config (~/.claude)
+# plus ~/.vimrc. Patterns match target paths, not source names.
+# See docs/explanation/architecture.md, "Host roles".
+.chezmoiscripts/**
+.config/**
+.local/bin/**
+.gnupg/**
+.ssh/**
+.bashrc
+.bash_profile
+.profile
+.gitconfig
+{{- end }}

@@ -41,6 +41,16 @@ Bootstrap lives in `.chezmoiscripts/`: `run_*_before_*.sh.tmpl` install and conf
 
 Tool versions live in `script/install/*` (one script per tool, each pinning its own `*_VERSION`), and both bootstrap and CI reuse them, so there's exactly one place to bump. Zellij *plugins* (`zellaude`, `zjstatus`) pin via alias tags in `dot_config/zellij/config.kdl`, since the plugin registry is independent of the binary.
 
+## Host roles
+
+One repo serves more than one kind of host. The workstation is a Debian/Crostini box that wants the full toolchain; a leaner host—for example the Home Assistant "Advanced SSH & Web Terminal" add-on (Alpine/musl, ephemeral `/root`)—wants only enough to run a Claude session and none of the Debian/systemd machinery. A single `role` data variable is the host-class axis. It defaults to `workstation`, so existing hosts and a plain `chezmoi init` are unchanged, and each host sets it explicitly at bootstrap (`CHEZMOI_ROLE=…`; the HA add-on passes it through its `init_commands`).
+
+The role is *set*, not *detected*. Detection would couple intent to incidental signals—OS id, hostname, filesystem markers—and each added profile makes the heuristics more brittle. An explicit value set where the host is bootstrapped scales to N profiles with no heuristics to maintain: adding a role is a new value plus ignore rules, never new detection code. The HA add-on controls its own `chezmoi` invocation, so it can pass the role directly with no interactive prompt on unattended re-runs.
+
+`role` gates sources through `.chezmoiignore` (itself a template). The default `workstation` path ignores nothing role-specific, so it renders exactly as before. A lean role instead names the workstation-only sources to drop: the Debian/systemd bootstrap, service configs, the long-lived signing/SSH secrets below, and the GPG-signing `gitconfig` (a host with no signing key can't honour `commit.gpgsign`). The ignore list is a denylist because chezmoi's un-ignore (`!`) beats *every* ignore, including the repo-wide test excludes—so an allowlist (`*` then `!keep`) would drag the `.bats`/`_test.py` files back into the applied tree. Denylisting composes additively with those excludes instead; a role that later needs one workstation source back re-includes that *specific* file with `!`.
+
+Leaner roles also run a smaller-blast-radius secret posture. The workstation gets the full age-backed set (signing key, SSH keys); a network-exposed, ephemeral host next to home automation gets only the narrowly scoped tokens it needs and none of the long-lived signing/SSH identities—so a compromise there can't sign commits or reach the SSH identities as this host.
+
 ## Layered trust: Everything behind age
 
 The source tree stores long-lived secrets as age-encrypted blobs that unlock at `apply` time:
