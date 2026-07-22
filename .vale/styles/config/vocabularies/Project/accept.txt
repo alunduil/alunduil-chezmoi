@@ -79,6 +79,12 @@ worktrees
 
 # Common tech terms
 config
+configs
+hostname
+denylist
+allowlist
+(?i)denylist(ing)?
+(?i)allowlist(ing)?
 justfile
 dev
 dotfile

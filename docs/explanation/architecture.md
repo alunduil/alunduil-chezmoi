@@ -29,17 +29,27 @@ C4Container
 
 chezmoi separates the *source* (this checkout) from the *applied clone* at `~/.local/share/chezmoi`. `chezmoi diff` and `chezmoi apply` read the apply clone, not the working tree, so edits here only take effect after you commit them and update the apply clone. Use `chezmoi diff --source-path .` to preview from this checkout.
 
-The split exists so a half-finished edit in the dev clone can't corrupt a live `chezmoi apply` mid-keystroke. The cost is one extra step (commit + pull) before changes go live, which is small in exchange for an always-coherent apply path.
+The split exists so a half-finished edit in the dev clone can't corrupt a live `chezmoi apply`. The cost—commit + pull before changes go live—buys an always-coherent apply path.
 
 ## Ordered idempotent bootstrap
 
 Bootstrap lives in `.chezmoiscripts/`: `run_*_before_*.sh.tmpl` install and configure passes (run before chezmoi applies files) plus `run_onchange_after_*.sh.tmpl` service-enablement and MCP-registration passes (run after). Each script is responsible for one logical concern (system packages, language toolchains, third-party binaries, login-required tools, automatic security updates, etc.) and is safe to re-run.
 
-- **Idempotent** two ways. Most install passes are `run_once_before`: chezmoi runs each unique content once and never again. The passes that must re-fire when their *inputs* change are `run_onchange_before` instead: `run_onchange_before_02` tracks the pinned `script/install/*` versions and `run_onchange_before_04` the `etc/apt/*` config, and both embed those inputs' hashes so an upstream bump re-runs them. Either way, scripts tolerate "already installed" without bailing.
-- **Ordered where order is load-bearing.** The `before` passes carry a two-digit prefix because some installs depend on others (for example, ghcup must exist before `cabal` can build anything); the prefix is a stable sort key, not a reservation system—gaps are fine. The `after` passes (`run_onchange_after_register-*-mcp`, `run_onchange_after_enable-*`) are mutually independent, so they drop the number and name the concept—chezmoi's only ordering lever is the filename, so numbers earn their place only where a real dependency exists.
-- **One concern per script** so a failed run names its own scope. Scripts map to a product family, not an install mechanism—a tool that needs both `apt` and a binary download lives together, not split across the apt and download passes.
+- **Idempotent** two ways. Most install passes are `run_once_before`: chezmoi runs each unique content once, never again. Passes that must re-fire when their *inputs* change are `run_onchange_before`: `_02` hashes the pinned `script/install/*` versions, `_04` the `etc/apt/*` config, so an upstream bump re-runs them. Either way, scripts tolerate "already installed" without bailing.
+- **Ordered where order is load-bearing.** The `before` passes carry a two-digit prefix because some installs depend on others (ghcup must exist before `cabal` can build); it's a stable sort key, not a reservation system—gaps are fine. The `after` passes are mutually independent, so they drop the number and name the concept. Filename is chezmoi's only ordering lever, so numbers earn their place only where a real dependency exists.
+- **One concern per script** so a failed run names its own scope. Scripts map to a product family, not an install mechanism: a tool needing both `apt` and a binary download lives in one script, not split across passes.
 
 Tool versions live in `script/install/*` (one script per tool, each pinning its own `*_VERSION`), and both bootstrap and CI reuse them, so there's exactly one place to bump. Zellij *plugins* (`zellaude`, `zjstatus`) pin via alias tags in `dot_config/zellij/config.kdl`, since the plugin registry is independent of the binary.
+
+## Host roles
+
+One repo, more than one kind of host. The workstation is a Debian/Crostini box that wants the full toolchain; a lean host—the Home Assistant "Advanced SSH & Web Terminal" add-on (Alpine/musl, ephemeral `/root`)—wants only enough to run a Claude session. The `role` data variable is the host-class axis. It defaults to `workstation`, so existing hosts and a plain `chezmoi init` are unchanged; each host otherwise sets it at bootstrap via `CHEZMOI_ROLE`, which the HA add-on passes through its `init_commands`.
+
+Explicit, not detected. Detection would couple intent to incidental signals—OS id, hostname, filesystem markers—that grow brittle as profiles multiply. Setting the value where the host is bootstrapped scales to any number of profiles: a new role is a new value plus ignore rules, never new detection code.
+
+`role` gates sources through `.chezmoiignore`, itself a template. `workstation` drops nothing and renders as before. A lean role names the workstation-only sources to exclude—the Debian/systemd bootstrap, service configs, the age-backed signing and SSH secrets, and the GPG-signing `gitconfig`, which would fail every commit on a host with no signing key. It has to be a denylist: chezmoi's un-ignore (`!`) overrides *every* ignore, so an allowlist (`*` then `!keep`) would pull the repo-wide `.bats`/`_test.py` excludes back into the applied tree. A denylist composes with those excludes instead, and a role that needs one source back re-includes that specific file with `!`.
+
+The exclusions also shrink the secret blast radius: a network-exposed, ephemeral host next to home automation carries only the narrowly scoped tokens it needs, never the long-lived signing and SSH identities the workstation holds.
 
 ## Layered trust: Everything behind age
 
@@ -49,7 +59,7 @@ The source tree stores long-lived secrets as age-encrypted blobs that unlock at 
 - **GPG** signs commits. The secret key ships as an age-encrypted blob in `private_dot_gnupg/`; trust chain is *age key + GPG passphrase*.
 - **SSH** keys (`~/.ssh/{id_rsa,config}`) ship the same way under `private_dot_ssh/`; trust chain is just the age key. This is what makes `chezmoi init --apply` over HTTPS bootstrap straight into a working SSH-to-GitHub state.
 
-Age handles "secrets at rest in a public-ish git repo" cleanly but can't sign commits or authenticate to SSH servers. GPG and SSH each need somewhere safe to live. Putting both behind the same age-key recovery flow means a fresh host needs exactly one out-of-band secret to bootstrap everything else. The paper-key backup (see [how-to/pgp-signing.md](../how-to/pgp-signing.md)) is the independent fallback if you lose both clouds and repo together.
+Age secures secrets at rest but can't itself sign commits or authenticate to SSH; putting GPG and SSH behind the same age-key recovery flow means a fresh host needs exactly one out-of-band secret to bootstrap the rest. The paper-key backup (see [how-to/pgp-signing.md](../how-to/pgp-signing.md)) is the independent fallback if you lose both clouds and the repo together.
 
 ## `gh` shim
 
