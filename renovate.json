@@ -86,6 +86,13 @@
     },
     {
       "customType": "regex",
+      "managerFilePatterns": ["/^script/install/claude$/"],
+      "matchStrings": ["CLAUDE_VERSION=\"(?<currentValue>[\\d.]+)\""],
+      "depNameTemplate": "@anthropic-ai/claude-code",
+      "datasourceTemplate": "npm"
+    },
+    {
+      "customType": "regex",
       "managerFilePatterns": ["/^script/install/lychee$/"],
       "matchStrings": ["LYCHEE_VERSION=\"(?<currentValue>v[\\d.]+)\""],
       "depNameTemplate": "lycheeverse/lychee",
