@@ -15,10 +15,6 @@ script
 **/*.bats
 **/*_test.py
 **/fixtures
-# ha-terminal install pass: ignored everywhere by default and re-included only
-# under the role block below, so it never runs on a workstation. The pattern is
-# the target path, which drops the run_onchange_before_ source prefix.
-.chezmoiscripts/10-install-ha-terminal-tools.sh
 {{- if and (hasKey . "role") (eq .role "ha-terminal") }}
 
 # ha-terminal (HA SSH addon: Alpine/musl, ephemeral /root) is a lean
@@ -28,7 +24,6 @@ script
 # plus ~/.vimrc. Patterns match target paths, not source names.
 # See docs/explanation/architecture.md, "Host roles".
 .chezmoiscripts/**
-!.chezmoiscripts/10-install-ha-terminal-tools.sh
 .config/**
 .local/bin/**
 .gnupg/**
