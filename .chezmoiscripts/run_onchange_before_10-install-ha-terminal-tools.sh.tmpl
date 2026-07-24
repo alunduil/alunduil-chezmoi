@@ -1,0 +1,22 @@
+#!/usr/bin/env bash
+# gcx content:    {{ include "script/install/gcx" | sha256sum }}
+# claude content: {{ include "script/install/claude" | sha256sum }}
+# lib.sh content: {{ include "script/install/lib.sh" | sha256sum }}
+# The hashes above embed the installers into this script's rendered output so
+# run_onchange re-fires when a pin bumps. This script runs only on the
+# ha-terminal role: .chezmoiignore drops it everywhere else and re-includes it
+# under the ha-terminal block.
+
+set -euo pipefail
+
+# The HA SSH addon's container is ephemeral -- /root resets on rebuild -- but
+# /config persists. Cache the Claude-session binaries there so a rebuild
+# relinks them onto PATH (see the ha-terminal how-to) without re-downloading.
+# Both installers are idempotent: a warm cache with matching versions is a
+# no-op.
+BIN_DIR="/config/claude-session/bin"
+INSTALL_DIR="{{ .chezmoi.sourceDir }}/script/install"
+
+mkdir -p "$BIN_DIR"
+"$INSTALL_DIR/gcx" --bin-dir "$BIN_DIR"
+"$INSTALL_DIR/claude" --bin-dir "$BIN_DIR"
