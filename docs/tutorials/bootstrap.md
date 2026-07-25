@@ -33,6 +33,7 @@ uv --version                               # Python-CLI installer (astral-sh/uv)
 pre-commit --version                       # git hook runner (uv tool install)
 ghc --version && cabal --version           # ghcup-managed Haskell toolchain
 pnpm --version                             # pnpm package manager (npm global)
+java --version                             # Temurin 21 JDK (Firebase emulators)
 command -v cargo-cache                     # cargo registry GC helper (needs cargo)
 golang-petname                             # repo-picker worktree namer
 command -v nethack                         # roguelike (nethack-console)
