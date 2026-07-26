@@ -1,6 +1,7 @@
 #!/usr/bin/env bash
 set -euo pipefail
 
+# renovate: datasource=github-releases depName=vale-cli/vale
 VALE_VERSION="v3.14.2"
 ARCH="Linux_64-bit"
 

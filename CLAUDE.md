@@ -25,6 +25,13 @@ effect on `apply` until committed and pulled into the apply clone. Use
   Bump in one place. Zellij *plugins*
   (`zellaude`, `zjstatus`) are pinned separately as alias tags in
   `dot_config/zellij/config.kdl`.
+- Every `*_VERSION` pin carries a `# renovate: datasource=… depName=…`
+  line directly above it (order: datasource, depName, packageName,
+  versioning, extractVersion). One generic manager in `renovate.json`
+  reads them all — a new pinned tool needs no Renovate config change.
+  An unannotated pin is invisible to Renovate rather than an error, so
+  `script/checks/renovate-pins` (a pre-commit hook) fails the build on
+  one.
 - `gh` extensions install in script 05 alongside other bespoke
   installers, not script 02 — they're managed by `gh extension`, not
   the `script/install/` download-and-verify pattern. Version pin lives

@@ -1,0 +1,30 @@
+#!/usr/bin/env bash
+# Every pinned *_VERSION carries a `# renovate:` line above it, which is what
+# renovate.json's generic managers match on. A pin without one is not a
+# Renovate error -- it is simply never extracted, so it reads as permanently
+# up to date and silently rots. Nothing else notices, hence this check.
+
+set -euo pipefail
+
+SOURCE_DIR="$(git -C "$(dirname "${BASH_SOURCE[0]}")" rev-parse --show-toplevel)"
+cd "$SOURCE_DIR"
+
+fail=0
+while IFS= read -r file; do
+  awk -v f="$file" '
+    /^[[:space:]]*[A-Za-z0-9_]+_VERSION[=:][[:space:]]*"/ {
+      if (prev !~ /# renovate:/) {
+        printf "%s:%d:%s\n", f, NR, $0
+        rc = 1
+      }
+    }
+    { prev = $0 }
+    END { exit rc }
+  ' "$file" || fail=1
+done < <(git ls-files 'script/install/*' '.chezmoiscripts/*.tmpl' '.github/workflows/*.yml')
+
+if [ "$fail" -ne 0 ]; then
+  printf '%s: pins above lack a `# renovate: datasource=... depName=...` line\n' \
+    "${0##*/}" >&2
+  exit 1
+fi

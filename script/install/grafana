@@ -1,6 +1,7 @@
 #!/usr/bin/env bash
 set -euo pipefail
 
+# renovate: datasource=github-releases depName=grafana/grafana
 GRAFANA_VERSION="v13.0.1"
 ARCH="linux-amd64"
 

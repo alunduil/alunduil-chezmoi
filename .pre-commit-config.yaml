@@ -88,6 +88,13 @@ repos:
   # out-of-band (#359).
   - repo: local
     hooks:
+      - id: renovate-pins
+        name: renovate-pins
+        entry: script/checks/renovate-pins
+        language: system
+        pass_filenames: false
+        files: ^(script/install/|\.chezmoiscripts/.*\.tmpl$|\.github/workflows/)
+
       - id: lychee
         name: lychee
         entry: lychee --config lychee.toml --no-progress --offline --include-fragments=full
