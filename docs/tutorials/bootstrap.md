@@ -31,6 +31,10 @@ vale --version                             # prose linter (vale-cli/vale)
 just --version                             # command runner (justfiles)
 uv --version                               # Python-CLI installer (astral-sh/uv)
 pre-commit --version                       # git hook runner (uv tool install)
+beet --version                             # music tagger (uv tool install)
+ffprobe -version && mediainfo --version    # media inspection (ffmpeg, mediainfo)
+exiftool -ver && fpcalc -version           # metadata reader, audio fingerprinter
+rsync --version                            # file sync
 ghc --version && cabal --version           # ghcup-managed Haskell toolchain
 pnpm --version                             # pnpm package manager (npm global)
 java --version                             # Temurin 21 JDK (Firebase emulators)
