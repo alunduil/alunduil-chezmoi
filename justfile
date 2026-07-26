@@ -1,5 +1,5 @@
 # Local sensor entrypoint: the fast pre-claim sweep. CI is the source of
-# truth — each sensor also runs in its own workflow, so a stale list here
+# truth — each sensor also runs as a job in ci.yml, so a stale list here
 # can only cause a local false-pass that CI then catches, never a bad
 # merge. lychee (link-checking) runs in CI only; it's not a pre-claim
 # sensor and needs its own binary.

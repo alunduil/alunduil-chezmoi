@@ -37,14 +37,14 @@
     },
     {
       "customType": "regex",
-      "managerFilePatterns": ["/^\\.github/workflows/bats\\.yml$/"],
+      "managerFilePatterns": ["/^\\.github/workflows/ci\\.yml$/"],
       "matchStrings": ["support-version: \"(?<currentValue>[\\d.]+)\""],
       "depNameTemplate": "bats-core/bats-support",
       "datasourceTemplate": "github-releases"
     },
     {
       "customType": "regex",
-      "managerFilePatterns": ["/^\\.github/workflows/bats\\.yml$/"],
+      "managerFilePatterns": ["/^\\.github/workflows/ci\\.yml$/"],
       "matchStrings": ["assert-version: \"(?<currentValue>[\\d.]+)\""],
       "depNameTemplate": "bats-core/bats-assert",
       "datasourceTemplate": "github-releases"
@@ -234,7 +234,7 @@
     },
     {
       "customType": "regex",
-      "managerFilePatterns": ["/^\\.github/workflows/chezmoi\\.yml$/"],
+      "managerFilePatterns": ["/^\\.github/workflows/ci\\.yml$/"],
       "matchStrings": ["CHEZMOI_VERSION: \"(?<currentValue>v[\\d.]+)\""],
       "depNameTemplate": "twpayne/chezmoi",
       "datasourceTemplate": "github-releases"

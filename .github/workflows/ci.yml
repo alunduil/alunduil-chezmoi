@@ -1,0 +1,303 @@
+name: CI
+
+# The always-on gate: everything triggered by a push to main or a pull
+# request. Workflow files are named for their trigger, not their tool or
+# subject — the jobs below carry the descriptive names, the same way
+# weekly.yml holds scheduled work. See docs/adr/0004-consolidate-ci-workflow.md.
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  # Cancel superseded PR runs; never cancel main so each commit completes.
+  cancel-in-progress: ${{ github.ref != 'refs/heads/main' }}
+
+jobs:
+  # GitHub filters paths per workflow, not per job, so the two jobs whose
+  # setup is genuinely expensive resolve their own filters here and gate on
+  # the outputs. Cheap checks skip this and always run.
+  changes:
+    name: Detect changed paths
+    runs-on: ubuntu-24.04
+    timeout-minutes: 5
+    outputs:
+      systemd: ${{ steps.filter.outputs.systemd }}
+      # Underscore, not hyphen: `-` is subtraction in GitHub expressions, so a
+      # hyphenated output name silently evaluates to empty and never gates.
+      observability_smoke: ${{ steps.filter.outputs.observability_smoke }}
+    steps:
+      - uses: actions/checkout@df4cb1c069e1874edd31b4311f1884172cec0e10 # v6
+      - uses: dorny/paths-filter@7b450fff21473bca461d4b92ce414b9d0420d706 # v4.0.2
+        id: filter
+        with:
+          # A change to this file re-runs both heavy jobs: their gating now
+          # lives here, so the filter can't tell which one changed.
+          filters: |
+            systemd:
+              - 'dot_config/systemd/user/**'
+              - 'etc/systemd/system/**'
+              - 'dot_local/bin/executable_zellijstat'
+              - 'dot_local/bin/executable_git-poi-all'
+              - 'dot_local/bin/executable_git-worktree-poi'
+              - 'dot_local/bin/executable_dev-cache-gc'
+              - 'script/install/prometheus'
+              - 'script/install/alloy'
+              - 'script/install/loki'
+              - 'script/install/tempo'
+              - 'script/install/grafana'
+              - 'script/checks/systemd-units'
+              - '.github/workflows/ci.yml'
+            observability_smoke:
+              - 'dot_config/alloy/**'
+              - 'dot_config/prometheus/**'
+              - 'dot_local/bin/executable_zellijstat'
+              - 'script/install/alloy'
+              - 'script/install/prometheus'
+              - 'script/checks/observability-smoke'
+              - '.github/workflows/ci.yml'
+
+  pre-commit:
+    name: Run pre-commit hooks
+    runs-on: ubuntu-24.04
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@df4cb1c069e1874edd31b4311f1884172cec0e10 # v6
+      - uses: actions/setup-python@ece7cb06caefa5fff74198d8649806c4678c61a1 # v6
+        with:
+          python-version: '3.x'
+      # The local lychee hook runs the system binary; provision it here.
+      - name: Install lychee
+        run: |
+          mkdir -p "$HOME/.local/bin"
+          script/install/lychee --bin-dir "$HOME/.local/bin"
+          echo "$HOME/.local/bin" >> "$GITHUB_PATH"
+      - uses: pre-commit/action@2c7b3805fd2a0fd8c1884dcaebf91fc102a13ecd # v3.0.1
+
+  shell-tests:
+    name: Test shell scripts
+    runs-on: ubuntu-24.04
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@df4cb1c069e1874edd31b4311f1884172cec0e10 # v6
+
+      - uses: bats-core/bats-action@77d6fb60505b4d0d1d73e48bd035b55074bbfb43 # 4.0.0
+        id: setup-bats
+        with:
+          # Versions stay aligned with script/install/bats-libs (the local
+          # path); Renovate bumps both together. assert defaults to 2.1.0, so
+          # pin it explicitly. detik/file stay unused.
+          support-install: true
+          support-version: "0.3.0"
+          assert-install: true
+          assert-version: "2.2.4"
+          detik-install: false
+          file-install: false
+          # bats-action curls api.github.com; auth raises the anonymous rate limit.
+          github-token: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Test
+        run: bats --recursive dot_local dot_claude script
+        env:
+          # The action installs to /usr/lib/bats-* but does not export the path;
+          # its lib-path output points BATS_LIB_PATH at the converted suites'
+          # bats_load_library calls.
+          BATS_LIB_PATH: ${{ steps.setup-bats.outputs.lib-path }}
+
+  python-tests:
+    name: Test python
+    runs-on: ubuntu-24.04
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@df4cb1c069e1874edd31b4311f1884172cec0e10 # v6
+      - uses: actions/setup-python@ece7cb06caefa5fff74198d8649806c4678c61a1 # v6
+        with:
+          python-version: '3.x'
+
+      - name: Test
+        run: python3 dot_local/bin/zellijstat_test.py
+
+  chezmoi-source:
+    name: Validate chezmoi source
+    runs-on: ubuntu-24.04
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@df4cb1c069e1874edd31b4311f1884172cec0e10 # v6
+
+      - name: Install chezmoi
+        env:
+          CHEZMOI_VERSION: "v2.70.5"
+        run: sh -c "$(curl -fsLS get.chezmoi.io)" -- -b /usr/local/bin -t "$CHEZMOI_VERSION"
+
+      - name: Install age
+        run: |
+          sudo apt-get update -qq
+          sudo apt-get install -y -qq age
+
+      - name: Generate ephemeral age key
+        run: |
+          mkdir -p ~/.config/chezmoi
+          age-keygen -o ~/.config/chezmoi/key.txt
+
+      - name: Check apply
+        run: script/checks/chezmoi-apply
+
+      - name: Check script templates render
+        run: script/checks/chezmoi-template
+
+      - name: Check settings permission grammar
+        run: script/checks/settings-permissions
+
+  zellij-config:
+    name: Validate zellij config
+    runs-on: ubuntu-24.04
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@df4cb1c069e1874edd31b4311f1884172cec0e10 # v6
+
+      - name: Install zellij
+        run: |
+          script/install/zellij --bin-dir "$HOME/.local/bin"
+          echo "$HOME/.local/bin" >> "$GITHUB_PATH"
+
+      - name: Check config
+        run: script/checks/zellij-config
+
+  # Cheap to run but needs the tools' own validators (promtool, alloy, loki,
+  # tempo) on PATH, so it installs the binaries — cached on the pinned
+  # versions to keep the always-on cost low. Ungated, unlike the smoke below,
+  # so a broken service config fails the build regardless of changed paths.
+  observability-config:
+    name: Validate observability config
+    runs-on: ubuntu-24.04
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@df4cb1c069e1874edd31b4311f1884172cec0e10 # v6
+      - uses: actions/cache@caa296126883cff596d87d8935842f9db880ef25 # v5
+        with:
+          path: ~/.local/bin
+          key: obs-bins-${{ hashFiles('script/install/prometheus', 'script/install/alloy', 'script/install/loki', 'script/install/tempo', 'script/install/lib.sh') }}
+
+      - name: Install stack binaries
+        run: |
+          mkdir -p "$HOME/.local/bin"
+          for t in prometheus alloy loki tempo; do
+            script/install/"$t" --bin-dir "$HOME/.local/bin"
+          done
+          echo "$HOME/.local/bin" >>"$GITHUB_PATH"
+
+      - name: Validate configs
+        run: script/checks/observability-config
+
+  # Heavy: installs the telemetry binaries and binds their real ports, so it
+  # only runs when the metrics path itself changes. Smoke-tests the live path
+  # (zellijstat -> Alloy -> Prometheus).
+  observability-smoke:
+    name: Smoke the metrics path
+    needs: changes
+    if: needs.changes.outputs.observability_smoke == 'true'
+    runs-on: ubuntu-24.04
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@df4cb1c069e1874edd31b4311f1884172cec0e10 # v6
+      - uses: actions/setup-python@ece7cb06caefa5fff74198d8649806c4678c61a1 # v6
+        with:
+          python-version: '3.x'
+
+      - name: Install stack binaries
+        run: |
+          mkdir -p "$HOME/.local/bin"
+          for t in prometheus alloy; do
+            script/install/"$t" --bin-dir "$HOME/.local/bin"
+          done
+          echo "$HOME/.local/bin" >>"$GITHUB_PATH"
+
+      - name: Smoke the metrics path
+        run: script/checks/observability-smoke
+
+  # `systemd-analyze verify` resolves each unit's ExecStart against the calling
+  # user's %h, so this installs every binary the units reference first (the
+  # observability stack pushes this to a ~400 MB install).
+  systemd-units:
+    name: Verify systemd units
+    needs: changes
+    if: needs.changes.outputs.systemd == 'true'
+    runs-on: ubuntu-24.04
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@df4cb1c069e1874edd31b4311f1884172cec0e10 # v6
+
+      - name: Install referenced binaries
+        run: |
+          mkdir -p "$HOME/.local/bin"
+          for t in prometheus alloy loki tempo grafana; do
+            script/install/"$t" --bin-dir "$HOME/.local/bin"
+          done
+          for s in zellijstat git-poi-all git-worktree-poi dev-cache-gc; do
+            install -m 0755 "dot_local/bin/executable_$s" "$HOME/.local/bin/$s"
+          done
+
+      - name: Verify systemd units
+        run: script/checks/systemd-units
+
+  # Diff-aware prose gate. The pre-commit vale hook gates error severity across
+  # the whole tree; this layer catches the warning- and error-severity findings a
+  # PR introduces on the lines it changes, and surfaces suggestions as
+  # non-blocking annotations. vale's exit code ignores non-error severities, so
+  # the gate is reviewdog: vale --output=JSON becomes rdjsonl, reviewdog filters
+  # to added lines and fails at warning level or above (issue #310).
+  #
+  # Pull-request only: "added lines" needs a PR diff, and reviewdog's
+  # github-pr-check reporter needs the PR context. Pushes to main keep the
+  # error-severity gate through the pre-commit job. The vale styles are
+  # vendored under .vale/styles/, so no `vale sync` is needed.
+  prose:
+    name: Check prose
+    if: github.event_name == 'pull_request'
+    runs-on: ubuntu-24.04
+    timeout-minutes: 10
+    permissions:
+      contents: read
+      checks: write
+      pull-requests: write
+    steps:
+      - uses: actions/checkout@df4cb1c069e1874edd31b4311f1884172cec0e10 # v6
+
+      - name: Install vale
+        run: |
+          mkdir -p "$HOME/.local/bin"
+          script/install/vale --bin-dir "$HOME/.local/bin"
+          echo "$HOME/.local/bin" >> "$GITHUB_PATH"
+
+      - uses: reviewdog/action-setup@d8a7baabd7f3e8544ee4dbde3ee41d0011c3a93f # v1.5.0
+
+      - name: Run vale gate
+        env:
+          REVIEWDOG_GITHUB_API_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          # README.md + docs/ is exactly the pre-commit-linted set, so no
+          # exclude regex is needed; reviewdog then narrows to changed lines.
+          vale --output=JSON README.md docs/ > vale.json || true
+          # Fail the step if vale emitted no valid JSON (a crash), rather than
+          # silently reporting nothing.
+          jq -e . vale.json > /dev/null
+          jq -c '
+            to_entries[] | .key as $p | .value[] | {
+              message: .Message,
+              location: {
+                path: $p,
+                range: {
+                  start: {line: .Line, column: .Span[0]},
+                  end: {line: .Line, column: (.Span[1] + 1)},
+                },
+              },
+              severity: ({error: "ERROR", warning: "WARNING", suggestion: "INFO"}[.Severity]),
+              code: {value: .Check},
+            }' vale.json \
+            | reviewdog -f=rdjsonl -name=vale \
+                -reporter=github-pr-check -filter-mode=added -fail-level=warning
