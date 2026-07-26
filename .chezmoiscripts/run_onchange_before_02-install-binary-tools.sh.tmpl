@@ -51,6 +51,31 @@ else
   "$HOME/.local/bin/uv" tool install --force "pre-commit==$PRE_COMMIT_VERSION"
 fi
 
+# Music-library tagger. pyacoustid and musicbrainzngs have no entry point of
+# their own, so they ride in beets' tool environment via --with rather than
+# being installed as tools; beets 2.x dropped musicbrainzngs as a dependency
+# and ships its own MusicBrainz client, so the pin here is deliberate and not
+# a restatement of beets' metadata. Its fingerprinter needs fpcalc
+# (libchromaprint-tools, script 01). The guard compares the whole requirement
+# set, not just beets' version, so bumping either --with pin re-fires it.
+# renovate: datasource=pypi depName=beets
+BEETS_VERSION="2.12.0"
+# renovate: datasource=pypi depName=pyacoustid
+PYACOUSTID_VERSION="1.3.1"
+# renovate: datasource=pypi depName=musicbrainzngs
+MUSICBRAINZNGS_VERSION="0.7.1"
+beets_installed="beets v$BEETS_VERSION [required: ==$BEETS_VERSION] [with: pyacoustid==$PYACOUSTID_VERSION, musicbrainzngs==$MUSICBRAINZNGS_VERSION]"
+if "$HOME/.local/bin/uv" tool list --show-with --show-version-specifiers 2>/dev/null |
+  grep -qxF "$beets_installed"; then
+  printf '==> beets: %s already installed via uv\n' "$BEETS_VERSION" >&2
+else
+  printf '==> beets: installing %s via uv\n' "$BEETS_VERSION" >&2
+  "$HOME/.local/bin/uv" tool install --force \
+    --with "pyacoustid==$PYACOUSTID_VERSION" \
+    --with "musicbrainzngs==$MUSICBRAINZNGS_VERSION" \
+    "beets==$BEETS_VERSION"
+fi
+
 # bats helper libraries (bats-support, bats-assert), loaded by the co-located
 # *.bats suites via bats_load_library. The `just check-bats` recipe points
 # BATS_LIB_PATH at this dir so local runs resolve them; CI uses the

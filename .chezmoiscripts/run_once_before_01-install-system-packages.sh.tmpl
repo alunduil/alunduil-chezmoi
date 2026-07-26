@@ -103,6 +103,11 @@ APT_PACKAGES=(
   protobuf-compiler
   temurin-21-jdk
   golang-petname
+  # Music-library toolchain around beets (uv tool, script 02). Package names
+  # differ from the binaries they ship: ffmpeg -> ffprobe,
+  # libimage-exiftool-perl -> exiftool, libchromaprint-tools -> fpcalc, which
+  # is the fingerprinter pyacoustid shells out to.
+  ffmpeg mediainfo libimage-exiftool-perl rsync libchromaprint-tools
   keybase signal-desktop calibre
   nethack-console
   docker-ce docker-ce-cli docker-ce-rootless-extras containerd.io
