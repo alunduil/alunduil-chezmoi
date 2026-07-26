@@ -3,8 +3,8 @@ name: Systemd
 # Verifies the systemd user units with `systemd-analyze verify`. verify
 # resolves each unit's ExecStart against the calling user's %h, so it installs
 # every binary the units reference first (the observability stack pushes this
-# to a ~400 MB install). Kept apart from observability.yml so the units keep
-# their checker once that stack is gone.
+# to a ~400 MB install). Kept apart from the observability workflows so the
+# units keep their checker independently of that stack.
 on:
   push:
     branches: [main]

@@ -1,0 +1,206 @@
+name: CI
+
+# Sensors that run on every integration event. Path-gated checks have a
+# narrower "when" and keep their own files;
+# docs/adr/0004-consolidate-ci-workflow.md carries the naming rule.
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  # Cancel superseded PR runs; never cancel main so each commit completes.
+  cancel-in-progress: ${{ github.ref != 'refs/heads/main' }}
+
+jobs:
+  pre-commit:
+    name: Run pre-commit hooks
+    runs-on: ubuntu-24.04
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@d23441a48e516b6c34aea4fa41551a30e30af803 # v6
+      - uses: actions/setup-python@ece7cb06caefa5fff74198d8649806c4678c61a1 # v6
+        with:
+          python-version: '3.x'
+      # The local lychee hook runs the system binary; provision it here.
+      - name: Install lychee
+        run: |
+          mkdir -p "$HOME/.local/bin"
+          script/install/lychee --bin-dir "$HOME/.local/bin"
+          echo "$HOME/.local/bin" >> "$GITHUB_PATH"
+      - uses: pre-commit/action@2c7b3805fd2a0fd8c1884dcaebf91fc102a13ecd # v3.0.1
+
+  shell-tests:
+    name: Test shell scripts
+    runs-on: ubuntu-24.04
+    timeout-minutes: 10
+    # Versions stay aligned with script/install/bats-libs (the local path);
+    # Renovate bumps both together. The action takes them without the tag's
+    # leading `v`, hence extractVersion.
+    env:
+      # renovate: datasource=github-releases depName=bats-core/bats-support extractVersion=^v(?<version>.+)$
+      BATS_SUPPORT_VERSION: "0.3.0"
+      # renovate: datasource=github-releases depName=bats-core/bats-assert extractVersion=^v(?<version>.+)$
+      BATS_ASSERT_VERSION: "2.2.4"
+    steps:
+      - uses: actions/checkout@d23441a48e516b6c34aea4fa41551a30e30af803 # v6
+
+      - uses: bats-core/bats-action@77d6fb60505b4d0d1d73e48bd035b55074bbfb43 # 4.0.0
+        id: setup-bats
+        with:
+          # assert defaults to 2.1.0, so pin it explicitly. detik/file stay unused.
+          support-install: true
+          support-version: ${{ env.BATS_SUPPORT_VERSION }}
+          assert-install: true
+          assert-version: ${{ env.BATS_ASSERT_VERSION }}
+          detik-install: false
+          file-install: false
+          # bats-action curls api.github.com; auth raises the anonymous rate limit.
+          github-token: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Test
+        run: bats --recursive dot_local dot_claude script
+        env:
+          # The action installs to /usr/lib/bats-* without exporting the path,
+          # so bats_load_library needs it from the action's lib-path output.
+          BATS_LIB_PATH: ${{ steps.setup-bats.outputs.lib-path }}
+
+  python-tests:
+    name: Test python
+    runs-on: ubuntu-24.04
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@d23441a48e516b6c34aea4fa41551a30e30af803 # v6
+      - uses: actions/setup-python@ece7cb06caefa5fff74198d8649806c4678c61a1 # v6
+        with:
+          python-version: '3.x'
+
+      - name: Test
+        run: python3 dot_local/bin/zellijstat_test.py
+
+  chezmoi-source:
+    name: Validate chezmoi source
+    runs-on: ubuntu-24.04
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@d23441a48e516b6c34aea4fa41551a30e30af803 # v6
+
+      - name: Install chezmoi
+        env:
+          # renovate: datasource=github-releases depName=twpayne/chezmoi
+          CHEZMOI_VERSION: "v2.70.5"
+        run: sh -c "$(curl -fsLS get.chezmoi.io)" -- -b /usr/local/bin -t "$CHEZMOI_VERSION"
+
+      - name: Install age
+        run: |
+          sudo apt-get update -qq
+          sudo apt-get install -y -qq age
+
+      - name: Generate ephemeral age key
+        run: |
+          mkdir -p ~/.config/chezmoi
+          age-keygen -o ~/.config/chezmoi/key.txt
+
+      - name: Check apply
+        run: script/checks/chezmoi-apply
+
+      - name: Check script templates render
+        run: script/checks/chezmoi-template
+
+      - name: Check settings permission grammar
+        run: script/checks/settings-permissions
+
+  zellij-config:
+    name: Validate zellij config
+    runs-on: ubuntu-24.04
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@d23441a48e516b6c34aea4fa41551a30e30af803 # v6
+
+      - name: Install zellij
+        run: |
+          script/install/zellij --bin-dir "$HOME/.local/bin"
+          echo "$HOME/.local/bin" >> "$GITHUB_PATH"
+
+      - name: Check config
+        run: script/checks/zellij-config
+
+  # Each service config is checked by its own tool's validator, hence the
+  # installs. Deliberately ungated, unlike observability-smoke.yml, so a broken
+  # config fails the build whatever changed.
+  observability-config:
+    name: Validate observability config
+    runs-on: ubuntu-24.04
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@d23441a48e516b6c34aea4fa41551a30e30af803 # v6
+      - uses: actions/cache@caa296126883cff596d87d8935842f9db880ef25 # v5
+        with:
+          path: ~/.local/bin
+          key: obs-bins-${{ hashFiles('script/install/prometheus', 'script/install/alloy', 'script/install/loki', 'script/install/tempo', 'script/install/lib.sh') }}
+
+      - name: Install stack binaries
+        run: |
+          mkdir -p "$HOME/.local/bin"
+          for t in prometheus alloy loki tempo; do
+            script/install/"$t" --bin-dir "$HOME/.local/bin"
+          done
+          echo "$HOME/.local/bin" >>"$GITHUB_PATH"
+
+      - name: Validate configs
+        run: script/checks/observability-config
+
+  # vale's exit code ignores non-error severities, so reviewdog supplies the
+  # gate: warnings on the lines a PR adds fail the build, suggestions land as
+  # annotations (#310). Error severity stays covered tree-wide by the
+  # pre-commit hook, including on pushes to main, where this job cannot run
+  # because filter-mode=added and github-pr-check both need PR context.
+  # .vale/styles/ is vendored, so no `vale sync` step.
+  prose:
+    name: Check prose
+    if: github.event_name == 'pull_request'
+    runs-on: ubuntu-24.04
+    timeout-minutes: 10
+    permissions:
+      contents: read
+      checks: write
+      pull-requests: write
+    steps:
+      - uses: actions/checkout@d23441a48e516b6c34aea4fa41551a30e30af803 # v6
+
+      - name: Install vale
+        run: |
+          mkdir -p "$HOME/.local/bin"
+          script/install/vale --bin-dir "$HOME/.local/bin"
+          echo "$HOME/.local/bin" >> "$GITHUB_PATH"
+
+      - uses: reviewdog/action-setup@d8a7baabd7f3e8544ee4dbde3ee41d0011c3a93f # v1.5.0
+
+      - name: Run vale gate
+        env:
+          REVIEWDOG_GITHUB_API_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          # Same set the pre-commit vale hook lints, so no exclude regex.
+          vale --output=JSON README.md docs/ > vale.json || true
+          # A vale crash yields no JSON; fail here rather than report nothing.
+          jq -e . vale.json > /dev/null
+          jq -c '
+            to_entries[] | .key as $p | .value[] | {
+              message: .Message,
+              location: {
+                path: $p,
+                range: {
+                  start: {line: .Line, column: .Span[0]},
+                  end: {line: .Line, column: (.Span[1] + 1)},
+                },
+              },
+              severity: ({error: "ERROR", warning: "WARNING", suggestion: "INFO"}[.Severity]),
+              code: {value: .Check},
+            }' vale.json \
+            | reviewdog -f=rdjsonl -name=vale \
+                -reporter=github-pr-check -filter-mode=added -fail-level=warning

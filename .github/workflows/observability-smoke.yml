@@ -2,8 +2,8 @@ name: Observability Smoke
 
 # Heavy: installs the telemetry binaries and binds their real ports, so it
 # only runs when the metrics path itself changes. Smoke-tests the live path
-# (zellijstat -> Alloy -> Prometheus). Static config validation lives in
-# observability-config.yml, which runs on every PR.
+# (zellijstat -> Alloy -> Prometheus). Static config validation is the ungated
+# observability-config job in ci.yml.
 on:
   push:
     branches: [main]
