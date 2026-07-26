@@ -5,10 +5,9 @@ description: Query Codecov for flaky-test signal, failure history, and coverage 
 
 # Codecov
 
-Auth is already in env: `dot_bashrc` exports `CODECOV_API_TOKEN` from
-the age-encrypted `~/.config/codecov/token`. The `codecov-api` wrapper
-in `~/.local/bin/` injects auth + the `https://api.codecov.io` base.
-Don't shell out to `curl` directly.
+Auth is already in env — `dot_bashrc` exports `CODECOV_API_TOKEN`. The
+`codecov-api` wrapper in `~/.local/bin/` injects auth + the
+`https://api.codecov.io` base. Don't shell out to `curl` directly.
 
 ## Triggers
 
