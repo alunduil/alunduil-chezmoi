@@ -1,6 +1,7 @@
 #!/usr/bin/env bash
 set -euo pipefail
 
+# renovate: datasource=github-releases depName=grafana/alloy
 ALLOY_VERSION="v1.16.2"
 ARCH="linux-amd64"
 

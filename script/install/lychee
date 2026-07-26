@@ -1,6 +1,7 @@
 #!/usr/bin/env bash
 set -euo pipefail
 
+# renovate: datasource=github-releases depName=lycheeverse/lychee extractVersion=^lychee-(?<version>v[\d.]+)$
 LYCHEE_VERSION="v0.24.2"
 ARCH="x86_64-unknown-linux-musl"
 

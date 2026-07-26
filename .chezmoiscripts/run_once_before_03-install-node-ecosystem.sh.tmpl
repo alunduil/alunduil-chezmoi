@@ -11,6 +11,7 @@ log() { printf '==> %s\n' "$*" >&2; }
 # Mirror nvm's own install-location logic: $XDG_CONFIG_HOME/nvm if XDG is set,
 # else $HOME/.nvm. Set PROFILE=/dev/null so the installer does NOT append to
 # any rc file -- the managed .bashrc sources nvm itself.
+# renovate: datasource=github-releases depName=nvm-sh/nvm
 NVM_VERSION="v0.40.5"
 export NVM_DIR="${XDG_CONFIG_HOME:-$HOME/.config}/nvm"
 if [ ! -s "$NVM_DIR/nvm.sh" ]; then
@@ -27,6 +28,7 @@ fi
 # this once-script when the pin changes, so a bump applies on apply. Match by
 # explicit version rather than `command -v node`, which could find a system
 # /usr/bin/node and skip installation, leaving nvm with zero versions.
+# renovate: datasource=node-version depName=node versioning=node
 NODE_VERSION="24.16.0"
 if ! nvm ls "$NODE_VERSION" >/dev/null 2>&1; then
   log "node: installing $NODE_VERSION via nvm"
@@ -57,6 +59,7 @@ fi
 # take effect. `npm ls -g` is the local query, no network round-trip. It
 # exits 1 when the package is absent (e.g. fresh prefix after a node bump),
 # so `|| true` keeps set -e from killing the run before the install branch.
+# renovate: datasource=npm depName=@readwise/cli
 READWISE_CLI_VERSION="0.5.9"
 installed="$(npm ls -g --depth=0 --parseable=false @readwise/cli 2>/dev/null |
   sed -n 's,.*@readwise/cli@\([0-9][0-9.]*\).*,\1,p' | head -1 || true)"
@@ -75,6 +78,7 @@ fi
 # Same pin-enforced replace as readwise-cli above. Backs the global guide's
 # devcontainer-exec helper; nvm owns the runtime so this is the only copy on
 # PATH.
+# renovate: datasource=npm depName=@devcontainers/cli
 DEVCONTAINER_CLI_VERSION="0.87.0"
 installed="$(npm ls -g --depth=0 --parseable=false @devcontainers/cli 2>/dev/null |
   sed -n 's,.*@devcontainers/cli@\([0-9][0-9.]*\).*,\1,p' | head -1 || true)"
@@ -92,6 +96,7 @@ fi
 # ---------------------------------------------------------------------- pnpm
 # Backs dev-cache-gc's `pnpm store prune`. Same pin-enforced replace as the
 # CLIs above; nvm owns the runtime so this is the only pnpm on PATH.
+# renovate: datasource=npm depName=pnpm
 PNPM_VERSION="11.8.0"
 installed="$(npm ls -g --depth=0 --parseable=false pnpm 2>/dev/null |
   sed -n 's,.*pnpm@\([0-9][0-9.]*\).*,\1,p' | head -1 || true)"

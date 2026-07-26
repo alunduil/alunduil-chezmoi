@@ -1,6 +1,7 @@
 #!/usr/bin/env bash
 set -euo pipefail
 
+# renovate: datasource=github-releases depName=AsamK/signal-cli
 SIGNAL_CLI_VERSION="v0.14.6"
 ARCH="Linux-native"
 

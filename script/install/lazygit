@@ -1,6 +1,7 @@
 #!/usr/bin/env bash
 set -euo pipefail
 
+# renovate: datasource=github-releases depName=jesseduffield/lazygit
 LAZYGIT_VERSION="v0.62.2"
 ARCH="linux_x86_64"
 

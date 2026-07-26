@@ -9,8 +9,10 @@ set -euo pipefail
 # *_VERSION lines; the matching *_SHA256 has no automated source, so a version
 # bump trips the sha check in CI until the hash is refreshed by hand (the
 # deliberate supply-chain checkpoint on every upgrade).
+# renovate: datasource=github-releases depName=bats-core/bats-support
 BATS_SUPPORT_VERSION="v0.3.0"
 BATS_SUPPORT_SHA256="7815237aafeb42ddcc1b8c698fc5808026d33317d8701d5ec2396e9634e2918f"
+# renovate: datasource=github-releases depName=bats-core/bats-assert
 BATS_ASSERT_VERSION="v2.2.4"
 BATS_ASSERT_SHA256="e305df20c4c36cba4570e10f1cd824efb1ae71d88b5ef474550781ebee04192f"
 

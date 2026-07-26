@@ -1,247 +1,55 @@
 {
   "$schema": "https://docs.renovatebot.com/renovate-schema.json",
-  "extends": ["config:best-practices", "schedule:weekly"],
-  "baseBranchPatterns": [
-    "main"
+  "extends": [
+    "config:best-practices",
+    "security:openssf-scorecard",
+    "customManagers:githubActionsVersions"
   ],
+  "timezone": "Europe/London",
   "reviewers": ["alunduil"],
   "pre-commit": {
     "enabled": true
   },
   "minimumReleaseAge": "3 days",
-  "internalChecksFilter": "strict",
-  "vulnerabilityAlerts": {
-    "minimumReleaseAge": "0 days"
-  },
   "osvVulnerabilityAlerts": true,
   "packageRules": [
     {
-      "matchUpdateTypes": ["digest", "pin"],
-      "minimumReleaseAge": "0 days"
+      "description": "Update types with no release timestamp can never satisfy the bake, and internalChecksFilter defaults to strict, so without this they stall on a pending renovate/stability-days check forever",
+      "matchUpdateTypes": [
+        "pin",
+        "pinDigest",
+        "digest",
+        "lockFileMaintenance",
+        "lockfileUpdate",
+        "rollback",
+        "bump",
+        "replacement"
+      ],
+      "minimumReleaseAge": null
     }
   ],
   "customManagers": [
     {
       "customType": "regex",
-      "managerFilePatterns": ["/^script/install/bats-libs$/"],
-      "matchStrings": ["BATS_SUPPORT_VERSION=\"(?<currentValue>v[\\d.]+)\""],
-      "depNameTemplate": "bats-core/bats-support",
+      "description": "Annotated *_VERSION pins in the install scripts and bootstrap passes",
+      "managerFilePatterns": ["script/install/*", ".chezmoiscripts/*.tmpl"],
+      "matchStrings": [
+        "# renovate: datasource=(?<datasource>[a-zA-Z0-9-._]+?) depName=(?<depName>[^\\s]+?)(?: packageName=(?<packageName>[^\\s]+?))?(?: versioning=(?<versioning>[^\\s]+?))?(?: extractVersion=(?<extractVersion>[^\\s]+?))?\\s+[A-Za-z0-9_]+?_VERSION=\"(?<currentValue>.+?)\""
+      ]
+    },
+    {
+      "customType": "regex",
+      "description": "Zellij plugins, pinned as release-asset URLs rather than a version assignment",
+      "managerFilePatterns": ["dot_config/zellij/config.kdl"],
+      "matchStrings": [
+        "https://github\\.com/(?<depName>[^/]+/[^/]+)/releases/download/(?<currentValue>v[\\d.]+)/"
+      ],
       "datasourceTemplate": "github-releases"
     },
     {
       "customType": "regex",
-      "managerFilePatterns": ["/^script/install/bats-libs$/"],
-      "matchStrings": ["BATS_ASSERT_VERSION=\"(?<currentValue>v[\\d.]+)\""],
-      "depNameTemplate": "bats-core/bats-assert",
-      "datasourceTemplate": "github-releases"
-    },
-    {
-      "customType": "regex",
-      "managerFilePatterns": ["/^\\.github/workflows/bats\\.yml$/"],
-      "matchStrings": ["support-version: \"(?<currentValue>[\\d.]+)\""],
-      "depNameTemplate": "bats-core/bats-support",
-      "datasourceTemplate": "github-releases"
-    },
-    {
-      "customType": "regex",
-      "managerFilePatterns": ["/^\\.github/workflows/bats\\.yml$/"],
-      "matchStrings": ["assert-version: \"(?<currentValue>[\\d.]+)\""],
-      "depNameTemplate": "bats-core/bats-assert",
-      "datasourceTemplate": "github-releases"
-    },
-    {
-      "customType": "regex",
-      "managerFilePatterns": ["/^script/install/zellij$/"],
-      "matchStrings": ["ZELLIJ_VERSION=\"(?<currentValue>v[\\d.]+)\""],
-      "depNameTemplate": "zellij-org/zellij",
-      "datasourceTemplate": "github-releases"
-    },
-    {
-      "customType": "regex",
-      "managerFilePatterns": ["/^\\.chezmoiscripts/run_once_before_.*\\.sh\\.tmpl$/"],
-      "matchStrings": ["NVM_VERSION=\"(?<currentValue>v[\\d.]+)\""],
-      "depNameTemplate": "nvm-sh/nvm",
-      "datasourceTemplate": "github-releases"
-    },
-    {
-      "customType": "regex",
-      "managerFilePatterns": ["/^script/install/lazygit$/"],
-      "matchStrings": ["LAZYGIT_VERSION=\"(?<currentValue>v[\\d.]+)\""],
-      "depNameTemplate": "jesseduffield/lazygit",
-      "datasourceTemplate": "github-releases"
-    },
-    {
-      "customType": "regex",
-      "managerFilePatterns": ["/^script/install/act$/"],
-      "matchStrings": ["ACT_VERSION=\"(?<currentValue>v[\\d.]+)\""],
-      "depNameTemplate": "nektos/act",
-      "datasourceTemplate": "github-releases"
-    },
-    {
-      "customType": "regex",
-      "managerFilePatterns": ["/^script/install/gcx$/"],
-      "matchStrings": ["GCX_VERSION=\"(?<currentValue>v[\\d.]+)\""],
-      "depNameTemplate": "grafana/gcx",
-      "datasourceTemplate": "github-releases"
-    },
-    {
-      "customType": "regex",
-      "managerFilePatterns": ["/^script/install/lychee$/"],
-      "matchStrings": ["LYCHEE_VERSION=\"(?<currentValue>v[\\d.]+)\""],
-      "depNameTemplate": "lycheeverse/lychee",
-      "datasourceTemplate": "github-releases",
-      "extractVersionTemplate": "^lychee-(?<version>v[\\d.]+)$"
-    },
-    {
-      "customType": "regex",
-      "managerFilePatterns": ["/^script/install/signal-cli$/"],
-      "matchStrings": ["SIGNAL_CLI_VERSION=\"(?<currentValue>v[\\d.]+)\""],
-      "depNameTemplate": "AsamK/signal-cli",
-      "datasourceTemplate": "github-releases"
-    },
-    {
-      "customType": "regex",
-      "managerFilePatterns": ["/^script/install/yq$/"],
-      "matchStrings": ["YQ_VERSION=\"(?<currentValue>v[\\d.]+)\""],
-      "depNameTemplate": "mikefarah/yq",
-      "datasourceTemplate": "github-releases"
-    },
-    {
-      "customType": "regex",
-      "managerFilePatterns": ["/^script/install/truenas-mcp$/"],
-      "matchStrings": ["TRUENAS_MCP_VERSION=\"(?<currentValue>v[\\d.]+)\""],
-      "depNameTemplate": "truenas/truenas-mcp",
-      "datasourceTemplate": "github-releases"
-    },
-    {
-      "customType": "regex",
-      "managerFilePatterns": ["/^script/install/vale$/"],
-      "matchStrings": ["VALE_VERSION=\"(?<currentValue>v[\\d.]+)\""],
-      "depNameTemplate": "vale-cli/vale",
-      "datasourceTemplate": "github-releases"
-    },
-    {
-      "customType": "regex",
-      "managerFilePatterns": ["/^script/install/trivy$/"],
-      "matchStrings": ["TRIVY_VERSION=\"(?<currentValue>v[\\d.]+)\""],
-      "depNameTemplate": "aquasecurity/trivy",
-      "datasourceTemplate": "github-releases"
-    },
-    {
-      "customType": "regex",
-      "managerFilePatterns": ["/^script/install/just$/"],
-      "matchStrings": ["JUST_VERSION=\"(?<currentValue>[\\d.]+)\""],
-      "depNameTemplate": "casey/just",
-      "datasourceTemplate": "github-releases"
-    },
-    {
-      "customType": "regex",
-      "managerFilePatterns": ["/^script/install/uv$/"],
-      "matchStrings": ["UV_VERSION=\"(?<currentValue>[\\d.]+)\""],
-      "depNameTemplate": "astral-sh/uv",
-      "datasourceTemplate": "github-releases"
-    },
-    {
-      "customType": "regex",
-      "managerFilePatterns": ["/^\\.chezmoiscripts/run_onchange_before_02-install-binary-tools\\.sh\\.tmpl$/"],
-      "matchStrings": ["PRE_COMMIT_VERSION=\"(?<currentValue>[\\d.]+)\""],
-      "depNameTemplate": "pre-commit",
-      "datasourceTemplate": "pypi"
-    },
-    {
-      "customType": "regex",
-      "managerFilePatterns": ["/^script/install/alloy$/"],
-      "matchStrings": ["ALLOY_VERSION=\"(?<currentValue>v[\\d.]+)\""],
-      "depNameTemplate": "grafana/alloy",
-      "datasourceTemplate": "github-releases"
-    },
-    {
-      "customType": "regex",
-      "managerFilePatterns": ["/^script/install/prometheus$/"],
-      "matchStrings": ["PROMETHEUS_VERSION=\"(?<currentValue>v[\\d.]+)\""],
-      "depNameTemplate": "prometheus/prometheus",
-      "datasourceTemplate": "github-releases"
-    },
-    {
-      "customType": "regex",
-      "managerFilePatterns": ["/^script/install/loki$/"],
-      "matchStrings": ["LOKI_VERSION=\"(?<currentValue>v[\\d.]+)\""],
-      "depNameTemplate": "grafana/loki",
-      "datasourceTemplate": "github-releases"
-    },
-    {
-      "customType": "regex",
-      "managerFilePatterns": ["/^script/install/tempo$/"],
-      "matchStrings": ["TEMPO_VERSION=\"(?<currentValue>v[\\d.]+)\""],
-      "depNameTemplate": "grafana/tempo",
-      "datasourceTemplate": "github-releases"
-    },
-    {
-      "customType": "regex",
-      "managerFilePatterns": ["/^script/install/grafana$/"],
-      "matchStrings": ["GRAFANA_VERSION=\"(?<currentValue>v[\\d.]+)\""],
-      "depNameTemplate": "grafana/grafana",
-      "datasourceTemplate": "github-releases"
-    },
-    {
-      "customType": "regex",
-      "managerFilePatterns": ["/^\\.chezmoiscripts/run_once_before_05-install-standalone-tools\\.sh\\.tmpl$/"],
-      "matchStrings": ["GH_POI_VERSION=\"(?<currentValue>v[\\d.]+)\""],
-      "depNameTemplate": "seachicken/gh-poi",
-      "datasourceTemplate": "github-releases"
-    },
-    {
-      "customType": "regex",
-      "managerFilePatterns": ["/^\\.chezmoiscripts/run_once_before_03-install-node-ecosystem\\.sh\\.tmpl$/"],
-      "matchStrings": ["NODE_VERSION=\"(?<currentValue>[\\d.]+)\""],
-      "depNameTemplate": "node",
-      "datasourceTemplate": "node-version",
-      "versioningTemplate": "node"
-    },
-    {
-      "customType": "regex",
-      "managerFilePatterns": ["/^\\.chezmoiscripts/run_once_before_03-install-node-ecosystem\\.sh\\.tmpl$/"],
-      "matchStrings": ["READWISE_CLI_VERSION=\"(?<currentValue>[\\d.]+)\""],
-      "depNameTemplate": "@readwise/cli",
-      "datasourceTemplate": "npm"
-    },
-    {
-      "customType": "regex",
-      "managerFilePatterns": ["/^\\.chezmoiscripts/run_once_before_03-install-node-ecosystem\\.sh\\.tmpl$/"],
-      "matchStrings": ["DEVCONTAINER_CLI_VERSION=\"(?<currentValue>[\\d.]+)\""],
-      "depNameTemplate": "@devcontainers/cli",
-      "datasourceTemplate": "npm"
-    },
-    {
-      "customType": "regex",
-      "managerFilePatterns": ["/^\\.chezmoiscripts/run_once_before_03-install-node-ecosystem\\.sh\\.tmpl$/"],
-      "matchStrings": ["PNPM_VERSION=\"(?<currentValue>[\\d.]+)\""],
-      "depNameTemplate": "pnpm",
-      "datasourceTemplate": "npm"
-    },
-    {
-      "customType": "regex",
-      "managerFilePatterns": ["/^\\.chezmoiscripts/run_once_before_09-install-rust-ecosystem\\.sh\\.tmpl$/"],
-      "matchStrings": ["CARGO_CACHE_VERSION=\"(?<currentValue>[\\d.]+)\""],
-      "depNameTemplate": "cargo-cache",
-      "datasourceTemplate": "crate"
-    },
-    {
-      "customType": "regex",
-      "managerFilePatterns": ["/dot_config/zellij/config\\.kdl$/"],
-      "matchStrings": ["https://github\\.com/(?<depName>[^/]+/[^/]+)/releases/download/(?<currentValue>v[\\d.]+)/"],
-      "datasourceTemplate": "github-releases"
-    },
-    {
-      "customType": "regex",
-      "managerFilePatterns": ["/^\\.github/workflows/chezmoi\\.yml$/"],
-      "matchStrings": ["CHEZMOI_VERSION: \"(?<currentValue>v[\\d.]+)\""],
-      "depNameTemplate": "twpayne/chezmoi",
-      "datasourceTemplate": "github-releases"
-    },
-    {
-      "customType": "regex",
-      "managerFilePatterns": ["/^docs/tutorials/bootstrap\\.md$/"],
+      "description": "chezmoi pin in the bootstrap tutorial; annotating it would leak Renovate syntax into a copy-pasted snippet",
+      "managerFilePatterns": ["docs/tutorials/bootstrap.md"],
       "matchStrings": ["CHEZMOI_VERSION=\"(?<currentValue>v[\\d.]+)\""],
       "depNameTemplate": "twpayne/chezmoi",
       "datasourceTemplate": "github-releases"

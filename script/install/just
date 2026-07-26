@@ -3,6 +3,7 @@ set -euo pipefail
 
 # casey/just tags have no `v` prefix (unlike zellij/lazygit/act), so the
 # version variable and Renovate matcher both use bare semver.
+# renovate: datasource=github-releases depName=casey/just
 JUST_VERSION="1.51.0"
 ARCH="x86_64-unknown-linux-musl"
 

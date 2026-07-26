@@ -17,19 +17,25 @@ jobs:
   run:
     runs-on: ubuntu-24.04
     timeout-minutes: 10
+    # Versions stay aligned with script/install/bats-libs (the local path);
+    # Renovate bumps both together. The action takes them without the tag's
+    # leading `v`, hence extractVersion.
+    env:
+      # renovate: datasource=github-releases depName=bats-core/bats-support extractVersion=^v(?<version>.+)$
+      BATS_SUPPORT_VERSION: "0.3.0"
+      # renovate: datasource=github-releases depName=bats-core/bats-assert extractVersion=^v(?<version>.+)$
+      BATS_ASSERT_VERSION: "2.2.4"
     steps:
       - uses: actions/checkout@df4cb1c069e1874edd31b4311f1884172cec0e10 # v6
 
       - uses: bats-core/bats-action@77d6fb60505b4d0d1d73e48bd035b55074bbfb43 # 4.0.0
         id: setup-bats
         with:
-          # Versions stay aligned with script/install/bats-libs (the local
-          # path); Renovate bumps both together. assert defaults to 2.1.0, so
-          # pin it explicitly. detik/file stay unused.
+          # assert defaults to 2.1.0, so pin it explicitly. detik/file stay unused.
           support-install: true
-          support-version: "0.3.0"
+          support-version: ${{ env.BATS_SUPPORT_VERSION }}
           assert-install: true
-          assert-version: "2.2.4"
+          assert-version: ${{ env.BATS_ASSERT_VERSION }}
           detik-install: false
           file-install: false
           # bats-action curls api.github.com; auth raises the anonymous rate limit.
