@@ -1,0 +1,48 @@
+name: Observability Smoke
+
+# Heavy: installs the telemetry binaries and binds their real ports, so it
+# only runs when the metrics path itself changes. Smoke-tests the live path
+# (zellijstat -> Alloy -> Prometheus). Static config validation is the
+# observability-config job in ci.yml, which runs on every PR.
+on:
+  push:
+    branches: [main]
+    paths: &paths
+      - 'dot_config/alloy/**'
+      - 'dot_config/prometheus/**'
+      - 'dot_local/bin/executable_zellijstat'
+      - 'script/install/alloy'
+      - 'script/install/prometheus'
+      - 'script/checks/observability-smoke'
+      - '.github/workflows/observability-smoke.yml'
+  pull_request:
+    paths: *paths
+
+permissions:
+  contents: read
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  # Cancel superseded PR runs; never cancel main so each commit completes.
+  cancel-in-progress: ${{ github.ref != 'refs/heads/main' }}
+
+jobs:
+  run:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@df4cb1c069e1874edd31b4311f1884172cec0e10 # v6
+      - uses: actions/setup-python@ece7cb06caefa5fff74198d8649806c4678c61a1 # v6
+        with:
+          python-version: '3.x'
+
+      - name: Install stack binaries
+        run: |
+          mkdir -p "$HOME/.local/bin"
+          for t in prometheus alloy; do
+            script/install/"$t" --bin-dir "$HOME/.local/bin"
+          done
+          echo "$HOME/.local/bin" >>"$GITHUB_PATH"
+
+      - name: Smoke the metrics path
+        run: script/checks/observability-smoke

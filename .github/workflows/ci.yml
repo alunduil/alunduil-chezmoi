@@ -1,9 +1,11 @@
 name: CI
 
-# The always-on gate: everything triggered by a push to main or a pull
-# request. Workflow files are named for their trigger, not their tool or
-# subject — the jobs below carry the descriptive names, the same way
-# weekly.yml holds scheduled work. See docs/adr/0004-consolidate-ci-workflow.md.
+# Every sensor that runs unconditionally on an integration event: a push to
+# main or a pull request. Workflow files are named for when they run, with the
+# jobs carrying the descriptive names, the same way weekly.yml holds scheduled
+# work. Checks that run only when specific paths change have a narrower "when",
+# so they keep their own files and their native paths: filter — see
+# docs/adr/0004-consolidate-ci-workflow.md.
 
 on:
   push:
@@ -19,49 +21,6 @@ concurrency:
   cancel-in-progress: ${{ github.ref != 'refs/heads/main' }}
 
 jobs:
-  # GitHub filters paths per workflow, not per job, so the two jobs whose
-  # setup is genuinely expensive resolve their own filters here and gate on
-  # the outputs. Cheap checks skip this and always run.
-  changes:
-    name: Detect changed paths
-    runs-on: ubuntu-24.04
-    timeout-minutes: 5
-    outputs:
-      systemd: ${{ steps.filter.outputs.systemd }}
-      # Underscore, not hyphen: `-` is subtraction in GitHub expressions, so a
-      # hyphenated output name silently evaluates to empty and never gates.
-      observability_smoke: ${{ steps.filter.outputs.observability_smoke }}
-    steps:
-      - uses: actions/checkout@df4cb1c069e1874edd31b4311f1884172cec0e10 # v6
-      - uses: dorny/paths-filter@7b450fff21473bca461d4b92ce414b9d0420d706 # v4.0.2
-        id: filter
-        with:
-          # A change to this file re-runs both heavy jobs: their gating now
-          # lives here, so the filter can't tell which one changed.
-          filters: |
-            systemd:
-              - 'dot_config/systemd/user/**'
-              - 'etc/systemd/system/**'
-              - 'dot_local/bin/executable_zellijstat'
-              - 'dot_local/bin/executable_git-poi-all'
-              - 'dot_local/bin/executable_git-worktree-poi'
-              - 'dot_local/bin/executable_dev-cache-gc'
-              - 'script/install/prometheus'
-              - 'script/install/alloy'
-              - 'script/install/loki'
-              - 'script/install/tempo'
-              - 'script/install/grafana'
-              - 'script/checks/systemd-units'
-              - '.github/workflows/ci.yml'
-            observability_smoke:
-              - 'dot_config/alloy/**'
-              - 'dot_config/prometheus/**'
-              - 'dot_local/bin/executable_zellijstat'
-              - 'script/install/alloy'
-              - 'script/install/prometheus'
-              - 'script/checks/observability-smoke'
-              - '.github/workflows/ci.yml'
-
   pre-commit:
     name: Run pre-commit hooks
     runs-on: ubuntu-24.04
@@ -170,8 +129,9 @@ jobs:
 
   # Cheap to run but needs the tools' own validators (promtool, alloy, loki,
   # tempo) on PATH, so it installs the binaries — cached on the pinned
-  # versions to keep the always-on cost low. Ungated, unlike the smoke below,
-  # so a broken service config fails the build regardless of changed paths.
+  # versions to keep the always-on cost low. Ungated, unlike the smoke in
+  # observability-smoke.yml, so a broken service config fails the build
+  # regardless of which paths changed.
   observability-config:
     name: Validate observability config
     runs-on: ubuntu-24.04
@@ -193,57 +153,6 @@ jobs:
 
       - name: Validate configs
         run: script/checks/observability-config
-
-  # Heavy: installs the telemetry binaries and binds their real ports, so it
-  # only runs when the metrics path itself changes. Smoke-tests the live path
-  # (zellijstat -> Alloy -> Prometheus).
-  observability-smoke:
-    name: Smoke the metrics path
-    needs: changes
-    if: needs.changes.outputs.observability_smoke == 'true'
-    runs-on: ubuntu-24.04
-    timeout-minutes: 15
-    steps:
-      - uses: actions/checkout@df4cb1c069e1874edd31b4311f1884172cec0e10 # v6
-      - uses: actions/setup-python@ece7cb06caefa5fff74198d8649806c4678c61a1 # v6
-        with:
-          python-version: '3.x'
-
-      - name: Install stack binaries
-        run: |
-          mkdir -p "$HOME/.local/bin"
-          for t in prometheus alloy; do
-            script/install/"$t" --bin-dir "$HOME/.local/bin"
-          done
-          echo "$HOME/.local/bin" >>"$GITHUB_PATH"
-
-      - name: Smoke the metrics path
-        run: script/checks/observability-smoke
-
-  # `systemd-analyze verify` resolves each unit's ExecStart against the calling
-  # user's %h, so this installs every binary the units reference first (the
-  # observability stack pushes this to a ~400 MB install).
-  systemd-units:
-    name: Verify systemd units
-    needs: changes
-    if: needs.changes.outputs.systemd == 'true'
-    runs-on: ubuntu-24.04
-    timeout-minutes: 15
-    steps:
-      - uses: actions/checkout@df4cb1c069e1874edd31b4311f1884172cec0e10 # v6
-
-      - name: Install referenced binaries
-        run: |
-          mkdir -p "$HOME/.local/bin"
-          for t in prometheus alloy loki tempo grafana; do
-            script/install/"$t" --bin-dir "$HOME/.local/bin"
-          done
-          for s in zellijstat git-poi-all git-worktree-poi dev-cache-gc; do
-            install -m 0755 "dot_local/bin/executable_$s" "$HOME/.local/bin/$s"
-          done
-
-      - name: Verify systemd units
-        run: script/checks/systemd-units
 
   # Diff-aware prose gate. The pre-commit vale hook gates error severity across
   # the whole tree; this layer catches the warning- and error-severity findings a
