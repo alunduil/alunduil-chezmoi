@@ -23,11 +23,10 @@ named for its cadence and holds the link check as job `external-links`.
 
 The distinction that ADR 0002 missed, and that resolves it, is that "when"
 comes at more than one granularity. Most sensors run on every integration
-event: a push to main or a pull request. Two run on a narrower
-condition, only when specific paths change, because their setup is
-expensive (`systemd-analyze verify` needs a ~400 MB install; the metrics
-smoke binds real ports). Those are two different whens, so they're two
-different files.
+event: a push to main or a pull request. Others run on a narrower condition,
+only when specific paths change, because their setup is expensive
+(`systemd-analyze verify` needs a ~400 MB install; the metrics smoke binds
+real ports). Those are different whens, so they're different files.
 
 Consolidating the always-on set and keeping the path-gated set split is
 therefore not a compromise between 0002 and its alternative. Both fall
@@ -42,9 +41,7 @@ ADR 0002's three arguments resolve as follows:
   path-gated workflows keep their own files. Folding them into `ci.yml`
   would have meant re-implementing gating with a `changes` job and a
   filter-matching action—a duplicated filter list, an extra runner per
-  run, and a drift failure that's silent where the native filter's is
-  not. That machinery bought nothing but filename uniformity for two
-  files, and uniformity was never the goal.
+  run, and a drift failure that's silent where the native filter's isn't.
 - **Consolidation removes only ~10 lines of boilerplate per file.** True,
   and not a reason to consolidate. Boilerplate reduction is a side effect.
 
@@ -68,26 +65,21 @@ Gating remains reserved for expensive setup, per 0002's still-standing
 rule. A check whose only cost is fast validation runs unconditionally, so
 missing coverage never goes unnoticed.
 
-Revisit if a third path-gated check appears whose filter substantially
-overlaps an existing one, since duplicated `paths:` lists across files
-would then be their own drift risk.
+Revisit if another path-gated check appears whose filter overlaps an
+existing one, since duplicated `paths:` lists across files would then be
+their own drift risk.
 
 ## Consequences
 
 - A reader can tell when a workflow runs from its filename.
-- Seven sensors share one set of trigger, permissions, and concurrency
-  boilerplate instead of seven copies. Six run on every integration event;
-  `prose` adds `if: github.event_name == 'pull_request'`, since `reviewdog`
-  needs a PR diff. A job `if:` covers conditions GitHub evaluates at job
-  level, which is why it suits the event name and not `paths:`.
-- Two path-gated workflows keep their native `paths:` filter next to the
-  job it guards, and no filter-matching action enters the supply chain.
-- Moving a job between workflow files costs no Renovate config change.
-  Each version pin carries a `# renovate:` annotation beside the value,
-  which one generic manager reads wherever that file lives, and
-  `script/checks/renovate-pins` fails the build on an unannotated pin. The
-  path-scoped `managerFilePatterns` this repo used before would have
-  needed an edit on every restructure, and a miss produces no error.
-- `docs/adr/0003` refers to "five workflows" calling
-  `script/install/<tool>`; that count is now stale, left as written since
-  its decision is unaffected.
+- The always-on sensors share one set of trigger, permissions, and
+  concurrency boilerplate rather than one copy each.
+- `prose` needs `if: github.event_name == 'pull_request'`, because
+  `reviewdog` has no diff to filter against otherwise. A job `if:` covers
+  conditions GitHub evaluates at job level, which is why it suits the event
+  name and not `paths:`.
+- The path-gated workflows keep their `paths:` filter next to the job it
+  guards, and no filter-matching action enters the supply chain.
+- Moving a job between workflow files costs no Renovate config change: each
+  pin carries a `# renovate:` annotation that travels with it, and
+  `script/checks/renovate-pins` fails the build on an unannotated pin.

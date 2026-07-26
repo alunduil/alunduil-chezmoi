@@ -1,11 +1,8 @@
 name: CI
 
-# Every sensor that runs unconditionally on an integration event: a push to
-# main or a pull request. Workflow files are named for when they run, with the
-# jobs carrying the descriptive names, the same way weekly.yml holds scheduled
-# work. Checks that run only when specific paths change have a narrower "when",
-# so they keep their own files and their native paths: filter — see
-# docs/adr/0004-consolidate-ci-workflow.md.
+# Sensors that run on every integration event. Path-gated checks have a
+# narrower "when" and keep their own files;
+# docs/adr/0004-consolidate-ci-workflow.md carries the naming rule.
 
 on:
   push:
@@ -69,9 +66,8 @@ jobs:
       - name: Test
         run: bats --recursive dot_local dot_claude script
         env:
-          # The action installs to /usr/lib/bats-* but does not export the path;
-          # its lib-path output points BATS_LIB_PATH at the converted suites'
-          # bats_load_library calls.
+          # The action installs to /usr/lib/bats-* without exporting the path,
+          # so bats_load_library needs it from the action's lib-path output.
           BATS_LIB_PATH: ${{ steps.setup-bats.outputs.lib-path }}
 
   python-tests:
@@ -134,11 +130,9 @@ jobs:
       - name: Check config
         run: script/checks/zellij-config
 
-  # Cheap to run but needs the tools' own validators (promtool, alloy, loki,
-  # tempo) on PATH, so it installs the binaries — cached on the pinned
-  # versions to keep the always-on cost low. Ungated, unlike the smoke in
-  # observability-smoke.yml, so a broken service config fails the build
-  # regardless of which paths changed.
+  # Each service config is checked by its own tool's validator, hence the
+  # installs. Deliberately ungated, unlike observability-smoke.yml, so a broken
+  # config fails the build whatever changed.
   observability-config:
     name: Validate observability config
     runs-on: ubuntu-24.04
@@ -161,17 +155,12 @@ jobs:
       - name: Validate configs
         run: script/checks/observability-config
 
-  # Diff-aware prose gate. The pre-commit vale hook gates error severity across
-  # the whole tree; this layer catches the warning- and error-severity findings a
-  # PR introduces on the lines it changes, and surfaces suggestions as
-  # non-blocking annotations. vale's exit code ignores non-error severities, so
-  # the gate is reviewdog: vale --output=JSON becomes rdjsonl, reviewdog filters
-  # to added lines and fails at warning level or above (issue #310).
-  #
-  # Pull-request only: "added lines" needs a PR diff, and reviewdog's
-  # github-pr-check reporter needs the PR context. Pushes to main keep the
-  # error-severity gate through the pre-commit job. The vale styles are
-  # vendored under .vale/styles/, so no `vale sync` is needed.
+  # vale's exit code ignores non-error severities, so reviewdog supplies the
+  # gate: warnings on the lines a PR adds fail the build, suggestions land as
+  # annotations (#310). Error severity stays covered tree-wide by the
+  # pre-commit hook, including on pushes to main, where this job cannot run
+  # because filter-mode=added and github-pr-check both need PR context.
+  # .vale/styles/ is vendored, so no `vale sync` step.
   prose:
     name: Check prose
     if: github.event_name == 'pull_request'
@@ -196,11 +185,9 @@ jobs:
         env:
           REVIEWDOG_GITHUB_API_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
-          # README.md + docs/ is exactly the pre-commit-linted set, so no
-          # exclude regex is needed; reviewdog then narrows to changed lines.
+          # Same set the pre-commit vale hook lints, so no exclude regex.
           vale --output=JSON README.md docs/ > vale.json || true
-          # Fail the step if vale emitted no valid JSON (a crash), rather than
-          # silently reporting nothing.
+          # A vale crash yields no JSON; fail here rather than report nothing.
           jq -e . vale.json > /dev/null
           jq -c '
             to_entries[] | .key as $p | .value[] | {
