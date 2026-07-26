@@ -11,7 +11,7 @@ Supersedes [0002](0002-keep-per-workflow-ci.md).
 ADR 0002 kept one workflow per sensor and rejected consolidation into a
 shared `ci.yml`. Its reasoning was sound on the axis it considered, which
 was whether to collapse *everything*. It never weighed the naming
-question separately.
+question as its own axis.
 
 A workflow filename should answer one question: when does this run. The
 per-sensor layout answered a different one. Files named the checking tool
@@ -23,7 +23,7 @@ named for its cadence and holds the link check as job `external-links`.
 
 The distinction that ADR 0002 missed, and that resolves it, is that "when"
 comes at more than one granularity. Most sensors run on every integration
-event: a push to main or a pull request. Two run on a strictly narrower
+event: a push to main or a pull request. Two run on a narrower
 condition, only when specific paths change, because their setup is
 expensive (`systemd-analyze verify` needs a ~400 MB install; the metrics
 smoke binds real ports). Those are two different whens, so they're two
@@ -36,7 +36,7 @@ out of the same rule.
 ADR 0002's three arguments resolve as follows:
 
 - **Independent status check per sensor.** Retained. GitHub emits a check
-  run per job, so each sensor still reports separately; the consolidated
+  run per job, so each sensor still reports on its own; the consolidated
   ones are now prefixed `CI /`.
 - **Native per-workflow `paths:` filters.** Retained, because the
   path-gated workflows keep their own files. Folding them into `ci.yml`
@@ -75,8 +75,11 @@ would then be their own drift risk.
 ## Consequences
 
 - A reader can tell when a workflow runs from its filename.
-- Six always-on sensors share one set of trigger, permissions, and
-  concurrency boilerplate instead of six copies.
+- Seven sensors share one set of trigger, permissions, and concurrency
+  boilerplate instead of seven copies. Six run on every integration event;
+  `prose` adds `if: github.event_name == 'pull_request'`, since `reviewdog`
+  needs a PR diff. A job `if:` covers conditions GitHub evaluates at job
+  level, which is why it suits the event name and not `paths:`.
 - Two path-gated workflows keep their native `paths:` filter next to the
   job it guards, and no filter-matching action enters the supply chain.
 - Moving a job between workflow files costs no Renovate config change.
@@ -84,7 +87,7 @@ would then be their own drift risk.
   which one generic manager reads wherever that file lives, and
   `script/checks/renovate-pins` fails the build on an unannotated pin. The
   path-scoped `managerFilePatterns` this repo used before would have
-  needed an edit on every restructure, failing silently when missed.
+  needed an edit on every restructure, and a miss produces no error.
 - `docs/adr/0003` refers to "five workflows" calling
   `script/install/<tool>`; that count is now stale, left as written since
   its decision is unaffected.
