@@ -1,6 +1,7 @@
 #!/usr/bin/env bash
 set -euo pipefail
 
+# renovate: datasource=github-releases depName=nektos/act
 ACT_VERSION="v0.2.89"
 ARCH="Linux_x86_64"
 

@@ -26,7 +26,7 @@ jobs:
     runs-on: ubuntu-24.04
     timeout-minutes: 10
     steps:
-      - uses: actions/checkout@df4cb1c069e1874edd31b4311f1884172cec0e10 # v6
+      - uses: actions/checkout@d23441a48e516b6c34aea4fa41551a30e30af803 # v6
       - uses: actions/setup-python@ece7cb06caefa5fff74198d8649806c4678c61a1 # v6
         with:
           python-version: '3.x'
@@ -42,19 +42,25 @@ jobs:
     name: Test shell scripts
     runs-on: ubuntu-24.04
     timeout-minutes: 10
+    # Versions stay aligned with script/install/bats-libs (the local path);
+    # Renovate bumps both together. The action takes them without the tag's
+    # leading `v`, hence extractVersion.
+    env:
+      # renovate: datasource=github-releases depName=bats-core/bats-support extractVersion=^v(?<version>.+)$
+      BATS_SUPPORT_VERSION: "0.3.0"
+      # renovate: datasource=github-releases depName=bats-core/bats-assert extractVersion=^v(?<version>.+)$
+      BATS_ASSERT_VERSION: "2.2.4"
     steps:
-      - uses: actions/checkout@df4cb1c069e1874edd31b4311f1884172cec0e10 # v6
+      - uses: actions/checkout@d23441a48e516b6c34aea4fa41551a30e30af803 # v6
 
       - uses: bats-core/bats-action@77d6fb60505b4d0d1d73e48bd035b55074bbfb43 # 4.0.0
         id: setup-bats
         with:
-          # Versions stay aligned with script/install/bats-libs (the local
-          # path); Renovate bumps both together. assert defaults to 2.1.0, so
-          # pin it explicitly. detik/file stay unused.
+          # assert defaults to 2.1.0, so pin it explicitly. detik/file stay unused.
           support-install: true
-          support-version: "0.3.0"
+          support-version: ${{ env.BATS_SUPPORT_VERSION }}
           assert-install: true
-          assert-version: "2.2.4"
+          assert-version: ${{ env.BATS_ASSERT_VERSION }}
           detik-install: false
           file-install: false
           # bats-action curls api.github.com; auth raises the anonymous rate limit.
@@ -73,7 +79,7 @@ jobs:
     runs-on: ubuntu-24.04
     timeout-minutes: 10
     steps:
-      - uses: actions/checkout@df4cb1c069e1874edd31b4311f1884172cec0e10 # v6
+      - uses: actions/checkout@d23441a48e516b6c34aea4fa41551a30e30af803 # v6
       - uses: actions/setup-python@ece7cb06caefa5fff74198d8649806c4678c61a1 # v6
         with:
           python-version: '3.x'
@@ -86,10 +92,11 @@ jobs:
     runs-on: ubuntu-24.04
     timeout-minutes: 10
     steps:
-      - uses: actions/checkout@df4cb1c069e1874edd31b4311f1884172cec0e10 # v6
+      - uses: actions/checkout@d23441a48e516b6c34aea4fa41551a30e30af803 # v6
 
       - name: Install chezmoi
         env:
+          # renovate: datasource=github-releases depName=twpayne/chezmoi
           CHEZMOI_VERSION: "v2.70.5"
         run: sh -c "$(curl -fsLS get.chezmoi.io)" -- -b /usr/local/bin -t "$CHEZMOI_VERSION"
 
@@ -117,7 +124,7 @@ jobs:
     runs-on: ubuntu-24.04
     timeout-minutes: 10
     steps:
-      - uses: actions/checkout@df4cb1c069e1874edd31b4311f1884172cec0e10 # v6
+      - uses: actions/checkout@d23441a48e516b6c34aea4fa41551a30e30af803 # v6
 
       - name: Install zellij
         run: |
@@ -137,7 +144,7 @@ jobs:
     runs-on: ubuntu-24.04
     timeout-minutes: 10
     steps:
-      - uses: actions/checkout@df4cb1c069e1874edd31b4311f1884172cec0e10 # v6
+      - uses: actions/checkout@d23441a48e516b6c34aea4fa41551a30e30af803 # v6
       - uses: actions/cache@caa296126883cff596d87d8935842f9db880ef25 # v5
         with:
           path: ~/.local/bin
@@ -175,7 +182,7 @@ jobs:
       checks: write
       pull-requests: write
     steps:
-      - uses: actions/checkout@df4cb1c069e1874edd31b4311f1884172cec0e10 # v6
+      - uses: actions/checkout@d23441a48e516b6c34aea4fa41551a30e30af803 # v6
 
       - name: Install vale
         run: |

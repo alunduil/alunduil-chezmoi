@@ -1,7 +1,8 @@
 #!/usr/bin/env bash
 set -euo pipefail
 
-TEMPO_VERSION="v3.0.0"
+# renovate: datasource=github-releases depName=grafana/tempo
+TEMPO_VERSION="v3.0.2"
 ARCH="linux_amd64"
 
 # shellcheck source-path=SCRIPTDIR source=lib.sh

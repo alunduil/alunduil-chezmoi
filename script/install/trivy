@@ -1,6 +1,7 @@
 #!/usr/bin/env bash
 set -euo pipefail
 
+# renovate: datasource=github-releases depName=aquasecurity/trivy
 TRIVY_VERSION="v0.71.1"
 ARCH="Linux-64bit"
 

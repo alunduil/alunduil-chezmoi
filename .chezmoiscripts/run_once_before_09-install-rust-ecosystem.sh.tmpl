@@ -19,6 +19,7 @@ fi
 # download-and-verify pattern; `cargo install` is the canonical path. Pin
 # enforced (Renovate-tracked, crate datasource): if a different version is
 # installed, --force replaces it so bumps actually take effect.
+# renovate: datasource=crate depName=cargo-cache
 CARGO_CACHE_VERSION="0.8.3"
 installed="$(cargo cache --version 2>/dev/null | awk '{print $2}' || true)"
 if [ "$installed" != "$CARGO_CACHE_VERSION" ]; then

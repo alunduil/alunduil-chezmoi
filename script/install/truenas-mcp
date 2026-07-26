@@ -1,6 +1,7 @@
 #!/usr/bin/env bash
 set -euo pipefail
 
+# renovate: datasource=github-releases depName=truenas/truenas-mcp
 TRUENAS_MCP_VERSION="v0.0.4"
 ARCH="linux-amd64"
 

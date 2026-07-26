@@ -79,11 +79,12 @@ would then be their own drift risk.
   concurrency boilerplate instead of six copies.
 - Two path-gated workflows keep their native `paths:` filter next to the
   job it guards, and no filter-matching action enters the supply chain.
-- Renovate's custom managers scraped tool versions out of `bats.yml` and
-  `chezmoi.yml` by path; they now point at `ci.yml`. Any future move of
-  those jobs has to move the `managerFilePatterns` with them, and the
-  failure is silent—the manager stops matching and the pin quietly
-  freezes.
+- Moving a job between workflow files costs no Renovate config change.
+  Each version pin carries a `# renovate:` annotation beside the value,
+  which one generic manager reads wherever that file lives, and
+  `script/checks/renovate-pins` fails the build on an unannotated pin. The
+  path-scoped `managerFilePatterns` this repo used before would have
+  needed an edit on every restructure, failing silently when missed.
 - `docs/adr/0003` refers to "five workflows" calling
   `script/install/<tool>`; that count is now stale, left as written since
   its decision is unaffected.

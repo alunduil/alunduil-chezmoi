@@ -1,7 +1,8 @@
 #!/usr/bin/env bash
 set -euo pipefail
 
-LOKI_VERSION="v3.7.2"
+# renovate: datasource=github-releases depName=grafana/loki
+LOKI_VERSION="v3.7.3"
 ARCH="linux-amd64"
 
 # shellcheck source-path=SCRIPTDIR source=lib.sh
