@@ -33,10 +33,6 @@ A per-repo `CLAUDE.md` overrides anything here.
   missing) and `~/.local/bin/gh` (shadows `gh`, requires
   `--draft`/`-d` on `gh pr create`). Always pass `--draft`; opening a
   ready PR is a human-only action done outside Claude.
-- Composing a PR body, opening a PR, or adding a PR template to a
-  repo: `pr-create` skill. Holds the tight Summary (why) / Gotchas
-  (surprises) / Verification (how we know it's correct) structure, the
-  repo-template detection, and the regenerate-don't-append rule.
 - Never post a new comment on a PR we're working. Carry the update in
   the description (regenerate the body) — it's the single source of
   truth. The only PR comment allowed is a direct reply to an existing
@@ -58,11 +54,6 @@ A per-repo `CLAUDE.md` overrides anything here.
   `git switch -c` or `gh issue develop --checkout` — the petname
   branch is the working branch regardless of issue or task.
 
-## Issues
-
-- Filing a new issue (search for duplicates, detect templates,
-  compose title/body/labels/milestone): `issue-create` skill.
-
 ## Issue workflow
 
 - Before implementing an issue, read its comments and scan recent
@@ -71,9 +62,6 @@ A per-repo `CLAUDE.md` overrides anything here.
   has been replaced).
 - Multi-step tasks: commit incrementally rather than batching.
   Interruptions leave a recoverable branch, not lost work.
-- Picking up a specific issue (`work #N`, `implement #N`, `fix #N`):
-  `issue-work` skill. Carries the inspect commands, staleness signals,
-  and go/no-go format.
 
 ## GitHub API budget
 
@@ -171,58 +159,6 @@ templates) is loaded every relevant turn. Optimise for tokens, not
 readability: cut filler, decorative connectors, restated headings,
 and examples that don't disambiguate.
 
-## Diátaxis docs
-
-- Tutorial/how-to/reference/explanation work under `docs/` not owned by
-  the artifact skills below: `diataxis` skill. Forces a Diátaxis mode
-  pick before writing, then loads per-mode anti-patterns (the canonical
-  failure: a how-to drifting into explanation).
-
-## READMEs and CONTRIBUTING
-
-- README work (audit, write, revise, badges): `readme` skill.
-- CONTRIBUTING work, including the warranted/not decision:
-  `contributing` skill.
-
-## Renovate
-
-- `renovate.json` work (audit, write, troubleshoot dashboard, regex
-  managers): `renovate` skill.
-
-## Vale
-
-- `.vale.ini` work (audit, write, troubleshoot silent passes,
-  vocabularies, pre-commit wiring) and vale findings cleanup:
-  `vale` skill. Cleanup proceeds suggestion → warning → error;
-  reverse risks re-introducing what you just cleared.
-
-## Changelogs
-
-- `CHANGELOG.md` work (bootstrap, review against commits) following
-  Keep a Changelog 1.1.0: `changelog` skill.
-
-## ADRs
-
-- Architecture Decision Record work (warranted/not, Nygard or MADR
-  template detection, scaffolding): `adr` skill.
-
-## Issue relationships
-
-- Linking GitHub issues/PRs (blocked-by via GraphQL, parent/sub-issue,
-  Closes/Fixes, plain mention): `issue-links` skill.
-
-## Milestones
-
-- GitHub milestone work (creating, naming, scoping, closing):
-  `milestones` skill.
-
-## Codecov
-
-- Flaky-test analysis, failure history, coverage queries — anything
-  that would otherwise hit the Codecov web UI's login wall: `codecov`
-  skill. Calls go through the `codecov-api` wrapper; token comes from
-  `~/.config/codecov/token` (chezmoi-decrypted from age).
-
 ## Tests
 
 - Don't test upstream. If a behaviour belongs to the language,
@@ -250,6 +186,11 @@ to undo or touching state outside this checkout.
   (host-wide) — surface the choice, don't pick silently.
 - Permission allowlists in `settings.json`: read-only fine to
   propose; mutating local needs review; remote/external stays manual.
+- Trust material: never establish it unattended. No
+  `StrictHostKeyChecking=accept-new`, no writing `~/.ssh/known_hosts`,
+  no importing GPG keys, no changing token scopes. Accepting an
+  unverified key is the whole security decision — surface the
+  fingerprint and let the user make it.
 
 ## Subagents
 
@@ -263,9 +204,13 @@ to undo or touching state outside this checkout.
 When a new rule is needed, choose the mechanism by required
 behaviour:
 
-- **CLAUDE.md text** — Claude can be trusted to follow it after
-  reading. Default choice. Add here once friction shows up in more
-  than one project.
+- **CLAUDE.md text** — an always-on obligation Claude can be trusted
+  to follow after reading. Default choice. Add here once friction
+  shows up in more than one project.
+- **Skills** — a procedure for one kind of task. The skill list and
+  its `description:` triggers load every session, so a rule that
+  belongs to a procedure goes in that skill's body, never restated
+  here. CLAUDE.md is not an index of the skills.
 - **`settings.json` hooks** — Claude must not be able to forget.
   Pair with CLAUDE.md text when reinforcement and enforcement are
   both wanted.
