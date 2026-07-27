@@ -3,7 +3,8 @@ set -euo pipefail
 
 # renovate: datasource=github-releases depName=grafana/grafana
 GRAFANA_VERSION="v13.0.1"
-ARCH="linux-amd64"
+OS="linux"
+ARCH="amd64"
 
 # shellcheck source-path=SCRIPTDIR source=lib.sh
 . "$(dirname "$0")/lib.sh"
@@ -24,14 +25,26 @@ printf '==> grafana: downloading %s\n' "$GRAFANA_VERSION" >&2
 tmp="$(mktemp -d)"
 trap 'rm -rf "$tmp"' EXIT
 
-base="https://dl.grafana.com/oss/release"
-asset="grafana-${GRAFANA_VERSION#v}.${ARCH}.tar.gz"
-curl -fsSL -o "$tmp/$asset" "$base/$asset"
-curl -fsSL -o "$tmp/$asset.sha256" "$base/$asset.sha256"
+# dl.grafana.com/oss/release/ is a mutable alias whose tarball and .sha256
+# sidecar are separate objects that can disagree across CDN edges, which is
+# indistinguishable from tampering. The release API names the build-stamped
+# immutable URL and its hash in one response, so the two cannot skew.
+curl -fsSL -o "$tmp/version.json" \
+  "https://grafana.com/api/grafana/versions/${GRAFANA_VERSION#v}"
+package="$(jq -c --arg os "$OS" --arg arch "$ARCH" \
+  'first(.packages[] | select(.os == $os and .arch == $arch)) // empty' \
+  "$tmp/version.json")"
+if [ -z "$package" ]; then
+  printf '%s: release API lists no %s/%s package for %s\n' \
+    "${0##*/}" "$OS" "$ARCH" "$GRAFANA_VERSION" >&2
+  exit 1
+fi
 
-# The sidecar lists the hash against an internal dist/ path, so take the
-# hash field directly rather than matching by asset name.
-expected="$(awk '{print $1}' "$tmp/$asset.sha256")"
+url="$(jq -r '.url' <<<"$package")"
+expected="$(jq -r '.sha256' <<<"$package")"
+
+asset="${url##*/}"
+curl -fsSL -o "$tmp/$asset" "$url"
 verify_sha256 "$tmp/$asset" "$expected"
 
 # Tarball top dir is grafana-<version>/ (no leading v); extract beside it and
