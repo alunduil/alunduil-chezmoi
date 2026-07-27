@@ -2,7 +2,7 @@
 set -euo pipefail
 
 # renovate: datasource=github-releases depName=jesseduffield/lazygit
-LAZYGIT_VERSION="v0.62.2"
+LAZYGIT_VERSION="v0.63.1"
 ARCH="linux_x86_64"
 
 # shellcheck source-path=SCRIPTDIR source=lib.sh
