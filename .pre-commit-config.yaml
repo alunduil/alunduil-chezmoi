@@ -76,7 +76,7 @@ repos:
         exclude: ^(CLAUDE\.md|dot_claude/|\.claude/|\.vale/styles/)
 
   - repo: https://github.com/DavidAnson/markdownlint-cli2
-    rev: v0.22.1
+    rev: v0.23.1
     hooks:
       - id: markdownlint-cli2
 
