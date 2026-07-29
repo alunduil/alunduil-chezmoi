@@ -25,7 +25,7 @@ fi
 # script 01). Pin enforced: if a different version is already
 # installed, replace it so renovate-tracked bumps actually take effect.
 # renovate: datasource=github-releases depName=seachicken/gh-poi
-GH_POI_VERSION="v0.18.2"
+GH_POI_VERSION="v0.18.3"
 installed="$(gh extension list 2>/dev/null | awk -F'\t' '$2 == "seachicken/gh-poi" {print $3; exit}')"
 if [ "$installed" != "$GH_POI_VERSION" ]; then
   if [ -n "$installed" ]; then
