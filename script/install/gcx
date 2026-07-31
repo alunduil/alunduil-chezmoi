@@ -2,7 +2,7 @@
 set -euo pipefail
 
 # renovate: datasource=github-releases depName=grafana/gcx
-GCX_VERSION="v0.6.0"
+GCX_VERSION="v1.0.0"
 ARCH="linux_amd64"
 
 # shellcheck source-path=SCRIPTDIR source=lib.sh
