@@ -1,0 +1,138 @@
+name: Daily
+
+# Offset from the hour deliberately: schedules landing on the hour queue
+# behind the platform's peak load.
+on:
+  schedule:
+    - cron: '47 6 * * *'
+      timezone: Europe/London
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  # No cancel-in-progress here, unlike the other scheduled workflow: a
+  # truncated sweep loses the stale action's operations-per-run resume cache
+  # and restarts from the first pull request on the next run.
+  group: ${{ github.workflow }}
+
+jobs:
+  stale-pull-requests:
+    name: Prune stale pull requests
+    runs-on: ubuntu-24.04
+    timeout-minutes: 10
+    permissions:
+      # The stale action's README also asks for `actions: write`, which covers
+      # only its resume cache. Without that scope a truncated run warns and
+      # restarts rather than failing.
+      issues: write
+      pull-requests: write
+    steps:
+      # The stale action measures idleness and nothing else, so on its own it
+      # closes a pull request that has been quiet because *we* owe the review.
+      # It has no input for whose turn it is, so compute that here and express
+      # it as a label the action can exempt on.
+      #
+      # A pull request is the author's move when it is a draft (a draft asks
+      # nobody for anything) or when a reviewer's standing verdict is
+      # CHANGES_REQUESTED. Everything else — review requested and pending, all
+      # approved, nobody engaged yet — is ours, and gets `awaiting-review`.
+      #
+      # Labelling rather than exempting by author is deliberate: the action has
+      # no author-keyed input, and this direction (label the protected set, not
+      # the eligible set) keeps the timer honest. Adding a label bumps
+      # `updated_at`, which would reset the idle clock; here that only ever
+      # happens to pull requests that are exempt anyway.
+      - name: Label pull requests awaiting our review
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          REPO: ${{ github.repository }}
+        run: |
+          set -euo pipefail
+
+          pulls=$(gh api "repos/${REPO}/pulls?state=open&per_page=100" --paginate \
+            --jq '.[] | [.number, .draft, ([.labels[].name] | index("awaiting-review") != null)] | @tsv')
+
+          while IFS=$'\t' read -r number draft labelled; do
+            [ -n "${number}" ] || continue
+
+            if [ "${draft}" = "true" ]; then
+              authors_turn=true
+            else
+              # Stream every review across pages and keep the last verdict per
+              # reviewer; COMMENTED is commentary, not a verdict, and a later
+              # DISMISSED correctly supersedes an earlier CHANGES_REQUESTED.
+              standing=$(gh api "repos/${REPO}/pulls/${number}/reviews?per_page=100" --paginate \
+                --jq '.[] | select(.state != "COMMENTED") | "\(.user.login)\t\(.state)"' \
+                | awk -F'\t' '{latest[$1] = $2} END {for (u in latest) if (latest[u] == "CHANGES_REQUESTED") {print "true"; exit}}')
+              authors_turn=${standing:-false}
+            fi
+
+            # Only write when the verdict and the label disagree, so a steady
+            # state costs no API writes and no `updated_at` churn.
+            if [ "${authors_turn}" = "true" ] && [ "${labelled}" = "true" ]; then
+              echo "#${number}: author's move, clearing awaiting-review"
+              gh api -X DELETE "repos/${REPO}/issues/${number}/labels/awaiting-review" --silent
+            elif [ "${authors_turn}" = "false" ] && [ "${labelled}" = "false" ]; then
+              echo "#${number}: our move, applying awaiting-review"
+              gh api -X POST "repos/${REPO}/issues/${number}/labels" -f "labels[]=awaiting-review" --silent
+            fi
+          done <<< "${pulls}"
+
+      # Two passes because `days-before-pr-stale` is per-invocation and
+      # `blocked` gets a longer leash than everything else. The partitions are
+      # disjoint — this pass takes only `blocked`, the next exempts it — so
+      # both can share one stale label without fighting over it.
+      #
+      # `awaiting-review` is deliberately NOT exempt here. Blocked work is
+      # usually waiting on the world rather than on a named reviewer, so
+      # honouring the turn gate would leave nothing for this pass to do.
+      # Blocked pull requests age out on the clock regardless of whose move it
+      # is; that is the point of giving them a leash at all.
+      - name: Prune blocked pull requests
+        uses: actions/stale@4391f3da665fdf50b6810c1a66712fb9ba21aa93 # v11
+        with:
+          days-before-issue-stale: -1
+          days-before-issue-close: -1
+          days-before-pr-stale: 90
+          days-before-pr-close: 14
+          stale-pr-label: no-pr-activity
+          only-pr-labels: blocked
+          exempt-pr-labels: dependencies,no stale
+          stale-pr-message: >-
+            This has been blocked and quiet for 90 days, so it's picked up a
+            stale label. A comment or a push clears the label and restarts the
+            clock. Otherwise this closes in another 14 days.
+          close-pr-message: >-
+            Closing this after 104 days blocked. That isn't a call on the change
+            itself, and nothing is lost: the branch stays where it is, so
+            comment here if the blocker has cleared and I'll reopen it.
+
+      # Issues are out of scope on both legs: staling them is a separate
+      # decision from staling pull requests, and excluding them from marking
+      # alone would still leave any already carrying a stale label eligible for
+      # closing on the next run.
+      - name: Prune stale pull requests
+        uses: actions/stale@4391f3da665fdf50b6810c1a66712fb9ba21aa93 # v11
+        with:
+          days-before-issue-stale: -1
+          days-before-issue-close: -1
+          days-before-pr-stale: 30
+          days-before-pr-close: 14
+          stale-pr-label: no-pr-activity
+          # Closing a Renovate pull request tells Renovate the update is
+          # unwanted and it will not offer that version again, so `dependencies`
+          # is a correctness exemption rather than a courtesy one — and it only
+          # works because renovate.json applies that label. `no stale` is the
+          # manual opt-out and stays inert until that label is declared in
+          # alunduil/alunduil-infrastructure#330.
+          exempt-pr-labels: blocked,dependencies,no stale,awaiting-review
+          stale-pr-message: >-
+            This has been quiet for 30 days, so it's picked up a stale label. A
+            comment or a push clears the label and restarts the clock. Otherwise
+            this closes in another 14 days.
+          close-pr-message: >-
+            Closing this after 44 quiet days. That isn't a call on the change
+            itself, and nothing is lost: the branch stays where it is, so
+            comment here if you want to pick it back up and I'll reopen it.
