@@ -31,11 +31,12 @@ chezmoi separates the *source* (this checkout) from the *applied clone* at `~/.l
 
 The split exists so a half-finished edit in the dev clone can't corrupt a live `chezmoi apply`. The cost—commit + pull before changes go live—buys an always-coherent apply path.
 
-## Ordered idempotent bootstrap
+## Ordered convergent bootstrap
 
-Bootstrap lives in `.chezmoiscripts/`: `run_*_before_*.sh.tmpl` install and configure passes (run before chezmoi applies files) plus `run_onchange_after_*.sh.tmpl` service-enablement and MCP-registration passes (run after). Each script is responsible for one logical concern (system packages, language toolchains, third-party binaries, login-required tools, automatic security updates, etc.) and is safe to re-run.
+Bootstrap lives in `.chezmoiscripts/`: `run_*_before_*.sh.tmpl` install and configure passes (run before chezmoi applies files) plus `run_*_after_*.sh.tmpl` service-enablement and MCP-registration passes (run after). Each script is responsible for one logical concern (system packages, language toolchains, third-party binaries, login-required tools, automatic security updates, etc.) and is safe to re-run.
 
-- **Idempotent** two ways. Most install passes are `run_once_before`: chezmoi runs each unique content once, never again. Passes that must re-fire when their *inputs* change are `run_onchange_before`: `_02` hashes the pinned `script/install/*` versions, `_04` the `etc/apt/*` config, so an upstream bump re-runs them. Either way, scripts tolerate "already installed" without bailing.
+- **Convergent, not once-only.** Install passes are plain `run_`: they execute on every apply and each one checks host state before acting—`dpkg -s` before `apt-get install`, a pinned `--version` before a download, `cmp` before a `sudo install` into `/etc`. Drift therefore heals. This matters because chezmoi's own state tracking can't see it: `run_once_` and `run_onchange_` key off the *script's* content, so a package removed by `apt autoremove`, a deleted binary, or a hand-edited `/etc` file leaves the source text untouched and the pass never re-fires. Guards are cheap enough (about seven seconds total on a converged host) and skip their `sudo` calls entirely when there is nothing to do.
+- **`run_onchange_` where content is the only trigger.** Two cases keep it: `_07` (Claude MCP servers), because `claude mcp list` costs a network round-trip per registered server and nothing removes a registration behind your back; and `run_onchange_after_register-*-mcp`, which carry rotating secrets and must re-register when the secret changes rather than when the host differs.
 - **Ordered where order is load-bearing.** The `before` passes carry a two-digit prefix because some installs depend on others (ghcup must exist before `cabal` can build); it's a stable sort key, not a reservation system—gaps are fine. The `after` passes are mutually independent, so they drop the number and name the concept. Filename is chezmoi's only ordering lever, so numbers earn their place only where a real dependency exists.
 - **One concern per script** so a failed run names its own scope. Scripts map to a product family, not an install mechanism: a tool needing both `apt` and a binary download lives in one script, not split across passes.
 
@@ -65,7 +66,7 @@ Age secures secrets at rest but can't itself sign commits or authenticate to SSH
 
 `dot_local/bin/executable_gh` shadows system `gh` to enforce `--draft` on `gh pr create`. The shim exists because Claude Code opens PRs through `gh`, and the project rule is "every PR opens as draft, human promotes to ready." Enforcing this in a wrapper rather than via memory keeps the rule load-bearing even when memory slips. `GH_DRAFT_GUARD=off` overrides for the rare manual case.
 
-`gh` extensions install in `.chezmoiscripts/run_once_before_05-*` alongside other bespoke installers, not script 02—they're managed by `gh extension`, not the `script/install/` download-and-verify pattern, so they don't fit that script's shape. Version pin lives inline (for example, `GH_POI_VERSION`).
+`gh` extensions install in `.chezmoiscripts/run_before_05-*` alongside other bespoke installers, not script 02—they're managed by `gh extension`, not the `script/install/` download-and-verify pattern, so they don't fit that script's shape. Version pin lives inline (for example, `GH_POI_VERSION`).
 
 ## Two `CLAUDE.md` files
 

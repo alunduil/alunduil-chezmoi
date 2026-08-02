@@ -13,15 +13,26 @@
 # hook restarts them in place after each upgrade, so the security fix takes hold
 # without a reboot. See #238.
 #
-# run_onchange re-runs when this script's rendered content changes; edits to
-# the config files alone would not. Embed their hashes here so an edit re-fires:
-# 20auto-upgrades content:       {{ include "etc/apt/20auto-upgrades" | sha256sum }}
-# 50unattended-upgrades content: {{ include "etc/apt/50unattended-upgrades" | sha256sum }}
-# needrestart drop-in content:   {{ include "etc/needrestart/conf.d/zz-alunduil.conf" | sha256sum }}
+# Runs on every apply and compares each file against its deployed copy, so
+# both an edit here and a hand-edit under /etc reconcile. Content hashes are
+# not embedded: the comparison reads the real files, which a hash of the
+# source cannot see.
 
 set -euo pipefail
 
 log() { printf '==> %s\n' "$*" >&2; }
+
+# install_if_changed SRC DEST [INSTALL_ARGS...]: sudo-installs SRC over DEST
+# only when they differ, keeping a converged host free of sudo prompts.
+install_if_changed() {
+  local src="$1" dest="$2"
+  shift 2
+  if cmp -s "$src" "$dest"; then
+    return 0
+  fi
+  log "installing $dest"
+  sudo install "$@" "$src" "$dest"
+}
 
 APT_CONF_SRC="{{ .chezmoi.sourceDir }}/etc/apt"
 NEEDRESTART_CONF_SRC="{{ .chezmoi.sourceDir }}/etc/needrestart"
@@ -30,9 +41,12 @@ NEEDRESTART_CONF_SRC="{{ .chezmoi.sourceDir }}/etc/needrestart"
 # powermgmt-base provides on_ac_power, which the OnlyOnACPower gate in
 # 50unattended-upgrades needs to read the AC line; without it u-u fails open.
 PACKAGES=(unattended-upgrades powermgmt-base needrestart)
+# Status field, not `dpkg -s`: see the note in pass 01 -- a package left in
+# `config-files` state by `apt remove` still exits 0 there.
 missing=()
 for pkg in "${PACKAGES[@]}"; do
-  dpkg -s "$pkg" >/dev/null 2>&1 || missing+=("$pkg")
+  status="$(dpkg-query -W -f='${db:Status-Status}' "$pkg" 2>/dev/null || true)"
+  [ "$status" = "installed" ] || missing+=("$pkg")
 done
 if ((${#missing[@]} > 0)); then
   log "installing ${missing[*]}"
@@ -43,17 +57,21 @@ else
 fi
 
 # --------------------------------------------------------------------- config
-log "unattended-upgrades: installing apt config"
-sudo install -m 0644 "$APT_CONF_SRC/20auto-upgrades" /etc/apt/apt.conf.d/20auto-upgrades
-sudo install -m 0644 "$APT_CONF_SRC/50unattended-upgrades" /etc/apt/apt.conf.d/50unattended-upgrades
+install_if_changed "$APT_CONF_SRC/20auto-upgrades" /etc/apt/apt.conf.d/20auto-upgrades -m 0644
+install_if_changed "$APT_CONF_SRC/50unattended-upgrades" /etc/apt/apt.conf.d/50unattended-upgrades -m 0644
 
 # needrestart drop-in: a conf.d snippet so the package's own needrestart.conf
 # stays untouched. -D creates /etc/needrestart/conf.d/ if the package layout
 # ever drops it.
-log "needrestart: installing drop-in config"
-sudo install -D -m 0644 "$NEEDRESTART_CONF_SRC/conf.d/zz-alunduil.conf" /etc/needrestart/conf.d/zz-alunduil.conf
+install_if_changed "$NEEDRESTART_CONF_SRC/conf.d/zz-alunduil.conf" /etc/needrestart/conf.d/zz-alunduil.conf -D -m 0644
 
 # --------------------------------------------------------------------- timers
-sudo systemctl enable --now apt-daily.timer apt-daily-upgrade.timer
+for timer in apt-daily.timer apt-daily-upgrade.timer; do
+  if ! systemctl is-enabled --quiet "$timer" 2>/dev/null ||
+    ! systemctl is-active --quiet "$timer" 2>/dev/null; then
+    log "enabling $timer"
+    sudo systemctl enable --now "$timer"
+  fi
+done
 
 log "unattended-upgrades configured"

@@ -1,0 +1,38 @@
+#!/usr/bin/env bash
+# Bootstrap passes converge: they run on every apply and check host state
+# before acting. Two ways that silently breaks, both of which have already
+# cost us a package that never came back:
+#
+#   run_once_    keys off the script's own content, so a package removed by
+#                `apt autoremove`, a deleted binary, or a hand-edited /etc
+#                file leaves the source untouched and the pass never re-fires.
+#   dpkg -s      exits 0 for a package in `config-files` state -- removed with
+#                `apt remove` but its conffiles retained -- so it reports a
+#                package that is gone from disk as present.
+#
+# Neither is a syntax error and neither fails an apply; they just quietly stop
+# converging. Hence this check.
+
+set -euo pipefail
+
+SOURCE_DIR="$(git -C "$(dirname "${BASH_SOURCE[0]}")" rev-parse --show-toplevel)"
+cd "$SOURCE_DIR"
+
+fail=0
+
+while IFS= read -r file; do
+  printf '%s: run_once_ cannot see host drift; use run_ (converging) or run_onchange_ (content-triggered)\n' \
+    "$file" >&2
+  fail=1
+done < <(git ls-files '.chezmoiscripts/run_once_*')
+
+# Only code: the passes discuss `dpkg -s` in comments explaining why they
+# avoid it, and flagging that would make the fix un-documentable.
+while IFS= read -r hit; do
+  printf '%s: `dpkg -s` is true for config-files state; compare `dpkg-query -W -f='"'"'${db:Status-Status}'"'"'` to "installed"\n' \
+    "$hit" >&2
+  fail=1
+done < <(git grep -n 'dpkg -s' -- '.chezmoiscripts/*.tmpl' |
+  grep -vE '^[^:]+:[0-9]+:[[:space:]]*#' || true)
+
+exit "$fail"

@@ -50,8 +50,13 @@ fi
 # apt repo itself (vscode.sources + microsoft.gpg). A hand-rolled vscode.list
 # naming a second keyring path collides with that postinst source and wedges
 # apt with a "Conflicting values set for option Signed-By" error. Drop the
-# stale entry before any apt call so sources stay readable.
-sudo rm -f /etc/apt/sources.list.d/vscode.list /usr/share/keyrings/packages.microsoft.gpg
+# stale entry before any apt call so sources stay readable. Guarded so a
+# converged host reaches no sudo here; this pass runs on every apply.
+if [ -e /etc/apt/sources.list.d/vscode.list ] ||
+  [ -e /usr/share/keyrings/packages.microsoft.gpg ]; then
+  log "vscode: dropping stale hand-rolled apt source"
+  sudo rm -f /etc/apt/sources.list.d/vscode.list /usr/share/keyrings/packages.microsoft.gpg
+fi
 
 # --------------------------------------------------------------------- docker
 if [ ! -f /usr/share/keyrings/docker-archive-keyring.gpg ]; then
@@ -113,9 +118,13 @@ APT_PACKAGES=(
   docker-ce docker-ce-cli docker-ce-rootless-extras containerd.io
   docker-buildx-plugin docker-compose-plugin
 )
+# Status field, not `dpkg -s`: the latter exits 0 for a package in
+# config-files state -- removed with `apt remove` but its conffiles retained --
+# so a package gone from disk reads as present and never gets reinstalled.
 missing=()
 for pkg in "${APT_PACKAGES[@]}"; do
-  dpkg -s "$pkg" >/dev/null 2>&1 || missing+=("$pkg")
+  status="$(dpkg-query -W -f='${db:Status-Status}' "$pkg" 2>/dev/null || true)"
+  [ "$status" = "installed" ] || missing+=("$pkg")
 done
 if ((${#missing[@]} > 0)); then
   log "apt: installing ${missing[*]}"
@@ -146,6 +155,10 @@ if ! command -v tailscale >/dev/null 2>&1; then
 else
   log "tailscale: already installed"
 fi
-sudo systemctl enable --now tailscaled
+if ! systemctl is-enabled --quiet tailscaled 2>/dev/null ||
+  ! systemctl is-active --quiet tailscaled 2>/dev/null; then
+  log "tailscale: enabling tailscaled"
+  sudo systemctl enable --now tailscaled
+fi
 
 log "system packages complete"

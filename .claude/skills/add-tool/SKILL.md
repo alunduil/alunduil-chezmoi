@@ -26,14 +26,14 @@ Pick the canonical installer for the ecosystem:
 
 All passes live under `.chezmoiscripts/`.
 
-| Source                | Pass                                                | Pattern                          |
-| --------------------- | --------------------------------------------------- | -------------------------------- |
-| Debian package        | `run_once_before_01`                                | append to `APT_PACKAGES`         |
-| Pinned binary release | `run_onchange_before_02` + `script/install/<tool>`  | template below                   |
-| npm package           | `run_once_before_03`                                | `npm install -g`, `command -v`   |
-| Cargo crate           | `run_once_before_09`                                | `cargo install`, `command -v`    |
-| `gh` extension        | `run_once_before_05`                                | `gh extension install --pin`     |
-| `curl \| sh`          | `run_once_before_05`                                | guard with `command -v`          |
+| Source                | Pass                                      | Pattern                        |
+| --------------------- | ----------------------------------------- | ------------------------------ |
+| Debian package        | `run_before_01`                           | append to `APT_PACKAGES`       |
+| Pinned binary release | `run_before_02` + `script/install/<tool>` | template below                 |
+| npm package           | `run_before_03`                           | `npm install -g`, `command -v` |
+| Cargo crate           | `run_before_09`                           | `cargo install`, `command -v`  |
+| `gh` extension        | `run_before_05`                           | `gh extension install --pin`   |
+| `curl \| sh`          | `run_before_05`                           | guard with `command -v`        |
 
 Auth and install axes are independent: `gcx` is auth-required *and*
 uses `script/install/`; `gh-poi` is fire-and-forget *and* uses
@@ -78,12 +78,11 @@ mkdir -p "$BIN_DIR"
 install -m 0755 "$tmp/<tool>" "$bin"
 ```
 
-In `.chezmoiscripts/run_onchange_before_02-install-binary-tools.sh.tmpl`, add both:
-
-- `# <tool> content: {{ include "script/install/<tool>" | sha256sum }}`
-  to the hash-include block — without this, chezmoi won't re-fire
-  bootstrap on version bumps.
-- `"$INSTALL_DIR/<tool>" --bin-dir "$HOME/.local/bin"` to the call list.
+In `.chezmoiscripts/run_before_02-install-binary-tools.sh.tmpl`, add
+`"$INSTALL_DIR/<tool>" --bin-dir "$HOME/.local/bin"` to the call list.
+That pass runs on every apply, so the installer's own
+`installed_version_matches` guard is what makes a bump take effect — the
+install script must no-op when the pinned version is already on disk.
 
 Add a Renovate custom-manager entry so `<TOOL>_VERSION` tracks GitHub
 releases — see the `renovate` skill for the regex-manager pattern.

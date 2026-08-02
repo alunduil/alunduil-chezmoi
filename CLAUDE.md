@@ -14,12 +14,19 @@ effect on `apply` until committed and pulled into the apply clone. Use
 
 ## Invariants
 
-- Bootstrap scripts live in `.chezmoiscripts/` and are idempotent;
-  re-running is safe. `run_*_before_NN-*` install/config passes carry a
-  numeric prefix that orders them (dependencies); `run_onchange_after_*`
-  passes are order-independent and named by concept, not numbered. Passes
-  that must re-fire when their inputs change (`run_onchange_before_02`,
-  `_04`) are `run_onchange` and embed those inputs' hashes.
+- Bootstrap scripts live in `.chezmoiscripts/` and converge: they run on
+  every apply and each checks host state before acting (`dpkg -s`, pinned
+  `--version`, `cmp` before `sudo install`), so drift heals. Guards must
+  stay cheap and reach no `sudo` when the host already matches — a new
+  guard that shells out per item or prompts for a password is a bug.
+  `run_*_before_NN-*` install/config passes carry a numeric prefix that
+  orders them (dependencies); `run_*_after_*` passes are
+  order-independent and named by concept, not numbered.
+- `run_onchange_` is only for passes whose trigger is genuinely content,
+  not host state: `_07` (its `claude mcp list` guard costs a network
+  round-trip per server) and `run_onchange_after_register-*-mcp` (rotating
+  secrets must re-register on change). Everything else is plain `run_`.
+  No `run_once_` — it keys off script content, so it cannot see drift.
 - Tool versions live in `script/install/*` (one script per tool, each
   pinning its own `*_VERSION`) and are reused by both bootstrap and CI.
   Bump in one place. Zellij *plugins*
