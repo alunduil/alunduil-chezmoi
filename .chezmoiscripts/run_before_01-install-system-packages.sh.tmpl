@@ -7,6 +7,13 @@ set -euo pipefail
 
 log() { printf '==> %s\n' "$*" >&2; }
 
+# `dpkg -s` is not this test: it exits 0 for a package in config-files state --
+# removed with `apt remove` but its conffiles retained -- so a package gone
+# from disk reads as present and never gets reinstalled.
+is_installed() {
+  [ "$(dpkg-query -W -f='${db:Status-Status}' "$1" 2>/dev/null || true)" = "installed" ]
+}
+
 # ----------------------------------------------------------- hashicorp repo
 if [ ! -f /usr/share/keyrings/hashicorp-archive-keyring.gpg ]; then
   log "hashicorp: adding apt repository"
@@ -118,13 +125,9 @@ APT_PACKAGES=(
   docker-ce docker-ce-cli docker-ce-rootless-extras containerd.io
   docker-buildx-plugin docker-compose-plugin
 )
-# Status field, not `dpkg -s`: the latter exits 0 for a package in
-# config-files state -- removed with `apt remove` but its conffiles retained --
-# so a package gone from disk reads as present and never gets reinstalled.
 missing=()
 for pkg in "${APT_PACKAGES[@]}"; do
-  status="$(dpkg-query -W -f='${db:Status-Status}' "$pkg" 2>/dev/null || true)"
-  [ "$status" = "installed" ] || missing+=("$pkg")
+  is_installed "$pkg" || missing+=("$pkg")
 done
 if ((${#missing[@]} > 0)); then
   log "apt: installing ${missing[*]}"

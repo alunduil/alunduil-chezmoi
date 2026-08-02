@@ -22,16 +22,23 @@ set -euo pipefail
 
 log() { printf '==> %s\n' "$*" >&2; }
 
-# install_if_changed SRC DEST [INSTALL_ARGS...]: sudo-installs SRC over DEST
-# only when they differ, keeping a converged host free of sudo prompts.
+# `dpkg -s` is not this test: it exits 0 for a package in config-files state --
+# removed with `apt remove` but its conffiles retained -- so a package gone
+# from disk reads as present and never gets reinstalled.
+is_installed() {
+  [ "$(dpkg-query -W -f='${db:Status-Status}' "$1" 2>/dev/null || true)" = "installed" ]
+}
+
+# Same argument list as `install` itself, so call sites read as the command
+# they wrap; the only difference is that an unchanged DEST is left alone,
+# which is what keeps a converged host free of sudo prompts.
 install_if_changed() {
-  local src="$1" dest="$2"
-  shift 2
+  local src="${*: -2:1}" dest="${*: -1}"
   if cmp -s "$src" "$dest"; then
     return 0
   fi
   log "installing $dest"
-  sudo install "$@" "$src" "$dest"
+  sudo install "$@"
 }
 
 APT_CONF_SRC="{{ .chezmoi.sourceDir }}/etc/apt"
@@ -41,12 +48,9 @@ NEEDRESTART_CONF_SRC="{{ .chezmoi.sourceDir }}/etc/needrestart"
 # powermgmt-base provides on_ac_power, which the OnlyOnACPower gate in
 # 50unattended-upgrades needs to read the AC line; without it u-u fails open.
 PACKAGES=(unattended-upgrades powermgmt-base needrestart)
-# Status field, not `dpkg -s`: see the note in pass 01 -- a package left in
-# `config-files` state by `apt remove` still exits 0 there.
 missing=()
 for pkg in "${PACKAGES[@]}"; do
-  status="$(dpkg-query -W -f='${db:Status-Status}' "$pkg" 2>/dev/null || true)"
-  [ "$status" = "installed" ] || missing+=("$pkg")
+  is_installed "$pkg" || missing+=("$pkg")
 done
 if ((${#missing[@]} > 0)); then
   log "installing ${missing[*]}"
@@ -57,13 +61,13 @@ else
 fi
 
 # --------------------------------------------------------------------- config
-install_if_changed "$APT_CONF_SRC/20auto-upgrades" /etc/apt/apt.conf.d/20auto-upgrades -m 0644
-install_if_changed "$APT_CONF_SRC/50unattended-upgrades" /etc/apt/apt.conf.d/50unattended-upgrades -m 0644
+install_if_changed -m 0644 "$APT_CONF_SRC/20auto-upgrades" /etc/apt/apt.conf.d/20auto-upgrades
+install_if_changed -m 0644 "$APT_CONF_SRC/50unattended-upgrades" /etc/apt/apt.conf.d/50unattended-upgrades
 
 # needrestart drop-in: a conf.d snippet so the package's own needrestart.conf
 # stays untouched. -D creates /etc/needrestart/conf.d/ if the package layout
 # ever drops it.
-install_if_changed "$NEEDRESTART_CONF_SRC/conf.d/zz-alunduil.conf" /etc/needrestart/conf.d/zz-alunduil.conf -D -m 0644
+install_if_changed -D -m 0644 "$NEEDRESTART_CONF_SRC/conf.d/zz-alunduil.conf" /etc/needrestart/conf.d/zz-alunduil.conf
 
 # --------------------------------------------------------------------- timers
 for timer in apt-daily.timer apt-daily-upgrade.timer; do
