@@ -15,6 +15,7 @@ description: Audit, write, or revise renovate.json. Use when adding Renovate, tr
   ],
   "timezone": "Europe/London",
   "reviewers": ["alunduil"],
+  "labels": ["dependencies"],
   "pre-commit": { "enabled": true }
 }
 ```
@@ -22,7 +23,8 @@ description: Audit, write, or revise renovate.json. Use when adding Renovate, tr
 - This block is identical in every repo and is a standing candidate for a shared preset (`github>alunduil/renovate-config`, a `default.json`); Renovate also checks `<owner>/renovate-config` when onboarding a new repo. Until that repo exists, keep the block inline and change it everywhere at once.
 - Omit `baseBranchPatterns`. It is auto-detected, and hard-coding it is the one field that differs per repo (`main` vs `master`) — the thing that would block sharing.
 - Omit `schedule` unless a repo wants batching. With a bake period the PR is already delayed, and Renovate's default `prHourlyLimit` of 2 rate-limits the rest.
-- `packageRules` and `customManagers` are `mergeable: true`, so preset arrays concatenate with a repo's own rather than replacing them. `labels` and `reviewers` are not mergeable — setting them in a repo replaces the inherited value.
+- `packageRules` and `customManagers` are `mergeable: true`, so preset arrays concatenate with a repo's own rather than replacing them. `labels` and `reviewers` are not mergeable — setting them in a repo replaces the inherited value. `addLabels` merges and appends; `labels` in a shared preset is dropped wholesale by the first repo setting its own.
+- `labels` — default `[]`, so Renovate labels nothing without this. A stale sweep exempting Renovate PRs by label depends on it: closing a Renovate PR tells Renovate the version is unwanted and it will not re-offer it. `vulnerabilityAlerts` takes no `labels`.
 - `reviewers` — without it, Renovate PRs land silent. Use `assignees` instead for a creation-time ping with no rebase notifications.
 - `pre-commit: { enabled: true }` — opt-in manager; enable unconditionally. No-op without `.pre-commit-config.yaml`; replaces pre-commit.ci where the file exists.
 - `config:best-practices` = `config:recommended` + `docker:pinDigests` + `helpers:pinGitHubActionDigests` + `:configMigration` + `:pinDevDependencies` + `abandonments:recommended` + `security:minimumReleaseAgeNpm` + `:maintainLockFilesWeekly`. It does *not* include OpenSSF scorecard; that is `security:openssf-scorecard`, which adds a badge column to PR bodies.
@@ -109,5 +111,5 @@ Renovate opens a "Dependency Dashboard" issue. Read it before assuming a bug:
 1. Confirm any field name, default, or preset body you plan to rely on against the source, not memory: defaults in `lib/config/options/index.ts`, preset bodies in `lib/config/presets/internal/*.preset.ts`. Docs summaries and prior commits drift — several fields once worth writing are now defaults.
 2. Read `renovate.json` if present, and any preset it extends.
 3. **Greenfield** — write the Defaults and Supply-chain hardening blocks. Add `customManagers` only for pins the annotation convention cannot reach. Add the `renovate-config-validator` pre-commit hook (see Validation).
-4. **Audit existing** — flag drift: fields that merely restate a default (`internalChecksFilter`, `vulnerabilityAlerts.minimumReleaseAge`, `baseBranchPatterns`), a no-timestamp carve-out that is missing or narrower than the eight update types, one manager per pin where an annotation would do, unannotated `*_VERSION=` pins (invisible to Renovate, so they look up-to-date forever), deprecated `fileMatch`/`baseBranches`, missing validator hook.
+4. **Audit existing** — flag drift: fields that merely restate a default (`internalChecksFilter`, `vulnerabilityAlerts.minimumReleaseAge`, `baseBranchPatterns`), a no-timestamp carve-out that is missing or narrower than the eight update types, one manager per pin where an annotation would do, unannotated `*_VERSION=` pins (invisible to Renovate, so they look up-to-date forever), deprecated `fileMatch`/`baseBranches`, missing validator hook, missing `labels` where a workflow exempts Renovate PRs by label.
 5. Surface findings before editing. Apply only after scope is agreed.
