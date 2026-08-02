@@ -15,13 +15,14 @@ effect on `apply` until committed and pulled into the apply clone. Use
 ## Invariants
 
 - Bootstrap scripts live in `.chezmoiscripts/` and converge: they run on
-  every apply and each checks host state before acting (`dpkg -s`, pinned
-  `--version`, `cmp` before `sudo install`), so drift heals. Guards must
-  stay cheap and reach no `sudo` when the host already matches — a new
-  guard that shells out per item or prompts for a password is a bug.
-  `run_*_before_NN-*` install/config passes carry a numeric prefix that
-  orders them (dependencies); `run_*_after_*` passes are
-  order-independent and named by concept, not numbered.
+  every apply and each checks host state before acting (`dpkg-query`
+  status, pinned `--version`, `cmp` before `sudo install`), so drift
+  heals. Guards stay local and reach no `sudo` when the host already
+  matches — one that costs a network round-trip or prompts for a password
+  belongs behind `run_onchange_` instead. `run_*_before_NN-*`
+  install/config passes carry a numeric prefix that orders them
+  (dependencies); `run_*_after_*` passes are order-independent and named
+  by concept, not numbered.
 - `run_onchange_` is only for passes whose trigger is genuinely content,
   not host state: `_07` (its `claude mcp list` guard costs a network
   round-trip per server) and `run_onchange_after_register-*-mcp` (rotating

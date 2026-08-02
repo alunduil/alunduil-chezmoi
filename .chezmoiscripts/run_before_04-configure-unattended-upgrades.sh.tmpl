@@ -13,10 +13,8 @@
 # hook restarts them in place after each upgrade, so the security fix takes hold
 # without a reboot. See #238.
 #
-# Runs on every apply and compares each file against its deployed copy, so
-# both an edit here and a hand-edit under /etc reconcile. Content hashes are
-# not embedded: the comparison reads the real files, which a hash of the
-# source cannot see.
+# Each file is compared against its deployed copy, so an edit here and a
+# hand-edit under /etc both reconcile.
 
 set -euo pipefail
 
@@ -29,9 +27,8 @@ is_installed() {
   [ "$(dpkg-query -W -f='${db:Status-Status}' "$1" 2>/dev/null || true)" = "installed" ]
 }
 
-# Same argument list as `install` itself, so call sites read as the command
-# they wrap; the only difference is that an unchanged DEST is left alone,
-# which is what keeps a converged host free of sudo prompts.
+# Takes `install`'s own argument list; the difference is that an unchanged
+# DEST is left alone, so a converged host never reaches sudo.
 install_if_changed() {
   local src="${*: -2:1}" dest="${*: -1}"
   if cmp -s "$src" "$dest"; then

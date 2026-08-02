@@ -1,9 +1,8 @@
 #!/usr/bin/env bash
 # Installs third-party binaries through script/install/*, each of which pins
 # its own version and no-ops when that version is already on disk. Those
-# guards are the convergence point: this pass runs on every apply, so a
-# Renovate bump, a deleted binary, or a hand-installed older copy all
-# reconcile on the next one.
+# guards are the convergence point: nothing here tracks what ran before, so
+# a version bump and a deleted binary reconcile by the same path.
 
 set -euo pipefail
 

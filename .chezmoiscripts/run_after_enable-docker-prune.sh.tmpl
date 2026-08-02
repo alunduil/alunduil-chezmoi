@@ -5,9 +5,8 @@
 # $HOME, not /etc, so the units live in etc/ and are copied in with sudo (same
 # shape as the unattended-upgrades config). See #312.
 #
-# Runs on every apply and compares each unit against its deployed copy, so an
-# edit here and a hand-edit under /etc both reconcile, and daemon-reload fires
-# only when something actually changed.
+# Each unit is compared against its deployed copy, so an edit here and a
+# hand-edit under /etc both reconcile.
 
 set -euo pipefail
 

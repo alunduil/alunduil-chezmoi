@@ -1,7 +1,8 @@
 #!/usr/bin/env bash
 # Bootstrap passes converge: they run on every apply and check host state
-# before acting. Two ways that silently breaks, both of which have already
-# cost us a package that never came back:
+# before acting. Two things break that silently -- neither is a syntax error,
+# neither fails an apply, and both leave a pass that runs and reconciles
+# nothing:
 #
 #   run_once_    keys off the script's own content, so a package removed by
 #                `apt autoremove`, a deleted binary, or a hand-edited /etc
@@ -9,9 +10,6 @@
 #   dpkg -s      exits 0 for a package in `config-files` state -- removed with
 #                `apt remove` but its conffiles retained -- so it reports a
 #                package that is gone from disk as present.
-#
-# Neither is a syntax error and neither fails an apply; they just quietly stop
-# converging. Hence this check.
 
 set -euo pipefail
 
@@ -20,7 +18,6 @@ cd "$SOURCE_DIR"
 
 fail=0
 
-# report REMEDY < locations: prints one `location: remedy` line per input line.
 report() {
   local remedy="$1" location
   while IFS= read -r location; do

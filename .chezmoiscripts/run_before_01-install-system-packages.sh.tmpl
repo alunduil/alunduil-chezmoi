@@ -57,8 +57,7 @@ fi
 # apt repo itself (vscode.sources + microsoft.gpg). A hand-rolled vscode.list
 # naming a second keyring path collides with that postinst source and wedges
 # apt with a "Conflicting values set for option Signed-By" error. Drop the
-# stale entry before any apt call so sources stay readable. Guarded so a
-# converged host reaches no sudo here; this pass runs on every apply.
+# stale entry before any apt call so sources stay readable.
 if [ -e /etc/apt/sources.list.d/vscode.list ] ||
   [ -e /usr/share/keyrings/packages.microsoft.gpg ]; then
   log "vscode: dropping stale hand-rolled apt source"

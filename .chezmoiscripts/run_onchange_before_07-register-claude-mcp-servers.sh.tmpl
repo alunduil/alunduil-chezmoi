@@ -11,17 +11,17 @@
 # run_onchange scripts re-add because they carry rotating secrets whose
 # change must take effect.
 #
-# The sibling install passes are `run_` and converge against host state on
-# every apply. This one stays content-triggered: `claude mcp list` pings every
-# registered server (~5s), and nothing removes a registration behind your back,
-# so paying that on each apply buys no drift coverage.
+# Content-triggered rather than converging like the sibling install passes:
+# `claude mcp list` pings every registered server, and nothing removes a
+# registration behind your back, so checking on each apply buys no drift
+# coverage for the round-trips it costs.
 
 set -euo pipefail
 
 log() { printf '==> %s\n' "$*" >&2; }
 
-# One `claude mcp list` for all the checks below -- it is a network round-trip
-# per registered server, so calling it per candidate is what made this pass slow.
+# One listing for every check below: it is a network round-trip per registered
+# server, so a call per candidate costs seconds.
 registered="$(claude mcp list 2>/dev/null || true)"
 
 # ----------------------------------------------------------------- Cloudflare
