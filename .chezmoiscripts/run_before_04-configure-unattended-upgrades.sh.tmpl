@@ -42,9 +42,8 @@ APT_CONF_SRC="{{ .chezmoi.sourceDir }}/etc/apt"
 NEEDRESTART_CONF_SRC="{{ .chezmoi.sourceDir }}/etc/needrestart"
 
 # -------------------------------------------------------------------- install
-# powermgmt-base provides on_ac_power, which the OnlyOnACPower gate in
-# 50unattended-upgrades needs to read the AC line; without it u-u fails open.
-PACKAGES=(unattended-upgrades powermgmt-base needrestart)
+read -ra PACKAGES <<<'{{ join " " .packages.apt.unattendedUpgrades }}'
+
 missing=()
 for pkg in "${PACKAGES[@]}"; do
   is_installed "$pkg" || missing+=("$pkg")

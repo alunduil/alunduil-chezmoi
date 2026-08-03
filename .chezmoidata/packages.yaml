@@ -1,0 +1,52 @@
+# Apt package lists, read by the bootstrap passes that install them.
+# chezmoi has no package target, so a script still does the installing; this
+# file is what that script installs, separated from how.
+packages:
+  apt:
+    # Pass 01: the workstation toolchain.
+    system:
+      - gh
+      - zsh
+      - ripgrep
+      - fd-find
+      - fzf
+      - jq
+      - unzip
+      - age
+      - terraform
+      - libnotify-bin
+      - 1password-cli
+      - build-essential
+      - libffi-dev
+      - libgmp-dev
+      - libncurses-dev
+      - zlib1g-dev
+      - protobuf-compiler
+      - temurin-21-jdk
+      - golang-petname
+      # Music-library toolchain around beets (uv tool, pass 02). Package names
+      # differ from the binaries they ship: ffmpeg -> ffprobe,
+      # libimage-exiftool-perl -> exiftool, libchromaprint-tools -> fpcalc,
+      # which is the fingerprinter pyacoustid shells out to.
+      - ffmpeg
+      - mediainfo
+      - libimage-exiftool-perl
+      - rsync
+      - libchromaprint-tools
+      - keybase
+      - signal-desktop
+      - calibre
+      - nethack-console
+      - docker-ce
+      - docker-ce-cli
+      - docker-ce-rootless-extras
+      - containerd.io
+      - docker-buildx-plugin
+      - docker-compose-plugin
+    # Pass 04: automatic security updates. powermgmt-base provides
+    # on_ac_power, which the OnlyOnACPower gate in 50unattended-upgrades needs
+    # to read the AC line; without it unattended-upgrades fails open.
+    unattendedUpgrades:
+      - unattended-upgrades
+      - powermgmt-base
+      - needrestart

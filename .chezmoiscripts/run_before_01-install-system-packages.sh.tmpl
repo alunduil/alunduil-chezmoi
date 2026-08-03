@@ -108,22 +108,11 @@ if [ ! -f /usr/share/keyrings/adoptium-archive-keyring.gpg ]; then
 fi
 
 # -------------------------------------------------------------------- apt pkgs
-APT_PACKAGES=(
-  gh zsh ripgrep fd-find fzf jq unzip age terraform libnotify-bin 1password-cli
-  build-essential libffi-dev libgmp-dev libncurses-dev zlib1g-dev
-  protobuf-compiler
-  temurin-21-jdk
-  golang-petname
-  # Music-library toolchain around beets (uv tool, script 02). Package names
-  # differ from the binaries they ship: ffmpeg -> ffprobe,
-  # libimage-exiftool-perl -> exiftool, libchromaprint-tools -> fpcalc, which
-  # is the fingerprinter pyacoustid shells out to.
-  ffmpeg mediainfo libimage-exiftool-perl rsync libchromaprint-tools
-  keybase signal-desktop calibre
-  nethack-console
-  docker-ce docker-ce-cli docker-ce-rootless-extras containerd.io
-  docker-buildx-plugin docker-compose-plugin
-)
+# The list itself lives in .chezmoidata/packages.yaml, chezmoi's own idiom for
+# declaring packages, so it is data every template can read rather than a shell
+# array only this script can.
+read -ra APT_PACKAGES <<<'{{ join " " .packages.apt.system }}'
+
 missing=()
 for pkg in "${APT_PACKAGES[@]}"; do
   is_installed "$pkg" || missing+=("$pkg")
