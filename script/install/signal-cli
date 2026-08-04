@@ -2,7 +2,7 @@
 set -euo pipefail
 
 # renovate: datasource=github-releases depName=AsamK/signal-cli
-SIGNAL_CLI_VERSION="v0.14.6"
+SIGNAL_CLI_VERSION="v0.14.7"
 ARCH="Linux-native"
 
 # AsamK's release signing key. Published at keys.openpgp.org with UID
