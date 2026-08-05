@@ -93,7 +93,7 @@ jobs:
       - name: Install chezmoi
         env:
           # renovate: datasource=github-releases depName=twpayne/chezmoi
-          CHEZMOI_VERSION: "v2.71.1"
+          CHEZMOI_VERSION: "v2.72.0"
         run: sh -c "$(curl -fsLS get.chezmoi.io)" -- -b /usr/local/bin -t "$CHEZMOI_VERSION"
 
       - name: Install age
