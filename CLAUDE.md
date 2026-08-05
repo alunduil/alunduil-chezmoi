@@ -28,9 +28,13 @@ effect on `apply` until committed and pulled into the apply clone. Use
   round-trip per server) and `run_onchange_after_register-*-mcp` (rotating
   secrets must re-register on change). Everything else is plain `run_`.
   No `run_once_` — it keys off script content, so it cannot see drift.
-- Apt package lists live in `.chezmoidata/packages.yaml`, not in the
-  scripts that install them. Group keys are Go template field paths, so
-  no hyphens (`unattendedUpgrades`).
+- Phases carry the split: `before` passes install, `after` passes
+  configure, enable, and register. A pass that both installs its own
+  packages and configures them is misfiled — the packages belong in the
+  apt list, the rest in an `after` pass.
+- Every apt package lives in `.chezmoidata/packages.yaml`, in one list, so
+  one pass makes one apt transaction. Later passes configure what it
+  installed rather than installing their own.
 - pre-commit shellchecks `.sh.tmpl` files unrendered, so a `{{ … }}`
   expression must sit inside quotes or a comment. That is why the package
   lists arrive via `read -ra <<<'{{ … }}'` rather than an array literal.

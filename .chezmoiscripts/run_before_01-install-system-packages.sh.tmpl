@@ -108,7 +108,7 @@ if [ ! -f /usr/share/keyrings/adoptium-archive-keyring.gpg ]; then
 fi
 
 # -------------------------------------------------------------------- apt pkgs
-read -ra APT_PACKAGES <<<'{{ join " " .packages.apt.system }}'
+read -ra APT_PACKAGES <<<'{{ join " " .packages.apt }}'
 
 missing=()
 for pkg in "${APT_PACKAGES[@]}"; do
