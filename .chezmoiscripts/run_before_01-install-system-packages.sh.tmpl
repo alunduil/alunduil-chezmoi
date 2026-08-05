@@ -108,9 +108,6 @@ if [ ! -f /usr/share/keyrings/adoptium-archive-keyring.gpg ]; then
 fi
 
 # -------------------------------------------------------------------- apt pkgs
-# The list itself lives in .chezmoidata/packages.yaml, chezmoi's own idiom for
-# declaring packages, so it is data every template can read rather than a shell
-# array only this script can.
 read -ra APT_PACKAGES <<<'{{ join " " .packages.apt.system }}'
 
 missing=()

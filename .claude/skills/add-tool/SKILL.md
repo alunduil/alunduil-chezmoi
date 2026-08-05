@@ -28,7 +28,7 @@ All passes live under `.chezmoiscripts/`.
 
 | Source                | Pass                                      | Pattern                        |
 | --------------------- | ----------------------------------------- | ------------------------------ |
-| Debian package        | `run_before_01`                           | append to `APT_PACKAGES`       |
+| Debian package        | `.chezmoidata/packages.yaml`              | append to `packages.apt`       |
 | Pinned binary release | `run_before_02` + `script/install/<tool>` | template below                 |
 | npm package           | `run_before_03`                           | `npm install -g`, `command -v` |
 | Cargo crate           | `run_before_09`                           | `cargo install`, `command -v`  |

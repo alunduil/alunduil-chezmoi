@@ -1,6 +1,3 @@
-# Apt package lists, read by the bootstrap passes that install them.
-# chezmoi has no package target, so a script still does the installing; this
-# file is what that script installs, separated from how.
 packages:
   apt:
     # The workstation toolchain.

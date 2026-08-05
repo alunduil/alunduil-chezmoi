@@ -2,7 +2,7 @@
 
 Chezmoi source directory. Files deploy to `$HOME` via `chezmoi apply`;
 names follow chezmoi rules (`dot_` → `.`, `executable_` → +x, `.tmpl` →
-Go template, `.chezmoiscripts/run_*_before_NN-…` → ordered idempotent bootstrap).
+Go template, `.chezmoiscripts/run_*_before_NN-…` → ordered convergent bootstrap).
 `docs/tutorials/bootstrap.md` has the bootstrap walkthrough; `docs/explanation/architecture.md` has the human-facing rationale.
 
 ## Source vs. apply path
@@ -28,6 +28,12 @@ effect on `apply` until committed and pulled into the apply clone. Use
   round-trip per server) and `run_onchange_after_register-*-mcp` (rotating
   secrets must re-register on change). Everything else is plain `run_`.
   No `run_once_` — it keys off script content, so it cannot see drift.
+- Apt package lists live in `.chezmoidata/packages.yaml`, not in the
+  scripts that install them. Group keys are Go template field paths, so
+  no hyphens (`unattendedUpgrades`).
+- pre-commit shellchecks `.sh.tmpl` files unrendered, so a `{{ … }}`
+  expression must sit inside quotes or a comment. That is why the package
+  lists arrive via `read -ra <<<'{{ … }}'` rather than an array literal.
 - Tool versions live in `script/install/*` (one script per tool, each
   pinning its own `*_VERSION`) and are reused by both bootstrap and CI.
   Bump in one place. Zellij *plugins*
