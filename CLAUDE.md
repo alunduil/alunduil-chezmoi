@@ -28,10 +28,12 @@ effect on `apply` until committed and pulled into the apply clone. Use
   round-trip per server) and `run_onchange_after_register-*-mcp` (rotating
   secrets must re-register on change). Everything else is plain `run_`.
   No `run_once_` — it keys off script content, so it cannot see drift.
-- Phases carry the split: `before` passes install, `after` passes
-  configure, enable, and register. A pass that both installs its own
-  packages and configures them is misfiled — the packages belong in the
-  apt list, the rest in an `after` pass.
+- `after` is for passes that consume something `chezmoi apply` deploys: a
+  user unit from `dot_config/systemd/user/`, a decrypted token. That
+  dependency is the only thing that forces the phase — everything else is
+  `before`. Enabling a service the package itself shipped (tailscaled)
+  forces nothing, so it stays in the pass that installed it rather than
+  splitting one concern across two.
 - Every apt package lives in `.chezmoidata/packages.yaml`, in one list, so
   one pass makes one apt transaction. Later passes configure what it
   installed rather than installing their own.
