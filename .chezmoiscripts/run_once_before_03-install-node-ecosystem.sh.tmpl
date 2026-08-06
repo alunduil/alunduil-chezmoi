@@ -29,7 +29,7 @@ fi
 # explicit version rather than `command -v node`, which could find a system
 # /usr/bin/node and skip installation, leaving nvm with zero versions.
 # renovate: datasource=node-version depName=node versioning=node
-NODE_VERSION="24.18.1"
+NODE_VERSION="24.19.0"
 if ! nvm ls "$NODE_VERSION" >/dev/null 2>&1; then
   log "node: installing $NODE_VERSION via nvm"
   nvm install "$NODE_VERSION"
