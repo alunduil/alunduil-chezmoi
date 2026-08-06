@@ -3,7 +3,7 @@
 # auth (not OAuth like the Cloudflare MCPs in script 07-before), so the token
 # is passed via --header and ends up baked into ~/.claude.json.
 #
-# Why run_onchange_after instead of run_once_before:
+# Why run_onchange_after instead of a converging run_before pass:
 #   - _after_: the chezmoi-encrypted token must be decrypted to
 #     ~/.config/uptimerobot/token before we read it, which only happens after
 #     files are applied.

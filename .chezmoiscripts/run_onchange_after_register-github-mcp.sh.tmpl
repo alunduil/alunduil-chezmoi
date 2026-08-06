@@ -5,7 +5,7 @@
 # a fine-grained PAT, mirroring the uptimerobot script in the same slot. Tools
 # land under mcp__github__*, which pr-draft-guard.sh keys on.
 #
-# Why run_onchange_after instead of run_once_before:
+# Why run_onchange_after instead of a converging run_before pass:
 #   - _after_: the chezmoi-encrypted token must be decrypted to
 #     ~/.config/github/token before we read it, which only happens after files
 #     are applied.

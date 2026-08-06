@@ -1,0 +1,47 @@
+packages:
+  apt:
+    - gh
+    - zsh
+    - ripgrep
+    - fd-find
+    - fzf
+    - jq
+    - unzip
+    - age
+    - terraform
+    - libnotify-bin
+    - 1password-cli
+    - build-essential
+    - libffi-dev
+    - libgmp-dev
+    - libncurses-dev
+    - zlib1g-dev
+    - protobuf-compiler
+    - temurin-21-jdk
+    - golang-petname
+    # Music-library toolchain around beets, which uv installs separately.
+    # Package names differ from the binaries they ship: ffmpeg -> ffprobe,
+    # libimage-exiftool-perl -> exiftool, libchromaprint-tools -> fpcalc,
+    # which is the fingerprinter pyacoustid shells out to.
+    - ffmpeg
+    - mediainfo
+    - libimage-exiftool-perl
+    - rsync
+    - libchromaprint-tools
+    - keybase
+    - signal-desktop
+    - calibre
+    - nethack-console
+    - docker-ce
+    - docker-ce-cli
+    - docker-ce-rootless-extras
+    - containerd.io
+    - docker-buildx-plugin
+    - docker-compose-plugin
+    # Automatic security updates, configured by enable-unattended-upgrades.
+    # powermgmt-base provides on_ac_power, which the OnlyOnACPower gate in
+    # 50unattended-upgrades needs to read the AC line; without it
+    # unattended-upgrades fails open.
+    - unattended-upgrades
+    - powermgmt-base
+    - needrestart

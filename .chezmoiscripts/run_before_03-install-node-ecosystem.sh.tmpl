@@ -24,8 +24,7 @@ fi
 # shellcheck disable=SC1091
 [ -s "$NVM_DIR/nvm.sh" ] && . "$NVM_DIR/nvm.sh"
 
-# Pinned (Renovate-tracked via the node-version datasource): chezmoi re-runs
-# this once-script when the pin changes, so a bump applies on apply. Match by
+# Pinned (Renovate-tracked via the node-version datasource). Match by
 # explicit version rather than `command -v node`, which could find a system
 # /usr/bin/node and skip installation, leaving nvm with zero versions.
 # renovate: datasource=node-version depName=node versioning=node

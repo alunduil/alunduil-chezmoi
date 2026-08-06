@@ -95,6 +95,13 @@ repos:
         pass_filenames: false
         files: ^(script/install/|\.chezmoiscripts/.*\.tmpl$|\.github/workflows/)
 
+      - id: bootstrap-convergence
+        name: bootstrap-convergence
+        entry: script/checks/bootstrap-convergence
+        language: system
+        pass_filenames: false
+        files: ^\.chezmoiscripts/
+
       - id: lychee
         name: lychee
         entry: lychee --config lychee.toml --no-progress --offline --include-fragments=full

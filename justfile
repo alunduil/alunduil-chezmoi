@@ -18,7 +18,7 @@ check:
     #!/usr/bin/env bash
     set -uo pipefail
     rc=0
-    for c in check-pre-commit check-bats check-python check-zellij check-chezmoi check-chezmoi-templates check-settings-permissions check-observability check-systemd; do
+    for c in check-pre-commit check-bats check-python check-zellij check-chezmoi check-chezmoi-templates check-settings-permissions check-observability check-systemd check-bootstrap-convergence; do
       just "$c" || rc=1
     done
     exit "$rc"
@@ -64,3 +64,7 @@ check-observability:
 # that stack is gone).
 check-systemd:
     script/checks/systemd-units
+
+# Bootstrap passes stay convergent (no run_once_, no `dpkg -s` presence guard).
+check-bootstrap-convergence:
+    script/checks/bootstrap-convergence

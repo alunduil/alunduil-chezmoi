@@ -3,7 +3,7 @@
 # stdio binary (truenas-mcp, installed in script 02) plus URL and API key
 # passed as -e env vars, which Claude Code bakes into ~/.claude.json.
 #
-# Why run_onchange_after instead of run_once_before:
+# Why run_onchange_after instead of a converging run_before pass:
 #   - _after_: the chezmoi-encrypted api key must be decrypted to
 #     ~/.config/truenas/api_key before we read it, which only happens
 #     after files are applied. The url file likewise deploys this pass.

@@ -5,10 +5,8 @@
 # $HOME, not /etc, so the units live in etc/ and are copied in with sudo (same
 # shape as the unattended-upgrades config). See #312.
 #
-# run_onchange hashes the rendered script; the unit files alone would not
-# re-trigger it. Embed their hashes so an edit re-applies:
-# docker-prune service: {{ include "etc/systemd/system/docker-prune.service" | sha256sum }}
-# docker-prune timer:   {{ include "etc/systemd/system/docker-prune.timer" | sha256sum }}
+# Each unit is compared against its deployed copy, so an edit here and a
+# hand-edit under /etc both reconcile.
 
 set -euo pipefail
 
@@ -22,9 +20,21 @@ fi
 
 UNIT_SRC="{{ .chezmoi.sourceDir }}/etc/systemd/system"
 
-log "docker-prune: installing system units"
-sudo install -m 0644 "$UNIT_SRC/docker-prune.service" /etc/systemd/system/docker-prune.service
-sudo install -m 0644 "$UNIT_SRC/docker-prune.timer" /etc/systemd/system/docker-prune.timer
+changed=0
+for unit in docker-prune.service docker-prune.timer; do
+  if ! cmp -s "$UNIT_SRC/$unit" "/etc/systemd/system/$unit"; then
+    log "docker-prune: installing $unit"
+    sudo install -m 0644 "$UNIT_SRC/$unit" "/etc/systemd/system/$unit"
+    changed=1
+  fi
+done
 
-sudo systemctl daemon-reload
-sudo systemctl enable --now docker-prune.timer
+if [ "$changed" -eq 1 ]; then
+  sudo systemctl daemon-reload
+fi
+
+if ! systemctl is-enabled --quiet docker-prune.timer 2>/dev/null ||
+  ! systemctl is-active --quiet docker-prune.timer 2>/dev/null; then
+  log "docker-prune: enabling timer"
+  sudo systemctl enable --now docker-prune.timer
+fi

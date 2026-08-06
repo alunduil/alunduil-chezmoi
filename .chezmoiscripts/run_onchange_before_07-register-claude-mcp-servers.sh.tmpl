@@ -10,10 +10,19 @@
 # static endpoint URLs, so skipping when already present is safe; the
 # run_onchange scripts re-add because they carry rotating secrets whose
 # change must take effect.
+#
+# Content-triggered rather than converging like the sibling install passes:
+# `claude mcp list` pings every registered server, and nothing removes a
+# registration behind your back, so checking on each apply buys no drift
+# coverage for the round-trips it costs.
 
 set -euo pipefail
 
 log() { printf '==> %s\n' "$*" >&2; }
+
+# One listing for every check below: it is a network round-trip per registered
+# server, so a call per candidate costs seconds.
+registered="$(claude mcp list 2>/dev/null || true)"
 
 # ----------------------------------------------------------------- Cloudflare
 declare -A CLOUDFLARE_MCP=(
@@ -22,7 +31,7 @@ declare -A CLOUDFLARE_MCP=(
   [cloudflare-docs]="https://docs.mcp.cloudflare.com/mcp"
 )
 for name in "${!CLOUDFLARE_MCP[@]}"; do
-  if claude mcp list 2>/dev/null | grep -q "^${name}:"; then
+  if grep -q "^${name}:" <<<"$registered"; then
     log "${name}: already registered"
   else
     log "${name}: registering"
@@ -34,7 +43,7 @@ done
 # Upstash's docs-for-LLMs MCP. Anonymous use is rate-limited; a key would raise
 # the ceiling, but no limit pressure has shown up, so we run keyless by choice.
 # The encrypted-token pattern (see uptimerobot) is the path if that changes.
-if claude mcp list 2>/dev/null | grep -q "^context7:"; then
+if grep -q "^context7:" <<<"$registered"; then
   log "context7: already registered"
 else
   log "context7: registering"

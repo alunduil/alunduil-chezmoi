@@ -1,0 +1,55 @@
+#!/usr/bin/env bash
+# Configures unattended-upgrades so updates apply on their own via the
+# apt-daily-upgrade timer. The packages themselves come from the apt list in
+# .chezmoidata; this pass only places config and enables timers. The config
+# files live in etc/apt/ as whole files (chezmoi can't target /etc, which is
+# outside $HOME) and are copied in with sudo. Results land in
+# /var/log/unattended-upgrades/ and the journal -- no email or desktop
+# notification (the box is attended), and automatic reboot stays off. See #228.
+#
+# needrestart complements u-u: auto-reboot is off, so when an upgrade replaces
+# a shared library the daemons mapping the old copy keep running it until they
+# happen to restart. needrestart's apt DPkg::Post-Invoke hook restarts them in
+# place after each upgrade, so the security fix takes hold without a reboot.
+# See #238.
+#
+# Each file is compared against its deployed copy, so an edit here and a
+# hand-edit under /etc both reconcile.
+
+set -euo pipefail
+
+log() { printf '==> %s\n' "$*" >&2; }
+
+# Takes `install`'s own argument list; the difference is that an unchanged
+# DEST is left alone, so a converged host never reaches sudo.
+install_if_changed() {
+  local src="${*: -2:1}" dest="${*: -1}"
+  if cmp -s "$src" "$dest"; then
+    return 0
+  fi
+  log "installing $dest"
+  sudo install "$@"
+}
+
+APT_CONF_SRC="{{ .chezmoi.sourceDir }}/etc/apt"
+NEEDRESTART_CONF_SRC="{{ .chezmoi.sourceDir }}/etc/needrestart"
+
+# --------------------------------------------------------------------- config
+install_if_changed -m 0644 "$APT_CONF_SRC/20auto-upgrades" /etc/apt/apt.conf.d/20auto-upgrades
+install_if_changed -m 0644 "$APT_CONF_SRC/50unattended-upgrades" /etc/apt/apt.conf.d/50unattended-upgrades
+
+# needrestart drop-in: a conf.d snippet so the package's own needrestart.conf
+# stays untouched. -D creates /etc/needrestart/conf.d/ if the package layout
+# ever drops it.
+install_if_changed -D -m 0644 "$NEEDRESTART_CONF_SRC/conf.d/zz-alunduil.conf" /etc/needrestart/conf.d/zz-alunduil.conf
+
+# --------------------------------------------------------------------- timers
+for timer in apt-daily.timer apt-daily-upgrade.timer; do
+  if ! systemctl is-enabled --quiet "$timer" 2>/dev/null ||
+    ! systemctl is-active --quiet "$timer" 2>/dev/null; then
+    log "enabling $timer"
+    sudo systemctl enable --now "$timer"
+  fi
+done
+
+log "unattended-upgrades configured"

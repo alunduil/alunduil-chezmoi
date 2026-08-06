@@ -1,26 +1,8 @@
 #!/usr/bin/env bash
-# zellij content:     {{ include "script/install/zellij" | sha256sum }}
-# lazygit content:    {{ include "script/install/lazygit" | sha256sum }}
-# act content:        {{ include "script/install/act" | sha256sum }}
-# gcx content:        {{ include "script/install/gcx" | sha256sum }}
-# lychee content:     {{ include "script/install/lychee" | sha256sum }}
-# signal-cli content: {{ include "script/install/signal-cli" | sha256sum }}
-# yq content:         {{ include "script/install/yq" | sha256sum }}
-# truenas-mcp content:{{ include "script/install/truenas-mcp" | sha256sum }}
-# vale content:       {{ include "script/install/vale" | sha256sum }}
-# trivy content:      {{ include "script/install/trivy" | sha256sum }}
-# just content:       {{ include "script/install/just" | sha256sum }}
-# uv content:         {{ include "script/install/uv" | sha256sum }}
-# alloy content:      {{ include "script/install/alloy" | sha256sum }}
-# prometheus content: {{ include "script/install/prometheus" | sha256sum }}
-# loki content:       {{ include "script/install/loki" | sha256sum }}
-# tempo content:      {{ include "script/install/tempo" | sha256sum }}
-# grafana content:    {{ include "script/install/grafana" | sha256sum }}
-# bats-libs content:  {{ include "script/install/bats-libs" | sha256sum }}
-# lib.sh content:     {{ include "script/install/lib.sh" | sha256sum }}
-# The hashes above embed the install scripts' content into this file's
-# rendered output so chezmoi re-runs this script when any of them change
-# (e.g. version bumps). Without them, run_onchange would not re-fire.
+# Installs third-party binaries through script/install/*, each of which pins
+# its own version and no-ops when that version is already on disk. Those
+# guards are the convergence point: nothing here tracks what ran before, so
+# a version bump and a deleted binary reconcile by the same path.
 
 set -euo pipefail
 
@@ -57,7 +39,7 @@ fi
 # and ships its own MusicBrainz client, so the pin here is deliberate and not
 # a restatement of beets' metadata. Its fingerprinter needs fpcalc
 # (libchromaprint-tools, script 01). The guard compares the whole requirement
-# set, not just beets' version, so bumping either --with pin re-fires it.
+# set, not just beets' version, so bumping either --with pin reinstalls.
 # renovate: datasource=pypi depName=beets
 BEETS_VERSION="2.13.1"
 # renovate: datasource=pypi depName=pyacoustid
