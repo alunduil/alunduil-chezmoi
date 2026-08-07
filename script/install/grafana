@@ -2,7 +2,7 @@
 set -euo pipefail
 
 # renovate: datasource=github-releases depName=grafana/grafana
-GRAFANA_VERSION="v13.1.1"
+GRAFANA_VERSION="v13.1.2"
 OS="linux"
 ARCH="amd64"
 
