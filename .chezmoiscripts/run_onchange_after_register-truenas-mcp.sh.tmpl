@@ -47,7 +47,9 @@ key="$(<"$key_file")"
 # ~/.claude.json.
 claude mcp remove truenas --scope user >/dev/null 2>&1 || true
 log "truenas-mcp: registering"
+# --insecure: the cert carries no IP SANs and the URL is an address, so
+# verification can never match the name. --tls-ca does not help a mismatch.
 claude mcp add truenas --scope user \
   -e "TRUENAS_URL=${url}" \
   -e "TRUENAS_API_KEY=${key}" \
-  -- "$bin"
+  -- "$bin" --insecure
