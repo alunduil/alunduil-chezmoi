@@ -2,7 +2,7 @@
 set -euo pipefail
 
 # renovate: datasource=github-releases depName=vale-cli/vale
-VALE_VERSION="v3.17.0"
+VALE_VERSION="v3.17.1"
 ARCH="Linux_64-bit"
 
 # shellcheck source-path=SCRIPTDIR source=lib.sh
