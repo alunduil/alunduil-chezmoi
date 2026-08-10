@@ -8,9 +8,8 @@ set -euo pipefail
 
 log() { printf '==> %s\n' "$*" >&2; }
 
-# Probe by running cargo, not by `command -v`: rustup puts a `cargo` shim on
-# PATH that exists but exits non-zero until a default toolchain is set, so
-# presence alone is a false positive.
+# rustup's cargo shim is on PATH before any toolchain exists, so a presence
+# test passes on hosts where cargo cannot run.
 if ! cargo --version >/dev/null 2>&1; then
   log "rust: no usable cargo toolchain; skipping cargo-cache"
   exit 0
