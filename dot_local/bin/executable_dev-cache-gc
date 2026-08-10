@@ -71,10 +71,6 @@ run_gc() {
     printf '\n'
 }
 
-# Tests source this script to exercise run_gc against stubs without running the
-# sweep below.
-if [[ "${BASH_SOURCE[0]}" != "$0" ]]; then return 0; fi
-
 if [[ "${1:-}" == "-h" || "${1:-}" == "--help" ]]; then
     usage
     exit 0
