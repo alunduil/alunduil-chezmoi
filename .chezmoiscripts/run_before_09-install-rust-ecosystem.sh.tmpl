@@ -8,8 +8,10 @@ set -euo pipefail
 
 log() { printf '==> %s\n' "$*" >&2; }
 
-if ! command -v cargo >/dev/null 2>&1; then
-  log "rust: cargo not found; skipping cargo-cache"
+# rustup's cargo shim is on PATH before any toolchain exists, so a presence
+# test passes on hosts where cargo cannot run.
+if ! cargo --version >/dev/null 2>&1; then
+  log "rust: no usable cargo toolchain; skipping cargo-cache"
   exit 0
 fi
 
