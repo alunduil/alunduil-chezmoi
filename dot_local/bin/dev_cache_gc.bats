@@ -39,18 +39,17 @@ stub_tools() {
 }
 
 @test "runs each tool's native GC with the expected flags" {
-  # cargo-cache gates the `cargo cache` call, so both binaries are present.
-  stub_tools ghcup npm cargo cargo-cache pnpm
+  stub_tools ghcup npm cargo-cache pnpm
   run env -i HOME="$HOME" PATH="$PATH" GC_LOG="$GC_LOG" GC_FAIL="$GC_FAIL" bash "$GC"
   [ "$status" -eq 0 ]
   grep -qx "ghcup	gc -c -t" "$GC_LOG"
   grep -qx "npm	cache verify" "$GC_LOG"
-  grep -qx "cargo	cache --autoclean" "$GC_LOG"
+  grep -qx "cargo-cache	--autoclean" "$GC_LOG"
   grep -qx "pnpm	store prune" "$GC_LOG"
 }
 
 @test "a missing tool is skipped, not a failure" {
-  stub_tools ghcup npm cargo cargo-cache
+  stub_tools ghcup npm cargo-cache
   run env -i HOME="$HOME" PATH="$PATH" GC_LOG="$GC_LOG" GC_FAIL="$GC_FAIL" bash "$GC"
   [ "$status" -eq 0 ]
   # pnpm never ran, and the run still succeeded.
@@ -58,24 +57,23 @@ stub_tools() {
   [[ "$output" == *"pnpm store: pnpm absent, skipping"* ]]
 }
 
-@test "cargo GC is gated on cargo-cache, not cargo" {
-  # cargo present but cargo-cache absent: the registry GC must not run, since
-  # `cargo cache` would be an unknown subcommand.
-  stub_tools ghcup npm cargo pnpm
+@test "registry GC never dispatches through the cargo shim" {
+  # `cargo` on PATH is rustup's shim, which fails with no default toolchain.
+  stub_tools ghcup npm cargo cargo-cache pnpm
   run env -i HOME="$HOME" PATH="$PATH" GC_LOG="$GC_LOG" GC_FAIL="$GC_FAIL" bash "$GC"
   [ "$status" -eq 0 ]
   [ "$(grep -c '^cargo	' "$GC_LOG")" -eq 0 ]
-  [[ "$output" == *"cargo registry: cargo-cache absent, skipping"* ]]
+  grep -qx "cargo-cache	--autoclean" "$GC_LOG"
 }
 
 @test "a failing tool is reported and non-fatal" {
-  stub_tools ghcup npm cargo cargo-cache pnpm
+  stub_tools ghcup npm cargo-cache pnpm
   export GC_FAIL="npm"
   run env -i HOME="$HOME" PATH="$PATH" GC_LOG="$GC_LOG" GC_FAIL="$GC_FAIL" bash "$GC"
   [ "$status" -eq 1 ]
   # Every tool was still attempted — the npm failure didn't abort the sweep.
   grep -qx "ghcup	gc -c -t" "$GC_LOG"
-  grep -qx "cargo	cache --autoclean" "$GC_LOG"
+  grep -qx "cargo-cache	--autoclean" "$GC_LOG"
   grep -qx "pnpm	store prune" "$GC_LOG"
   [[ "$output" == *"failed"* ]]
   [[ "$output" == *"npm cache"* ]]

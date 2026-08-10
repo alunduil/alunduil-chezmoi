@@ -27,7 +27,7 @@ EOF
 
 # systemd --user does not source ~/.bashrc, and each toolchain installs its
 # binaries outside the unit's PATH. Load the same environment .bashrc would so
-# `command -v` resolves ghcup, cargo (+ cargo-cache), npm, and pnpm. Each guard
+# `command -v` resolves ghcup, cargo-cache, npm, and pnpm. Each guard
 # no-ops when the toolchain is absent, which is also what lets the tests run
 # against PATH stubs alone.
 export NVM_DIR="${XDG_CONFIG_HOME:-$HOME/.config}/nvm"
@@ -54,16 +54,12 @@ fi
 
 declare -a failures=()
 
-# run_gc LABEL BIN -- CMD...: run one tool's native GC. Skip cleanly (not a
-# failure) when BIN is missing, so an uninstalled tool is a no-op; record a
-# non-zero exit in `failures` without aborting, so the remaining tools still
-# run. BIN is the guard and may differ from CMD's binary — cargo-cache backs
-# the `cargo cache` subcommand, so it gates a `cargo` invocation.
+# run_gc LABEL CMD...: run one tool's native GC, guarding on CMD's own binary.
 run_gc() {
-    local label=$1 bin=$2
-    shift 3 # drop label, bin, and the -- separator
-    if ! command -v "$bin" >/dev/null 2>&1; then
-        printf '%s-- %s: %s absent, skipping%s\n' "$DIM" "$label" "$bin" "$RESET"
+    local label=$1
+    shift
+    if ! command -v "$1" >/dev/null 2>&1; then
+        printf '%s-- %s: %s absent, skipping%s\n' "$DIM" "$label" "$1" "$RESET"
         return 0
     fi
     printf '%s==> %s%s\n' "$BOLD" "$label" "$RESET"
@@ -75,10 +71,6 @@ run_gc() {
     printf '\n'
 }
 
-# Tests source this script to exercise run_gc against stubs without running the
-# sweep below.
-if [[ "${BASH_SOURCE[0]}" != "$0" ]]; then return 0; fi
-
 if [[ "${1:-}" == "-h" || "${1:-}" == "--help" ]]; then
     usage
     exit 0
@@ -87,10 +79,12 @@ fi
 # -c (cache) and -t (tmpdirs) only: -o/-u remove GHC versions and -p/-s strip
 # profiling libs / docs from installed toolchains, all of which the version
 # store stays out of by design.
-run_gc "ghcup cache" ghcup -- ghcup gc -c -t
-run_gc "npm cache" npm -- npm cache verify
-run_gc "cargo registry" cargo-cache -- cargo cache --autoclean
-run_gc "pnpm store" pnpm -- pnpm store prune
+run_gc "ghcup cache" ghcup gc -c -t
+run_gc "npm cache" npm cache verify
+# cargo-cache, not `cargo cache`: the subcommand form dispatches through
+# rustup's cargo shim, which fails when no default toolchain is installed.
+run_gc "cargo registry" cargo-cache --autoclean
+run_gc "pnpm store" pnpm store prune
 
 if ((${#failures[@]})); then
     printf '%s%d tool(s) failed:%s\n' "$BOLD" "${#failures[@]}" "$RESET"

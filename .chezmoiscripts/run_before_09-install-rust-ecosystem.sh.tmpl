@@ -1,29 +1,48 @@
 #!/usr/bin/env bash
-# Installs Rust-ecosystem helpers via cargo. Canonical installer only: cargo
-# (crates.io). cargo/rustup themselves are not bootstrap-managed, so this
-# no-ops on a host without Rust rather than installing a toolchain behind the
-# user's back.
+# Installs rustup, a pinned Rust toolchain, and cargo-installed helpers.
+# Canonical installers only: rustup for the toolchain, cargo (crates.io) for
+# the helpers. Debian apt rustc/cargo are avoided by design (they lag upstream
+# and can't switch toolchains).
 
 set -euo pipefail
 
 log() { printf '==> %s\n' "$*" >&2; }
 
-# rustup's cargo shim is on PATH before any toolchain exists, so a presence
-# test passes on hosts where cargo cannot run.
-if ! cargo --version >/dev/null 2>&1; then
-  log "rust: no usable cargo toolchain; skipping cargo-cache"
-  exit 0
+# ------------------------------------------------------------------- rustup
+# --no-modify-path: chezmoi overwrites ~/.bashrc on apply, and the managed
+# dot_bashrc sources ~/.cargo/env itself. --default-toolchain none leaves the
+# version pick to the pinned block below, which would otherwise install a
+# second toolchain whenever the pin trails stable.
+if ! command -v rustup >/dev/null 2>&1; then
+  log "rustup: installing"
+  curl --proto '=https' --tlsv1.2 -fsSL https://sh.rustup.rs |
+    sh -s -- -y --no-modify-path --default-toolchain none
 fi
 
+# shellcheck disable=SC1091
+[ -f "$HOME/.cargo/env" ] && . "$HOME/.cargo/env"
+
+# Pinned (Renovate-tracked). rustup's cargo shim sits on PATH before any
+# toolchain exists, so presence tests cannot detect one; `rustup toolchain
+# list` can, and reads ~/.rustup without a network round-trip.
+# renovate: datasource=github-releases depName=rust-lang/rust
+RUST_VERSION="1.97.1"
+if ! rustup toolchain list | grep -q "^${RUST_VERSION}-"; then
+  log "rust: installing toolchain $RUST_VERSION"
+  rustup toolchain install "$RUST_VERSION"
+fi
+rustup default "$RUST_VERSION" >/dev/null
+log "rust: $(rustc --version)"
+
 # ------------------------------------------------------------------ cargo-cache
-# Backs dev-cache-gc's `cargo cache --autoclean`. cargo-cache ships only on
+# Backs dev-cache-gc's `cargo-cache --autoclean`. cargo-cache ships only on
 # crates.io (no release binaries), so it can't use the script/install/
 # download-and-verify pattern; `cargo install` is the canonical path. Pin
 # enforced (Renovate-tracked, crate datasource): if a different version is
 # installed, --force replaces it so bumps actually take effect.
 # renovate: datasource=crate depName=cargo-cache
 CARGO_CACHE_VERSION="0.8.3"
-installed="$(cargo cache --version 2>/dev/null | awk '{print $2}' || true)"
+installed="$(cargo-cache --version 2>/dev/null | awk '{print $2}' || true)"
 if [ "$installed" != "$CARGO_CACHE_VERSION" ]; then
   if [ -n "$installed" ]; then
     log "cargo-cache: replacing $installed with $CARGO_CACHE_VERSION"
