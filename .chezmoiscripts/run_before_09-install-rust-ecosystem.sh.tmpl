@@ -37,14 +37,15 @@ rustup default "$RUST_VERSION" >/dev/null
 log "rust: $(rustc --version)"
 
 # ------------------------------------------------------------------ cargo-cache
-# Backs dev-cache-gc's `cargo cache --autoclean`. cargo-cache ships only on
+# Backs dev-cache-gc's `cargo-cache --autoclean`. cargo-cache ships only on
 # crates.io (no release binaries), so it can't use the script/install/
 # download-and-verify pattern; `cargo install` is the canonical path. Pin
 # enforced (Renovate-tracked, crate datasource): if a different version is
-# installed, --force replaces it so bumps actually take effect.
+# installed, --force replaces it so bumps actually take effect. Probe the
+# standalone binary, not `cargo cache`, for the same reason dev-cache-gc does.
 # renovate: datasource=crate depName=cargo-cache
 CARGO_CACHE_VERSION="0.8.3"
-installed="$(cargo cache --version 2>/dev/null | awk '{print $2}' || true)"
+installed="$(cargo-cache --version 2>/dev/null | awk '{print $2}' || true)"
 if [ "$installed" != "$CARGO_CACHE_VERSION" ]; then
   if [ -n "$installed" ]; then
     log "cargo-cache: replacing $installed with $CARGO_CACHE_VERSION"
