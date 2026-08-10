@@ -8,6 +8,17 @@
 // anyway. The pair layout adds a zjstatus line for PR-aware status; default
 // stays minimal.
 
+// Session resurrection discovers each pane's command by mapping child
+// processes to their parent, and a parent with several children yields
+// whichever child `ps` printed last (zellij-org/zellij#4873). Claude Code
+// holds a stdio MCP server (truenas-mcp) open for the pane's lifetime, so
+// the pair layout's claude pane serializes as that server and
+// `zellij attach -f` reruns it — the pane shows only truenas-mcp's
+// "--truenas-url and --api-key are required" usage error. Map it back to
+// the launcher. Every other MCP server is HTTP; a second stdio one would
+// need adding here.
+post_command_discovery_hook "echo \"$RESURRECT_COMMAND\" | sed 's|.*truenas-mcp.*|claude-pair|'"
+
 plugins {
     zellaude location="https://github.com/ishefi/zellaude/releases/download/v0.5.1/zellaude.wasm"
     zjstatus location="https://github.com/dj95/zjstatus/releases/download/v0.24.0/zjstatus.wasm"
