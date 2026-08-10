@@ -1,0 +1,22 @@
+#!/usr/bin/env bash
+# zellij `post_command_discovery_hook`: prints the command zellij should
+# serialize for a pane, given the one it discovered in $RESURRECT_COMMAND.
+#
+# Zellij discovers a pane's command by mapping child processes back to their
+# parent; a parent with several children yields whichever child `ps` printed
+# last (zellij-org/zellij#4873). Claude Code holds its truenas stdio MCP
+# server open for the pane's lifetime, so zellij discovers the pair layout's
+# claude pane as truenas-mcp. `zellij attach -f` then reruns that server and
+# the pane shows only "--truenas-url and --api-key are required".
+#
+# Every other MCP server is HTTP, so truenas-mcp is the only child that can
+# displace a pane command. A second stdio server needs its own arm.
+
+set -euo pipefail
+
+discovered="${RESURRECT_COMMAND:-}"
+
+case "$discovered" in
+  *truenas-mcp*) printf '%s\n' claude-pair ;;
+  *) printf '%s\n' "$discovered" ;;
+esac

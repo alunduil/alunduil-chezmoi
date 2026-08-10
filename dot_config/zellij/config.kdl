@@ -8,6 +8,10 @@
 // anyway. The pair layout adds a zjstatus line for PR-aware status; default
 // stays minimal.
 
+// Without this, `zellij attach -f` can rerun a subprocess a pane spawned
+// instead of the pane's own command. The script has the specifics.
+post_command_discovery_hook "zellij-resurrect-command"
+
 plugins {
     zellaude location="https://github.com/ishefi/zellaude/releases/download/v0.5.1/zellaude.wasm"
     zjstatus location="https://github.com/dj95/zjstatus/releases/download/v0.24.0/zjstatus.wasm"
