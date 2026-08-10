@@ -27,7 +27,7 @@ EOF
 
 # systemd --user does not source ~/.bashrc, and each toolchain installs its
 # binaries outside the unit's PATH. Load the same environment .bashrc would so
-# `command -v` resolves ghcup, cargo (+ cargo-cache), npm, and pnpm. Each guard
+# `command -v` resolves ghcup, cargo-cache, npm, and pnpm. Each guard
 # no-ops when the toolchain is absent, which is also what lets the tests run
 # against PATH stubs alone.
 export NVM_DIR="${XDG_CONFIG_HOME:-$HOME/.config}/nvm"
@@ -57,8 +57,7 @@ declare -a failures=()
 # run_gc LABEL BIN -- CMD...: run one tool's native GC. Skip cleanly (not a
 # failure) when BIN is missing, so an uninstalled tool is a no-op; record a
 # non-zero exit in `failures` without aborting, so the remaining tools still
-# run. BIN is the guard and may differ from CMD's binary — cargo-cache backs
-# the `cargo cache` subcommand, so it gates a `cargo` invocation.
+# run.
 run_gc() {
     local label=$1 bin=$2
     shift 3 # drop label, bin, and the -- separator
@@ -89,7 +88,10 @@ fi
 # store stays out of by design.
 run_gc "ghcup cache" ghcup -- ghcup gc -c -t
 run_gc "npm cache" npm -- npm cache verify
-run_gc "cargo registry" cargo-cache -- cargo cache --autoclean
+# cargo-cache directly, not `cargo cache`: the subcommand form dispatches
+# through rustup's cargo shim, which fails when no default toolchain is
+# installed. The standalone binary needs no toolchain.
+run_gc "cargo registry" cargo-cache -- cargo-cache --autoclean
 run_gc "pnpm store" pnpm -- pnpm store prune
 
 if ((${#failures[@]})); then

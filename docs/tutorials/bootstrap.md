@@ -36,9 +36,10 @@ ffprobe -version && mediainfo --version    # media inspection (ffmpeg, mediainfo
 exiftool -ver && fpcalc -version           # metadata reader, audio fingerprinter
 rsync --version                            # file sync
 ghc --version && cabal --version           # ghcup-managed Haskell toolchain
+cargo --version && rustc --version         # rustup-managed Rust toolchain
 pnpm --version                             # pnpm package manager (npm global)
 java --version                             # Temurin 21 JDK (Firebase emulators)
-command -v cargo-cache                     # cargo registry GC helper (needs cargo)
+command -v cargo-cache                     # cargo registry GC helper
 golang-petname                             # repo-picker worktree namer
 command -v nethack                         # roguelike (nethack-console)
 command -v calibre                         # ebook library manager
