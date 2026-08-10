@@ -54,10 +54,7 @@ fi
 
 declare -a failures=()
 
-# run_gc LABEL CMD...: run one tool's native GC. CMD's own binary is the guard,
-# so a tool is skipped cleanly (not a failure) when it isn't installed and the
-# sweep can never test one binary while invoking another. Record a non-zero exit
-# in `failures` without aborting, so the remaining tools still run.
+# run_gc LABEL CMD...: run one tool's native GC, guarding on CMD's own binary.
 run_gc() {
     local label=$1
     shift
@@ -89,8 +86,7 @@ fi
 run_gc "ghcup cache" ghcup gc -c -t
 run_gc "npm cache" npm cache verify
 # cargo-cache, not `cargo cache`: the subcommand form dispatches through
-# rustup's cargo shim, which fails when no default toolchain is installed. The
-# standalone binary needs no toolchain.
+# rustup's cargo shim, which fails when no default toolchain is installed.
 run_gc "cargo registry" cargo-cache --autoclean
 run_gc "pnpm store" pnpm store prune
 

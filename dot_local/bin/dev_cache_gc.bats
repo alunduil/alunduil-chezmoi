@@ -59,7 +59,6 @@ stub_tools() {
 
 @test "registry GC never dispatches through the cargo shim" {
   # `cargo` on PATH is rustup's shim, which fails with no default toolchain.
-  # Even with it available, the GC must call the standalone binary.
   stub_tools ghcup npm cargo cargo-cache pnpm
   run env -i HOME="$HOME" PATH="$PATH" GC_LOG="$GC_LOG" GC_FAIL="$GC_FAIL" bash "$GC"
   [ "$status" -eq 0 ]
