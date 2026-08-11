@@ -53,10 +53,9 @@ shows.
   where to spend attention and why, not an exhaustive risk dump. Each
   names something the reviewer would otherwise miss — off-diff state (a
   label/secret/setting changed remotely), a silent-failure mode, a
-  non-obvious constraint, a thing that reads like a typo. A bullet
-  explaining *why you chose* an approach is rationale, not a gotcha —
-  move it to Summary or cut. Litmus: a gotcha completes "watch out —
-  `___`", not "I chose `___` because `___`". Omit when nothing
+  non-obvious constraint, a thing that reads like a typo. Litmus: a
+  gotcha completes "watch out — `___`", not "I chose `___` because
+  `___`"; rationale goes to Summary or gets cut. Omit when nothing
   surprises.
   Bad: "Split into two workflows so each trigger is self-documenting."
   Good: "Labeling pins `.../autolabeler@<sha>`, a subpath of the same
@@ -117,7 +116,8 @@ HTML-comment prompts the author fills in and deletes:
 
 ## Gotchas
 
-<!-- One bullet per surprise: where to spend attention and why.
+<!-- One bullet per surprise: what the reviewer would otherwise miss.
+     Completes "watch out — ___", not "I chose ___ because ___".
      Delete this section if nothing surprises. -->
 
 -
