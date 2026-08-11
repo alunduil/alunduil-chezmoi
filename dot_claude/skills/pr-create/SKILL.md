@@ -50,8 +50,15 @@ shows.
   Good: "Bar paints uniformly black across the format gap, closing the
   lighter strip from #68."
 - **Gotchas** — *what'll surprise the reviewer.* A bullet per pointer:
-  where to spend attention and why ("focus on X because Y"), not an
-  exhaustive risk dump. Omit the section when nothing surprises.
+  where to spend attention and why, not an exhaustive risk dump.
+  Typical: off-diff state (a label/secret/setting changed remotely), a
+  silent-failure mode, a non-obvious constraint, something that reads
+  like a typo. Litmus: a gotcha completes "watch out — `___`", not "I
+  chose `___` because `___`"; rationale goes to Summary or gets cut.
+  Omit when nothing surprises.
+  Bad: "Split into two workflows so each trigger is self-documenting."
+  Good: "Labeling pins `.../autolabeler@<sha>`, a subpath of the same
+  action — not a typo."
 - **Verification** — *how we know it's correct.* A bullet per material
   check beyond CI, past tense ("ran X, confirmed Y"). Skip trivial
   steps. Omit the section when CI covers everything; unverified items
@@ -109,6 +116,7 @@ HTML-comment prompts the author fills in and deletes:
 ## Gotchas
 
 <!-- One bullet per surprise: where to spend attention and why.
+     Completes "watch out — ___", not "I chose ___ because ___".
      Delete this section if nothing surprises. -->
 
 -
