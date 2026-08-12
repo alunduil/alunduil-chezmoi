@@ -32,8 +32,8 @@ trap 'rm -rf "$tmp" "$gpghome"' EXIT
 # verify_gpg replaces the verify_sha256 step used by other installers.
 base="https://github.com/AsamK/signal-cli/releases/download/${SIGNAL_CLI_VERSION}"
 asset="signal-cli-${SIGNAL_CLI_VERSION#v}-${ARCH}.tar.gz"
-curl -fsSL -o "$tmp/$asset" "$base/$asset"
-curl -fsSL -o "$tmp/$asset.asc" "$base/$asset.asc"
+fetch "$tmp/$asset" "$base/$asset"
+fetch "$tmp/$asset.asc" "$base/$asset.asc"
 
 verify_gpg "$tmp/$asset" "$tmp/$asset.asc" "$KEY_URL" "$KEY_FPR" "$gpghome"
 

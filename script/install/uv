@@ -26,8 +26,8 @@ trap 'rm -rf "$tmp"' EXIT
 
 base="https://github.com/astral-sh/uv/releases/download/${UV_VERSION}"
 asset="uv-${ARCH}.tar.gz"
-curl -fsSL -o "$tmp/$asset" "$base/$asset"
-curl -fsSL -o "$tmp/$asset.sha256" "$base/$asset.sha256"
+fetch "$tmp/$asset" "$base/$asset"
+fetch "$tmp/$asset.sha256" "$base/$asset.sha256"
 
 expected="$(expected_from_checksums "$tmp/$asset.sha256" "$asset")"
 verify_sha256 "$tmp/$asset" "$expected"

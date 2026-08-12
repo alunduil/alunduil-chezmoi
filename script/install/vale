@@ -23,8 +23,8 @@ trap 'rm -rf "$tmp"' EXIT
 base="https://github.com/vale-cli/vale/releases/download/${VALE_VERSION}"
 asset="vale_${VALE_VERSION#v}_${ARCH}.tar.gz"
 checksums="vale_${VALE_VERSION#v}_checksums.txt"
-curl -fsSL -o "$tmp/$asset" "$base/$asset"
-curl -fsSL -o "$tmp/checksums.txt" "$base/$checksums"
+fetch "$tmp/$asset" "$base/$asset"
+fetch "$tmp/checksums.txt" "$base/$checksums"
 
 expected="$(expected_from_checksums "$tmp/checksums.txt" "$asset")"
 verify_sha256 "$tmp/$asset" "$expected"

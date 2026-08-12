@@ -26,9 +26,9 @@ trap 'rm -rf "$tmp"' EXIT
 # instead of hard-coding a position that upstream could reorder.
 base="https://github.com/mikefarah/yq/releases/download/${YQ_VERSION}"
 asset="yq_${ARCH}"
-curl -fsSL -o "$tmp/$asset" "$base/$asset"
-curl -fsSL -o "$tmp/checksums" "$base/checksums"
-curl -fsSL -o "$tmp/checksums_hashes_order" "$base/checksums_hashes_order"
+fetch "$tmp/$asset" "$base/$asset"
+fetch "$tmp/checksums" "$base/checksums"
+fetch "$tmp/checksums_hashes_order" "$base/checksums_hashes_order"
 
 hash_row="$(awk '/^SHA-256$/ {print NR; exit}' "$tmp/checksums_hashes_order")"
 if [ -z "$hash_row" ]; then

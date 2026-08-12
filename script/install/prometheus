@@ -23,8 +23,8 @@ trap 'rm -rf "$tmp"' EXIT
 dir="prometheus-${PROMETHEUS_VERSION#v}.${ARCH}"
 base="https://github.com/prometheus/prometheus/releases/download/${PROMETHEUS_VERSION}"
 asset="${dir}.tar.gz"
-curl -fsSL -o "$tmp/$asset" "$base/$asset"
-curl -fsSL -o "$tmp/sha256sums.txt" "$base/sha256sums.txt"
+fetch "$tmp/$asset" "$base/$asset"
+fetch "$tmp/sha256sums.txt" "$base/sha256sums.txt"
 
 expected="$(expected_from_checksums "$tmp/sha256sums.txt" "$asset")"
 verify_sha256 "$tmp/$asset" "$expected"

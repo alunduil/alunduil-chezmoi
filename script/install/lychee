@@ -26,8 +26,8 @@ trap 'rm -rf "$tmp"' EXIT
 # `lychee-${ARCH}/lychee`.
 base="https://github.com/lycheeverse/lychee/releases/download/lychee-${LYCHEE_VERSION}"
 asset="lychee-${ARCH}.tar.gz"
-curl -fsSL -o "$tmp/$asset" "$base/$asset"
-curl -fsSL -o "$tmp/$asset.sha256" "$base/$asset.sha256"
+fetch "$tmp/$asset" "$base/$asset"
+fetch "$tmp/$asset.sha256" "$base/$asset.sha256"
 
 expected="$(expected_from_checksums "$tmp/$asset.sha256" "$asset")"
 verify_sha256 "$tmp/$asset" "$expected"

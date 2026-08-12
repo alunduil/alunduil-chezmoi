@@ -23,8 +23,8 @@ trap 'rm -rf "$tmp"' EXIT
 base="https://github.com/grafana/gcx/releases/download/${GCX_VERSION}"
 asset="gcx_${GCX_VERSION#v}_${ARCH}.tar.gz"
 checksums="gcx_${GCX_VERSION#v}_checksums.txt"
-curl -fsSL -o "$tmp/$asset" "$base/$asset"
-curl -fsSL -o "$tmp/$checksums" "$base/$checksums"
+fetch "$tmp/$asset" "$base/$asset"
+fetch "$tmp/$checksums" "$base/$checksums"
 
 expected="$(expected_from_checksums "$tmp/$checksums" "$asset")"
 verify_sha256 "$tmp/$asset" "$expected"

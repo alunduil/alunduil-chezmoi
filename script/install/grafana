@@ -29,7 +29,7 @@ trap 'rm -rf "$tmp"' EXIT
 # sidecar are separate objects that can disagree across CDN edges, which is
 # indistinguishable from tampering. The release API names the build-stamped
 # immutable URL and its hash in one response, so the two cannot skew.
-curl -fsSL -o "$tmp/version.json" \
+fetch "$tmp/version.json" \
   "https://grafana.com/api/grafana/versions/${GRAFANA_VERSION#v}"
 package="$(jq -c --arg os "$OS" --arg arch "$ARCH" \
   'first(.packages[] | select(.os == $os and .arch == $arch)) // empty' \
@@ -44,7 +44,7 @@ url="$(jq -r '.url' <<<"$package")"
 expected="$(jq -r '.sha256' <<<"$package")"
 
 asset="${url##*/}"
-curl -fsSL -o "$tmp/$asset" "$url"
+fetch "$tmp/$asset" "$url"
 verify_sha256 "$tmp/$asset" "$expected"
 
 # Tarball top dir is grafana-<version>/ (no leading v); extract beside it and

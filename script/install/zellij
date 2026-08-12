@@ -21,8 +21,8 @@ tmp="$(mktemp -d)"
 trap 'rm -rf "$tmp"' EXIT
 
 base="https://github.com/zellij-org/zellij/releases/download/${ZELLIJ_VERSION}"
-curl -fsSL -o "$tmp/zellij.tar.gz" "$base/zellij-${ARCH}.tar.gz"
-curl -fsSL -o "$tmp/zellij.sha256sum" "$base/zellij-${ARCH}.sha256sum"
+fetch "$tmp/zellij.tar.gz" "$base/zellij-${ARCH}.tar.gz"
+fetch "$tmp/zellij.sha256sum" "$base/zellij-${ARCH}.sha256sum"
 
 # zellij's published .sha256sum labels the binary by its CI build path
 # (target/.../zellij), not the tarball name -- so `sha256sum -c` fails.

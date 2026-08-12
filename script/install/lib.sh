@@ -27,6 +27,19 @@ parse_bin_dir() {
   }
 }
 
+# Download URL to OUT (a path, or `-` for stdout) with curl, retrying
+# transient failures. GitHub's and Grafana's release CDNs intermittently
+# answer 503 or drop the connection mid-transfer; without a retry a single
+# unlucky request fails the whole install -- and the CI job. --retry covers
+# transient 5xx and network errors, --retry-all-errors widens that to
+# failures curl won't otherwise retry (e.g. a dropped TLS handshake), and
+# --retry-delay bounds the wait between attempts. Every installer routes its
+# asset downloads through here so the retry policy lives in one place.
+fetch() {
+  local out="$1" url="$2"
+  curl -fsSL --retry 3 --retry-delay 2 --retry-all-errors -o "$out" "$url"
+}
+
 # installed_version_matches BIN VERSION: succeeds when BIN is executable and
 # its `--version` output contains VERSION with any leading `v` stripped.
 # Release tags carry the `v` (v0.2.88); the binary's own --version usually
@@ -74,7 +87,7 @@ verify_gpg() {
   local actual_fpr
 
   GNUPGHOME="$gpghome" gpg --quiet --batch --import \
-    <(curl -fsSL "$key_url") 2>/dev/null
+    <(fetch - "$key_url") 2>/dev/null
   actual_fpr="$(GNUPGHOME="$gpghome" gpg --list-keys --with-colons |
     awk -F: '$1 == "fpr" {print $10; exit}')"
   if [ "$actual_fpr" != "$expected_fpr" ]; then

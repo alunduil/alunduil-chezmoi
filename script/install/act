@@ -22,8 +22,8 @@ trap 'rm -rf "$tmp"' EXIT
 
 base="https://github.com/nektos/act/releases/download/${ACT_VERSION}"
 asset="act_${ARCH}.tar.gz"
-curl -fsSL -o "$tmp/$asset" "$base/$asset"
-curl -fsSL -o "$tmp/checksums.txt" "$base/checksums.txt"
+fetch "$tmp/$asset" "$base/$asset"
+fetch "$tmp/checksums.txt" "$base/checksums.txt"
 
 expected="$(expected_from_checksums "$tmp/checksums.txt" "$asset")"
 verify_sha256 "$tmp/$asset" "$expected"

@@ -22,8 +22,8 @@ trap 'rm -rf "$tmp"' EXIT
 
 base="https://github.com/grafana/alloy/releases/download/${ALLOY_VERSION}"
 asset="alloy-${ARCH}.zip"
-curl -fsSL -o "$tmp/$asset" "$base/$asset"
-curl -fsSL -o "$tmp/SHA256SUMS" "$base/SHA256SUMS"
+fetch "$tmp/$asset" "$base/$asset"
+fetch "$tmp/SHA256SUMS" "$base/SHA256SUMS"
 
 expected="$(expected_from_checksums "$tmp/SHA256SUMS" "$asset")"
 verify_sha256 "$tmp/$asset" "$expected"

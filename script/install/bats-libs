@@ -57,7 +57,7 @@ install_lib() {
 
   printf '==> %s: downloading %s\n' "$name" "$version" >&2
   local asset="$tmp/$name.tar.gz"
-  curl -fsSL -o "$asset" \
+  fetch "$asset" \
     "https://github.com/bats-core/$name/archive/refs/tags/$version.tar.gz"
   verify_sha256 "$asset" "$sha"
 
