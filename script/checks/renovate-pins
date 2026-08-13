@@ -4,9 +4,9 @@
 # Renovate error -- it is simply never extracted, so it reads as permanently
 # up to date and silently rots. Nothing else notices, hence this check.
 #
-# A pin is a literal version, so `="$OTHER_VERSION"` is a reference to one --
-# passing a pin to an installer that expects it under a different name -- and
-# carries no annotation of its own.
+# A pin is a literal version. `FOO_VERSION="$BAR_VERSION"` references one and
+# needs no annotation of its own -- the literal it resolves to carries the
+# annotation, where it is defined.
 
 set -euo pipefail
 
