@@ -5,7 +5,7 @@ description: Open a GitHub PR with a tight body — why this change, what'll sur
 
 # PR create
 
-Compose before `gh pr create`. The body is the squash-merge commit
+Compose before opening. The body is the squash-merge commit
 context — write it for the reviewer first, the future reader of
 `git log` second.
 
@@ -69,10 +69,11 @@ headings.
 
 ## House rules
 
-- **Draft only.** `gh pr create --draft`; the user promotes to ready.
+- **Draft only.** `draft: true`; the user promotes to ready.
 - **Regenerate, don't append.** Adding commits to an open PR → rewrite
-  the body from scratch for the new merge state. Appending each round
-  drifts toward changelog narration.
+  the body from scratch for the new merge state, via
+  `mcp__github__update_pull_request`. Appending each round drifts
+  toward changelog narration.
 - **Description, not comments.** Carry updates in the body — the single
   source of truth. The only allowed PR comment is a direct reply to an
   existing comment on that PR.
@@ -85,21 +86,13 @@ headings.
 
 Propose the body before submitting — a PR is shared state.
 
-```bash
-gh pr create --draft \
-  --title '<imperative subject>' \
-  --body "$(cat <<'EOF'
-## Summary
+Push the branch, then open with `mcp__github__create_pull_request`:
 
-...
-
-Closes #<N>
-EOF
-)"
-```
-
-HEREDOC avoids escaping. `--web` opens the browser to review before
-submit.
+- `title` — imperative subject.
+- `body` — the blocks above, ending with `Closes #<N>`.
+- `head`, `base` — this branch and the repo's default branch. The MCP
+  call neither pushes nor infers them, so push first and pass both.
+- `draft: true` — `pr-draft-guard.sh` blocks the call without it.
 
 ## Scaffold a repo template
 

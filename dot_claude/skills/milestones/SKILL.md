@@ -6,8 +6,8 @@ description: Create, name, scope, assign, and close GitHub milestones. Use when 
 # Milestones
 
 A milestone is a *finite, scoped* group of issues converging on a
-shipping or closing event. If it doesn't converge, it's a label — use
-`gh label` instead.
+shipping or closing event. If it doesn't converge, it's a label, not a
+milestone.
 
 ## Pick one axis per project
 
@@ -75,8 +75,11 @@ late work; create the next milestone.
 ## Operations
 
 ```bash
+# REST — see ~/.claude/CLAUDE.md "GitHub API budget".
+
 # List
-gh api repos/:owner/:repo/milestones?state=all
+gh api 'repos/:owner/:repo/milestones?state=all' \
+  --jq '.[] | "\(.number)\t\(.title)\t\(.state)"'
 
 # Create
 gh api repos/:owner/:repo/milestones \
@@ -84,13 +87,13 @@ gh api repos/:owner/:repo/milestones \
   -f due_on='2026-06-01T00:00:00Z' \
   -f description='...'
 
-# Assign
-gh issue create -m 'v1.1.0' ...
-gh issue edit <N> -m 'v1.1.0'
-
 # Close
 gh api -X PATCH repos/:owner/:repo/milestones/<num> -f state=closed
 ```
+
+Assign with `mcp__github__issue_write` (`method: create` or `update`).
+Its `milestone` param takes the milestone *number* from the listing
+above, not the title.
 
 ## Procedure
 
