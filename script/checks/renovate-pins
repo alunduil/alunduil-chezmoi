@@ -3,6 +3,10 @@
 # renovate.json's generic managers match on. A pin without one is not a
 # Renovate error -- it is simply never extracted, so it reads as permanently
 # up to date and silently rots. Nothing else notices, hence this check.
+#
+# A pin is a literal version. `FOO_VERSION="$BAR_VERSION"` references one and
+# needs no annotation of its own -- the literal it resolves to carries the
+# annotation, where it is defined.
 
 set -euo pipefail
 
@@ -12,7 +16,7 @@ cd "$SOURCE_DIR"
 fail=0
 while IFS= read -r file; do
   awk -v f="$file" '
-    /^[[:space:]]*[A-Za-z0-9_]+_VERSION[=:][[:space:]]*"/ {
+    /^[[:space:]]*[A-Za-z0-9_]+_VERSION[=:][[:space:]]*"[^$]/ {
       if (prev !~ /# renovate:/) {
         printf "%s:%d:%s\n", f, NR, $0
         rc = 1
