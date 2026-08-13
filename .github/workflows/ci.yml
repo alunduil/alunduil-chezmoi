@@ -30,9 +30,8 @@ jobs:
           mkdir -p "$HOME/.local/bin"
           script/install/lychee --bin-dir "$HOME/.local/bin"
           echo "$HOME/.local/bin" >> "$GITHUB_PATH"
-      # Not pre-commit/action: it reaches a mutable action tag from inside its
-      # composite steps, where our digest pinning cannot follow. This one pins
-      # through, and sources its own Python via uv.
+      # Renovate's digest pinning stops at this line — whatever action we call
+      # has to pin its own inner steps, or the chain breaks there.
       - uses: tox-dev/action-pre-commit-uv@e09b8958484dfe71f4ac3bc7afb230ba506402ec # v1.0.5
 
   shell-tests:
