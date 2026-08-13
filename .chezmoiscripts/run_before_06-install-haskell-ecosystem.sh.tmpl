@@ -40,37 +40,40 @@ if ! command -v ghcup >/dev/null 2>&1; then
       sh
 fi
 
-export PATH="$HOME/.ghcup/bin:$PATH"
+# ghcup's own name for the directory it links every managed tool into.
+GHCUP_BIN="$HOME/.ghcup/bin"
+export PATH="$GHCUP_BIN:$PATH"
 # Every ghcup subcommand otherwise fetches release metadata to nag about newer
 # versions; the pin is the answer to that question already.
 export GHCUP_SKIP_UPDATE_CHECK=1
 
-# ------------------------------------------------------------------------ ghc
-# Carries the pin forward on hosts where ghcup already exists, which is every
-# apply after the first and so the path a Renovate bump actually lands on.
-# ghcup lays down a version-suffixed symlink per install, so presence is a
-# local test; `ghcup list` would download the metadata yaml. --numeric-version
-# then reports which one the unversioned symlink currently points at, so a
-# converged host reaches no network at all.
-if [ ! -e "$HOME/.ghcup/bin/ghc-$GHC_VERSION" ]; then
-  log "ghc: installing $GHC_VERSION"
-  ghcup install ghc "$GHC_VERSION"
-fi
-if [ "$(ghc --numeric-version 2>/dev/null || true)" != "$GHC_VERSION" ]; then
-  log "ghc: setting $GHC_VERSION as default"
-  ghcup set ghc "$GHC_VERSION" >/dev/null
-fi
-log "ghc: $(ghc --numeric-version)"
+# ---------------------------------------------------------------- ghc + cabal
+# ghcup_pin TOOL VERSION: converge one ghcup-managed tool on its pin. This is
+# the path every apply after the first takes, and so the one a Renovate bump
+# lands on -- the installer above only runs on a host that has no ghcup yet.
+#
+# Both guards read disk alone, so a converged host reaches no network: ghcup
+# lays down a version-suffixed symlink per install, and every tool it manages
+# answers --numeric-version, which reports the version the unversioned symlink
+# resolves to. `ghcup list` would answer both questions by downloading the
+# metadata yaml instead.
+ghcup_pin() {
+  local tool="$1" version="$2"
 
-# ---------------------------------------------------------------------- cabal
-if [ ! -e "$HOME/.ghcup/bin/cabal-$CABAL_VERSION" ]; then
-  log "cabal: installing $CABAL_VERSION"
-  ghcup install cabal "$CABAL_VERSION"
-fi
-if [ "$(cabal --numeric-version 2>/dev/null || true)" != "$CABAL_VERSION" ]; then
-  log "cabal: setting $CABAL_VERSION as default"
-  ghcup set cabal "$CABAL_VERSION" >/dev/null
-fi
-log "cabal: $(cabal --numeric-version)"
+  if [ ! -e "$GHCUP_BIN/$tool-$version" ]; then
+    log "$tool: installing $version"
+    ghcup install "$tool" "$version"
+  fi
+
+  if [ "$("$tool" --numeric-version 2>/dev/null || true)" != "$version" ]; then
+    log "$tool: setting $version as default"
+    ghcup set "$tool" "$version" >/dev/null
+  fi
+
+  log "$tool: $("$tool" --numeric-version)"
+}
+
+ghcup_pin ghc "$GHC_VERSION"
+ghcup_pin cabal "$CABAL_VERSION"
 
 log "haskell ecosystem complete"
