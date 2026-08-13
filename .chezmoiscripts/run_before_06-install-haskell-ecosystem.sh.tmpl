@@ -15,7 +15,12 @@ log() { printf '==> %s\n' "$*" >&2; }
 # drops.
 # renovate: datasource=github-tags depName=ghc/ghc extractVersion=^ghc-(?<version>[\d.]+)-release$
 GHC_VERSION="9.10.3"
-# renovate: datasource=github-releases depName=haskell/cabal extractVersion=^cabal-install-v(?<version>.+)$
+# cabal versions carry a fourth component, which Renovate's default
+# semver-coerced versioning truncates -- it reads 3.14.1.0 and 3.14.1.1, both
+# real releases, as the same version, so a bump in that component would never
+# be offered. loose compares component-wise instead. GHC is plain three-part
+# and needs no such override.
+# renovate: datasource=github-releases depName=haskell/cabal versioning=loose extractVersion=^cabal-install-v(?<version>.+)$
 CABAL_VERSION="3.16.1.0"
 
 # ---------------------------------------------------------- ghcup + ghc + cabal
