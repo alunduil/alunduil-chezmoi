@@ -154,10 +154,16 @@ Never write pointers to where secrets live (e.g. "token in
 bait for whatever reads the repo next.
 
 Human-read docs should be skimmable and earn their place.
-AI-targeted text (this file, repo-local `CLAUDE.md`, hooks, prompt
-templates) is loaded every relevant turn. Optimise for tokens, not
-readability: cut filler, decorative connectors, restated headings,
-and examples that don't disambiguate.
+AI-targeted text (this file, repo-local `CLAUDE.md`, skills, memories,
+hooks, prompt templates) is loaded every relevant turn. Optimise for
+tokens, not readability: cut filler, decorative connectors, restated
+headings, and examples that don't disambiguate.
+
+Write AI-targeted text as positive instructions: state the chosen
+approach and leave the rejected one unnamed. Naming what to avoid
+loads that approach into context alongside the rule, so the rule keeps
+alive the thing it means to displace. Prohibitions with no competing
+approach to inject — fabrication, secret disclosure — stay negative.
 
 ## Tests
 
