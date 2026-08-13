@@ -30,9 +30,9 @@ jobs:
           mkdir -p "$HOME/.local/bin"
           script/install/lychee --bin-dir "$HOME/.local/bin"
           echo "$HOME/.local/bin" >> "$GITHUB_PATH"
-      # tox-dev's fork over pre-commit/action: it digest-pins the actions it
-      # calls, where upstream floats `actions/cache@v4`, and it brings its own
-      # Python through uv rather than needing a setup-python step.
+      # Not pre-commit/action: it reaches a mutable action tag from inside its
+      # composite steps, where our digest pinning cannot follow. This one pins
+      # through, and sources its own Python via uv.
       - uses: tox-dev/action-pre-commit-uv@e09b8958484dfe71f4ac3bc7afb230ba506402ec # v1.0.5
 
   shell-tests:
