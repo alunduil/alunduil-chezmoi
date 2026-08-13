@@ -1,6 +1,6 @@
 ---
 name: adr
-description: Audit, write, or revise Architecture Decision Records (ADRs), including the decision of whether one is warranted. Use when an architecturally significant decision needs recording, when reviewing an existing ADR collection, or when adding ADRs to a project that has none. Detects existing template (Nygard or MADR) and defaults to Nygard for new repos.
+description: Audit, write, or revise Architecture Decision Records (ADRs), including the decision of whether one is warranted. Use when an architecturally significant decision needs recording, when reviewing an existing ADR collection, or when adding ADRs to a project that has none. Detects existing template (Nygard or MADR) and defaults to Nygard for new repos. Gates comparison ADRs through a decompose-and-verify interview before drafting.
 ---
 
 # ADR
@@ -33,7 +33,8 @@ Detect, don't impose:
    respect it.
 3. Otherwise: **Nygard** for a single decision; escalate to **MADR**
    only when alternatives analysis is genuinely load-bearing (3+
-   options worth comparing across multiple drivers).
+   options worth comparing across multiple drivers). Call that case a
+   *comparison ADR*.
 
 ### Nygard skeleton
 
@@ -52,6 +53,30 @@ Use the upstream template at <https://adr.github.io/madr/>; don't
 re-derive it here. Sections that earn their weight: Decision Drivers,
 Considered Options (with pros/cons), Decision Outcome.
 
+## Decompose and verify
+
+Comparison ADRs only; a single-decision Nygard record skips it.
+
+A comparison ADR that starts from an inherited conclusion
+reverse-justifies it with abstract drivers ("cross-surface leverage",
+"maintenance burden") and never examines the facts that decide it. Run
+this interview with the user before any Context, driver, or outcome
+prose exists:
+
+1. **Options** — name the concrete candidates under comparison.
+2. **Requirements** — get the targets from the user, enumerated. Not
+   from memory, not inferred from the options.
+3. **Option × requirement** — for each pair, state the fact and where
+   it came from. Reachability, feasibility, and cost decide most tool
+   choices; verify those pairs first. Anything assumed, recalled, or
+   unchecked is a blocker: search it before continuing, and never
+   write the Decision Outcome over an open one.
+4. **Inherited answer** — name the option that arrived pre-chosen, if
+   any. Check whether each driver tests that option or flatters it; a
+   driver only the pre-chosen option satisfies is there to justify it.
+5. **Draft** — every Decision Driver cites a verified fact from step
+   3. Cut any driver that can't; don't hedge it.
+
 ## Location and filename
 
 - Default `docs/adr/` for new repos. Match existing layout if present.
@@ -64,9 +89,10 @@ Considered Options (with pros/cons), Decision Outcome.
 
 1. Decide warranted vs. not. If not, stop.
 2. Detect template and location from existing ADRs or repo `CLAUDE.md`.
-3. Compute next sequence number. If first ADR, scaffold the meta-ADR
+3. For a comparison ADR, run *Decompose and verify* before drafting.
+4. Compute next sequence number. If first ADR, scaffold the meta-ADR
    too.
-4. Surface chosen template, location, and a one-line decision summary
+5. Surface chosen template, location, and a one-line decision summary
    before drafting full content. Apply after agreement.
-5. Default Status to `Proposed`. The team promotes it after the
+6. Default Status to `Proposed`. The team promotes it after the
    decision is actually made.
