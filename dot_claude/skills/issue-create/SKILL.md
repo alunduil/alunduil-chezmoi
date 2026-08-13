@@ -5,23 +5,25 @@ description: File a new GitHub issue in the checked-out repo — search first fo
 
 # Issue create
 
-Don't `gh issue create` first. Search and inspect before composing.
+Don't file first. Search and inspect before composing.
 
 ## Dedup pre-flight
 
-Open *and* closed:
+Open *and* closed — omitting `--state` searches both:
 
 ```bash
-gh search issues "<keywords>" --repo <owner>/<repo> --state all --limit 20
+gh search issues "<keywords>" --repo <owner>/<repo> --limit 20
 ```
 
 Read near-matches with `gh api repos/:owner/:repo/issues/<N>`. Decide:
 
 - **Same outcome already open** — update the existing one
-  (`gh issue edit <N>` for body, `gh issue comment <N>` for new
-  context). Don't file a new one.
-- **Same outcome closed for stale reasons** — `gh issue reopen <N>`
-  with a comment citing what changed. Don't file a new one.
+  (`mcp__github__issue_write` with `method: update` for the body,
+  `mcp__github__add_issue_comment` for new context). Don't file a new
+  one.
+- **Same outcome closed for stale reasons** — reopen it
+  (`mcp__github__issue_write`, `method: update`, `state: open`) with a
+  comment citing what changed. Don't file a new one.
 - **Adjacent** (same area, different angle) — file new, cite the
   existing in *Additional context*; consider an `issue-links` edge.
 - **Partially covers** — narrow the new issue to the uncovered
@@ -34,15 +36,18 @@ If torn, surface the call rather than silently pick.
 
 ```bash
 ls .github/ISSUE_TEMPLATE/ 2>/dev/null
-gh label list --limit 100
-gh api repos/:owner/:repo/milestones --jq '.[] | "\(.title)\t\(.state)"'
+
+# REST reads — see ~/.claude/CLAUDE.md "GitHub API budget".
+gh api 'repos/:owner/:repo/labels?per_page=100' --jq '.[].name'
+gh api repos/:owner/:repo/milestones \
+  --jq '.[] | "\(.number)\t\(.title)"'   # open only — can't assign a closed one
 gh api 'repos/:owner/:repo/issues?per_page=5&state=all' \
-  --jq '.[].title'           # skim recent house style
+  --jq '.[].title'                       # skim recent house style
 ```
 
-Template present → `gh issue create --template <name>`. Templates
-encode the project's required fields; don't bypass with a freeform
-body.
+Template present → read it and fill its fields into the body.
+Templates encode the project's required fields; don't bypass with a
+freeform body.
 
 ## Standard structure (no template)
 
@@ -76,20 +81,10 @@ issue tracks the work to..." preambles.
 Filing creates shared state — propose the body before submitting on
 any non-obvious choice (scope, label call, dedup verdict).
 
-```bash
-gh issue create \
-  --title '<title>' \
-  --label <label1>,<label2> \
-  --milestone '<name>' \
-  --body "$(cat <<'EOF'
-## Summary
-...
-EOF
-)"
-```
+File with `mcp__github__issue_write` (`method: create`):
 
-HEREDOC body avoids escaping. `--web` opens the browser for manual
-review before submit.
+- `labels` — array of existing label names.
+- `milestone` — the *number* from the listing above, not the title.
 
 ## Procedure
 
