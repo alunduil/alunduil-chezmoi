@@ -90,8 +90,8 @@ Push the branch, then open with `mcp__github__create_pull_request`:
 
 - `title` — imperative subject.
 - `body` — the blocks above, ending with `Closes #<N>`.
-- `head`, `base` — this branch and the repo's default branch. The MCP
-  call neither pushes nor infers them, so push first and pass both.
+- `head`, `base` — this branch and the repo's default branch; neither
+  is inferred.
 - `draft: true` — `pr-draft-guard.sh` blocks the call without it.
 
 ## Scaffold a repo template

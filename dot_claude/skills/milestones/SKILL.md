@@ -6,8 +6,7 @@ description: Create, name, scope, assign, and close GitHub milestones. Use when 
 # Milestones
 
 A milestone is a *finite, scoped* group of issues converging on a
-shipping or closing event. If it doesn't converge, it's a label, not a
-milestone.
+shipping or closing event. If it doesn't converge, it's a label.
 
 ## Pick one axis per project
 
@@ -75,9 +74,7 @@ late work; create the next milestone.
 ## Operations
 
 ```bash
-# REST — see ~/.claude/CLAUDE.md "GitHub API budget".
-
-# List — state=all, since closed milestones are the axis's history
+# List — closed ones show which axis is in use
 gh api 'repos/:owner/:repo/milestones?state=all' \
   --jq '.[] | "\(.number)\t\(.title)\t\(.state)"'
 

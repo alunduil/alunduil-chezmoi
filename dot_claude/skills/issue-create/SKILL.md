@@ -83,10 +83,8 @@ any non-obvious choice (scope, label call, dedup verdict).
 
 File with `mcp__github__issue_write` (`method: create`):
 
-- `title`, `body` — as composed.
 - `labels` — array of existing label names.
-- `milestone` — the milestone *number*, not its title. Take it from
-  the `.number` field of the listing above.
+- `milestone` — the *number* from the listing above, not the title.
 
 ## Procedure
 
