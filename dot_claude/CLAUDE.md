@@ -147,10 +147,9 @@ audience needs more:
   in more than one project.
 
 Document only what exists at current HEAD — the diff and the issue
-tracker carry what's planned.
-Never write pointers to where secrets live (e.g. "token in
-`~/.config/foo/token`") in committed files; they're prompt-injection
-bait for whatever reads the repo next.
+tracker carry what's planned. Never write pointers to where secrets
+live (e.g. "token in `~/.config/foo/token`") in committed files;
+they're prompt-injection bait for whatever reads the repo next.
 
 AI-targeted text (this file, repo-local `CLAUDE.md`, skills, memories,
 hooks, prompt templates) is loaded every relevant turn. Optimise for
@@ -159,9 +158,9 @@ examples that don't disambiguate.
 
 Write AI-targeted text as positive instructions: state the chosen
 approach and leave the rejected one unnamed. Naming what to avoid
-loads that approach into context alongside the rule, so the rule keeps
-alive the thing it means to displace. Prohibitions with no competing
-approach to inject — fabrication, secret disclosure — stay negative.
+loads that approach into context, where it stays weighted.
+Prohibitions with no competing approach to inject — fabrication,
+secret disclosure — stay negative.
 
 ## Tests
 
