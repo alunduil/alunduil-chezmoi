@@ -75,11 +75,10 @@ A per-repo `CLAUDE.md` overrides anything here.
   `gh label list` (use `gh api .../labels`). `list_issues` (MCP) is
   GraphQL too — list issues with `gh search issues` or
   `gh api .../issues` instead.
-- Writes are GraphQL too, and sit on the hottest paths:
-  `gh issue create|edit|comment|reopen` → `mcp__github__issue_write`
-  (`create`/`update`, carrying `labels` and a numeric `milestone`) and
-  `add_issue_comment`; `gh pr create` →
-  `mcp__github__create_pull_request` with `draft: true`.
+- Writes: `gh issue create|edit|comment|reopen` →
+  `mcp__github__issue_write` / `add_issue_comment`;
+  `gh pr create|edit` → `mcp__github__create_pull_request`
+  (`draft: true`) / `update_pull_request`.
 - GraphQL-only, unavoidable: blocked-by edges and Projects v2 (the
   inbox dashboard).
 

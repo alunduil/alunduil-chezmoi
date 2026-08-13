@@ -77,7 +77,7 @@ late work; create the next milestone.
 ```bash
 # REST — see ~/.claude/CLAUDE.md "GitHub API budget".
 
-# List
+# List — state=all, since closed milestones are the axis's history
 gh api 'repos/:owner/:repo/milestones?state=all' \
   --jq '.[] | "\(.number)\t\(.title)\t\(.state)"'
 

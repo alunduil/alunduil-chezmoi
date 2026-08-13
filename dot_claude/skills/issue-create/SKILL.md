@@ -35,13 +35,14 @@ If torn, surface the call rather than silently pick.
 ## Detect repo conventions
 
 ```bash
-# REST reads — see ~/.claude/CLAUDE.md "GitHub API budget".
 ls .github/ISSUE_TEMPLATE/ 2>/dev/null
+
+# REST reads — see ~/.claude/CLAUDE.md "GitHub API budget".
 gh api 'repos/:owner/:repo/labels?per_page=100' --jq '.[].name'
 gh api repos/:owner/:repo/milestones \
-  --jq '.[] | "\(.number)\t\(.title)\t\(.state)"'
+  --jq '.[] | "\(.number)\t\(.title)"'   # open only — can't assign a closed one
 gh api 'repos/:owner/:repo/issues?per_page=5&state=all' \
-  --jq '.[].title'           # skim recent house style
+  --jq '.[].title'                       # skim recent house style
 ```
 
 Template present → read it and fill its fields into the body.
