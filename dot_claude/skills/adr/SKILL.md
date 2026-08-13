@@ -33,8 +33,8 @@ Detect, don't impose:
    respect it.
 3. Otherwise: **Nygard** for a single decision; escalate to **MADR**
    only when alternatives analysis is genuinely load-bearing (3+
-   options worth comparing across multiple drivers). That second case
-   is a *comparison ADR* throughout this skill.
+   options worth comparing across multiple drivers). Call that case a
+   *comparison ADR*.
 
 ### Nygard skeleton
 
@@ -59,25 +59,23 @@ Comparison ADRs only; a single-decision Nygard record skips it.
 
 A comparison ADR that starts from an inherited conclusion
 reverse-justifies it with abstract drivers ("cross-surface leverage",
-"maintenance burden") while the facts that decide the question stay
-unexamined. Run this interview with the user before any Context,
-driver, or outcome prose exists:
+"maintenance burden") and never examines the facts that decide it. Run
+this interview with the user before any Context, driver, or outcome
+prose exists:
 
 1. **Options** — name the concrete candidates under comparison.
-2. **Requirements** — get the targets from the user, enumerated.
-   Not from memory, not inferred from the options already on the
-   table.
+2. **Requirements** — get the targets from the user, enumerated. Not
+   from memory, not inferred from the options.
 3. **Option × requirement** — for each pair, state the fact and where
    it came from. Reachability, feasibility, and cost decide most tool
    choices; verify those pairs first. Anything assumed, recalled, or
    unchecked is a blocker: search it before continuing, and never
    write the Decision Outcome over an open one.
 4. **Inherited answer** — name the option that arrived pre-chosen, if
-   any. Ask of each driver whether it tests that option or flatters
-   it; a driver only the incumbent satisfies is the conclusion in
-   disguise.
+   any. Check whether each driver tests that option or flatters it; a
+   driver only the pre-chosen option satisfies is there to justify it.
 5. **Draft** — every Decision Driver cites a verified fact from step
-   3. A driver with no fact behind it gets cut, not softened.
+   3. Cut any driver that can't; don't hedge it.
 
 ## Location and filename
 
