@@ -1,25 +1,71 @@
 #!/usr/bin/env bash
-# Installs ghcup, GHC, and cabal-install. Canonical installer only:
-# get-ghcup.haskell.org. Debian apt ghc/cabal-install are avoided by design
-# (they lag upstream).
+# Installs ghcup, a pinned GHC, and a pinned cabal-install. Canonical installer
+# only: get-ghcup.haskell.org. Debian apt ghc/cabal-install are avoided by
+# design (they lag upstream).
 
 set -euo pipefail
 
 log() { printf '==> %s\n' "$*" >&2; }
 
+# Pinned (Renovate-tracked), which replaces ghcup's "recommended" channel --
+# recommended deliberately trails latest and no datasource can read it, so the
+# lag becomes a reviewed Renovate bump instead. GHC publishes no releases and
+# its tags carry rc/alpha/branch-start siblings, hence tags filtered to
+# -release; cabal's releases include a rolling cabal-head that the same filter
+# drops.
+# renovate: datasource=github-tags depName=ghc/ghc extractVersion=^ghc-(?<version>[\d.]+)-release$
+GHC_VERSION="9.10.3"
+# renovate: datasource=github-releases depName=haskell/cabal extractVersion=^cabal-install-v(?<version>.+)$
+CABAL_VERSION="3.16.1.0"
+
 # ---------------------------------------------------------- ghcup + ghc + cabal
-# NONINTERACTIVE skips prompts and installs the recommended GHC and cabal.
-# INSTALL_NO_STACK skips stack; HLS is opt-in (default off). The installer
-# would also append to ~/.bashrc, but chezmoi overwrites that on apply -- the
-# managed dot_bashrc sources ~/.ghcup/env itself.
+# NONINTERACTIVE skips prompts; INSTALL_NO_STACK skips stack; HLS is opt-in
+# (default off). The installer would also append to ~/.bashrc, but chezmoi
+# overwrites that on apply -- the managed dot_bashrc sources ~/.ghcup/env
+# itself. Handing it the pins rather than installing minimally keeps the rest
+# of its first-run setup (the ~/.cabal nudge that opts cabal out of XDG, and
+# the initial `cabal update`) without this script restating any of it.
 if ! command -v ghcup >/dev/null 2>&1; then
-  log "ghcup: installing recommended GHC + cabal"
+  log "ghcup: installing with GHC $GHC_VERSION + cabal $CABAL_VERSION"
   curl -fsSL https://get-ghcup.haskell.org |
     BOOTSTRAP_HASKELL_NONINTERACTIVE=1 \
       BOOTSTRAP_HASKELL_INSTALL_NO_STACK=1 \
+      BOOTSTRAP_HASKELL_GHC_VERSION="$GHC_VERSION" \
+      BOOTSTRAP_HASKELL_CABAL_VERSION="$CABAL_VERSION" \
       sh
-else
-  log "ghcup: already installed"
 fi
+
+export PATH="$HOME/.ghcup/bin:$PATH"
+# Every ghcup subcommand otherwise fetches release metadata to nag about newer
+# versions; the pin is the answer to that question already.
+export GHCUP_SKIP_UPDATE_CHECK=1
+
+# ------------------------------------------------------------------------ ghc
+# Carries the pin forward on hosts where ghcup already exists, which is every
+# apply after the first and so the path a Renovate bump actually lands on.
+# ghcup lays down a version-suffixed symlink per install, so presence is a
+# local test; `ghcup list` would download the metadata yaml. --numeric-version
+# then reports which one the unversioned symlink currently points at, so a
+# converged host reaches no network at all.
+if [ ! -e "$HOME/.ghcup/bin/ghc-$GHC_VERSION" ]; then
+  log "ghc: installing $GHC_VERSION"
+  ghcup install ghc "$GHC_VERSION"
+fi
+if [ "$(ghc --numeric-version 2>/dev/null || true)" != "$GHC_VERSION" ]; then
+  log "ghc: setting $GHC_VERSION as default"
+  ghcup set ghc "$GHC_VERSION" >/dev/null
+fi
+log "ghc: $(ghc --numeric-version)"
+
+# ---------------------------------------------------------------------- cabal
+if [ ! -e "$HOME/.ghcup/bin/cabal-$CABAL_VERSION" ]; then
+  log "cabal: installing $CABAL_VERSION"
+  ghcup install cabal "$CABAL_VERSION"
+fi
+if [ "$(cabal --numeric-version 2>/dev/null || true)" != "$CABAL_VERSION" ]; then
+  log "cabal: setting $CABAL_VERSION as default"
+  ghcup set cabal "$CABAL_VERSION" >/dev/null
+fi
+log "cabal: $(cabal --numeric-version)"
 
 log "haskell ecosystem complete"
