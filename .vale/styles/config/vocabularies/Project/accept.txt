@@ -46,7 +46,6 @@ futex
 VSCode
 macOS
 Linux
-VMs
 
 # AI and Claude ecosystem
 Claude
@@ -83,6 +82,7 @@ worktrees
 config
 configs
 hostname
+VMs
 denylist
 allowlist
 (?i)denylist(ing)?

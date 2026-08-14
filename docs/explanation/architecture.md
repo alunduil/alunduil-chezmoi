@@ -83,8 +83,14 @@ Editing the deployed file directly would lose the change on the next `chezmoi ap
 
 Everything above describes one host. A Claude Code session running somewhere else—the web app, `claude --cloud`, a routine—starts from a fresh clone of a single repository, so it sees what that clone contains and nothing this repo deploys.
 
-A cloud session loads the repo's `CLAUDE.md`, `.claude/rules/`, `.claude/skills/`, `.claude/agents/`, `.claude/commands/`, the hooks declared in `.claude/settings.json`, and `.mcp.json`; plugins the clone names in `.claude/settings.json`; and skills enabled for the claude.ai account. It doesn't load `~/.claude/CLAUDE.md`, `~/.claude/skills/`, the hooks in `~/.claude/settings.json`, or the per-project auto memory under `~/.claude/projects/*/memory/`. Auto memory is machine-local by design and has no cross-machine path in either direction.
+Such a session loads three things:
 
-The split is deliberate. [ADR 0005](../adr/0005-treat-the-checkout-as-the-only-portable-context.md) records why the alternatives lost, chiefly that the one mechanism able to seed `~/.claude/` in a cloud VM is a text field in the claude.ai environment dialog, which no sensor here can check and which serves a filesystem snapshot cached for about a week behind whatever this repo says.
+- From the clone: `CLAUDE.md`, `.claude/rules/`, `.claude/skills/`, `.claude/agents/`, `.claude/commands/`, the hooks in `.claude/settings.json`, and `.mcp.json`.
+- Declared in the clone: plugins named in `.claude/settings.json`.
+- From the account: skills enabled on claude.ai.
 
-Two things follow for anyone editing here. `dot_claude/CLAUDE.md` is free to stay host-specific, because the `gh` shim, the RTK proxy, and worktree paths describe machinery a cloud VM doesn't have. And a skill under `dot_claude/skills/` runs on this host only: one that must also work on the web gets committed to the repo that needs it, and written to stand on its own rather than reaching for `~/.claude/` or memory.
+It doesn't load `~/.claude/CLAUDE.md`, `~/.claude/skills/`, the hooks in `~/.claude/settings.json`, or the per-project auto memory under `~/.claude/projects/*/memory/`. Auto memory is machine-local by design, with no cross-machine path in either direction.
+
+The split is deliberate; [ADR 0005](../adr/0005-treat-the-checkout-as-the-only-portable-context.md) records why the alternatives lost.
+
+Two consequences for anyone editing here. `dot_claude/CLAUDE.md` is free to stay host-specific, because the `gh` shim, the RTK proxy, and worktree paths describe machinery a cloud VM doesn't have. And a skill under `dot_claude/skills/` runs on this host only: one that must also work on the web gets committed to the repo that needs it, and written to stand on its own rather than reaching for `~/.claude/` or memory.

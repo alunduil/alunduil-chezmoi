@@ -225,11 +225,11 @@ behaviour:
 - **Per-project sensors** (tests, linters, type-checkers) — detect
   violations after the fact. Live with the project.
 
-Every mechanism above is host-local. Web and cloud sessions load the
-repo checkout and nothing else, so a rule that must hold there lives in
-that repo's `CLAUDE.md`, `.claude/rules/`, or `.claude/skills/`, and is
-written to stand alone — a skill reaching for `~/.claude/` or memory
-works here only.
+Web and cloud sessions load the repo checkout and nothing else, so
+anything reached through `~/.claude/` stays on this host. A rule that
+must hold there lives in that repo's `CLAUDE.md`, `.claude/rules/`, or
+`.claude/skills/`, written to stand alone — a skill reaching for
+`~/.claude/` or memory works here only.
 
 @RTK.md
 @techwriting.md
