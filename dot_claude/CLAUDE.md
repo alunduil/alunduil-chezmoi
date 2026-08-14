@@ -82,6 +82,20 @@ A per-repo `CLAUDE.md` overrides anything here.
 - GraphQL-only, unavoidable: blocked-by edges and Projects v2 (the
   inbox dashboard).
 
+## GitHub Actions schedules
+
+Write a workflow's `schedule:` cron in local time and put an IANA name
+in `timezone:`. Without it the schedule runs in UTC; with it, GitHub
+applies daylight saving. Use the repo's existing timezone, else
+`Europe/London`.
+
+```yaml
+on:
+  schedule:
+    - cron: '0 18 * * 5'
+      timezone: Europe/London
+```
+
 ## Feedback preference
 
 - Run the project's computational sensors (tests, linters, type
