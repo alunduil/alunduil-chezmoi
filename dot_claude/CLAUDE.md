@@ -84,15 +84,15 @@ A per-repo `CLAUDE.md` overrides anything here.
 
 ## GitHub Actions schedules
 
-Write a workflow's `schedule:` cron in local time with a `timezone:`
-IANA field. Schedules run in UTC without one; with one, GitHub
+Write a workflow's `schedule:` cron in local time and put an IANA name
+in `timezone:`. Without it the schedule runs in UTC; with it, GitHub
 applies daylight saving. Use the repo's existing timezone, else
 `Europe/London`.
 
 ```yaml
 on:
   schedule:
-    - cron: '0 18 * * 5' # 18:00 Friday
+    - cron: '0 18 * * 5'
       timezone: Europe/London
 ```
 
