@@ -37,21 +37,23 @@ only mechanism that can place a file at `~/.claude/CLAUDE.md` in a cloud
 VM, and it would carry the skills and hooks along with it. A `cloud` value
 for the existing `role` axis plus a `.chezmoiignore` block would scope the
 apply to `dot_claude/`, which needs no age key because every encrypted
-source sits outside that tree. It loses on where the trigger lives: the
-setup script is a text field in the claude.ai environment dialog, not a
-file in this repo. Nothing here can version it, no sensor can check it, and
-Renovate can't see it—the repo would hold a `cloud` role whose only caller
-is invisible to the repo. The delivered content would also lag. Anthropic
-snapshots the filesystem after the first run and reuses it for about seven
-days, so an edit to `dot_claude/CLAUDE.md` reaches cloud sessions whenever
-the cache happens to expire. Rules that are quietly a week stale are worse
-than rules known to be absent. The approach further assumes the session's
-Claude Code runs as root with `HOME=/root`, which the documentation doesn't
-state; setup scripts run as root, but that says nothing about the session.
-Finally, much of `~/.claude/CLAUDE.md` is about this host—the RTK proxy
-hook, the `gh` shim at `~/.local/bin/gh`, worktree paths, the
-source-versus-apply clone split. In a cloud VM those rules describe
-machinery that isn't there.
+source sits outside that tree. Four things sink it:
+
+- **The trigger can't live here.** The setup script is a text field in the
+  claude.ai environment dialog, not a file in this repo. Nothing here can
+  version it, no sensor can check it, and Renovate can't see it. The repo
+  would hold a `cloud` role whose only caller is invisible to the repo.
+- **What it delivers goes stale.** Anthropic snapshots the filesystem after
+  the first run and reuses it for about seven days, so an edit to
+  `dot_claude/CLAUDE.md` lands whenever the cache happens to expire. Rules
+  quietly a week stale are worse than rules known to be absent.
+- **It rests on an unverified assumption.** The approach needs the
+  session's Claude Code to run as root with `HOME=/root`. Setup scripts run
+  as root; the documentation says nothing about the session.
+- **Most of what it would carry is about this host.** The RTK proxy hook,
+  the `gh` shim at `~/.local/bin/gh`, worktree paths, the
+  source-versus-apply clone split. In a cloud VM those rules describe
+  machinery that isn't there.
 
 **Publish the skills and hooks as a marketplace plugin.** A plugin is
 versioned, testable in CI, and reaches both local and cloud sessions from
