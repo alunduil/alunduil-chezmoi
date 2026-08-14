@@ -13,10 +13,10 @@ deploys the host side: `dot_claude/CLAUDE.md` becomes `~/.claude/CLAUDE.md`,
 `dot_claude/skills/` becomes `~/.claude/skills/`, and `dot_claude/hooks/`
 backs the guards wired up in `~/.claude/settings.json`. None of it lives in
 a checkout, so a cloud session never sees it. Global conventions and
-accumulated memory are silently absent there rather than absent with a
-warning, which is what makes the split worth recording.
+accumulated memory go missing there with nothing to announce it, which is
+what makes the split worth recording.
 
-What a cloud session does load is fixed by the product, not by us:
+The product fixes what a cloud session does load, not this repo:
 
 - From the clone: the repo's `CLAUDE.md`, `.claude/rules/`,
   `.claude/skills/`, `.claude/agents/`, `.claude/commands/`, the hooks in
@@ -25,12 +25,12 @@ What a cloud session does load is fixed by the product, not by us:
   from their marketplace at session start.
 - From the account: skills enabled on claude.ai, synced at session start.
 
-Everything else stays here. The documentation is explicit that
+Everything else stays here. The documentation is explicit on both halves.
 `~/.claude/CLAUDE.md` doesn't travel because it "lives on your machine, not
-in the repo," and that auto memory under `~/.claude/projects/*/memory/` is
-machine-local and "not shared across machines or cloud environments."
+in the repo." Auto memory under `~/.claude/projects/*/memory/` is
+machine-local, and "not shared across machines or cloud environments."
 
-Three ways to close the gap were weighed.
+Three approaches could close the gap.
 
 **Bootstrap chezmoi from a cloud-environment setup script.** This is the
 only mechanism that can place a file at `~/.claude/CLAUDE.md` in a cloud
@@ -45,71 +45,69 @@ source sits outside that tree. Four things sink it:
   would hold a `cloud` role whose only caller is invisible to the repo.
 - **What it delivers goes stale.** Anthropic snapshots the filesystem after
   the first run and reuses it for about seven days, so an edit to
-  `dot_claude/CLAUDE.md` lands whenever the cache happens to expire. Rules
-  quietly a week stale are worse than rules known to be absent.
+  `dot_claude/CLAUDE.md` lands whenever the cache happens to expire. A
+  week-stale rule nobody can see is worse than no rule at all.
 - **It rests on an unverified assumption.** The approach needs the
   session's Claude Code to run as root with `HOME=/root`. Setup scripts run
-  as root; the documentation says nothing about the session.
-- **Most of what it would carry is about this host.** The RTK proxy hook,
-  the `gh` shim at `~/.local/bin/gh`, worktree paths, the
-  source-versus-apply clone split. In a cloud VM those rules describe
-  machinery that isn't there.
+  as root. The documentation says nothing about the session.
+- **Most of what it would carry is about this host.** The `rtk`
+  output-filtering proxy, the `gh` shim at `~/.local/bin/gh`, worktree
+  paths, the source-versus-apply clone split. In a cloud VM those rules
+  describe machinery that isn't there.
 
-**Publish the skills and hooks as a marketplace plugin.** A plugin is
-versioned, testable in CI, and reaches both local and cloud sessions from
-one source, and a repo opts in with one line of `.claude/settings.json`. It
-doesn't solve the problem this issue is about. A plugin's components are
-`skills/`, `commands/`, `agents/`, `hooks/`, `.mcp.json`, `.lsp.json`,
-`monitors/`, `bin/`, and `settings.json`; there's no slot for a `CLAUDE.md`
+**Publish the skills and hooks as a marketplace plugin.** A plugin carries
+a version, runs under CI, and reaches both local and cloud sessions from
+one source. A repo opts in with one line of `.claude/settings.json`. It
+still doesn't solve the problem this issue is about. A plugin's components
+are `skills/`, `commands/`, `agents/`, `hooks/`, `.mcp.json`, `.lsp.json`,
+`monitors/`, `bin/`, and `settings.json`. None of those holds a `CLAUDE.md`
 or a `rules/` directory, so the always-on rules still wouldn't travel. It
 also needs a new repository, which is its own decision.
 
-**Accept the split.** Nothing is built, so nothing can drift or go stale,
-and the boundary becomes something to design against rather than to
-discover. The cost is that a convention needed in several repos is written
-in each of them.
+**Accept the split.** This builds nothing, so nothing can drift or go
+stale, and the boundary turns into something to design for rather than to
+discover. The cost: a convention needed in several repos gets written in
+each of them.
 
 Memory carries no real choice. No mechanism moves auto memory in any
 direction, on purpose: it's per-machine session state.
 
 ## Decision
 
-We will treat the repository checkout as the only context that travels.
+Treat the repository checkout as the only context that travels.
 
 A rule that must hold in a web or cloud session lives in that repo's
-`CLAUDE.md`, `.claude/rules/`, or `.claude/skills/`, and is written to
-stand on its own. Skills in particular assume no host: one that reaches for
-`~/.claude/` or for memory works here and nowhere else.
+`CLAUDE.md`, `.claude/rules/`, or `.claude/skills/`, and stands on its own.
+Skills in particular assume no host: one that reaches for `~/.claude/` or
+for memory works here and nowhere else.
 
 `~/.claude/CLAUDE.md`, `~/.claude/skills/`, the `~/.claude/settings.json`
 hooks, and auto memory stay host-local. They keep describing this host,
-including the parts that only make sense here, and they aren't trimmed
-toward portability.
+including the parts that only make sense here. Nothing trims them toward
+portability.
 
-Auto memory stays local-only and isn't promoted wholesale. A memory that
-turns out to be durable project knowledge rather than a working note
-graduates into the repo's `CLAUDE.md` as a rule, which is the same bar that
-governed it before.
+Auto memory stays local-only. A memory that proves to be durable project
+knowledge, rather than a working note, graduates into the repo's
+`CLAUDE.md` as a rule. It meets the same bar that governed it before.
 
 Revisit if Anthropic ships a first-party path for user-scope
-instructions—an account-level `CLAUDE.md` equivalent to the account-level
-skill sync—since that removes the objection that killed the setup-script
-option.
+instructions—an account-level `CLAUDE.md` matching the account-level skill
+sync. That would remove the objection that killed the setup-script option.
 
 ## Consequences
 
-- A web session honours the repo it cloned and nothing else. That's now a
-  stated boundary, so a skill or rule can be written against it.
-- The deployed `~/.claude/CLAUDE.md` is free to stay host-specific. Rules
-  about the `gh` shim, RTK, and worktrees don't have to be softened for an
-  audience that will never load them.
-- A convention wanted in several repos is written in each of them. The
-  duplication is visible in review rather than papered over by a mechanism
-  that might not have run.
+- A web session honours the repo it cloned and nothing else. That boundary
+  now has a name, so a skill or rule can target it.
+- The deployed `~/.claude/CLAUDE.md` stays host-specific. Rules about the
+  `gh` shim, `rtk`, and worktrees need no softening for an audience that will
+  never load them.
+- A convention wanted in several repos appears in each of them. Review sees
+  that duplication, where a mechanism that might not have run would have
+  hidden it.
 - The skills under `dot_claude/skills/` remain host-only. Making one
   available on the web means committing it to a repo, enabling it for the
-  claude.ai account, or shipping it in a plugin—each a separate decision,
-  none forced by this one.
+  claude.ai account, or shipping it in a plugin. Each is a separate
+  decision, none forced by this one.
 - No cloud-environment setup script, so the claude.ai environment dialog
   holds no configuration this repo depends on.
 - The `role` axis keeps its two values. A `cloud` role would have been the
