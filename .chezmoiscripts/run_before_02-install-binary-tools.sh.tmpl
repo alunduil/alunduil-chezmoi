@@ -25,7 +25,7 @@ INSTALL_DIR="{{ .chezmoi.sourceDir }}/script/install"
 # keys off `uv tool list` rather than `pre-commit --version`, which can't tell
 # a uv-managed install from the legacy pip one at the same version.
 # renovate: datasource=pypi depName=pre-commit
-PRE_COMMIT_VERSION="4.6.1"
+PRE_COMMIT_VERSION="4.6.2"
 if "$HOME/.local/bin/uv" tool list 2>/dev/null | grep -qx "pre-commit v$PRE_COMMIT_VERSION"; then
   printf '==> pre-commit: %s already installed via uv\n' "$PRE_COMMIT_VERSION" >&2
 else
