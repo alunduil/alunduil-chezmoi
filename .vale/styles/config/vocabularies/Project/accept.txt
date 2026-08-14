@@ -49,6 +49,7 @@ Linux
 
 # AI and Claude ecosystem
 Claude
+claude.ai
 Anthropic
 Claustre
 claustre
@@ -81,6 +82,7 @@ worktrees
 config
 configs
 hostname
+VMs
 denylist
 allowlist
 (?i)denylist(ing)?
