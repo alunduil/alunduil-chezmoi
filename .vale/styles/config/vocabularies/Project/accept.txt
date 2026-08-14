@@ -46,9 +46,11 @@ futex
 VSCode
 macOS
 Linux
+VMs
 
 # AI and Claude ecosystem
 Claude
+claude.ai
 Anthropic
 Claustre
 claustre
