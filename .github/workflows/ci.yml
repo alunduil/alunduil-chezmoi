@@ -67,49 +67,26 @@ jobs:
           # bats-action curls api.github.com; auth raises the anonymous rate limit.
           github-token: ${{ secrets.GITHUB_TOKEN }}
 
-      # kcov distributes source tarballs only — no release binaries, and noble
-      # dropped the package — so it builds here. GitHub's auto-generated
-      # tarballs ship no checksum asset, so the sha256 is pinned by hand and a
-      # version bump trips this step until the hash is refreshed, the same
-      # supply-chain checkpoint script/install/bats-libs takes.
+      # script/install/kcov builds from source and carries the version pin; the
+      # toolchain it needs is CI-only, so it stays here rather than in
+      # .chezmoidata/packages.yaml.
       - name: Install kcov
-        env:
-          # renovate: datasource=github-releases depName=SimonKagstrom/kcov
-          KCOV_VERSION: "v43"
-          KCOV_SHA256: "4cbba86af11f72de0c7514e09d59c7927ed25df7cebdad087f6d3623213b95bf"
         run: |
           sudo apt-get update -qq
           sudo apt-get install -y -qq cmake ninja-build binutils-dev \
             libcurl4-openssl-dev zlib1g-dev libdw-dev libiberty-dev libssl-dev
-          curl -fsSL -o /tmp/kcov.tar.gz \
-            "https://github.com/SimonKagstrom/kcov/archive/refs/tags/${KCOV_VERSION}.tar.gz"
-          echo "${KCOV_SHA256}  /tmp/kcov.tar.gz" | sha256sum --check --strict
-          tar -xzf /tmp/kcov.tar.gz -C /tmp
-          # kcov traces bash by setting PS4 to an expansion of ${BASH_SOURCE},
-          # which is unbound inside `bash -c` under `set -u` — the form 40+ of
-          # these tests use to exercise a script's functions, and every one of
-          # them fails on it. SimonKagstrom/kcov#236, still open and unfixed on
-          # master, so the default expansion gets a fallback here. The grep
-          # fails the build if upstream moves the line rather than letting the
-          # sed silently stop applying.
-          helper="/tmp/kcov-${KCOV_VERSION#v}/src/engines/bash-helper.sh"
-          # shellcheck disable=SC2016  # matching kcov's literal $-expansion, not expanding one
-          grep -q '\${BASH_SOURCE}' "$helper"
-          # shellcheck disable=SC2016
-          sed -i 's/\${BASH_SOURCE}/${BASH_SOURCE:-}/' "$helper"
-          cmake -S "/tmp/kcov-${KCOV_VERSION#v}" -B /tmp/kcov-build -G Ninja \
-            -DCMAKE_BUILD_TYPE=Release -DCMAKE_INSTALL_PREFIX=/usr/local
-          cmake --build /tmp/kcov-build --parallel
-          sudo cmake --install /tmp/kcov-build
+          script/install/kcov --bin-dir "$HOME/.local/bin"
+          echo "$HOME/.local/bin" >> "$GITHUB_PATH"
 
-      # kcov traces the scripts bats runs from the checkout. Tests that copy
-      # their subject to a temp path first (gh_wrapper, pr_draft_guard) fall
-      # outside --include-path and report as uncovered; the flag is
-      # informational, so that under-count costs nothing but is worth knowing
-      # before reading the number as the suite's real reach.
+      # --include-path names the same three trees bats walks, so the two lists
+      # cannot drift. kcov traces the scripts it runs from the checkout, so
+      # tests that copy their subject to a temp path first (gh_wrapper,
+      # pr_draft_guard) report as uncovered; the flag is informational, so that
+      # under-count costs nothing but is worth knowing before reading the
+      # number as the suite's real reach.
       - name: Test
         run: |
-          kcov --include-path=dot_local/bin,dot_claude/hooks,script \
+          kcov --include-path=dot_local,dot_claude,script \
             --exclude-pattern=.bats,/fixtures/ \
             coverage bats --recursive dot_local dot_claude script
         env:
