@@ -1,0 +1,27 @@
+# Statuses are informational so a coverage drop annotates a pull request
+# without blocking merge; Renovate's update PRs have to stay mergeable on
+# checks alone.
+#
+# Two flags because the suites measure different languages through different
+# tools: `python` from pytest-cov, `bats` from kcov.
+#
+# Leading dot keeps chezmoi from deploying this into $HOME.
+
+coverage:
+  # No explicit target: each status then compares against its own base commit,
+  # so the floor tracks the codebase rather than a number someone picked once.
+  status:
+    project:
+      default:
+        informational: true
+      python:
+        informational: true
+        flags:
+          - python
+      bats:
+        informational: true
+        flags:
+          - bats
+    patch:
+      default:
+        informational: true

@@ -1,0 +1,56 @@
+#!/usr/bin/env bash
+set -euo pipefail
+
+# kcov publishes no release binaries and Ubuntu dropped the package after
+# 22.04, so this builds from source. The build toolchain is the caller's to
+# provide.
+#
+# GitHub's auto-generated tarballs carry no checksum asset, so this sha256 is
+# pinned by hand and a version bump fails verify_sha256 until it is refreshed.
+# renovate: datasource=github-releases depName=SimonKagstrom/kcov
+KCOV_VERSION="v43"
+KCOV_SHA256="4cbba86af11f72de0c7514e09d59c7927ed25df7cebdad087f6d3623213b95bf"
+
+# shellcheck source-path=SCRIPTDIR source=lib.sh
+. "$(dirname "$0")/lib.sh"
+
+parse_bin_dir "$@"
+
+bin="$BIN_DIR/kcov"
+if installed_version_matches "$bin" "$KCOV_VERSION"; then
+  printf '==> kcov: %s already installed at %s\n' "$KCOV_VERSION" "$bin" >&2
+  exit 0
+fi
+
+printf '==> kcov: downloading %s\n' "$KCOV_VERSION" >&2
+tmp="$(mktemp -d)"
+trap 'rm -rf "$tmp"' EXIT
+
+asset="kcov-${KCOV_VERSION}.tar.gz"
+curl -fsSL -o "$tmp/$asset" \
+  "https://github.com/SimonKagstrom/kcov/archive/refs/tags/${KCOV_VERSION}.tar.gz"
+verify_sha256 "$tmp/$asset" "$KCOV_SHA256"
+
+tar -xzf "$tmp/$asset" -C "$tmp"
+src="$tmp/kcov-${KCOV_VERSION#v}"
+
+# kcov traces bash through PS4, which expands ${BASH_SOURCE} -- unbound inside
+# `bash -c` under `set -u`, the form this repo's bats tests use to reach a
+# script's functions. Unpatched, those tests all fail. See
+# SimonKagstrom/kcov#236. The grep fails the install if upstream moves the
+# line, rather than letting the sed quietly stop applying.
+helper="$src/src/engines/bash-helper.sh"
+# shellcheck disable=SC2016  # matching kcov's literal $-expansion, not writing one
+grep -q '\${BASH_SOURCE}' "$helper"
+# shellcheck disable=SC2016
+sed -i 's/\${BASH_SOURCE}/${BASH_SOURCE:-}/' "$helper"
+
+printf '==> kcov: building %s\n' "$KCOV_VERSION" >&2
+cmake -S "$src" -B "$tmp/build" -G Ninja -DCMAKE_BUILD_TYPE=Release
+cmake --build "$tmp/build" --parallel
+
+# kcov embeds its HTML report assets, so these two binaries are the whole
+# install and `cmake --install`'s share/ tree is unnecessary.
+mkdir -p "$BIN_DIR"
+install -m 0755 "$tmp/build/src/kcov" "$bin"
+install -m 0755 "$tmp/build/src/kcov-system-daemon" "$BIN_DIR/kcov-system-daemon"

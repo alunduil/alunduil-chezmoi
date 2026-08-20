@@ -34,9 +34,10 @@ check-bats:
     BATS_LIB_PATH="${BATS_LIB_PATH:+$BATS_LIB_PATH:}$HOME/.local/lib/bats" \
       bats --recursive dot_local dot_claude script
 
-# Python unit tests (zellijstat parsers).
+# Python unit tests (zellijstat parsers), with the coverage report CI uploads.
+# bats coverage needs kcov, which like lychee is CI-only.
 check-python:
-    python3 dot_local/bin/zellijstat_test.py
+    uv run --no-project --with pytest,pytest-cov pytest --cov --cov-report=xml --cov-report=term
 
 # Zellij KDL validation (needs zellij on PATH).
 check-zellij:

@@ -1,0 +1,16 @@
+# pytest and coverage config for the repo's Python. Callers pass
+# `uv run --no-project`; without it uv treats the checkout as a package and
+# writes a .venv into it. pytest has no dot-prefixed config file, so
+# .chezmoiignore keeps this one out of $HOME.
+
+[tool.pytest.ini_options]
+# Tests sit beside the scripts they exercise rather than under a tests/ dir.
+testpaths = ["dot_local", "dot_claude", "script"]
+
+[tool.coverage.run]
+# Omit rather than include, so a new script under test is measured without
+# anyone remembering to list it here.
+omit = ["*_test.py"]
+
+[tool.coverage.report]
+exclude_also = ["if __name__ == .__main__.:"]

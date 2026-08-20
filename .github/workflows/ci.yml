@@ -38,6 +38,11 @@ jobs:
     name: Test shell scripts
     runs-on: ubuntu-24.04
     timeout-minutes: 10
+    permissions:
+      contents: read
+      # codecov-action authenticates by OIDC, so there is no upload token to
+      # store or rotate.
+      id-token: write
     # Versions stay aligned with script/install/bats-libs (the local path);
     # Renovate bumps both together. The action takes them without the tag's
     # leading `v`, hence extractVersion.
@@ -62,25 +67,67 @@ jobs:
           # bats-action curls api.github.com; auth raises the anonymous rate limit.
           github-token: ${{ secrets.GITHUB_TOKEN }}
 
+      # These build deps serve script/install/kcov alone and never reach a host,
+      # so they stay here rather than in .chezmoidata/packages.yaml.
+      - name: Install kcov
+        run: |
+          sudo apt-get update -qq
+          sudo apt-get install -y -qq cmake ninja-build binutils-dev \
+            libcurl4-openssl-dev zlib1g-dev libdw-dev libiberty-dev libssl-dev
+          script/install/kcov --bin-dir "$HOME/.local/bin"
+          echo "$HOME/.local/bin" >> "$GITHUB_PATH"
+
+      # kcov only traces scripts run from the checkout, so tests that copy their
+      # subject to a temp path first (gh_wrapper, pr_draft_guard) report as
+      # uncovered despite being tested.
       - name: Test
-        run: bats --recursive dot_local dot_claude script
+        run: |
+          kcov --include-path=dot_local,dot_claude,script \
+            --exclude-pattern=.bats,/fixtures/ \
+            coverage bats --recursive dot_local dot_claude script
         env:
           # The action installs to /usr/lib/bats-* without exporting the path,
           # so bats_load_library needs it from the action's lib-path output.
           BATS_LIB_PATH: ${{ steps.setup-bats.outputs.lib-path }}
 
+      # kcov writes to coverage/bats.<hash>/ and symlinks coverage/bats beside
+      # it; the symlink is the only stable path.
+      - uses: codecov/codecov-action@fb8b3582c8e4def4969c97caa2f19720cb33a72f # v7.0.0
+        with:
+          use_oidc: true
+          files: coverage/bats/cobertura.xml
+          disable_search: true
+          flags: bats
+
   python-tests:
     name: Test python
     runs-on: ubuntu-24.04
     timeout-minutes: 10
+    permissions:
+      contents: read
+      id-token: write
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
       - uses: actions/setup-python@5fda3b95a4ea91299a34e894583c3862153e4b97 # v7
         with:
           python-version: '3.x'
 
+      # uv supplies pytest and pytest-cov per run, so neither joins the repo's
+      # dependency surface.
+      - name: Install uv
+        run: |
+          script/install/uv --bin-dir "$HOME/.local/bin"
+          echo "$HOME/.local/bin" >> "$GITHUB_PATH"
+
       - name: Test
-        run: python3 dot_local/bin/zellijstat_test.py
+        run: uv run --no-project --with pytest,pytest-cov pytest --cov --cov-report=xml
+
+      - uses: codecov/codecov-action@fb8b3582c8e4def4969c97caa2f19720cb33a72f # v7.0.0
+        with:
+          use_oidc: true
+          files: coverage.xml
+          disable_search: true
+          flags: python
 
   chezmoi-source:
     name: Validate chezmoi source

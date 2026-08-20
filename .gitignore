@@ -1,5 +1,9 @@
 .lycheecache
 __pycache__/
+.pytest_cache/
+.coverage
+coverage.xml
+coverage/
 key.txt
 .credentials.json
 **/id_rsa*
