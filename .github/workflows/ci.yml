@@ -85,6 +85,18 @@ jobs:
             "https://github.com/SimonKagstrom/kcov/archive/refs/tags/${KCOV_VERSION}.tar.gz"
           echo "${KCOV_SHA256}  /tmp/kcov.tar.gz" | sha256sum --check --strict
           tar -xzf /tmp/kcov.tar.gz -C /tmp
+          # kcov traces bash by setting PS4 to an expansion of ${BASH_SOURCE},
+          # which is unbound inside `bash -c` under `set -u` — the form 40+ of
+          # these tests use to exercise a script's functions, and every one of
+          # them fails on it. SimonKagstrom/kcov#236, still open and unfixed on
+          # master, so the default expansion gets a fallback here. The grep
+          # fails the build if upstream moves the line rather than letting the
+          # sed silently stop applying.
+          helper="/tmp/kcov-${KCOV_VERSION#v}/src/engines/bash-helper.sh"
+          # shellcheck disable=SC2016  # matching kcov's literal $-expansion, not expanding one
+          grep -q '\${BASH_SOURCE}' "$helper"
+          # shellcheck disable=SC2016
+          sed -i 's/\${BASH_SOURCE}/${BASH_SOURCE:-}/' "$helper"
           cmake -S "/tmp/kcov-${KCOV_VERSION#v}" -B /tmp/kcov-build -G Ninja \
             -DCMAKE_BUILD_TYPE=Release -DCMAKE_INSTALL_PREFIX=/usr/local
           cmake --build /tmp/kcov-build --parallel
