@@ -1,0 +1,18 @@
+# pytest and coverage config for the repo's Python. Not a package — there is no
+# [project] table, and every invocation passes `uv run --no-project`, so uv
+# builds a throwaway environment instead of treating the checkout as a project.
+# pytest has no dot-prefixed config file to hide behind the way .ruff.toml does,
+# so .chezmoiignore keeps this one out of $HOME.
+
+[tool.pytest.ini_options]
+# The same three trees `bats --recursive` walks; Python and shell tests sit
+# beside the scripts they exercise.
+testpaths = ["dot_local", "dot_claude", "script"]
+
+[tool.coverage.run]
+# Omit rather than include: a new Python script under test then reports its own
+# coverage without anyone remembering to list it here.
+omit = ["*_test.py"]
+
+[tool.coverage.report]
+exclude_also = ["if __name__ == .__main__.:"]

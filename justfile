@@ -34,9 +34,12 @@ check-bats:
     BATS_LIB_PATH="${BATS_LIB_PATH:+$BATS_LIB_PATH:}$HOME/.local/lib/bats" \
       bats --recursive dot_local dot_claude script
 
-# Python unit tests (zellijstat parsers).
+# Python unit tests (zellijstat parsers) plus the coverage report CI uploads to
+# Codecov. --no-project keeps uv from treating the checkout as a package to
+# build; pyproject.toml here is pytest and coverage config only. bats coverage
+# needs kcov, which is CI-only — like lychee, it isn't a pre-claim sensor.
 check-python:
-    python3 dot_local/bin/zellijstat_test.py
+    uv run --no-project --with pytest,pytest-cov pytest --cov --cov-report=xml --cov-report=term
 
 # Zellij KDL validation (needs zellij on PATH).
 check-zellij:

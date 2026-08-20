@@ -1,10 +1,13 @@
 .lycheecache
 **/__pycache__
 CLAUDE.md
+coverage
+coverage.xml
 docs
 etc
 justfile
 LICENSE
+pyproject.toml
 README.md
 lychee.toml
 renovate.json
