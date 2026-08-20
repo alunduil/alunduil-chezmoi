@@ -40,8 +40,8 @@ jobs:
     timeout-minutes: 10
     permissions:
       contents: read
-      # codecov-action authenticates by OIDC; a public repo then needs no
-      # upload token to store or rotate.
+      # codecov-action authenticates by OIDC, so there is no upload token to
+      # store or rotate.
       id-token: write
     # Versions stay aligned with script/install/bats-libs (the local path);
     # Renovate bumps both together. The action takes them without the tag's
@@ -67,9 +67,8 @@ jobs:
           # bats-action curls api.github.com; auth raises the anonymous rate limit.
           github-token: ${{ secrets.GITHUB_TOKEN }}
 
-      # script/install/kcov builds from source and carries the version pin; the
-      # toolchain it needs is CI-only, so it stays here rather than in
-      # .chezmoidata/packages.yaml.
+      # These build deps serve script/install/kcov alone and never reach a host,
+      # so they stay here rather than in .chezmoidata/packages.yaml.
       - name: Install kcov
         run: |
           sudo apt-get update -qq
@@ -78,12 +77,9 @@ jobs:
           script/install/kcov --bin-dir "$HOME/.local/bin"
           echo "$HOME/.local/bin" >> "$GITHUB_PATH"
 
-      # --include-path names the same three trees bats walks, so the two lists
-      # cannot drift. kcov traces the scripts it runs from the checkout, so
-      # tests that copy their subject to a temp path first (gh_wrapper,
-      # pr_draft_guard) report as uncovered; the flag is informational, so that
-      # under-count costs nothing but is worth knowing before reading the
-      # number as the suite's real reach.
+      # kcov only traces scripts run from the checkout, so tests that copy their
+      # subject to a temp path first (gh_wrapper, pr_draft_guard) report as
+      # uncovered despite being tested.
       - name: Test
         run: |
           kcov --include-path=dot_local,dot_claude,script \
@@ -94,8 +90,8 @@ jobs:
           # so bats_load_library needs it from the action's lib-path output.
           BATS_LIB_PATH: ${{ steps.setup-bats.outputs.lib-path }}
 
-      # kcov names the report directory after the wrapped command and symlinks
-      # it beside the hashed one, so coverage/bats/ is the stable path.
+      # kcov writes to coverage/bats.<hash>/ and symlinks coverage/bats beside
+      # it; the symlink is the only stable path.
       - uses: codecov/codecov-action@fb8b3582c8e4def4969c97caa2f19720cb33a72f # v7.0.0
         with:
           use_oidc: true
@@ -116,9 +112,8 @@ jobs:
         with:
           python-version: '3.x'
 
-      # pytest and pytest-cov stay out of the repo's dependency surface; uv
-      # resolves them into a throwaway environment per run, from the same
-      # version pin the bootstrap uses.
+      # uv supplies pytest and pytest-cov per run, so neither joins the repo's
+      # dependency surface.
       - name: Install uv
         run: |
           script/install/uv --bin-dir "$HOME/.local/bin"
