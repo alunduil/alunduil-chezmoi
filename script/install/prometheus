@@ -2,7 +2,7 @@
 set -euo pipefail
 
 # renovate: datasource=github-releases depName=prometheus/prometheus
-PROMETHEUS_VERSION="v3.13.2"
+PROMETHEUS_VERSION="v3.14.0"
 ARCH="linux-amd64"
 
 # shellcheck source-path=SCRIPTDIR source=lib.sh
