@@ -1,0 +1,140 @@
+---
+name: threat-modeling
+description: Audit, write, or revise a threat model using STRIDE. Use when asked what could go wrong with a system, to threat-model or security-review a design, to enumerate threats against a component or data flow, or to check an existing threat model for coverage gaps. Walks a data flow diagram element by element and pins the threat table as the output artifact.
+---
+
+# Threat modeling
+
+References:
+
+- <https://learn.microsoft.com/en-us/azure/security/develop/threat-modeling-tool-threats> — STRIDE categories.
+- <https://learn.microsoft.com/en-us/azure/security/develop/threat-modeling-tool-getting-started> — the SDL process.
+- <https://learn.microsoft.com/en-us/archive/blogs/larryosterman/threat-modeling-again-what-does-stride-have-to-do-with-threat-modeling> — STRIDE-per-element.
+- <https://learn.microsoft.com/en-us/archive/blogs/larryosterman/threat-modeling-again-stride-mitigations> — mitigation classes.
+
+A threat model answers what an attacker can do to a design, before the
+design ships. STRIDE is the categorisation that turns that open
+question into a finite checklist: for a given design the threats are
+static, so walking every element against the categories that apply to
+it terminates.
+
+Model the software, not the assets. Microsoft dropped asset-centric
+framing because engineers know their design better than they know what
+an attacker wants from it; the element walk finds the same threats
+without the guessing.
+
+## Input
+
+The model is a data flow diagram with trust boundaries drawn. Its
+element list is the enumeration checklist and its element names are the
+threat table's row keys, so the diagram has to exist first — invoke the
+`dfd` skill when it doesn't.
+
+A C4 model is input to drawing that DFD, not a substitute for it: it
+carries no data flows and does not type its elements, so neither the
+checklist nor the coverage check can be derived from it.
+
+Analyse every element. One taken out of scope records the reason next
+to it, because an unexplained gap reads as an oversight later.
+
+## Categories
+
+| Category | Violates | Is |
+| --- | --- | --- |
+| **S**poofing | Authenticity | Using another party's identity — credentials, a signature, an address |
+| **T**ampering | Integrity | Malicious modification of data, at rest or in transit |
+| **R**epudiation | Non-repudiation | Denying an action the system cannot prove happened |
+| **I**nformation disclosure | Confidentiality | Exposure of data to someone not granted access to it |
+| **D**enial of service | Availability | Denying service to valid users |
+| **E**levation of privilege | Authorisation | An unprivileged party gaining privileged access |
+
+## Which apply where
+
+Category by element type — the rest are not threats against that type
+and are not enumerated:
+
+| Element type | Categories |
+| --- | --- |
+| External entity | S, R |
+| Process | S, T, R, I, D, E |
+| Data store | T, R, I, D |
+| Data flow | T, I, D |
+
+An external entity can be a person, so tampering, disclosure, denial of
+service, and elevation of privilege against it are outside the system's
+reach — but a person can be impersonated and can deny having acted.
+Stores and flows are passive, holding no privilege to elevate. A store
+carries repudiation because logs live in stores: flooding one is how a
+repudiation attack succeeds, and one is usually the mitigation.
+
+## Mitigations
+
+Where to start per category, not an exhaustive list:
+
+| Category | Mitigation classes |
+| --- | --- |
+| Spoofing | Authentication — credentials, Kerberos, PKI, IPsec, code signing. Where the caller can bypass the client and call directly, validate the payload server-side instead |
+| Tampering | Digital signatures, message authentication codes, access control on the file or key, validation of what is read back |
+| Repudiation | Secure logs and audit records, paired with strong authentication |
+| Information disclosure | Encryption in transit and at rest, access control |
+| Denial of service | Access control against deletion, filter rules, disk and CPU quotas, high-availability design |
+| Elevation of privilege | Input validation first, then access control and permission checks |
+
+Validation added as a tampering mitigation can itself deny service —
+rejecting corrupt input has to leave the component running.
+
+## Output
+
+`docs/explanation/threat-model-<system>.md`, linking to the DFD file it
+walks. A threat model explains a system, so it is a Diátaxis
+explanation and the `diataxis` skill owns the surrounding prose. It
+stays a separate document from the DFD: the diagram answers how the
+system works, the model answers what can go wrong with it.
+
+One table per DFD level, rows in the diagram's element order:
+
+| Element | Category | Threat | Priority | Mitigation | Status |
+| --- | --- | --- | --- | --- | --- |
+| 1.0 Decrypt secret | Spoofing | Another local process impersonates the caller and requests decryption | High | Socket peer credential check | Mitigated |
+| 1.0 Decrypt secret | Tampering | — | Low | — | Not Applicable |
+| age identity | Information Disclosure | Identity file readable by any process running as the user | High | — | Not Started |
+
+Every applicable element × category pair from *Which apply where* gets a
+row, including the pairs that turn out to be nothing. A dismissed pair
+recorded as `Not Applicable` with its reason in the threat column is
+evidence the category was considered; a missing row is indistinguishable
+from an oversight. Two threats in one category against one element take
+two rows.
+
+Priority is High, Medium, or Low against what the system's owner would
+actually stop to fix — not absolute severity.
+
+Status is one of: `Not Started` (default), `Needs Investigation`,
+`Not Applicable`, `Mitigated`.
+
+Currency: the model matches the DFD, and the DFD matches the system.
+Adding, removing, or retuning an element revisits its rows in the same
+change.
+
+## Procedure
+
+Model:
+
+1. Read the DFD, or draw one with the `dfd` skill. Confirm trust
+   boundaries are drawn — a flow crossing one is where the threats
+   concentrate.
+2. Take each element in diagram order. For each category that applies
+   to its type, ask what an attacker positioned outside the nearest
+   trust boundary could do. Write the row either way.
+3. Rate each threat, then assign a mitigation class and pick the
+   concrete mechanism from it.
+4. Set each status. Anything left `Needs Investigation` names who or
+   what resolves it.
+
+Check:
+
+1. Every element in the DFD appears, or is recorded as out of scope
+   with a reason.
+2. Every element has a row for every category its type carries.
+3. No row is `Mitigated` without a named mechanism.
+4. Element names match the DFD exactly.
