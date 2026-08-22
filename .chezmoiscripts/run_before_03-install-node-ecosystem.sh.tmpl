@@ -44,6 +44,41 @@ log "node: $(node --version) via nvm"
 NPM_CONFIG_PREFIX="$NVM_DIR/versions/node/$(node --version)"
 export NPM_CONFIG_PREFIX
 
+# ------------------------------------------------------- npm global installs
+# nvm owns the runtime, so every package below lands as the only copy on PATH.
+
+# installed_npm_version PACKAGE: prints the globally installed version of
+# PACKAGE, or nothing when it is absent. `npm ls -g` is a local query, no
+# network round-trip. It exits 1 when the package is missing (e.g. a fresh
+# prefix after a node bump), so `|| true` keeps set -e from killing the run
+# before the caller can act on the empty answer.
+installed_npm_version() {
+  npm ls -g --depth=0 --parseable=false "$1" 2>/dev/null |
+    sed -n "s,.*$1@\([0-9][0-9.]*\).*,\1,p" | head -1 || true
+}
+
+# pin_npm_global PACKAGE VERSION: converge PACKAGE on exactly VERSION,
+# replacing any other version already installed so a Renovate bump to the pin
+# takes effect on the next apply. Logs under the package's unscoped name
+# (@readwise/cli -> readwise-cli).
+pin_npm_global() {
+  local package="$1" version="$2" label installed
+  label="${package#@}"
+  label="${label//\//-}"
+  installed="$(installed_npm_version "$package")"
+
+  if [ "$installed" = "$version" ]; then
+    log "$label: $version already installed"
+    return
+  fi
+  if [ -n "$installed" ]; then
+    log "$label: replacing $installed with $version"
+  else
+    log "$label: installing $version"
+  fi
+  npm install -g "$package@$version"
+}
+
 # ---------------------------------------------------------------- Claude Code
 if ! command -v claude >/dev/null 2>&1; then
   log "claude-code: npm install -g @anthropic-ai/claude-code"
@@ -53,80 +88,28 @@ else
 fi
 
 # ----------------------------------------------------------- Readwise CLI
-# Pin enforced (mirrors gh-poi in script 05): if a different version is
-# already installed, npm replaces it so renovate-tracked bumps actually
-# take effect. `npm ls -g` is the local query, no network round-trip. It
-# exits 1 when the package is absent (e.g. fresh prefix after a node bump),
-# so `|| true` keeps set -e from killing the run before the install branch.
 # renovate: datasource=npm depName=@readwise/cli
 READWISE_CLI_VERSION="0.5.9"
-installed="$(npm ls -g --depth=0 --parseable=false @readwise/cli 2>/dev/null |
-  sed -n 's,.*@readwise/cli@\([0-9][0-9.]*\).*,\1,p' | head -1 || true)"
-if [ "$installed" != "$READWISE_CLI_VERSION" ]; then
-  if [ -n "$installed" ]; then
-    log "readwise-cli: replacing $installed with $READWISE_CLI_VERSION"
-  else
-    log "readwise-cli: installing $READWISE_CLI_VERSION"
-  fi
-  npm install -g "@readwise/cli@$READWISE_CLI_VERSION"
-else
-  log "readwise-cli: $READWISE_CLI_VERSION already installed"
-fi
+pin_npm_global "@readwise/cli" "$READWISE_CLI_VERSION"
 
 # --------------------------------------------------------- devcontainers CLI
-# Same pin-enforced replace as readwise-cli above. Backs the global guide's
-# devcontainer-exec helper; nvm owns the runtime so this is the only copy on
-# PATH.
+# Backs the global guide's devcontainer-exec helper.
 # renovate: datasource=npm depName=@devcontainers/cli
 DEVCONTAINER_CLI_VERSION="0.88.0"
-installed="$(npm ls -g --depth=0 --parseable=false @devcontainers/cli 2>/dev/null |
-  sed -n 's,.*@devcontainers/cli@\([0-9][0-9.]*\).*,\1,p' | head -1 || true)"
-if [ "$installed" != "$DEVCONTAINER_CLI_VERSION" ]; then
-  if [ -n "$installed" ]; then
-    log "devcontainers-cli: replacing $installed with $DEVCONTAINER_CLI_VERSION"
-  else
-    log "devcontainers-cli: installing $DEVCONTAINER_CLI_VERSION"
-  fi
-  npm install -g "@devcontainers/cli@$DEVCONTAINER_CLI_VERSION"
-else
-  log "devcontainers-cli: $DEVCONTAINER_CLI_VERSION already installed"
-fi
+pin_npm_global "@devcontainers/cli" "$DEVCONTAINER_CLI_VERSION"
 
 # ---------------------------------------------------------------------- pnpm
-# Backs dev-cache-gc's `pnpm store prune`. Same pin-enforced replace as the
-# CLIs above; nvm owns the runtime so this is the only pnpm on PATH.
+# Backs dev-cache-gc's `pnpm store prune`.
 # renovate: datasource=npm depName=pnpm
 PNPM_VERSION="11.22.0"
-installed="$(npm ls -g --depth=0 --parseable=false pnpm 2>/dev/null |
-  sed -n 's,.*pnpm@\([0-9][0-9.]*\).*,\1,p' | head -1 || true)"
-if [ "$installed" != "$PNPM_VERSION" ]; then
-  if [ -n "$installed" ]; then
-    log "pnpm: replacing $installed with $PNPM_VERSION"
-  else
-    log "pnpm: installing $PNPM_VERSION"
-  fi
-  npm install -g "pnpm@$PNPM_VERSION"
-else
-  log "pnpm: $PNPM_VERSION already installed"
-fi
+pin_npm_global "pnpm" "$PNPM_VERSION"
 
 # -------------------------------------------------------------------- bobbit
 # Browser-driven multi-agent orchestrator; runs its own gateway server and
-# gives each role agent its own git worktree. Same pin-enforced replace as the
-# CLIs above. Requires node >= 22.19, which the pin above clears.
+# gives each role agent its own git worktree. Needs node >= 22.19, which the
+# pin above clears.
 # renovate: datasource=npm depName=bobbit
 BOBBIT_VERSION="0.15.1"
-installed="$(npm ls -g --depth=0 --parseable=false bobbit 2>/dev/null |
-  sed -n 's,.*bobbit@\([0-9][0-9.]*\).*,\1,p' | head -1 || true)"
-if [ "$installed" != "$BOBBIT_VERSION" ]; then
-  if [ -n "$installed" ]; then
-    log "bobbit: replacing $installed with $BOBBIT_VERSION"
-  else
-    log "bobbit: installing $BOBBIT_VERSION"
-  fi
-  npm install -g "bobbit@$BOBBIT_VERSION"
-else
-  log "bobbit: $BOBBIT_VERSION already installed"
-fi
+pin_npm_global "bobbit" "$BOBBIT_VERSION"
 
 log "node ecosystem complete"
