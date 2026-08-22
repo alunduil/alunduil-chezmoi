@@ -1,6 +1,6 @@
 ---
 name: threat-modeling
-description: Audit, write, or revise a threat model using STRIDE. Use when asked what could go wrong with a system, to threat-model or security-review a design, to enumerate threats against a component or data flow, or to check an existing threat model for coverage gaps. Walks a data flow diagram element by element and pins the threat table as the output artifact.
+description: Audit, write, or revise a threat model using STRIDE. Use when asked what could go wrong with a system, to threat-model or security-review a design, to enumerate threats against a component or data flow, or to check an existing threat model for coverage gaps or stale mitigation claims. Walks a data flow diagram element by element, pins the threat table as the output artifact, and makes every row cite the code that makes its claim true.
 ---
 
 # Threat modeling
@@ -88,8 +88,8 @@ Fields:
 
 - **Element** names match the DFD exactly. They are the join between
   the two documents.
-- **Threat** on a dismissed pair carries the reason — the evidence the
-  category got considered.
+- **Threat** on a dismissed pair carries the reason — the record that
+  the category got considered.
 - **Priority** is High, Medium, or Low against what the system's owner
   would actually stop to fix, not absolute severity. A dismissed pair
   carries none.
@@ -98,22 +98,27 @@ Fields:
 - **Status** is `Not Started` (default), `Needs Investigation`,
   `Not Applicable`, or `Mitigated`. `Needs Investigation` names who or
   what resolves it.
+- **Evidence** locates the claim in the system: for `Mitigated`, where
+  the mechanism lives; for `Not Applicable`, what makes it
+  inapplicable. Cite a path and a symbol — line numbers rot on the next
+  edit. A row claiming either status with the cell empty is
+  `Needs Investigation` instead.
 
 Currency:
 
-- The model matches the DFD; `dfd` keeps the DFD matching the system.
-  Adding, removing, or renaming an element revisits its rows in the
-  same change.
+- The model matches the DFD. Adding, removing, or renaming an element
+  revisits its rows in the same change.
+- Moving or deleting cited code revisits every row citing it.
 
 ## Output
 
 One table per DFD level, rows in the diagram's element order:
 
-| Element | Category | Threat | Priority | Mitigation | Status |
-| --- | --- | --- | --- | --- | --- |
-| 1.0 Decrypt secret | Spoofing | Another local process impersonates the caller and requests decryption | High | Socket peer credential check | Mitigated |
-| 1.0 Decrypt secret | Tampering | In-proc call — modifying the flow needs code already running at the caller's privilege | — | — | Not Applicable |
-| age identity | Information Disclosure | Identity file readable by any process running as the user | High | — | Not Started |
+| Element | Category | Threat | Priority | Mitigation | Status | Evidence |
+| --- | --- | --- | --- | --- | --- | --- |
+| 1.0 Decrypt secret | Spoofing | Another local process impersonates the caller and requests decryption | High | Socket peer credential check | Mitigated | `src/ipc.rs`, `verify_peer_uid` |
+| 1.0 Decrypt secret | Tampering | In-proc call — modifying the flow needs code already running at the caller's privilege | — | — | Not Applicable | `src/decrypt.rs`, `decrypt_in_place` |
+| age identity | Information Disclosure | Identity file readable by any process running as the user | High | — | Not Started | — |
 
 ## Location
 
@@ -130,12 +135,21 @@ Model:
 1. Read the DFD, or draw one with the `dfd` skill. Confirm trust
    boundaries are drawn — a flow crossing one is where the threats
    concentrate.
-2. Take each element in diagram order. For each category *Element
+2. Reconcile the diagram against the code before trusting it as a
+   checklist. List the system's entry points, persisted state, and
+   outbound calls, and map each to an element. One that maps to nothing
+   is a missing element, and a missing element is a whole column of
+   threats nobody enumerated — send it back to `dfd`.
+3. Take each element in diagram order. For each category *Element
    types* gives it, ask what an attacker positioned outside the nearest
    trust boundary could do.
-3. Fill the row's fields per *Rules*.
+4. Fill the row's fields per *Rules*, reading the code for each claim.
+   The diagram says what to ask about; only the code says what is true.
 
 Check:
 
 1. Walk *Rules* against the result, coverage first.
 2. Reconcile the element column against the DFD in both directions.
+3. Open every citation and confirm it says what the row claims. One
+   that no longer resolves, or no longer shows the mechanism, reopens
+   the row as `Needs Investigation`.
