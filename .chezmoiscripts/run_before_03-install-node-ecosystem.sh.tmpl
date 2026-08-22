@@ -45,22 +45,18 @@ NPM_CONFIG_PREFIX="$NVM_DIR/versions/node/$(node --version)"
 export NPM_CONFIG_PREFIX
 
 # ------------------------------------------------------- npm global installs
-# nvm owns the runtime, so every package below lands as the only copy on PATH.
-
-# installed_npm_version PACKAGE: prints the globally installed version of
-# PACKAGE, or nothing when it is absent. `npm ls -g` is a local query, no
-# network round-trip. It exits 1 when the package is missing (e.g. a fresh
-# prefix after a node bump), so `|| true` keeps set -e from killing the run
-# before the caller can act on the empty answer.
+# installed_npm_version PACKAGE: prints PACKAGE's installed version, or
+# nothing when absent. `npm ls -g` answers locally, so the guard is cheap
+# enough to run on every apply. It exits 1 on a missing package -- a fresh
+# prefix after a node bump, say -- so `|| true` keeps set -e from aborting.
 installed_npm_version() {
   npm ls -g --depth=0 --parseable=false "$1" 2>/dev/null |
     sed -n "s,.*$1@\([0-9][0-9.]*\).*,\1,p" | head -1 || true
 }
 
-# pin_npm_global PACKAGE VERSION: converge PACKAGE on exactly VERSION,
-# replacing any other version already installed so a Renovate bump to the pin
-# takes effect on the next apply. Logs under the package's unscoped name
-# (@readwise/cli -> readwise-cli).
+# pin_npm_global PACKAGE VERSION: install PACKAGE at exactly VERSION,
+# replacing any other version present so a Renovate bump to the pin takes
+# effect on the next apply.
 pin_npm_global() {
   local package="$1" version="$2" label installed
   label="${package#@}"
@@ -105,9 +101,7 @@ PNPM_VERSION="11.22.0"
 pin_npm_global "pnpm" "$PNPM_VERSION"
 
 # -------------------------------------------------------------------- bobbit
-# Browser-driven multi-agent orchestrator; runs its own gateway server and
-# gives each role agent its own git worktree. Needs node >= 22.19, which the
-# pin above clears.
+# Browser-driven multi-agent orchestrator.
 # renovate: datasource=npm depName=bobbit
 BOBBIT_VERSION="0.15.1"
 pin_npm_global "bobbit" "$BOBBIT_VERSION"
