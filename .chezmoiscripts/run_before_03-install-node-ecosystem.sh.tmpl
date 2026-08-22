@@ -110,4 +110,23 @@ else
   log "pnpm: $PNPM_VERSION already installed"
 fi
 
+# -------------------------------------------------------------------- bobbit
+# Browser-driven multi-agent orchestrator; runs its own gateway server and
+# gives each role agent its own git worktree. Same pin-enforced replace as the
+# CLIs above. Requires node >= 22.19, which the pin above clears.
+# renovate: datasource=npm depName=bobbit
+BOBBIT_VERSION="0.15.1"
+installed="$(npm ls -g --depth=0 --parseable=false bobbit 2>/dev/null |
+  sed -n 's,.*bobbit@\([0-9][0-9.]*\).*,\1,p' | head -1 || true)"
+if [ "$installed" != "$BOBBIT_VERSION" ]; then
+  if [ -n "$installed" ]; then
+    log "bobbit: replacing $installed with $BOBBIT_VERSION"
+  else
+    log "bobbit: installing $BOBBIT_VERSION"
+  fi
+  npm install -g "bobbit@$BOBBIT_VERSION"
+else
+  log "bobbit: $BOBBIT_VERSION already installed"
+fi
+
 log "node ecosystem complete"
