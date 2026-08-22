@@ -18,12 +18,12 @@ signals are not data — leave them out.
 
 Four, and only four:
 
-| Component | Is | Gane–Sarson | Yourdon/DeMarco |
-| --- | --- | --- | --- |
-| External entity | A source or sink outside the system boundary | square | rectangle |
-| Process | Work that transforms input data into output data | rounded rectangle | circle |
-| Data store | Data at rest — a file, table, queue, keyring | open-ended rectangle | two parallel lines |
-| Data flow | Named data moving between the above | labelled arrow | labelled arrow |
+| Component | Is | Gane–Sarson | Yourdon/DeMarco | Mermaid |
+| --- | --- | --- | --- | --- |
+| External entity | A source or sink outside the system boundary | square | rectangle | `E[Name]` |
+| Process | Work that transforms input data into output data | rounded rectangle | circle | `P(1.0 Verb the thing)` |
+| Data store | Data at rest — a file, table, queue, keyring | open-ended rectangle | two parallel lines | `S[(Name)]` |
+| Data flow | Named data moving between the above | labelled arrow | labelled arrow | `A -->\|data name\| B` |
 
 Name every element. Entities and stores take noun phrases, processes
 take verb phrases, flows take the name of the data itself
@@ -44,8 +44,8 @@ above it.
 - **Level 2** — one Level 1 process opened up. Decomposing `2.1` gives
   `2.1.1`.
 
-Stop at the level that answers the question being asked. A process
-whose decomposition would restate itself is already a leaf.
+Stop at the level that answers the question asked, or at a process
+whose decomposition would only restate it.
 
 Pick logical or physical per diagram and hold it: a logical DFD names
 business activities, a physical one names the software, hosts, and
@@ -75,18 +75,17 @@ Balancing:
   have no parent counterpart. Only boundary-crossing flows balance.
 - Renaming a flow at one level renames it at every level it appears.
 
+Currency:
+
+- The diagram matches the system. Update it in the same change that
+  adds, removes, or retunes an element it shows.
+
 ## Output
 
 Mermaid `flowchart`, fenced inline in the markdown document. Renders on
-GitHub with no export step and no tool to install.
-
-| Component | Mermaid |
-| --- | --- |
-| External entity | `E[Name]` |
-| Process | `P(1.0 Verb the thing)` |
-| Data store | `S[(Name)]` |
-| Data flow | `A -->\|data name\| B` |
-| Trust boundary | `subgraph` |
+GitHub with no export step and no tool to install. Classic node shapes
+only — the `A@{ shape: ... }` extended syntax needs a Mermaid version
+the renderer may not have.
 
 ```mermaid
 flowchart LR
@@ -103,12 +102,9 @@ flowchart LR
   decrypt -->|plaintext token| mcp
 ```
 
-Classic node shapes only — the `A@{ shape: ... }` extended syntax
-needs a Mermaid version the renderer may not have.
-
-Trust boundaries are optional and belong on DFDs drawn for security
-work, where crossing one is the finding. One `subgraph` per boundary,
-named for who or what controls that side.
+Trust boundaries are an overlay, not a fifth component. Draw them on
+DFDs for security work, where crossing one is the finding: one
+`subgraph` per boundary, named for who or what controls that side.
 
 ## Location
 
@@ -117,16 +113,17 @@ A DFD explains a system, so it is a Diátaxis explanation — under
 prose. Keep every level of one system's DFD in one file, each level
 under its own heading, so balancing is checkable in a single read.
 
-A DFD is only worth drawing if it stays true. Update it in the same
-change that adds, removes, or retunes an element it shows.
-
 ## Procedure
 
-1. Establish the system boundary: what is inside, and which external
-   entities it exchanges data with. Draw the context diagram first.
+Draw:
+
+1. Fix the system boundary — what is inside, which external entities
+   exchange data with it, and, for security work, which trust
+   boundaries the data crosses. Draw the context diagram.
 2. Decompose to Level 0, then further only where the question needs it.
 3. Name every element and every flow.
-4. Check each process for black holes, miracles, and grey holes; check
-   each flow for a process at one end of any store or entity pair.
-5. Balance each child diagram against its parent's flow set.
-6. Add trust boundaries when the diagram is for security work.
+
+Check:
+
+1. Walk *Rules* against the result, drawing rules first.
+2. Balance each child diagram against its parent's flow set.
