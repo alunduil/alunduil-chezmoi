@@ -18,10 +18,9 @@ question into a finite checklist: for a given design the threats are
 static, so walking every element against the categories that apply to
 it terminates.
 
-Model the software, not the assets. Microsoft dropped asset-centric
-framing because engineers know their design better than they know what
-an attacker wants from it; the element walk finds the same threats
-without the guessing.
+Work from the design. Engineers know their own system better than they
+know what an attacker wants from it, and the element walk reaches the
+same threats without that guess.
 
 ## Input
 
@@ -30,9 +29,9 @@ element list is the enumeration checklist and its element names are the
 threat table's row keys, so the diagram has to exist first — invoke the
 `dfd` skill when it doesn't.
 
-A C4 model is input to drawing that DFD, not a substitute for it: it
-carries no data flows and does not type its elements, so neither the
-checklist nor the coverage check can be derived from it.
+A C4 model feeds drawing that DFD. It carries no data flows and does
+not type its elements, so the checklist and the coverage check both
+come from the DFD.
 
 ## Categories
 
@@ -47,8 +46,7 @@ checklist nor the coverage check can be derived from it.
 
 ## Element types
 
-Which categories a DFD element is subject to. The rest are not threats
-against that type:
+Which categories a DFD element is subject to. Enumerate these and stop:
 
 | Element type | Categories |
 | --- | --- |
@@ -57,16 +55,15 @@ against that type:
 | Data store | T, R, I, D |
 | Data flow | T, I, D |
 
-An external entity can be a person, so tampering, disclosure, denial of
-service, and elevation of privilege against it are outside the system's
-reach — but a person can be impersonated and can deny having acted.
-Stores and flows are passive, holding no privilege to elevate. A store
+An external entity can be a person: impersonate one and they can deny
+having acted, while the rest lies outside the system's reach. Stores
+and flows are passive, holding no privilege to elevate. A store
 carries repudiation because logs live in stores: flooding one is how a
 repudiation attack succeeds, and one is usually the mitigation.
 
 ## Mitigations
 
-Where to start per category, not an exhaustive list:
+Where to start per category:
 
 | Category | Mitigation classes |
 | --- | --- |
@@ -84,8 +81,8 @@ rejecting corrupt input has to leave the component running.
 
 Coverage:
 
-- Every element in the DFD is analysed. One held out of scope records
-  why, next to the others.
+- Analyse every element in the DFD. One held out of scope records why,
+  in the same table.
 - Every element × category pair from *Element types* gets a row,
   including the pairs that turn out to be nothing. A missing row is
   indistinguishable from an oversight.
@@ -95,22 +92,22 @@ Fields:
 
 - **Element** names match the DFD exactly. They are the join between
   the two documents.
-- **Threat** on a dismissed pair carries the reason it was dismissed.
-  That reason is the evidence the category was considered.
+- **Threat** on a dismissed pair carries the reason — the evidence the
+  category got considered.
 - **Priority** is High, Medium, or Low against what the system's owner
   would actually stop to fix, not absolute severity. A dismissed pair
   carries none.
 - **Mitigation** is the concrete mechanism, chosen from the class in
-  *Mitigations*. `Mitigated` without one is not mitigated.
+  *Mitigations*. `Mitigated` requires one.
 - **Status** is `Not Started` (default), `Needs Investigation`,
   `Not Applicable`, or `Mitigated`. `Needs Investigation` names who or
   what resolves it.
 
 Currency:
 
-- The model matches the DFD, which the `dfd` skill keeps matching the
-  system. Adding, removing, or renaming an element revisits its rows in
-  the same change.
+- The model matches the DFD; `dfd` keeps the DFD matching the system.
+  Adding, removing, or renaming an element revisits its rows in the
+  same change.
 
 ## Output
 
@@ -140,7 +137,7 @@ Model:
 2. Take each element in diagram order. For each category *Element
    types* gives it, ask what an attacker positioned outside the nearest
    trust boundary could do.
-3. Fill the row's fields per *Rules*, writing the row either way.
+3. Fill the row's fields per *Rules*.
 
 Check:
 
