@@ -116,8 +116,12 @@ Draw:
 1. Fix the system boundary — what is inside, which external entities
    exchange data with it, and, for security work, which trust
    boundaries the data crosses. Draw the context diagram.
-2. Decompose to Level 0, then further only where the question needs it.
-3. Name every element and every flow.
+2. List what each process consumes and produces before drawing its
+   flows. A process whose two lists you can't complete is the wrong
+   process, or sits on the wrong side of the boundary.
+3. Decompose to Level 0, then further only where the question needs
+   it, repeating step 2 at each level.
+4. Name every element and every flow.
 
 Check:
 
