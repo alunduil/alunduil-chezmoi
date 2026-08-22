@@ -1,6 +1,6 @@
 ---
 name: dfd
-description: Audit, write, or revise a data flow diagram (DFD). Use when asked to draw or model how data moves through a system, when standing up a DFD with trust boundaries for threat modeling or security review, or when checking an existing DFD for drawing and balancing errors. Pins Mermaid `flowchart` as the output notation and enforces the drawing rules — every process consumes and produces, data moves only through processes, each child diagram balances its parent.
+description: Audit, write, or revise a data flow diagram (DFD). Use when asked to draw or model how data moves through a system, when standing up a DFD with trust boundaries for threat modeling or security review, or when checking an existing DFD for drawing and balancing errors. Pins Mermaid `flowchart` as the output notation and the correctness rules a DFD must satisfy.
 ---
 
 # DFD
@@ -31,35 +31,32 @@ take verb phrases, flows take the name of the data itself
 
 ## Levels
 
-Four names, in order. Each level decomposes one process from the one
-above it.
+Each level decomposes one process from the level above.
 
 - **Context** — the whole system as a single process numbered `0`,
   surrounded by every external entity it exchanges data with. No data
   stores; internal storage is inside the system.
 - **Level 0** — process `0` opened up into its major processes,
   numbered `1.0`, `2.0`, `3.0`. Data stores appear here first.
-- **Level 1** — one Level 0 process opened up. Decomposing `2.0` gives
-  `2.1`, `2.2`.
-- **Level 2** — one Level 1 process opened up. Decomposing `2.1` gives
-  `2.1.1`.
+- **Level 1 onward** — one process from the level above opened up,
+  numbered beneath it. Decomposing `2.0` gives `2.1`, `2.2`;
+  decomposing `2.1` gives `2.1.1`.
 
 Stop at the level that answers the question asked, or at a process
 whose decomposition would only restate it.
 
 Pick logical or physical per diagram and hold it: a logical DFD names
 business activities, a physical one names the software, hosts, and
-files doing the work. Mixing them within one level is the usual reason
-a DFD stops being readable.
+files doing the work.
 
 ## Rules
 
 Drawing:
 
-- Every process has at least one input flow and at least one output
-  flow. Input only is a *black hole*, output only is a *miracle*, and
-  outputs the inputs can't account for is a *grey hole*. All three are
-  a missing flow or a wrong boundary.
+- Every process consumes and produces, and its inputs account for its
+  outputs. Input with no output is a *black hole*, output with no input
+  a *miracle*, output the inputs can't account for a *grey hole*. Each
+  is a missing flow or a wrong boundary.
 - Data flows through a process. Store-to-store, entity-to-entity, and
   entity-to-store flows all need a process between them, because
   stores and entities are passive.
@@ -69,10 +66,9 @@ Drawing:
 Balancing:
 
 - A child diagram's inflows and outflows match its parent process's
-  exactly — same set, same names. An extra or missing flow at the
-  child is the defect balancing exists to catch.
-- Flows internal to the decomposition are new at the child level and
-  have no parent counterpart. Only boundary-crossing flows balance.
+  exactly — same set, same names.
+- Only boundary-crossing flows balance; flows internal to the
+  decomposition are new at the child level.
 - Renaming a flow at one level renames it at every level it appears.
 
 Currency:
