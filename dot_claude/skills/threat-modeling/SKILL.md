@@ -29,10 +29,6 @@ element list is the enumeration checklist and its element names are the
 threat table's row keys, so the diagram has to exist first — invoke the
 `dfd` skill when it doesn't.
 
-A C4 model feeds drawing that DFD. It carries no data flows and does
-not type its elements, so the checklist and the coverage check both
-come from the DFD.
-
 ## Categories
 
 | Category | Violates | Is |
