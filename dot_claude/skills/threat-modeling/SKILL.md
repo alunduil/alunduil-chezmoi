@@ -34,9 +34,6 @@ A C4 model is input to drawing that DFD, not a substitute for it: it
 carries no data flows and does not type its elements, so neither the
 checklist nor the coverage check can be derived from it.
 
-Analyse every element. One taken out of scope records the reason next
-to it, because an unexplained gap reads as an oversight later.
-
 ## Categories
 
 | Category | Violates | Is |
@@ -48,10 +45,10 @@ to it, because an unexplained gap reads as an oversight later.
 | **D**enial of service | Availability | Denying service to valid users |
 | **E**levation of privilege | Authorisation | An unprivileged party gaining privileged access |
 
-## Which apply where
+## Element types
 
-Category by element type — the rest are not threats against that type
-and are not enumerated:
+Which categories a DFD element is subject to. The rest are not threats
+against that type:
 
 | Element type | Categories |
 | --- | --- |
@@ -83,38 +80,55 @@ Where to start per category, not an exhaustive list:
 Validation added as a tampering mitigation can itself deny service —
 rejecting corrupt input has to leave the component running.
 
-## Output
+## Rules
 
-`docs/explanation/threat-model-<system>.md`, linking to the DFD file it
-walks. A threat model explains a system, so it is a Diátaxis
-explanation and the `diataxis` skill owns the surrounding prose. It
-stays a separate document from the DFD: the diagram answers how the
-system works, the model answers what can go wrong with it.
+Coverage:
+
+- Every element in the DFD is analysed. One held out of scope records
+  why, next to the others.
+- Every element × category pair from *Element types* gets a row,
+  including the pairs that turn out to be nothing. A missing row is
+  indistinguishable from an oversight.
+- Two threats in one category against one element take two rows.
+
+Fields:
+
+- **Element** names match the DFD exactly. They are the join between
+  the two documents.
+- **Threat** on a dismissed pair carries the reason it was dismissed.
+  That reason is the evidence the category was considered.
+- **Priority** is High, Medium, or Low against what the system's owner
+  would actually stop to fix, not absolute severity. A dismissed pair
+  carries none.
+- **Mitigation** is the concrete mechanism, chosen from the class in
+  *Mitigations*. `Mitigated` without one is not mitigated.
+- **Status** is `Not Started` (default), `Needs Investigation`,
+  `Not Applicable`, or `Mitigated`. `Needs Investigation` names who or
+  what resolves it.
+
+Currency:
+
+- The model matches the DFD, which the `dfd` skill keeps matching the
+  system. Adding, removing, or renaming an element revisits its rows in
+  the same change.
+
+## Output
 
 One table per DFD level, rows in the diagram's element order:
 
 | Element | Category | Threat | Priority | Mitigation | Status |
 | --- | --- | --- | --- | --- | --- |
 | 1.0 Decrypt secret | Spoofing | Another local process impersonates the caller and requests decryption | High | Socket peer credential check | Mitigated |
-| 1.0 Decrypt secret | Tampering | — | Low | — | Not Applicable |
+| 1.0 Decrypt secret | Tampering | In-proc call — modifying the flow needs code already running at the caller's privilege | — | — | Not Applicable |
 | age identity | Information Disclosure | Identity file readable by any process running as the user | High | — | Not Started |
 
-Every applicable element × category pair from *Which apply where* gets a
-row, including the pairs that turn out to be nothing. A dismissed pair
-recorded as `Not Applicable` with its reason in the threat column is
-evidence the category was considered; a missing row is indistinguishable
-from an oversight. Two threats in one category against one element take
-two rows.
+## Location
 
-Priority is High, Medium, or Low against what the system's owner would
-actually stop to fix — not absolute severity.
-
-Status is one of: `Not Started` (default), `Needs Investigation`,
-`Not Applicable`, `Mitigated`.
-
-Currency: the model matches the DFD, and the DFD matches the system.
-Adding, removing, or retuning an element revisits its rows in the same
-change.
+`docs/explanation/threat-model-<system>.md`, linking to the DFD file it
+walks. A threat model explains a system, so it is a Diátaxis
+explanation and the `diataxis` skill owns the surrounding prose. It
+stays a separate document from the DFD: the diagram answers how the
+system works, the model answers what can go wrong with it.
 
 ## Procedure
 
@@ -123,18 +137,12 @@ Model:
 1. Read the DFD, or draw one with the `dfd` skill. Confirm trust
    boundaries are drawn — a flow crossing one is where the threats
    concentrate.
-2. Take each element in diagram order. For each category that applies
-   to its type, ask what an attacker positioned outside the nearest
-   trust boundary could do. Write the row either way.
-3. Rate each threat, then assign a mitigation class and pick the
-   concrete mechanism from it.
-4. Set each status. Anything left `Needs Investigation` names who or
-   what resolves it.
+2. Take each element in diagram order. For each category *Element
+   types* gives it, ask what an attacker positioned outside the nearest
+   trust boundary could do.
+3. Fill the row's fields per *Rules*, writing the row either way.
 
 Check:
 
-1. Every element in the DFD appears, or is recorded as out of scope
-   with a reason.
-2. Every element has a row for every category its type carries.
-3. No row is `Mitigated` without a named mechanism.
-4. Element names match the DFD exactly.
+1. Walk *Rules* against the result, coverage first.
+2. Reconcile the element column against the DFD in both directions.
