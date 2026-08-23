@@ -17,7 +17,7 @@ beside it.
 # REST reads — see ~/.claude/CLAUDE.md "GitHub API budget".
 gh api repos/:owner/:repo/pulls/<N> \
   --jq '{title, draft, body, base: .base.ref, user: .user.login}'
-gh pr diff <N>                                              # the subject
+gh pr diff <N>
 gh api repos/:owner/:repo/pulls/<N>/commits --jq '.[].commit.message'
 ```
 
@@ -30,7 +30,7 @@ Find what the repo already enforces before reading a line of the diff.
 ```bash
 ls .pre-commit-config.yaml .vale.ini Justfile justfile Makefile 2>/dev/null
 ls .github/workflows/
-cat CLAUDE.md CONTRIBUTING.md 2>/dev/null   # the repo's stated conventions
+cat CLAUDE.md CONTRIBUTING.md 2>/dev/null
 gh api repos/:owner/:repo/commits/<head-sha>/check-runs \
   --jq '.check_runs[] | select(.conclusion != "success") | {name, conclusion}'
 ```
@@ -49,9 +49,9 @@ directions:
 - The repo lacks that sensor → it moves in. An unformatted repo needs a
   human to notice the formatting.
 
-## Sections
+## The bar
 
-Each names the sensor's half, then yours.
+Each item names the sensor's half, then yours.
 
 **Correctness** — Sensors run the tests; they can't say these are the
 right tests. New behaviour carries a test that fails without the
@@ -63,8 +63,8 @@ an omitted optional argument, a failure partway through.
 **Secrets** — The scanner catches what looks like a key. Catch what
 doesn't: a token, endpoint, or hostname reading as ordinary config; a
 file that should be `private_` or age-encrypted and isn't; a committed
-pointer to where a secret lives (`token in ~/.config/foo/token`), bait
-for whatever reads the repo next.
+pointer to where a secret lives (`token in ~/.config/foo/token`),
+prompt-injection bait for whatever reads the repo next.
 
 **Inline suppressions** — The hooks already force a scoped code and
 reject a blanket ignore. Each new `# type: ignore[code]`, `# nosec`,
@@ -92,11 +92,10 @@ Subjects follow the repo's convention: Conventional Commits where
 `git log` shows them, its house format otherwise. A PR we opened is
 still a draft — promoting it is the user's act.
 
-**Test plan** — No sensor asserts a test plan exists; this section is
-entirely yours. The PR states how the change was verified, past tense
-and concrete enough that the reviewer can run it and see the claimed
-result. "Tested manually" is not one. An unverified item belongs in
-Gotchas instead.
+**Test plan** — No sensor asserts a test plan exists. The PR states how
+the change was verified, past tense and concrete enough that the
+reviewer can run it and see the claimed result. "Tested manually" is
+not one. An unverified item belongs in Gotchas instead.
 
 ## Findings
 
@@ -108,13 +107,13 @@ Gotchas instead.
   review, not a new comment — written in the `~/.claude/voice.md`
   register. Show the text and post only once the user approves; a
   review is shared state.
-- Findings only. Sections that come out clean get one line naming
-  them. Each finding carries the file and line, what's wrong, and what
-  would fix it. Uncertain → say so and ask, rather than assert.
+- Findings only. Items that come out clean get one line naming them.
+  Each finding carries the file and line, what's wrong, and what would
+  fix it. Uncertain → say so and ask.
 
 ## Procedure
 
 1. Read the PR's metadata, commits, and diff.
 2. Discover; red CI → report that and stop.
-3. Walk the sections against the diff, applying *Scope* to each.
+3. Walk *The bar* against the diff, applying *Scope* to each item.
 4. Report per *Findings*.
