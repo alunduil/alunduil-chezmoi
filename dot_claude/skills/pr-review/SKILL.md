@@ -7,10 +7,9 @@ description: Review a pull request's diff against the cross-repo judgment bar �
 
 The repo's sensors already assert what a machine can. This review is
 the residue: whether the change is *right*, not whether it is clean.
-Read the diff — the tree is context, not the subject.
-
-`/code-review` hunts bugs and cleanups in the same diff. This is the
-judgment pass beside it.
+Read the diff — the tree is context, not the subject. `/code-review`
+hunts bugs and cleanups in the same diff; this is the judgment pass
+beside it.
 
 ## Input
 
@@ -24,7 +23,7 @@ gh api repos/:owner/:repo/pulls/<N>/commits --jq '.[].commit.message'
 
 No PR open yet → `git log --patch main..HEAD` reviews the same change.
 
-## Precondition: sensors green
+## Discover
 
 Find what the repo already enforces before reading a line of the diff.
 
@@ -36,13 +35,19 @@ gh api repos/:owner/:repo/commits/<head-sha>/check-runs \
   --jq '.check_runs[] | select(.conclusion != "success") | {name, conclusion}'
 ```
 
-- Red CI is the finding. Report it and stop — restating a sensor's
-  output as review prose tells the author nothing new.
-- Every item a discovered sensor asserts drops out of the sections
-  below. `shellcheck` owns quoting, the type checker owns annotations,
-  `detect-private-key` owns anything key-shaped.
-- The reverse also holds: a check the repo *lacks* moves into scope.
-  An unformatted repo needs a human to notice the formatting.
+Red CI is the finding. Report it and stop — restating a sensor's output
+as review prose tells the author nothing new.
+
+## Scope
+
+What the discovered sensors assert draws the review's boundary, in both
+directions:
+
+- A sensor covers it → it drops out. `shellcheck` owns quoting, the
+  type checker owns annotations, `detect-private-key` owns anything
+  key-shaped.
+- The repo lacks that sensor → it moves in. An unformatted repo needs a
+  human to notice the formatting.
 
 ## Sections
 
@@ -66,34 +71,38 @@ reject a blanket ignore. Each new `# type: ignore[code]`, `# nosec`,
 `# noqa`, or `pylint: disable` says *why* the suppression can't be
 avoided, in a form still true to a stranger in 18 months.
 
-**Match the repo, don't impose** — Typing, logging, subprocess, and
-error handling follow the module the change lands in and whatever the
+**Match the repo, don't impose** — Formatters settle layout; nothing
+asserts a change fits the module it lands in. Typing, logging,
+subprocess, and error handling follow that module and whatever the
 repo's `CLAUDE.md` or `CONTRIBUTING.md` state. Read a neighbouring file
 before calling a pattern wrong. A finding names the existing pattern
 the change departs from; "the repo hasn't adopted X" is a separate
 issue to file, not a demand on this PR.
 
-**Docs** — A user-visible change updates the README, the `--help` or
-usage text, and whatever under `docs/` a reader lands on. Rationale a
-reader can't infer from the code belongs in the repo, not only in the
-PR body. New prose under `docs/` sits in one Diátaxis mode — the
-`diataxis` skill owns that call.
+**Docs** — Prose linters and link checkers own mechanics; nothing
+asserts the doc exists. A user-visible change updates the README, the
+`--help` or usage text, and whatever under `docs/` a reader lands on.
+Rationale a reader can't infer from the code belongs in the repo, not
+only in the PR body. New prose under `docs/` sits in one Diátaxis
+mode — the `diataxis` skill owns that call.
 
-**Commits and PR** — Subjects follow the repo's convention:
-Conventional Commits where `git log` shows them, its house format
-otherwise. The body says why, not what. A PR we opened is still a
-draft — promoting it is the user's act, not the author's.
+**Commits and PR** — A commit-message hook owns subject grammar where
+the repo runs one; nothing asserts the body says why rather than what.
+Subjects follow the repo's convention: Conventional Commits where
+`git log` shows them, its house format otherwise. A PR we opened is
+still a draft — promoting it is the user's act.
 
-**Test plan** — The PR states how the change was verified, past tense
+**Test plan** — No sensor asserts a test plan exists; this section is
+entirely yours. The PR states how the change was verified, past tense
 and concrete enough that the reviewer can run it and see the claimed
 result. "Tested manually" is not one. An unverified item belongs in
 Gotchas instead.
 
 ## Findings
 
-- **A repo the user owns → chat.** Per `~/.claude/CLAUDE.md` a new
-  comment on a PR we're working is off the table; the author carries
-  fixes into the branch and regenerates the description.
+- **A repo the user owns → chat**, per `~/.claude/CLAUDE.md` "Pull
+  requests". The author carries fixes into the branch and regenerates
+  the description.
 - **Someone else's PR → propose a GitHub review.**
   `mcp__github__pull_request_review_write` with inline comments — a
   review, not a new comment — written in the `~/.claude/voice.md`
@@ -106,8 +115,6 @@ Gotchas instead.
 ## Procedure
 
 1. Read the PR's metadata, commits, and diff.
-2. Discover the repo's sensors and stated conventions, and check CI.
-   Red → report that and stop.
-3. Walk the sections against the diff, dropping every item a
-   discovered sensor already asserts.
+2. Discover; red CI → report that and stop.
+3. Walk the sections against the diff, applying *Scope* to each.
 4. Report per *Findings*.
