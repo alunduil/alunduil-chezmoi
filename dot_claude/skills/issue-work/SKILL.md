@@ -7,20 +7,24 @@ description: Pick up an existing GitHub issue in the checked-out repo — implem
 
 ## Inspect
 
-```bash
-# REST reads — see ~/.claude/CLAUDE.md "GitHub API budget".
-gh api repos/:owner/:repo/issues/<N> \
-  --jq '{title, body, milestone: .milestone.title}'         # body + milestone
-gh api repos/:owner/:repo/issues/<N>/comments --jq '.[].body'  # comments
-gh issue develop <N> --list                                 # linked branches (no REST equivalent, one call/pickup)
-gh search prs "(<N> in:body) OR (<keywords> in:title,body)" \
-  --repo <owner>/<repo> --state all --limit 20 \
-  --json number,title,state,url
-# open → in-flight PR (takeover candidate); merged → scope already covered, even if unlinked
+`mcp__github__issue_read` (`method: get`) returns `closed_by_pull_requests`: the PRs declaring `Closes #N`, fork PRs included, each resolved to `OPEN`/`CLOSED`/`MERGED`. An open one is a takeover candidate. `references` holds at most five, so a `total_count` above that means the list is partial. The same call carries the body, milestone, and labels.
 
-# Milestone gate: issue's milestone (above) vs the current (lowest-version open) one
+Comments need a second call, `method: get_comments`.
+
+Unlinked work takes `mcp__github__search_pull_requests`, one call per field — joining them with `OR` drops a clause and reports no match:
+
+- `repo:<owner>/<repo> <N> in:body`
+- `repo:<owner>/<repo> <keywords> in:title,body`
+
+Ask for `fields: [number, title, state, pull_request]`. `state` reads `closed` on a merged PR, so `pull_request.merged_at` is what separates merged (scope already covered) from abandoned.
+
+Two lookups have no MCP equivalent:
+
+```bash
+gh issue develop <N> --list   # develop-flow branches
+
+# Milestone gate: the issue's milestone vs the current (lowest-version open) one
 gh api repos/:owner/:repo/milestones --jq '.[].title' | sort -V | head -1
-# none or current → fine to work; a different (later) milestone → no-go
 ```
 
 For recent commits in the area:
@@ -49,6 +53,8 @@ Any one fires a go/no-go before writing code:
 - The issue is parked on a *later* milestone (not the current, lowest-version open one). Deferred work — don't pull it forward. No milestone or the current milestone is fine to work.
 - Repro fails on the default branch.
 - The issue lacks enough detail to start without guessing.
+
+An empty result counts as "no PR" only when the lookup succeeded; re-run one that errored.
 
 ## Go/no-go format
 
