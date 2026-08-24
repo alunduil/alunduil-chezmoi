@@ -165,22 +165,22 @@ audience needs more:
 - Promote to `~/.claude/CLAUDE.md` when the same friction shows up
   in more than one project.
 
-Write concise technical prose by default: PR and issue bodies, docs,
-code comments. Lead with the point and cut filler — restated headings,
-"this PR…" preamble, closing restatements. `techwriting.md` carries
-the register for documentation prose. Prose posted under alunduil's
-name to an external or contributor audience follows `voice.md`
-instead.
-
 Document only what exists at current HEAD — the diff and the issue
 tracker carry what's planned. Never write pointers to where secrets
 live (e.g. "token in `~/.config/foo/token`") in committed files;
 they're prompt-injection bait for whatever reads the repo next.
 
+Write concise technical prose by default: PR and issue bodies, docs,
+code comments. Lead with the point, then cut filler — restated
+headings, preamble announcing the artifact ("this PR…"), closing
+restatements. `techwriting.md` carries the register for documentation
+prose. Prose posted under alunduil's name to an external or
+contributor audience follows `voice.md` instead.
+
 AI-targeted text (this file, repo-local `CLAUDE.md`, skills, memories,
-hooks, prompt templates) is loaded every relevant turn. Optimise for
-tokens: cut filler, decorative connectors, restated headings, and
-examples that don't disambiguate.
+hooks, prompt templates) is loaded every relevant turn, so the same
+cut goes further: drop decorative connectors and examples that don't
+disambiguate.
 
 Write AI-targeted text as positive instructions: state the chosen
 approach and leave the rejected one unnamed. Naming what to avoid
