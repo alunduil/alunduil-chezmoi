@@ -17,11 +17,10 @@ gh api repos/:owner/:repo/issues/<N>/comments --jq '.[].body'  # comments
 # `Closes #N` shows up with no search-index dependency.
 gh api repos/:owner/:repo/issues/<N>/timeline --paginate \
   --jq '.[] | select(.event == "cross-referenced" or .event == "connected")
-        | {num: .source.issue.number,
+        | {number: .source.issue.number,
            is_pr: (.source.issue.pull_request != null),
-           state: .source.issue.state,
-           merged: (.source.issue.pull_request.merged_at != null)}'
-# .state reports `closed` for a merged PR; read .merged for the distinction.
+           status: (if .source.issue.pull_request.merged_at
+                    then "merged" else .source.issue.state end)}'
 gh issue develop <N> --list             # develop-flow branches (no REST equivalent)
 
 # Unlinked work — two searches, since --match scopes the whole query.
