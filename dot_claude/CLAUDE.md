@@ -172,15 +172,14 @@ they're prompt-injection bait for whatever reads the repo next.
 
 Write concise technical prose by default: PR and issue bodies, docs,
 code comments. Lead with the point, then cut filler — restated
-headings, preamble announcing the artifact ("this PR…"), closing
-restatements. `techwriting.md` carries the register for documentation
-prose. Prose posted under alunduil's name to an external or
-contributor audience follows `voice.md` instead.
+headings, "this PR…"-style preamble, closing restatements.
+`techwriting.md` carries the register for documentation prose. Prose
+posted under alunduil's name to an external or contributor audience
+follows `voice.md` instead.
 
 AI-targeted text (this file, repo-local `CLAUDE.md`, skills, memories,
-hooks, prompt templates) is loaded every relevant turn, so the same
-cut goes further: drop decorative connectors and examples that don't
-disambiguate.
+hooks, prompt templates) is loaded every relevant turn, so it also
+drops decorative connectors and examples that don't disambiguate.
 
 Write AI-targeted text as positive instructions: state the chosen
 approach and leave the rejected one unnamed. Naming what to avoid
