@@ -25,7 +25,6 @@ gh issue develop <N> --list   # develop-flow branches
 
 # Milestone gate: the issue's milestone vs the current (lowest-version open) one
 gh api repos/:owner/:repo/milestones --jq '.[].title' | sort -V | head -1
-# none or current → fine to work; a different (later) milestone → no-go
 ```
 
 For recent commits in the area:
