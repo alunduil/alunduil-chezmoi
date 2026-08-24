@@ -7,29 +7,23 @@ description: Pick up an existing GitHub issue in the checked-out repo — implem
 
 ## Inspect
 
+`mcp__github__issue_read` (`method: get`) carries the body, milestone, labels, and `closed_by_pull_requests` in one call. Those are the PRs declaring `Closes #N`, each with `OPEN`/`CLOSED`/`MERGED`, and a fork PR appears among them. An open one is a takeover candidate. `references` lists at most five, so a larger `total_count` is truncated.
+
+`method: get_comments` on the same tool reads the comments.
+
+Unlinked work takes `mcp__github__search_pull_requests`, one call per field — joining them with `OR` drops a clause and reports no match:
+
+- `repo:<owner>/<repo> <N> in:body`
+- `repo:<owner>/<repo> <keywords> in:title,body`
+
+Ask for `fields: [number, title, state, pull_request]`. `state` reads `closed` on a merged PR, so `pull_request.merged_at` is what separates merged (scope already covered) from abandoned.
+
+Two lookups have no MCP equivalent:
+
 ```bash
-# REST reads — see ~/.claude/CLAUDE.md "GitHub API budget".
-gh api repos/:owner/:repo/issues/<N> \
-  --jq '{title, body, milestone: .milestone.title}'         # body + milestone
-gh api repos/:owner/:repo/issues/<N>/comments --jq '.[].body'  # comments
+gh issue develop <N> --list   # develop-flow branches
 
-# Attached PRs, including a fork PR whose only link is `Closes #N` in its body.
-gh api repos/:owner/:repo/issues/<N>/timeline --paginate \
-  --jq '.[] | select(.event == "cross-referenced" or .event == "connected")
-        | {number: .source.issue.number,
-           is_pr: (.source.issue.pull_request != null),
-           status: (if .source.issue.pull_request.merged_at
-                    then "merged" else .source.issue.state end)}'
-gh issue develop <N> --list             # develop-flow branches (no REST equivalent)
-
-# Unlinked work — `--match` applies to the whole query, so one search per field.
-gh search prs "<N>" --repo <owner>/<repo> --match body \
-  --limit 20 --json number,title,state,url
-gh search prs "<keywords>" --repo <owner>/<repo> --match title,body \
-  --limit 20 --json number,title,state,url
-# open → in-flight PR (takeover candidate); merged → scope already covered, even if unlinked
-
-# Milestone gate: issue's milestone (above) vs the current (lowest-version open) one
+# Milestone gate: the issue's milestone vs the current (lowest-version open) one
 gh api repos/:owner/:repo/milestones --jq '.[].title' | sort -V | head -1
 # none or current → fine to work; a different (later) milestone → no-go
 ```
@@ -61,7 +55,7 @@ Any one fires a go/no-go before writing code:
 - Repro fails on the default branch.
 - The issue lacks enough detail to start without guessing.
 
-Empty inspect output counts as "no PR" only when the command exited 0; re-run a lookup that errored.
+An empty result counts as "no PR" only when the lookup succeeded; re-run one that errored.
 
 ## Go/no-go format
 
