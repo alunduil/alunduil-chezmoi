@@ -7,9 +7,9 @@ description: Pick up an existing GitHub issue in the checked-out repo — implem
 
 ## Inspect
 
-`mcp__github__issue_read` (`method: get`) carries the body, milestone, labels, and `closed_by_pull_requests` in one call. Those are the PRs declaring `Closes #N`, each with `OPEN`/`CLOSED`/`MERGED`, and a fork PR appears among them. An open one is a takeover candidate. `references` lists at most five, so a larger `total_count` is truncated.
+`mcp__github__issue_read` (`method: get`) returns `closed_by_pull_requests`: the PRs declaring `Closes #N`, fork PRs included, each resolved to `OPEN`/`CLOSED`/`MERGED`. An open one is a takeover candidate. `references` holds at most five, so a `total_count` above that means the list is partial. The same call carries the body, milestone, and labels.
 
-`method: get_comments` on the same tool reads the comments.
+Comments need a second call, `method: get_comments`.
 
 Unlinked work takes `mcp__github__search_pull_requests`, one call per field — joining them with `OR` drops a clause and reports no match:
 
