@@ -12,10 +12,23 @@ description: Pick up an existing GitHub issue in the checked-out repo — implem
 gh api repos/:owner/:repo/issues/<N> \
   --jq '{title, body, milestone: .milestone.title}'         # body + milestone
 gh api repos/:owner/:repo/issues/<N>/comments --jq '.[].body'  # comments
-gh issue develop <N> --list                                 # linked branches (no REST equivalent, one call/pickup)
-gh search prs "(<N> in:body) OR (<keywords> in:title,body)" \
-  --repo <owner>/<repo> --state all --limit 20 \
-  --json number,title,state,url
+
+# Attached PRs — the Development panel's own data, so a fork PR carrying
+# `Closes #N` shows up with no search-index dependency.
+gh api repos/:owner/:repo/issues/<N>/timeline --paginate \
+  --jq '.[] | select(.event == "cross-referenced" or .event == "connected")
+        | {num: .source.issue.number,
+           is_pr: (.source.issue.pull_request != null),
+           state: .source.issue.state,
+           merged: (.source.issue.pull_request.merged_at != null)}'
+# .state reports `closed` for a merged PR; read .merged for the distinction.
+gh issue develop <N> --list             # develop-flow branches (no REST equivalent)
+
+# Unlinked work — two searches, since --match scopes the whole query.
+gh search prs "<N>" --repo <owner>/<repo> --match body \
+  --limit 20 --json number,title,state,url
+gh search prs "<keywords>" --repo <owner>/<repo> --match title,body \
+  --limit 20 --json number,title,state,url
 # open → in-flight PR (takeover candidate); merged → scope already covered, even if unlinked
 
 # Milestone gate: issue's milestone (above) vs the current (lowest-version open) one
@@ -43,6 +56,7 @@ Any one fires a go/no-go before writing code:
 - A commit since the issue was filed already implements or supersedes the change.
 - A linked PR is already merged — the issue should close, not be re-implemented.
 - An *unlinked* merged PR covers the same scope (keyword/path search). Filers don't always cross-reference; check before duplicating work.
+- Empty inspect output counts as "no PR" only when the command exited 0. A lookup that errored says nothing; re-run it before reading absence as a signal.
 - The issue assumes tooling/files that have since been replaced or removed.
 - The motivating dependency resolved differently (e.g. "waiting on upstream X" — X shipped via a different mechanism).
 - A maintainer comment narrows or vetoes the original scope and the body wasn't updated.
