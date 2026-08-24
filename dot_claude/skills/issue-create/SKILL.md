@@ -63,9 +63,6 @@ freeform body.
 - **Additional context** — links, screenshots, related issues, only
   when they help. Skip the section if empty.
 
-Optimise for tokens — no filler, no restated headings, no "this
-issue tracks the work to..." preambles.
-
 ## Labels and milestones
 
 - Pick existing labels. Don't invent inline — if nothing fits, skip

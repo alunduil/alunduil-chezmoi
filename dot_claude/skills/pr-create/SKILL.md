@@ -64,9 +64,6 @@ shows.
   steps. Omit the section when CI covers everything; unverified items
   go in Gotchas, not here.
 
-Optimise for tokens — no filler, no "this PR..." preamble, no restated
-headings.
-
 ## House rules
 
 - **Draft only.** `draft: true`; the user promotes to ready.
