@@ -165,6 +165,13 @@ audience needs more:
 - Promote to `~/.claude/CLAUDE.md` when the same friction shows up
   in more than one project.
 
+Write concise technical prose by default: PR and issue bodies, docs,
+code comments. Lead with the point and cut filler — restated headings,
+"this PR…" preamble, closing restatements. `techwriting.md` carries
+the register for documentation prose. Prose posted under alunduil's
+name to an external or contributor audience follows `voice.md`
+instead.
+
 Document only what exists at current HEAD — the diff and the issue
 tracker carry what's planned. Never write pointers to where secrets
 live (e.g. "token in `~/.config/foo/token`") in committed files;
