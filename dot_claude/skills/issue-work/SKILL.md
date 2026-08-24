@@ -13,8 +13,7 @@ gh api repos/:owner/:repo/issues/<N> \
   --jq '{title, body, milestone: .milestone.title}'         # body + milestone
 gh api repos/:owner/:repo/issues/<N>/comments --jq '.[].body'  # comments
 
-# Attached PRs — the Development panel's own data, so a fork PR carrying
-# `Closes #N` shows up with no search-index dependency.
+# Attached PRs, including a fork PR whose only link is `Closes #N` in its body.
 gh api repos/:owner/:repo/issues/<N>/timeline --paginate \
   --jq '.[] | select(.event == "cross-referenced" or .event == "connected")
         | {number: .source.issue.number,
@@ -23,7 +22,7 @@ gh api repos/:owner/:repo/issues/<N>/timeline --paginate \
                     then "merged" else .source.issue.state end)}'
 gh issue develop <N> --list             # develop-flow branches (no REST equivalent)
 
-# Unlinked work — two searches, since --match scopes the whole query.
+# Unlinked work — `--match` applies to the whole query, so one search per field.
 gh search prs "<N>" --repo <owner>/<repo> --match body \
   --limit 20 --json number,title,state,url
 gh search prs "<keywords>" --repo <owner>/<repo> --match title,body \
@@ -55,13 +54,14 @@ Any one fires a go/no-go before writing code:
 - A commit since the issue was filed already implements or supersedes the change.
 - A linked PR is already merged — the issue should close, not be re-implemented.
 - An *unlinked* merged PR covers the same scope (keyword/path search). Filers don't always cross-reference; check before duplicating work.
-- Empty inspect output counts as "no PR" only when the command exited 0. A lookup that errored says nothing; re-run it before reading absence as a signal.
 - The issue assumes tooling/files that have since been replaced or removed.
 - The motivating dependency resolved differently (e.g. "waiting on upstream X" — X shipped via a different mechanism).
 - A maintainer comment narrows or vetoes the original scope and the body wasn't updated.
 - The issue is parked on a *later* milestone (not the current, lowest-version open one). Deferred work — don't pull it forward. No milestone or the current milestone is fine to work.
 - Repro fails on the default branch.
 - The issue lacks enough detail to start without guessing.
+
+Empty inspect output counts as "no PR" only when the command exited 0; re-run a lookup that errored.
 
 ## Go/no-go format
 
