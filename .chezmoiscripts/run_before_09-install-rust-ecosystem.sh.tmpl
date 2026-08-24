@@ -26,7 +26,7 @@ fi
 # toolchain exists, so presence tests cannot detect one; `rustup toolchain
 # list` can, and reads ~/.rustup without a network round-trip.
 # renovate: datasource=github-releases depName=rust-lang/rust
-RUST_VERSION="1.97.1"
+RUST_VERSION="1.98.0"
 if ! rustup toolchain list | grep -q "^${RUST_VERSION}-"; then
   log "rust: installing toolchain $RUST_VERSION"
   rustup toolchain install "$RUST_VERSION"
