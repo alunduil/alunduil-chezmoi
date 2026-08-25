@@ -45,10 +45,8 @@ packages:
     - unattended-upgrades
     - powermgmt-base
     - needrestart
-    # foot's build dependencies (script/install/foot). bookworm's foot is
-    # 1.13.1 and cannot switch color themes at runtime, so it is built from
-    # source; wayland-protocols and fcft are pinned meson subprojects rather
-    # than apt packages because bookworm's are older than foot accepts.
+    # foot's build dependencies; script/install/foot covers why it is built
+    # from source and why wayland-protocols and fcft are not listed here.
     - meson
     - ninja-build
     - scdoc
@@ -59,10 +57,5 @@ packages:
     - libutf8proc-dev
     - libharfbuzz-dev
     - libpng-dev
-    # foot renders from the container's fontconfig rather than the ChromeOS
-    # side, which is where the terminal font used to come from. JetBrains Mono
-    # also covers U+E0B0, the Powerline separator zellij-rate-limit-status
-    # draws and the base image has in no font -- so no separate symbol font is
-    # needed. Swapping the primary means re-checking that:
-    #   fc-list ':charset=e0b0' family
+    # foot's font, and the only one here covering U+E0B0 (see foot.ini).
     - fonts-jetbrains-mono

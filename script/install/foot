@@ -1,33 +1,20 @@
 #!/usr/bin/env bash
 set -euo pipefail
 
-# foot is the only tool here built from source rather than downloaded as a
-# release binary: upstream ships no binaries, and bookworm's foot (1.13.1)
-# cannot switch color themes at runtime at all. The theme switch arrived in
-# 1.23.0 (SIGUSR1/SIGUSR2), so foot-theme-auto has nothing to drive without
-# this build.
+# Built from source because upstream ships no binaries and bookworm's foot
+# (1.13.1) cannot switch color themes at runtime, which foot-theme-auto needs.
 #
-# foot's own subprojects/*.wrap track upstream *branch heads* (fcft and
-# tllist at master, wayland-protocols at main), so a stock build pulls
-# whatever those were that morning, unverified. The [wrap-file] overrides
-# written below replace all three with pinned tarballs carrying a sha256
-# meson checks after download. They are subprojects rather than apt packages
-# because bookworm's wayland-protocols (1.31) and fcft (3.1.5) are both older
-# than foot accepts; tllist is not packaged at all.
+# The [wrap-file] overrides below replace foot's own subprojects/*.wrap, which
+# track upstream branch heads: a stock build pulls unpinned, unverified
+# sources. All three are subprojects rather than apt packages because
+# bookworm's wayland-protocols (1.31) and fcft (3.1.5) are older than foot
+# accepts, and tllist is not packaged.
 
 # Held at 1.25.0, the last release that builds against bookworm's libxkbcommon
-# (1.5.0). From 1.26.0 input.c references XKB_KEYSYM_MAX, added in xkbcommon
-# 1.6.0 -- and meson does not catch it, because foot declares only
-# `xkbcommon >= 1.0.0`, so the failure is a -Werror compile error rather than
-# a configure-time version check. Renovate will keep offering newer releases;
-# taking one means also building libxkbcommon from source, which is why this
-# pin is deliberate rather than merely stale.
-#
-# What 1.25.0 costs: it names the two color sections [colors] and [colors2]
-# rather than [colors-dark] and [colors-light] (renamed in 1.26.0), and
-# initial-color-theme takes 1 or 2 rather than dark or light. Behaviour is
-# identical -- SIGUSR1 selects the first, SIGUSR2 the second -- and the
-# shipped themes carry both sections either way.
+# (1.5.0): from 1.26.0 input.c references XKB_KEYSYM_MAX, added in xkbcommon
+# 1.6.0. meson does not catch it, because foot declares only
+# `xkbcommon >= 1.0.0`, so it surfaces as a -Werror compile error. Accepting a
+# Renovate bump past 1.25 means also building libxkbcommon from source.
 # renovate: datasource=forgejo-releases depName=dnkl/foot registryUrl=https://codeberg.org
 FOOT_VERSION="1.25.0"
 FOOT_SHA256="6572595658c81dde9dd1697a475fceaa2e46fbe8989bed989822643578a2ebe2"

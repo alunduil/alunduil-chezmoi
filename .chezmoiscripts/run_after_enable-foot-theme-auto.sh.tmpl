@@ -17,7 +17,6 @@ fi
 systemctl --user daemon-reload
 systemctl --user enable --now foot-theme-auto.timer
 
-# The timer's first scheduled run is up to five minutes out, and chezmoi has
-# just deployed theme-state.ini with its create_-time default. Run once now so
-# an apply during daylight does not leave the next window dark.
+# The timer's first run is up to five minutes out, so apply the current theme
+# now: otherwise an apply in daylight leaves the next window dark.
 systemctl --user start foot-theme-auto.service

@@ -2,24 +2,16 @@
 """Match foot's color theme to daylight at this host's location.
 
 ChromeOS does not propagate its light/dark setting into the Crostini
-container -- the appearance portal reports "no preference", the GTK theme
-(``CrosAdapta``) has no dark variant, and no ``prefer-dark`` setting exists
-anywhere -- so there is nothing for a terminal to follow. Nor would foot
-follow it: foot switches theme only on SIGUSR1/SIGUSR2 or a key binding, and
-never consults the portal. Daylight is therefore computed here, from the
-clock and the coordinates the tz database already records for the host's
-timezone.
+container: the appearance portal reports "no preference", ``CrosAdapta`` has
+no dark variant, and no ``prefer-dark`` setting exists. foot would not read
+it in any case, switching only on SIGUSR1/SIGUSR2 or a key binding. Daylight
+is therefore computed here, from the clock and the coordinates the tz
+database records for the host's timezone.
 
-Two mechanisms are needed because they cover different windows:
-
-- *Running* foot processes take SIGUSR1 (dark) or SIGUSR2 (light).
-- *Future* windows read ``initial-color-theme`` from the config file this
-  writes, which ``foot.ini`` includes. Without it a window opened at noon
-  would start dark and flip on the next timer tick.
-
-The state file is the record of what was last applied, so a run whose
-computed theme already matches does nothing -- no signal, no rewrite. That
-keeps a five-minute timer from redrawing every window all day.
+Running and future windows need separate mechanisms: a signal switches the
+former, ``initial-color-theme`` in the state file covers the latter. A run
+whose computed theme already matches the state file does nothing, which keeps
+the five-minute timer from redrawing every window all day.
 """
 
 from __future__ import annotations
@@ -36,9 +28,8 @@ from pathlib import Path
 from typing import NamedTuple
 
 # Elevation of the sun's centre at sunrise/sunset: half a solar diameter
-# below the horizon plus atmospheric refraction. The tz database and every
-# almanac use this figure, so "sunset" here means what a calendar says it
-# means.
+# below the horizon plus atmospheric refraction. This is the figure behind
+# published sunset times.
 SUNSET_ELEVATION = -0.833
 
 ZONE_TAB = Path("/usr/share/zoneinfo/zone1970.tab")
@@ -49,10 +40,9 @@ class Theme(Enum):
     """A foot color theme, with the two ways foot is told to select it.
 
     foot 1.25 numbers its color sections rather than naming them: [colors] is
-    the dark theme, [colors2] the light one, ``initial-color-theme`` takes the
-    number, and a signal switches a running window. Both encodings live here,
-    so moving to 1.26's ``dark``/``light`` names is an edit to this class and
-    nothing else -- see script/install/foot for why that release is not in use.
+    dark, [colors2] light, and ``initial-color-theme`` takes the number. A
+    signal switches a window already running. script/install/foot covers why
+    1.26, which renamed the sections, is not in use.
     """
 
     section: str
@@ -77,12 +67,7 @@ class Theme(Enum):
 
 
 class Coordinates(NamedTuple):
-    """A point on the earth, in signed decimal degrees.
-
-    Named rather than a bare pair because latitude and longitude are both
-    floats in the same range for much of the world, so a transposed call is
-    silently plausible instead of being a type error.
-    """
+    """A point on the earth, in signed decimal degrees."""
 
     latitude: float
     longitude: float
@@ -131,21 +116,15 @@ def coordinates_for_timezone(tz_name: str, zone_tab: str) -> Coordinates:
     raise LookupError(f"no coordinates for timezone {tz_name!r} in zone1970.tab")
 
 
-# The instant the Julian-century series below are expanded around, and the
-# length of the unit they count. Every other number in those series is a
-# fitted polynomial coefficient with no meaning apart from its position, so
-# naming them would invent significance rather than reveal it.
+# The instant the series below are expanded around, and the length of the
+# unit they count. Every other number in them is a fitted coefficient with no
+# meaning apart from its position.
 J2000_EPOCH = 2451545.0
 DAYS_PER_JULIAN_CENTURY = 36525.0
 
 
 class _SolarElements(NamedTuple):
-    """The sun's orbital position at one instant, as the NOAA series compute it.
-
-    Grouped because the equation of time and the declination are two readings
-    of the same underlying state: splitting them into separate functions would
-    mean deriving the shared terms twice.
-    """
+    """The sun's orbital position at one instant, as the NOAA series compute it."""
 
     mean_longitude: float  # degrees
     mean_anomaly: float  # radians
@@ -218,9 +197,8 @@ def solar_elements(t: float) -> _SolarElements:
 def equation_of_time(elements: _SolarElements) -> float:
     """Minutes by which true solar time leads the mean clock.
 
-    Swings roughly ±16 minutes over the year, which at temperate latitudes
-    moves sunset by more than a quarter hour -- far past the point a wrong
-    theme would be noticed.
+    Swings roughly ±16 minutes over the year, moving sunset at temperate
+    latitudes by more than a quarter hour.
     """
     y = tan(elements.obliquity / 2) ** 2
     longitude = radians(elements.mean_longitude)
@@ -283,7 +261,7 @@ def render_state(theme: Theme) -> str:
     )
 
 
-# Built from Theme so the accepted values cannot drift from the ones written.
+# Built from Theme so the accepted values cannot drift from the written ones.
 _STATE_PATTERN = re.compile(
     r"^\s*initial-color-theme\s*=\s*({})\s*$".format(
         "|".join(theme.section for theme in Theme)

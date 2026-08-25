@@ -20,9 +20,8 @@ INSTALL_DIR="{{ .chezmoi.sourceDir }}/script/install"
 "$INSTALL_DIR/just" --bin-dir "$HOME/.local/bin"
 "$INSTALL_DIR/uv" --bin-dir "$HOME/.local/bin"
 
-# foot is built from source, not downloaded, and lays down a whole prefix --
-# binaries, terminfo, themes, and the desktop entries garcon surfaces in the
-# ChromeOS launcher -- so it takes --prefix rather than --bin-dir.
+# Takes --prefix because it installs terminfo, themes, and the desktop entries
+# garcon surfaces in the ChromeOS launcher, not just a binary.
 "$INSTALL_DIR/foot" --prefix "$HOME/.local"
 
 # pre-commit ships only as a Python package, so uv owns its install. --force

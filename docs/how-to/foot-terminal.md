@@ -5,10 +5,10 @@ foot is the Wayland terminal on this host, built from source by
 colors follow daylight: light after sunrise, dark after sunset, computed
 locally.
 
-This covers changing when the theme flips, forcing a theme, and the one
-thing that breaks over SSH. It assumes you have already run `chezmoi apply`.
-For why the build is from source rather than apt, read the comment at the top
-of `script/install/foot`.
+This covers changing when the theme flips, forcing a theme, the terminfo
+gap over SSH, and replacing the font. It assumes you have already run
+`chezmoi apply`. The comment at the top of `script/install/foot` covers why
+the build is from source.
 
 ## Change when the theme flips
 
@@ -42,18 +42,17 @@ pkill -USR1 foot     # dark
 pkill -USR2 foot     # light
 ```
 
-That lasts until the next daylight transition. Windows opened afterwards read
-`initial-color-theme` from `~/.config/foot/theme-state.ini`, so to pin a theme
-across new windows, edit that file. The timer rewrites it only when the
-computed theme changes, so a manual edit survives until the next real sunrise
-or sunset.
+Windows opened afterwards read `initial-color-theme` from
+`~/.config/foot/theme-state.ini`, so pin a theme across new windows by editing
+that file. The timer rewrites it only when the computed theme changes, so
+either edit survives until the next sunrise or sunset.
 
 ## Fix a broken remote session
 
 bookworm's `ncurses-term` ships only the `foot+base` fragment, not the `foot`
-entry, so `TERM=foot` doesn't resolve on a stock Debian 12 host. Locally this
-is handled, because foot exports `$TERMINFO` pointing into its own prefix, but
-that variable doesn't survive SSH and remote curses programs fall back to
+entry, so `TERM=foot` doesn't resolve on a stock Debian 12 host. Locally that
+is covered: foot exports `$TERMINFO` pointing into its own prefix. The
+variable doesn't survive SSH, so remote curses programs fall back to
 dumb-terminal behaviour.
 
 Install foot's terminfo on the remote host once:
@@ -84,8 +83,8 @@ fc-list ':charset=e0b0' family    # fonts that can draw the separator
 fc-list : family | grep -i mono   # what is installed
 ```
 
-If the face you want doesn't cover it, add a fallback rather than giving up
-on the font. foot searches the list in order, per glyph:
+A face that doesn't cover it can still be the primary, since foot searches
+the list in order, per glyph:
 
 ```ini
 font=Some Other Mono:size=11, Symbols Nerd Font Mono:size=11
