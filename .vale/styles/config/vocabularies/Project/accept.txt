@@ -47,8 +47,6 @@ foot
 terminfo
 fontconfig
 Wayland
-codepoint
-codepoints
 Unifont
 Tempus
 inlined
@@ -56,8 +54,6 @@ colorscheme
 Catppuccin
 Solarized
 Powerline
-Sommelier
-sommelier
 
 # Editors and OSes
 VSCode
