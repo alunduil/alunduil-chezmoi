@@ -12,22 +12,21 @@ The palette is inlined in the `[colors]` section of `dot_config/foot/foot.ini`
 rather than included from a file, because the Debian package ships no themes
 directory.
 
-Tempus Night was picked by measurement, so a replacement is worth measuring
-the same way. Three properties matter:
+A replacement has to meet three properties:
 
 - Every one of the sixteen ANSI slots should clear WCAG AAA, 7:1 against the
-  background. That's what lets a single theme stay readable in daylight and
-  at night, rather than needing a light variant and something to switch them.
+  background. That's what lets one theme stay readable in daylight and at
+  night.
 - The background should be close to neutral, casting neither warm nor cool.
 - All sixteen slots should be distinct. `.vimrc` sets no colorscheme, so vim
-  reads its syntax colors straight off them, and a theme that collapses the
-  bright row onto the regular one flattens vim's highlighting. Catppuccin and
-  Solarized both fail this, for different reasons.
+  reads its syntax colors straight off them. A theme that collapses the bright
+  row onto the regular one flattens vim's highlighting; Catppuccin and
+  Solarized both do.
 
 foot publishes its themes at
-<https://codeberg.org/dnkl/foot/src/branch/master/themes>. Seven of the 84 met
-all three when this was chosen. The Tempus family is built to the contrast
-standard, so its other variants are the closest alternatives.
+<https://codeberg.org/dnkl/foot/src/branch/master/themes>. The Tempus family
+is built to the contrast standard, so its other variants are the closest
+alternatives.
 
 ## Replace the font
 
@@ -53,9 +52,9 @@ font=Some Other Mono:size=11, Symbols Nerd Font Mono:size=11
 
 ## Fix a broken remote session
 
-The `foot` package depends on `foot-terminfo`, so `TERM=foot` resolves here. A
-remote host has neither unless it installs foot as well, and curses programs
-there lose color and cursor addressing.
+The `foot` package depends on `foot-terminfo`, so `TERM=foot` resolves here.
+A remote host lacks that terminfo unless it installs foot too, and curses
+programs there lose color and cursor addressing.
 
 Install foot's terminfo on the remote host once:
 
