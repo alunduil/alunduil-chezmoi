@@ -91,6 +91,58 @@ class CoordinatesForTimezone(unittest.TestCase):
         with self.assertRaises(LookupError):
             fta.coordinates_for_timezone("Mars/Olympus_Mons", self.ZONE_TAB)
 
+    def test_falls_through_to_the_later_table(self):
+        """zone1970.tab omits zones that have agreed since 1970."""
+        fallback = "NO\t+5955+01045\tEurope/Oslo"
+        latitude, _ = fta.coordinates_for_timezone(
+            "Europe/Oslo", self.ZONE_TAB, fallback
+        )
+        self.assertAlmostEqual(latitude, 59 + 55 / 60, places=6)
+
+    def test_earlier_table_wins(self):
+        first = "GB\t+0000+00000\tEurope/London"
+        latitude, _ = fta.coordinates_for_timezone(
+            "Europe/London", first, self.ZONE_TAB
+        )
+        self.assertAlmostEqual(latitude, 0.0, places=6)
+
+
+class ZoneTablesOnThisHost(unittest.TestCase):
+    """The shipped tables, since travel depends on their real coverage."""
+
+    def zone_tabs(self):
+        return [p.read_text() for p in fta.ZONE_TABS if p.exists()]
+
+    def test_every_real_zone_resolves(self):
+        """Travel sets an arbitrary zone, so every one of them must resolve."""
+        tabs = self.zone_tabs()
+        if not tabs:
+            self.skipTest("no zone tables on this host")
+        root = fta.ZONEINFO
+        unresolved = []
+        for path in root.rglob("*"):
+            if path.is_dir() or path.suffix in (".tab", ".list"):
+                continue
+            name = str(path.relative_to(root))
+            # posix/ and right/ mirror the tree; Etc/ zones are offsets, not
+            # places, and no host geolocates to one.
+            if name.startswith(("posix/", "right/", "Etc/")) or "/" not in name:
+                continue
+            try:
+                fta.coordinates_for_timezone(fta.canonical_zone(name), *tabs)
+            except LookupError:
+                unresolved.append(name)
+        self.assertEqual(unresolved, [])
+
+    def test_nordic_capitals_resolve(self):
+        """Present only in zone.tab; searching zone1970.tab alone misses them."""
+        tabs = self.zone_tabs()
+        if not tabs:
+            self.skipTest("no zone tables on this host")
+        for zone in ("Europe/Oslo", "Europe/Stockholm", "Europe/Amsterdam"):
+            with self.subTest(zone=zone):
+                fta.coordinates_for_timezone(zone, *tabs)
+
 
 class ThemeEncoding(unittest.TestCase):
     """The two ways foot is told to select a theme, which must not drift apart."""
@@ -293,6 +345,15 @@ class TimezoneName(unittest.TestCase):
             named = Path(tmp) / "timezone"
             named.write_text("Europe/London\n")
             self.assertEqual(fta.timezone_name(absent, named), "Europe/London")
+
+    def test_canonicalises_a_legacy_alias(self):
+        """US/Eastern is a link; the zone tables list only America/New_York."""
+        if not (fta.ZONEINFO / "US/Eastern").is_symlink():
+            self.skipTest("no US/Eastern link on this host")
+        self.assertEqual(fta.canonical_zone("US/Eastern"), "America/New_York")
+
+    def test_canonical_zone_passes_through_a_real_zone(self):
+        self.assertEqual(fta.canonical_zone("Europe/London"), "Europe/London")
 
     def test_raises_when_undeterminable(self):
         with (

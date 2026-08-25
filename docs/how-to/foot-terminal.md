@@ -33,6 +33,28 @@ ExecStart=%h/.local/bin/foot-theme-auto --horizon -6
 The `run_after_enable-foot-theme-auto` script hashes both units, so the next
 `chezmoi apply` reloads and re-enables them.
 
+## Check what happens when you travel
+
+The switch follows ChromeOS's timezone. ChromeOS pushes it into the container
+over maitred's `SetTimezone`, which rewrites `/etc/localtime`;
+`foot-theme-auto` re-reads that every run, so a new timezone takes effect
+within five minutes of landing. It needs ChromeOS's own timezone set to
+update automatically. A manually pinned one never changes, and neither will
+the theme.
+
+Coordinates come from the timezone's entry in the zone tables, which is its
+representative city rather than where you are. Crossing timezones is
+therefore accurate, but a long trip inside one is off by however far you are
+from that city: Edinburgh runs about 40 minutes from London's sunset in June,
+Houston about an hour from Chicago's in December, and Kashgar over three
+hours from Shanghai's, China being a single timezone.
+
+Preview any zone without changing the system one:
+
+```bash
+TZ=America/Chicago foot-theme-auto --dry-run
+```
+
 ## Force a theme now
 
 Signals reach running windows directly, which is also what the timer does:

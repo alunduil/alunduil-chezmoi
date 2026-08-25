@@ -32,7 +32,12 @@ from typing import NamedTuple
 # published sunset times.
 SUNSET_ELEVATION = -0.833
 
-ZONE_TAB = Path("/usr/share/zoneinfo/zone1970.tab")
+# Both tables, in this order. zone1970.tab merges zones that have agreed since
+# 1970, so it omits around a hundred that zone.tab still lists separately --
+# Europe/Oslo, Stockholm, Copenhagen and Amsterdam among them. Searching only
+# the first leaves the theme stuck on arrival in any of those.
+ZONEINFO = Path("/usr/share/zoneinfo")
+ZONE_TABS = (ZONEINFO / "zone1970.tab", ZONEINFO / "zone.tab")
 DEFAULT_STATE = Path.home() / ".config" / "foot" / "theme-state.ini"
 
 
@@ -101,19 +106,20 @@ def parse_iso6709(value: str) -> Coordinates:
     )
 
 
-def coordinates_for_timezone(tz_name: str, zone_tab: str) -> Coordinates:
-    """Look a timezone's coordinates up in zone1970.tab contents.
+def coordinates_for_timezone(tz_name: str, *zone_tabs: str) -> Coordinates:
+    """Look a timezone's coordinates up in zone table contents, in order.
 
-    Each row is ``codes<TAB>coordinates<TAB>zone[<TAB>comments]``; a zone may
-    be listed under several country codes but appears in exactly one row.
+    Both tables share the row format ``codes<TAB>coordinates<TAB>zone``,
+    with trailing comment fields on some rows.
     """
-    for line in zone_tab.splitlines():
-        if line.startswith("#"):
-            continue
-        fields = line.split("\t")
-        if len(fields) >= 3 and fields[2] == tz_name:
-            return parse_iso6709(fields[1])
-    raise LookupError(f"no coordinates for timezone {tz_name!r} in zone1970.tab")
+    for zone_tab in zone_tabs:
+        for line in zone_tab.splitlines():
+            if line.startswith("#"):
+                continue
+            fields = line.split("\t")
+            if len(fields) >= 3 and fields[2] == tz_name:
+                return parse_iso6709(fields[1])
+    raise LookupError(f"no coordinates for timezone {tz_name!r}")
 
 
 # The instant the series below are expanded around, and the length of the
@@ -358,6 +364,20 @@ def build_parser() -> argparse.ArgumentParser:
     return parser
 
 
+def canonical_zone(name: str, zoneinfo: Path = ZONEINFO) -> str:
+    """Follow zoneinfo links so an alias reaches the name the tables use.
+
+    The tables list only canonical zones, while the tree also carries
+    backward-compatibility links such as US/Eastern.
+    """
+    path = zoneinfo / name
+    if path.is_symlink():
+        target = str(path.resolve())
+        if "zoneinfo/" in target:
+            return target.split("zoneinfo/", 1)[1]
+    return name
+
+
 def timezone_name(
     localtime: Path = Path("/etc/localtime"),
     timezone_file: Path = Path("/etc/timezone"),
@@ -365,24 +385,26 @@ def timezone_name(
     """This host's tz database zone name, e.g. ``Europe/London``.
 
     ``$TZ`` wins so a caller can check another location without touching
-    system files. Otherwise the /etc/localtime symlink is authoritative --
-    systemd rewrites it on `timedatectl set-timezone` and leaves
-    /etc/timezone as a Debian-only echo of it, which can drift.
+    system files. Otherwise /etc/localtime is authoritative: on Crostini it is
+    what ChromeOS rewrites, through maitred's SetTimezone, when the host
+    changes timezone. /etc/timezone is a Debian-only echo of it and can drift.
 
-    An abbreviation such as ``BST`` is useless here: zone1970.tab is keyed by
-    zone name, so a lookup needs the full identifier.
+    Whichever source answers, the name is canonicalised through the zoneinfo
+    tree, so a legacy alias such as US/Eastern becomes the America/New_York
+    the zone tables are keyed by. An abbreviation like ``BST`` is no use here
+    for the same reason.
     """
     env = os.environ.get("TZ", "").strip().lstrip(":")
     if env:
-        return env
+        return canonical_zone(env)
     if localtime.is_symlink():
-        target = os.readlink(localtime)
+        target = str(localtime.resolve())
         if "zoneinfo/" in target:
             return target.split("zoneinfo/", 1)[1]
     if timezone_file.exists():
         name = timezone_file.read_text().strip()
         if name:
-            return name
+            return canonical_zone(name)
     raise LookupError("cannot determine this host's timezone")
 
 
@@ -391,7 +413,9 @@ def main(argv: list[str] | None = None) -> int:
 
     try:
         tz_name = timezone_name()
-        location = coordinates_for_timezone(tz_name, ZONE_TAB.read_text())
+        location = coordinates_for_timezone(
+            tz_name, *(path.read_text() for path in ZONE_TABS if path.exists())
+        )
     except (OSError, LookupError, ValueError) as exc:
         print(f"foot-theme-auto: {exc}", file=sys.stderr)
         return 1

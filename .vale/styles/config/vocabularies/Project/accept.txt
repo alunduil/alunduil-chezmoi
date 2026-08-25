@@ -54,6 +54,9 @@ codepoints
 Selenized
 Powerline
 Unifont
+maitred
+timezone
+timezones
 
 # Editors and OSes
 VSCode
