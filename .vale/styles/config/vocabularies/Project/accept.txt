@@ -7,6 +7,7 @@ Alunduil
 alunduil
 
 # Host tooling
+foot
 chezmoi
 lazygit
 datasource
@@ -41,19 +42,6 @@ loopback
 substring
 wchan
 futex
-
-# Terminal stack
-foot
-terminfo
-fontconfig
-Wayland
-Unifont
-Tempus
-inlined
-colorscheme
-Catppuccin
-Solarized
-Powerline
 
 # Editors and OSes
 VSCode
