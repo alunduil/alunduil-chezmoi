@@ -1,0 +1,136 @@
+#!/usr/bin/env bash
+set -euo pipefail
+
+# foot is the only tool here built from source rather than downloaded as a
+# release binary: upstream ships no binaries, and bookworm's foot (1.13.1)
+# cannot switch color themes at runtime at all. The theme switch arrived in
+# 1.23.0 (SIGUSR1/SIGUSR2), so foot-theme-auto has nothing to drive without
+# this build.
+#
+# foot's own subprojects/*.wrap track upstream *branch heads* (fcft and
+# tllist at master, wayland-protocols at main), so a stock build pulls
+# whatever those were that morning, unverified. The [wrap-file] overrides
+# written below replace all three with pinned tarballs carrying a sha256
+# meson checks after download. They are subprojects rather than apt packages
+# because bookworm's wayland-protocols (1.31) and fcft (3.1.5) are both older
+# than foot accepts; tllist is not packaged at all.
+
+# Held at 1.25.0, the last release that builds against bookworm's libxkbcommon
+# (1.5.0). From 1.26.0 input.c references XKB_KEYSYM_MAX, added in xkbcommon
+# 1.6.0 -- and meson does not catch it, because foot declares only
+# `xkbcommon >= 1.0.0`, so the failure is a -Werror compile error rather than
+# a configure-time version check. Renovate will keep offering newer releases;
+# taking one means also building libxkbcommon from source, which is why this
+# pin is deliberate rather than merely stale.
+#
+# What 1.25.0 costs: it names the two color sections [colors] and [colors2]
+# rather than [colors-dark] and [colors-light] (renamed in 1.26.0), and
+# initial-color-theme takes 1 or 2 rather than dark or light. Behaviour is
+# identical -- SIGUSR1 selects the first, SIGUSR2 the second -- and the
+# shipped themes carry both sections either way.
+# renovate: datasource=forgejo-releases depName=dnkl/foot registryUrl=https://codeberg.org
+FOOT_VERSION="1.25.0"
+FOOT_SHA256="6572595658c81dde9dd1697a475fceaa2e46fbe8989bed989822643578a2ebe2"
+
+# renovate: datasource=forgejo-releases depName=dnkl/fcft registryUrl=https://codeberg.org
+FCFT_VERSION="3.3.3"
+FCFT_SHA256="bb298772d625e7d917373d541456f34f1957a9e22b16f17f64158b2c3816563c"
+
+# renovate: datasource=forgejo-releases depName=dnkl/tllist registryUrl=https://codeberg.org
+TLLIST_VERSION="1.1.0"
+TLLIST_SHA256="a1f0ce0dc4fcb4ce59c37202a1d914c853a8bd2d7c5d57d623b15a8dd9778767"
+
+# renovate: datasource=gitlab-tags depName=wayland/wayland-protocols registryUrl=https://gitlab.freedesktop.org
+WAYLAND_PROTOCOLS_VERSION="1.49"
+WAYLAND_PROTOCOLS_SHA256="8d94eee148db4d8111ccc0d4331de2f82d4b28c38e30eace9f052886480f7d86"
+
+# shellcheck source-path=SCRIPTDIR source=lib.sh
+. "$(dirname "$0")/lib.sh"
+
+# Unlike the other installers this lays down a whole prefix -- binaries,
+# terminfo, themes, desktop entries -- so it takes --prefix, not --bin-dir.
+PREFIX=""
+while [ $# -gt 0 ]; do
+  case "$1" in
+    --prefix)
+      [ $# -ge 2 ] || {
+        echo "${0##*/}: --prefix requires an argument" >&2
+        exit 2
+      }
+      PREFIX="$2"
+      shift 2
+      ;;
+    *)
+      echo "${0##*/}: unknown argument: $1" >&2
+      exit 2
+      ;;
+  esac
+done
+[ -n "$PREFIX" ] || {
+  echo "${0##*/}: --prefix DIR required" >&2
+  exit 2
+}
+
+bin="$PREFIX/bin/foot"
+if installed_version_matches "$bin" "$FOOT_VERSION"; then
+  printf '==> foot: %s already installed at %s\n' "$FOOT_VERSION" "$bin" >&2
+  exit 0
+fi
+
+printf '==> foot: building %s\n' "$FOOT_VERSION" >&2
+tmp="$(mktemp -d)"
+trap 'rm -rf "$tmp"' EXIT
+
+curl -fsSL -o "$tmp/foot.tar.gz" \
+  "https://codeberg.org/dnkl/foot/releases/download/${FOOT_VERSION}/foot-${FOOT_VERSION}.tar.gz"
+verify_sha256 "$tmp/foot.tar.gz" "$FOOT_SHA256"
+tar -xzf "$tmp/foot.tar.gz" -C "$tmp"
+
+src="$tmp/foot-${FOOT_VERSION}"
+
+cat >"$src/subprojects/fcft.wrap" <<EOF
+[wrap-file]
+directory = fcft-${FCFT_VERSION}
+source_url = https://codeberg.org/dnkl/fcft/releases/download/${FCFT_VERSION}/fcft-${FCFT_VERSION}.tar.gz
+source_filename = fcft-${FCFT_VERSION}.tar.gz
+source_hash = ${FCFT_SHA256}
+EOF
+
+cat >"$src/subprojects/tllist.wrap" <<EOF
+[wrap-file]
+directory = tllist-${TLLIST_VERSION}
+source_url = https://codeberg.org/dnkl/tllist/releases/download/${TLLIST_VERSION}/tllist-${TLLIST_VERSION}.tar.gz
+source_filename = tllist-${TLLIST_VERSION}.tar.gz
+source_hash = ${TLLIST_SHA256}
+EOF
+
+cat >"$src/subprojects/wayland-protocols.wrap" <<EOF
+[wrap-file]
+directory = wayland-protocols-${WAYLAND_PROTOCOLS_VERSION}
+source_url = https://gitlab.freedesktop.org/wayland/wayland-protocols/-/archive/${WAYLAND_PROTOCOLS_VERSION}/wayland-protocols-${WAYLAND_PROTOCOLS_VERSION}.tar.gz
+source_filename = wayland-protocols-${WAYLAND_PROTOCOLS_VERSION}.tar.gz
+source_hash = ${WAYLAND_PROTOCOLS_SHA256}
+EOF
+
+# custom-terminfo-install-location makes foot export $TERMINFO into the shell
+# it spawns, so `TERM=foot` resolves from a prefix ncurses does not search by
+# default. Without it every curses program in a foot window falls back to
+# dumb-terminal behaviour.
+#
+# systemd-units-dir is pinned inside the prefix because meson otherwise
+# resolves it from pkg-config to /usr/lib/systemd/user, which a non-root
+# install cannot write. utmp-backend=none for the same reason: its helper
+# wants to be installed setgid.
+meson setup \
+  --prefix "$PREFIX" \
+  --buildtype release \
+  -Dterminfo=enabled \
+  -Dcustom-terminfo-install-location=share/terminfo \
+  -Dthemes=true \
+  -Dtests=false \
+  -Dutmp-backend=none \
+  -Dsystemd-units-dir="$PREFIX/lib/systemd/user" \
+  "$src/build" "$src"
+
+ninja -C "$src/build"
+ninja -C "$src/build" install

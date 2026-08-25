@@ -1,0 +1,343 @@
+#!/usr/bin/env python3
+"""Match foot's color theme to daylight at this host's location.
+
+ChromeOS does not propagate its light/dark setting into the Crostini
+container -- the appearance portal reports "no preference", the GTK theme
+(``CrosAdapta``) has no dark variant, and no ``prefer-dark`` setting exists
+anywhere -- so there is nothing for a terminal to follow. Nor would foot
+follow it: foot switches theme only on SIGUSR1/SIGUSR2 or a key binding, and
+never consults the portal. Daylight is therefore computed here, from the
+clock and the coordinates the tz database already records for the host's
+timezone.
+
+Two mechanisms are needed because they cover different windows:
+
+- *Running* foot processes take SIGUSR1 (dark) or SIGUSR2 (light).
+- *Future* windows read ``initial-color-theme`` from the config file this
+  writes, which ``foot.ini`` includes. Without it a window opened at noon
+  would start dark and flip on the next timer tick.
+
+The state file is the record of what was last applied, so a run whose
+computed theme already matches does nothing -- no signal, no rewrite. That
+keeps a five-minute timer from redrawing every window all day.
+"""
+
+from __future__ import annotations
+
+import argparse
+import os
+import re
+import signal
+import sys
+from datetime import UTC, datetime
+from math import acos, asin, cos, degrees, radians, sin, tan
+from pathlib import Path
+
+# Elevation of the sun's centre at sunrise/sunset: half a solar diameter
+# below the horizon plus atmospheric refraction. The tz database and every
+# almanac use this figure, so "sunset" here means what a calendar says it
+# means.
+SUNSET_ELEVATION = -0.833
+
+# foot 1.25 numbers its two color sections rather than naming them: [colors]
+# is the dark theme and [colors2] the light one, and initial-color-theme takes
+# the number. 1.26 renamed both to dark/light, but that release needs a newer
+# libxkbcommon than bookworm has -- see script/install/foot. Keep the mapping
+# in one place so the rename is a one-line change here.
+THEME_SECTION = {"dark": "1", "light": "2"}
+
+ZONE_TAB = Path("/usr/share/zoneinfo/zone1970.tab")
+DEFAULT_STATE = Path.home() / ".config" / "foot" / "theme-state.ini"
+
+_ISO6709 = re.compile(
+    r"([+-])(\d{2})(\d{2})(\d{2})?"  # latitude:  ±DDMM[SS]
+    r"([+-])(\d{3})(\d{2})(\d{2})?$"  # longitude: ±DDDMM[SS]
+)
+
+
+def parse_iso6709(value: str) -> tuple[float, float]:
+    """Decode a zone.tab ``±DDMM±DDDMM`` (or ``±DDMMSS±DDDMMSS``) coordinate.
+
+    The sign is captured separately from the degrees because a longitude
+    such as ``-0000731`` (7'31" *west*) has a zero degrees field, and
+    ``int("-000")`` would discard the hemisphere.
+    """
+    match = _ISO6709.match(value)
+    if match is None:
+        raise ValueError(f"not an ISO 6709 coordinate: {value!r}")
+    lat_sign, lat_d, lat_m, lat_s, lon_sign, lon_d, lon_m, lon_s = match.groups()
+
+    def combine(sign: str, deg: str, minute: str, second: str | None) -> float:
+        magnitude = int(deg) + int(minute) / 60 + int(second or 0) / 3600
+        return -magnitude if sign == "-" else magnitude
+
+    return (
+        combine(lat_sign, lat_d, lat_m, lat_s),
+        combine(lon_sign, lon_d, lon_m, lon_s),
+    )
+
+
+def coordinates_for_timezone(tz_name: str, zone_tab: str) -> tuple[float, float]:
+    """Look a timezone's coordinates up in zone1970.tab contents.
+
+    Each row is ``codes<TAB>coordinates<TAB>zone[<TAB>comments]``; a zone may
+    be listed under several country codes but appears in exactly one row.
+    """
+    for line in zone_tab.splitlines():
+        if line.startswith("#"):
+            continue
+        fields = line.split("\t")
+        if len(fields) >= 3 and fields[2] == tz_name:
+            return parse_iso6709(fields[1])
+    raise LookupError(f"no coordinates for timezone {tz_name!r} in zone1970.tab")
+
+
+def solar_elevation(when: datetime, latitude: float, longitude: float) -> float:
+    """Elevation of the sun above the horizon, in degrees.
+
+    NOAA's solar position algorithm. Accurate to well under a minute of
+    sunrise/sunset time for the next century, which is far tighter than
+    anything a terminal theme needs.
+    """
+    when = when.astimezone(UTC)
+
+    year, month = when.year, when.month
+    day = when.day + (when.hour + when.minute / 60 + when.second / 3600) / 24
+    if month <= 2:
+        year -= 1
+        month += 12
+    century = year // 100
+    gregorian = 2 - century + century // 4
+    julian_day = (
+        int(365.25 * (year + 4716))
+        + int(30.6001 * (month + 1))
+        + day
+        + gregorian
+        - 1524.5
+    )
+    t = (julian_day - 2451545.0) / 36525.0
+
+    mean_long = (280.46646 + t * (36000.76983 + t * 0.0003032)) % 360
+    mean_anomaly = 357.52911 + t * (35999.05029 - 0.0001537 * t)
+    eccentricity = 0.016708634 - t * (0.000042037 + 0.0000001267 * t)
+
+    anomaly = radians(mean_anomaly)
+    centre = (
+        sin(anomaly) * (1.914602 - t * (0.004817 + 0.000014 * t))
+        + sin(2 * anomaly) * (0.019993 - 0.000101 * t)
+        + sin(3 * anomaly) * 0.000289
+    )
+
+    omega = radians(125.04 - 1934.136 * t)
+    apparent_long = radians(mean_long + centre - 0.00569 - 0.00478 * sin(omega))
+    obliquity = radians(
+        23
+        + (26 + (21.448 - t * (46.815 + t * (0.00059 - t * 0.001813))) / 60) / 60
+        + 0.00256 * cos(omega)
+    )
+    declination = asin(sin(obliquity) * sin(apparent_long))
+
+    # Equation of time, in minutes: the gap between clock noon and solar noon.
+    y = tan(obliquity / 2) ** 2
+    long_rad = radians(mean_long)
+    equation_of_time = 4 * degrees(
+        y * sin(2 * long_rad)
+        - 2 * eccentricity * sin(anomaly)
+        + 4 * eccentricity * y * sin(anomaly) * cos(2 * long_rad)
+        - 0.5 * y * y * sin(4 * long_rad)
+        - 1.25 * eccentricity * eccentricity * sin(2 * anomaly)
+    )
+
+    minutes = when.hour * 60 + when.minute + when.second / 60
+    true_solar_time = (minutes + equation_of_time + 4 * longitude) % 1440
+    hour_angle = radians(true_solar_time / 4 - 180)
+
+    lat = radians(latitude)
+    zenith = acos(
+        min(
+            1.0,
+            max(
+                -1.0,
+                sin(lat) * sin(declination)
+                + cos(lat) * cos(declination) * cos(hour_angle),
+            ),
+        )
+    )
+    return 90 - degrees(zenith)
+
+
+def theme_for_elevation(elevation: float, horizon: float = SUNSET_ELEVATION) -> str:
+    return "light" if elevation > horizon else "dark"
+
+
+def render_state(theme: str) -> str:
+    """The config fragment foot.ini includes.
+
+    Its own ``[main]`` header is required: an included file has its own
+    section scope, so it cannot inherit the including file's.
+    """
+    return (
+        "# Written by foot-theme-auto. Edits are overwritten on the next\n"
+        "# daylight transition; change the schedule, not this file.\n"
+        f"# Currently: {theme}.\n"
+        "[main]\n"
+        f"initial-color-theme={THEME_SECTION[theme]}\n"
+    )
+
+
+def read_state(path: Path) -> str | None:
+    """The theme recorded in the state file, or None if it says nothing."""
+    try:
+        text = path.read_text()
+    except OSError:
+        return None
+    match = re.search(r"^\s*initial-color-theme\s*=\s*([12])\s*$", text, re.M)
+    if match is None:
+        return None
+    section_to_theme = {v: k for k, v in THEME_SECTION.items()}
+    return section_to_theme[match.group(1)]
+
+
+def write_state(path: Path, theme: str) -> None:
+    """Replace the state file atomically.
+
+    foot reads this on startup, and a window racing a half-written file
+    would fail to parse its config rather than merely picking the wrong
+    colors.
+    """
+    path.parent.mkdir(parents=True, exist_ok=True)
+    scratch = path.with_name(f".{path.name}.tmp")
+    scratch.write_text(render_state(theme))
+    os.replace(scratch, path)
+
+
+def foot_pids(proc_root: Path = Path("/proc")) -> list[int]:
+    """PIDs of running foot processes.
+
+    Matches ``comm`` exactly rather than scanning cmdline, which would also
+    catch this script's own ancestry and anything with "foot" in its path.
+    """
+    pids = []
+    for entry in proc_root.iterdir():
+        if not entry.name.isdigit():
+            continue
+        try:
+            if (entry / "comm").read_text().strip() == "foot":
+                pids.append(int(entry.name))
+        except OSError:
+            continue  # exited between listing and reading
+    return sorted(pids)
+
+
+def signal_running(theme: str, pids: list[int]) -> int:
+    """Switch already-open windows. SIGUSR1 selects dark, SIGUSR2 light."""
+    sig = signal.SIGUSR1 if theme == "dark" else signal.SIGUSR2
+    signalled = 0
+    for pid in pids:
+        try:
+            os.kill(pid, sig)
+            signalled += 1
+        except OSError:
+            continue  # exited since it was listed
+    return signalled
+
+
+def build_parser() -> argparse.ArgumentParser:
+    parser = argparse.ArgumentParser(
+        prog="foot-theme-auto",
+        description="Match foot's color theme to daylight at this host's location.",
+    )
+    parser.add_argument(
+        "--horizon",
+        type=float,
+        default=SUNSET_ELEVATION,
+        metavar="DEGREES",
+        help=(
+            "sun elevation below which the dark theme applies "
+            f"(default: {SUNSET_ELEVATION}, true sunset; -6 for civil twilight)"
+        ),
+    )
+    parser.add_argument(
+        "--state",
+        type=Path,
+        default=DEFAULT_STATE,
+        metavar="PATH",
+        help="config fragment recording the applied theme (default: %(default)s)",
+    )
+    parser.add_argument(
+        "--force",
+        action="store_true",
+        help="apply the theme even when the state file already matches",
+    )
+    parser.add_argument(
+        "--dry-run",
+        action="store_true",
+        help="report what would change without writing or signalling",
+    )
+    return parser
+
+
+def timezone_name(
+    localtime: Path = Path("/etc/localtime"),
+    timezone_file: Path = Path("/etc/timezone"),
+) -> str:
+    """This host's tz database zone name, e.g. ``Europe/London``.
+
+    ``$TZ`` wins so a caller can check another location without touching
+    system files. Otherwise the /etc/localtime symlink is authoritative --
+    systemd rewrites it on `timedatectl set-timezone` and leaves
+    /etc/timezone as a Debian-only echo of it, which can drift.
+
+    An abbreviation such as ``BST`` is useless here: zone1970.tab is keyed by
+    zone name, so a lookup needs the full identifier.
+    """
+    env = os.environ.get("TZ", "").strip().lstrip(":")
+    if env:
+        return env
+    if localtime.is_symlink():
+        target = os.readlink(localtime)
+        if "zoneinfo/" in target:
+            return target.split("zoneinfo/", 1)[1]
+    if timezone_file.exists():
+        name = timezone_file.read_text().strip()
+        if name:
+            return name
+    raise LookupError("cannot determine this host's timezone")
+
+
+def main(argv: list[str] | None = None) -> int:
+    args = build_parser().parse_args(argv)
+
+    try:
+        tz_name = timezone_name()
+    except LookupError as exc:
+        print(f"foot-theme-auto: {exc}", file=sys.stderr)
+        return 1
+
+    try:
+        latitude, longitude = coordinates_for_timezone(tz_name, ZONE_TAB.read_text())
+    except (OSError, LookupError, ValueError) as exc:
+        print(f"foot-theme-auto: {exc}", file=sys.stderr)
+        return 1
+
+    elevation = solar_elevation(datetime.now(UTC), latitude, longitude)
+    theme = theme_for_elevation(elevation, args.horizon)
+    current = read_state(args.state)
+
+    if args.dry_run:
+        print(
+            f"{tz_name} ({latitude:.4f}, {longitude:.4f}) "
+            f"sun {elevation:+.2f} deg -> {theme} (recorded: {current or 'none'})"
+        )
+        return 0
+
+    if theme == current and not args.force:
+        return 0
+
+    write_state(args.state, theme)
+    signal_running(theme, foot_pids())
+    return 0
+
+
+if __name__ == "__main__":
+    sys.exit(main())

@@ -1,0 +1,15 @@
+[Unit]
+Description=Check daylight every five minutes for foot's color theme
+
+[Timer]
+OnCalendar=*:0/5
+# This host (Crostini) suspends constantly, and a sunset that falls inside a
+# suspend would otherwise be missed until the following day's transition.
+# Persistent runs the catch-up on wake, which is enough because the script is
+# convergent: it compares the computed theme against the recorded one and
+# does nothing when they already agree, so the five-minute cadence costs a
+# Python start and no redraw.
+Persistent=true
+
+[Install]
+WantedBy=timers.target

@@ -47,7 +47,9 @@ effect on `apply` until committed and pulled into the apply clone. Use
   `dot_config/zellij/config.kdl`.
 - Every `*_VERSION` pin carries a `# renovate: datasource=… depName=…`
   line directly above it (order: datasource, depName, packageName,
-  versioning, extractVersion). One generic manager in `renovate.json`
+  versioning, extractVersion, registryUrl). `registryUrl` is what lets a
+  pin point at a forge other than the datasource's default — Codeberg,
+  gitlab.freedesktop.org. One generic manager in `renovate.json`
   reads them all — a new pinned tool needs no Renovate config change.
   An unannotated pin is invisible to Renovate rather than an error, so
   `script/checks/renovate-pins` (a pre-commit hook) fails the build on

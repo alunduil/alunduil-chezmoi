@@ -42,6 +42,19 @@ substring
 wchan
 futex
 
+# Terminal stack
+foot
+terminfo
+fontconfig
+Wayland
+sommelier
+Sommelier
+codepoint
+codepoints
+Selenized
+Powerline
+Unifont
+
 # Editors and OSes
 VSCode
 macOS
