@@ -20,7 +20,7 @@ Organised by [Diátaxis](https://diataxis.fr):
 - How-to
   - [Adding an encrypted secret](docs/how-to/encrypted-secret.md)
   - [PGP commit signing](docs/how-to/pgp-signing.md): includes paper-key backup and key rotation.
-  - [Adjusting the foot terminal](docs/how-to/foot-terminal.md): daylight theme switching, fonts, remote terminfo.
+  - [Adjusting the foot terminal](docs/how-to/foot-terminal.md): theme and font choice, remote terminfo.
 - Explanation
   - [Architecture](docs/explanation/architecture.md)—source vs. apply clone, bootstrap shape, layered trust, the `gh` shim, the two `CLAUDE.md` files.
 

@@ -15,7 +15,6 @@ on:
       - 'dot_local/bin/executable_git-poi-all'
       - 'dot_local/bin/executable_git-worktree-poi'
       - 'dot_local/bin/executable_dev-cache-gc'
-      - 'dot_local/bin/executable_foot-theme-auto'
       - 'script/install/prometheus'
       - 'script/install/alloy'
       - 'script/install/loki'
@@ -47,7 +46,7 @@ jobs:
           for t in prometheus alloy loki tempo grafana; do
             script/install/"$t" --bin-dir "$HOME/.local/bin"
           done
-          for s in zellijstat git-poi-all git-worktree-poi dev-cache-gc foot-theme-auto; do
+          for s in zellijstat git-poi-all git-worktree-poi dev-cache-gc; do
             install -m 0755 "dot_local/bin/executable_$s" "$HOME/.local/bin/$s"
           done
 

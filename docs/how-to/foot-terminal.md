@@ -1,95 +1,35 @@
 # Adjust the foot terminal
 
-foot is the Wayland terminal on this host, built from source by
-`script/install/foot` and configured by `dot_config/foot/foot.ini`. Its
-colors follow daylight: light after sunrise, dark after sunset, computed
-locally.
+foot is the Wayland terminal on this host, installed from apt and configured
+by `dot_config/foot/foot.ini`. It uses one fixed theme, Tempus Night.
 
-This covers changing when the theme flips, forcing a theme, the terminfo
-gap over SSH, and replacing the font. It assumes you have already run
-`chezmoi apply`. The comment at the top of `script/install/foot` covers why
-the build is from source.
+This covers replacing the theme, replacing the font, and the terminfo gap over
+SSH. It assumes you have already run `chezmoi apply`.
 
-## Change when the theme flips
+## Replace the theme
 
-`foot-theme-auto` switches at true sunset: the sun's centre 0.833° below the
-horizon, which is the figure a calendar prints as the day's sunset time.
-Civil twilight, about half an hour later, is the usual alternative.
+The palette is inlined in the `[colors]` section of `dot_config/foot/foot.ini`
+rather than included from a file, because the Debian package ships no themes
+directory.
 
-Check what the current setting resolves to:
+Tempus Night was picked by measurement, so a replacement is worth measuring
+the same way. Three properties matter:
 
-```bash
-foot-theme-auto --dry-run
-# Europe/London (51.5083, -0.1253) sun +12.41 deg -> light (recorded: light)
-```
+- Every one of the sixteen ANSI slots should clear WCAG AAA, 7:1 against the
+  background. That's what lets a single theme stay readable in daylight and
+  at night, rather than needing a light variant and something to switch them.
+- The background should be close to neutral, casting neither warm nor cool.
+- All sixteen slots should be distinct. `.vimrc` sets no colorscheme, so vim
+  reads its syntax colors straight off them, and a theme that collapses the
+  bright row onto the regular one flattens vim's highlighting. Catppuccin and
+  Solarized both fail this, for different reasons.
 
-The timer runs the script with no arguments, so a different threshold means
-editing `ExecStart` in `dot_config/systemd/user/foot-theme-auto.service`:
+foot publishes its themes at
+<https://codeberg.org/dnkl/foot/src/branch/master/themes>. Seven of the 84 met
+all three when this was chosen. The Tempus family is built to the contrast
+standard, so its other variants are the closest alternatives.
 
-```ini
-ExecStart=%h/.local/bin/foot-theme-auto --horizon -6
-```
-
-The `run_after_enable-foot-theme-auto` script hashes both units, so the next
-`chezmoi apply` reloads and re-enables them.
-
-## Check what happens when you travel
-
-The switch follows ChromeOS's timezone. ChromeOS pushes it into the container
-over maitred's `SetTimezone`, which rewrites `/etc/localtime`;
-`foot-theme-auto` re-reads that every run, so a new timezone takes effect
-within five minutes of landing. It needs ChromeOS's own timezone set to
-update automatically. A manually pinned one never changes, and neither will
-the theme.
-
-Coordinates come from the timezone's entry in the zone tables, which is its
-representative city rather than where you are. Crossing timezones is
-therefore accurate, but a long trip inside one is off by however far you are
-from that city: Edinburgh runs about 40 minutes from London's sunset in June,
-Houston about an hour from Chicago's in December, and Kashgar over three
-hours from Shanghai's, China being a single timezone.
-
-Preview any zone without changing the system one:
-
-```bash
-TZ=America/Chicago foot-theme-auto --dry-run
-```
-
-## Force a theme now
-
-Signals reach running windows directly, which is also what the timer does:
-
-```bash
-pkill -USR1 foot     # dark
-pkill -USR2 foot     # light
-```
-
-Windows opened afterward read `initial-color-theme` from
-`~/.config/foot/theme-state.ini`, so pin a theme across new windows by editing
-that file. The timer rewrites it only when the computed theme changes, so
-either edit survives until the next sunrise or sunset.
-
-## Fix a broken remote session
-
-bookworm's `ncurses-term` ships only the `foot+base` fragment, not the `foot`
-entry, so `TERM=foot` doesn't resolve on a stock Debian 12 host. Locally that
-is covered: foot exports `$TERMINFO` pointing into its own prefix. The
-variable doesn't survive SSH, so remote curses programs lose color and
-cursor addressing.
-
-Install foot's terminfo on the remote host once:
-
-```bash
-infocmp -x foot | ssh HOST tic -x -
-```
-
-Or, for a host you don't control, override `TERM` for the session:
-
-```bash
-TERM=xterm-256color ssh HOST
-```
-
-## Change the font
+## Replace the font
 
 `fonts-jetbrains-mono` (in `.chezmoidata/packages.yaml`) supplies the face,
 set as `font=` in `dot_config/foot/foot.ini`.
@@ -104,9 +44,27 @@ fc-list ':charset=e0b0' family    # fonts that can draw the separator
 fc-list : family | grep -i mono   # what is installed
 ```
 
-A face that doesn't cover it can still be the primary, since foot searches
-the list in order, per glyph:
+A face that doesn't cover it can still be the primary, since foot searches the
+list in order, per glyph:
 
 ```ini
 font=Some Other Mono:size=11, Symbols Nerd Font Mono:size=11
+```
+
+## Fix a broken remote session
+
+The `foot` package depends on `foot-terminfo`, so `TERM=foot` resolves here. A
+remote host has neither unless it installs foot as well, and curses programs
+there lose color and cursor addressing.
+
+Install foot's terminfo on the remote host once:
+
+```bash
+infocmp -x foot | ssh HOST tic -x -
+```
+
+Or, for a host you don't control, override `TERM` for the session:
+
+```bash
+TERM=xterm-256color ssh HOST
 ```

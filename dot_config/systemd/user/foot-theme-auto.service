@@ -1,8 +1,0 @@
-[Unit]
-Description=Match foot's color theme to daylight (foot-theme-auto)
-
-[Service]
-Type=oneshot
-# The user manager's PATH lacks ~/.local/bin, where foot-theme-auto lives.
-Environment=PATH=%h/.local/bin:/usr/local/bin:/usr/bin:/bin
-ExecStart=%h/.local/bin/foot-theme-auto

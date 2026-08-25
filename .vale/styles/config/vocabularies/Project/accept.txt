@@ -47,16 +47,17 @@ foot
 terminfo
 fontconfig
 Wayland
-sommelier
-Sommelier
 codepoint
 codepoints
-Selenized
-Powerline
 Unifont
-maitred
-timezone
-timezones
+Tempus
+inlined
+colorscheme
+Catppuccin
+Solarized
+Powerline
+Sommelier
+sommelier
 
 # Editors and OSes
 VSCode

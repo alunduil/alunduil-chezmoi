@@ -20,10 +20,6 @@ INSTALL_DIR="{{ .chezmoi.sourceDir }}/script/install"
 "$INSTALL_DIR/just" --bin-dir "$HOME/.local/bin"
 "$INSTALL_DIR/uv" --bin-dir "$HOME/.local/bin"
 
-# Takes --prefix because it installs terminfo, themes, and the desktop entries
-# garcon surfaces in the ChromeOS launcher, not just a binary.
-"$INSTALL_DIR/foot" --prefix "$HOME/.local"
-
 # pre-commit ships only as a Python package, so uv owns its install. --force
 # overwrites a pre-existing pip-installed pre-commit on the PATH; the guard
 # keys off `uv tool list` rather than `pre-commit --version`, which can't tell

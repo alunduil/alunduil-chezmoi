@@ -45,17 +45,8 @@ packages:
     - unattended-upgrades
     - powermgmt-base
     - needrestart
-    # foot's build dependencies; script/install/foot covers why it is built
-    # from source and why wayland-protocols and fcft are not listed here.
-    - meson
-    - ninja-build
-    - scdoc
-    - libwayland-dev
-    - libxkbcommon-dev
-    - libpixman-1-dev
-    - libfontconfig-dev
-    - libutf8proc-dev
-    - libharfbuzz-dev
-    - libpng-dev
+    # Terminal. foot pulls in foot-terminfo, so TERM=foot resolves locally
+    # without further help.
+    - foot
     # foot's font, and the only one here covering U+E0B0 (see foot.ini).
     - fonts-jetbrains-mono
