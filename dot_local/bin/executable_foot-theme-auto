@@ -30,8 +30,10 @@ import re
 import signal
 import sys
 from datetime import UTC, datetime
+from enum import Enum
 from math import acos, asin, cos, degrees, radians, sin, tan
 from pathlib import Path
+from typing import NamedTuple
 
 # Elevation of the sun's centre at sunrise/sunset: half a solar diameter
 # below the horizon plus atmospheric refraction. The tz database and every
@@ -39,15 +41,52 @@ from pathlib import Path
 # means.
 SUNSET_ELEVATION = -0.833
 
-# foot 1.25 numbers its two color sections rather than naming them: [colors]
-# is the dark theme and [colors2] the light one, and initial-color-theme takes
-# the number. 1.26 renamed both to dark/light, but that release needs a newer
-# libxkbcommon than bookworm has -- see script/install/foot. Keep the mapping
-# in one place so the rename is a one-line change here.
-THEME_SECTION = {"dark": "1", "light": "2"}
-
 ZONE_TAB = Path("/usr/share/zoneinfo/zone1970.tab")
 DEFAULT_STATE = Path.home() / ".config" / "foot" / "theme-state.ini"
+
+
+class Theme(Enum):
+    """A foot color theme, with the two ways foot is told to select it.
+
+    foot 1.25 numbers its color sections rather than naming them: [colors] is
+    the dark theme, [colors2] the light one, ``initial-color-theme`` takes the
+    number, and a signal switches a running window. Both encodings live here,
+    so moving to 1.26's ``dark``/``light`` names is an edit to this class and
+    nothing else -- see script/install/foot for why that release is not in use.
+    """
+
+    section: str
+    switch_signal: signal.Signals
+
+    DARK = ("1", signal.SIGUSR1)
+    LIGHT = ("2", signal.SIGUSR2)
+
+    def __init__(self, section: str, switch_signal: signal.Signals) -> None:
+        self.section = section
+        self.switch_signal = switch_signal
+
+    def __str__(self) -> str:
+        return self.name.lower()
+
+    @classmethod
+    def from_section(cls, section: str) -> Theme:
+        for theme in cls:
+            if theme.section == section:
+                return theme
+        raise ValueError(f"no theme uses config section {section!r}")
+
+
+class Coordinates(NamedTuple):
+    """A point on the earth, in signed decimal degrees.
+
+    Named rather than a bare pair because latitude and longitude are both
+    floats in the same range for much of the world, so a transposed call is
+    silently plausible instead of being a type error.
+    """
+
+    latitude: float
+    longitude: float
+
 
 _ISO6709 = re.compile(
     r"([+-])(\d{2})(\d{2})(\d{2})?"  # latitude:  ±DDMM[SS]
@@ -55,7 +94,7 @@ _ISO6709 = re.compile(
 )
 
 
-def parse_iso6709(value: str) -> tuple[float, float]:
+def parse_iso6709(value: str) -> Coordinates:
     """Decode a zone.tab ``±DDMM±DDDMM`` (or ``±DDMMSS±DDDMMSS``) coordinate.
 
     The sign is captured separately from the degrees because a longitude
@@ -71,13 +110,13 @@ def parse_iso6709(value: str) -> tuple[float, float]:
         magnitude = int(deg) + int(minute) / 60 + int(second or 0) / 3600
         return -magnitude if sign == "-" else magnitude
 
-    return (
-        combine(lat_sign, lat_d, lat_m, lat_s),
-        combine(lon_sign, lon_d, lon_m, lon_s),
+    return Coordinates(
+        latitude=combine(lat_sign, lat_d, lat_m, lat_s),
+        longitude=combine(lon_sign, lon_d, lon_m, lon_s),
     )
 
 
-def coordinates_for_timezone(tz_name: str, zone_tab: str) -> tuple[float, float]:
+def coordinates_for_timezone(tz_name: str, zone_tab: str) -> Coordinates:
     """Look a timezone's coordinates up in zone1970.tab contents.
 
     Each row is ``codes<TAB>coordinates<TAB>zone[<TAB>comments]``; a zone may
@@ -92,85 +131,144 @@ def coordinates_for_timezone(tz_name: str, zone_tab: str) -> tuple[float, float]
     raise LookupError(f"no coordinates for timezone {tz_name!r} in zone1970.tab")
 
 
-def solar_elevation(when: datetime, latitude: float, longitude: float) -> float:
-    """Elevation of the sun above the horizon, in degrees.
+# The instant the Julian-century series below are expanded around, and the
+# length of the unit they count. Every other number in those series is a
+# fitted polynomial coefficient with no meaning apart from its position, so
+# naming them would invent significance rather than reveal it.
+J2000_EPOCH = 2451545.0
+DAYS_PER_JULIAN_CENTURY = 36525.0
 
-    NOAA's solar position algorithm. Accurate to well under a minute of
-    sunrise/sunset time for the next century, which is far tighter than
-    anything a terminal theme needs.
+
+class _SolarElements(NamedTuple):
+    """The sun's orbital position at one instant, as the NOAA series compute it.
+
+    Grouped because the equation of time and the declination are two readings
+    of the same underlying state: splitting them into separate functions would
+    mean deriving the shared terms twice.
     """
-    when = when.astimezone(UTC)
 
+    mean_longitude: float  # degrees
+    mean_anomaly: float  # radians
+    eccentricity: float
+    obliquity: float  # radians
+    declination: float  # radians
+
+
+def julian_day(when: datetime) -> float:
+    """Days since the start of the Julian period, the astronomical day count."""
+    when = when.astimezone(UTC)
     year, month = when.year, when.month
     day = when.day + (when.hour + when.minute / 60 + when.second / 3600) / 24
+    # January and February count as months 13 and 14 of the previous year, so
+    # the leap day always falls at the end of the arithmetic year.
     if month <= 2:
         year -= 1
         month += 12
     century = year // 100
     gregorian = 2 - century + century // 4
-    julian_day = (
+    return (
         int(365.25 * (year + 4716))
         + int(30.6001 * (month + 1))
         + day
         + gregorian
         - 1524.5
     )
-    t = (julian_day - 2451545.0) / 36525.0
 
-    mean_long = (280.46646 + t * (36000.76983 + t * 0.0003032)) % 360
-    mean_anomaly = 357.52911 + t * (35999.05029 - 0.0001537 * t)
+
+def julian_century(when: datetime) -> float:
+    """Julian centuries since J2000.0, the time scale the NOAA series take."""
+    return (julian_day(when) - J2000_EPOCH) / DAYS_PER_JULIAN_CENTURY
+
+
+def solar_elements(t: float) -> _SolarElements:
+    """Evaluate the NOAA orbital series at Julian century ``t``."""
+    mean_longitude = (280.46646 + t * (36000.76983 + t * 0.0003032)) % 360
+    mean_anomaly = radians(357.52911 + t * (35999.05029 - 0.0001537 * t))
     eccentricity = 0.016708634 - t * (0.000042037 + 0.0000001267 * t)
 
-    anomaly = radians(mean_anomaly)
+    # Equation of the centre: the correction from a circular orbit to the
+    # real ellipse.
     centre = (
-        sin(anomaly) * (1.914602 - t * (0.004817 + 0.000014 * t))
-        + sin(2 * anomaly) * (0.019993 - 0.000101 * t)
-        + sin(3 * anomaly) * 0.000289
+        sin(mean_anomaly) * (1.914602 - t * (0.004817 + 0.000014 * t))
+        + sin(2 * mean_anomaly) * (0.019993 - 0.000101 * t)
+        + sin(3 * mean_anomaly) * 0.000289
     )
 
+    # Nutation, driven by the moon's ascending node, perturbs both the
+    # apparent longitude and the obliquity.
     omega = radians(125.04 - 1934.136 * t)
-    apparent_long = radians(mean_long + centre - 0.00569 - 0.00478 * sin(omega))
+    apparent_longitude = radians(
+        mean_longitude + centre - 0.00569 - 0.00478 * sin(omega)
+    )
     obliquity = radians(
         23
         + (26 + (21.448 - t * (46.815 + t * (0.00059 - t * 0.001813))) / 60) / 60
         + 0.00256 * cos(omega)
     )
-    declination = asin(sin(obliquity) * sin(apparent_long))
 
-    # Equation of time, in minutes: the gap between clock noon and solar noon.
-    y = tan(obliquity / 2) ** 2
-    long_rad = radians(mean_long)
-    equation_of_time = 4 * degrees(
-        y * sin(2 * long_rad)
+    return _SolarElements(
+        mean_longitude=mean_longitude,
+        mean_anomaly=mean_anomaly,
+        eccentricity=eccentricity,
+        obliquity=obliquity,
+        declination=asin(sin(obliquity) * sin(apparent_longitude)),
+    )
+
+
+def equation_of_time(elements: _SolarElements) -> float:
+    """Minutes by which true solar time leads the mean clock.
+
+    Swings roughly ±16 minutes over the year, which at temperate latitudes
+    moves sunset by more than a quarter hour -- far past the point a wrong
+    theme would be noticed.
+    """
+    y = tan(elements.obliquity / 2) ** 2
+    longitude = radians(elements.mean_longitude)
+    anomaly = elements.mean_anomaly
+    eccentricity = elements.eccentricity
+    return 4 * degrees(
+        y * sin(2 * longitude)
         - 2 * eccentricity * sin(anomaly)
-        + 4 * eccentricity * y * sin(anomaly) * cos(2 * long_rad)
-        - 0.5 * y * y * sin(4 * long_rad)
+        + 4 * eccentricity * y * sin(anomaly) * cos(2 * longitude)
+        - 0.5 * y * y * sin(4 * longitude)
         - 1.25 * eccentricity * eccentricity * sin(2 * anomaly)
     )
 
+
+def hour_angle(when: datetime, longitude: float, offset_minutes: float) -> float:
+    """Radians the earth has turned past the sun being due south."""
+    when = when.astimezone(UTC)
     minutes = when.hour * 60 + when.minute + when.second / 60
-    true_solar_time = (minutes + equation_of_time + 4 * longitude) % 1440
-    hour_angle = radians(true_solar_time / 4 - 180)
-
-    lat = radians(latitude)
-    zenith = acos(
-        min(
-            1.0,
-            max(
-                -1.0,
-                sin(lat) * sin(declination)
-                + cos(lat) * cos(declination) * cos(hour_angle),
-            ),
-        )
-    )
-    return 90 - degrees(zenith)
+    # Four minutes of rotation per degree of longitude.
+    true_solar_time = (minutes + offset_minutes + 4 * longitude) % 1440
+    return radians(true_solar_time / 4 - 180)
 
 
-def theme_for_elevation(elevation: float, horizon: float = SUNSET_ELEVATION) -> str:
-    return "light" if elevation > horizon else "dark"
+def solar_elevation(when: datetime, location: Coordinates) -> float:
+    """Elevation of the sun above the horizon, in degrees.
+
+    NOAA's solar position algorithm. Accurate to well under a minute of
+    sunrise/sunset time for the next century, which is far tighter than
+    anything a terminal theme needs.
+    """
+    elements = solar_elements(julian_century(when))
+    angle = hour_angle(when, location.longitude, equation_of_time(elements))
+
+    latitude = radians(location.latitude)
+    declination = elements.declination
+    cos_zenith = sin(latitude) * sin(declination) + cos(latitude) * cos(
+        declination
+    ) * cos(angle)
+    # Rounding can push this a hair outside acos's domain at the poles.
+    return 90 - degrees(acos(min(1.0, max(-1.0, cos_zenith))))
 
 
-def render_state(theme: str) -> str:
+def theme_for_elevation(elevation: float, horizon: float = SUNSET_ELEVATION) -> Theme:
+    """The theme daylight calls for at this sun elevation."""
+    return Theme.LIGHT if elevation > horizon else Theme.DARK
+
+
+def render_state(theme: Theme) -> str:
     """The config fragment foot.ini includes.
 
     Its own ``[main]`` header is required: an included file has its own
@@ -181,24 +279,30 @@ def render_state(theme: str) -> str:
         "# daylight transition; change the schedule, not this file.\n"
         f"# Currently: {theme}.\n"
         "[main]\n"
-        f"initial-color-theme={THEME_SECTION[theme]}\n"
+        f"initial-color-theme={theme.section}\n"
     )
 
 
-def read_state(path: Path) -> str | None:
+# Built from Theme so the accepted values cannot drift from the ones written.
+_STATE_PATTERN = re.compile(
+    r"^\s*initial-color-theme\s*=\s*({})\s*$".format(
+        "|".join(theme.section for theme in Theme)
+    ),
+    re.M,
+)
+
+
+def read_state(path: Path) -> Theme | None:
     """The theme recorded in the state file, or None if it says nothing."""
     try:
         text = path.read_text()
     except OSError:
         return None
-    match = re.search(r"^\s*initial-color-theme\s*=\s*([12])\s*$", text, re.M)
-    if match is None:
-        return None
-    section_to_theme = {v: k for k, v in THEME_SECTION.items()}
-    return section_to_theme[match.group(1)]
+    match = _STATE_PATTERN.search(text)
+    return Theme.from_section(match.group(1)) if match else None
 
 
-def write_state(path: Path, theme: str) -> None:
+def write_state(path: Path, theme: Theme) -> None:
     """Replace the state file atomically.
 
     foot reads this on startup, and a window racing a half-written file
@@ -229,13 +333,12 @@ def foot_pids(proc_root: Path = Path("/proc")) -> list[int]:
     return sorted(pids)
 
 
-def signal_running(theme: str, pids: list[int]) -> int:
-    """Switch already-open windows. SIGUSR1 selects dark, SIGUSR2 light."""
-    sig = signal.SIGUSR1 if theme == "dark" else signal.SIGUSR2
+def signal_running(theme: Theme, pids: list[int]) -> int:
+    """Switch already-open windows, returning how many took the signal."""
     signalled = 0
     for pid in pids:
         try:
-            os.kill(pid, sig)
+            os.kill(pid, theme.switch_signal)
             signalled += 1
         except OSError:
             continue  # exited since it was listed
@@ -310,28 +413,24 @@ def main(argv: list[str] | None = None) -> int:
 
     try:
         tz_name = timezone_name()
-    except LookupError as exc:
-        print(f"foot-theme-auto: {exc}", file=sys.stderr)
-        return 1
-
-    try:
-        latitude, longitude = coordinates_for_timezone(tz_name, ZONE_TAB.read_text())
+        location = coordinates_for_timezone(tz_name, ZONE_TAB.read_text())
     except (OSError, LookupError, ValueError) as exc:
         print(f"foot-theme-auto: {exc}", file=sys.stderr)
         return 1
 
-    elevation = solar_elevation(datetime.now(UTC), latitude, longitude)
+    elevation = solar_elevation(datetime.now(UTC), location)
     theme = theme_for_elevation(elevation, args.horizon)
-    current = read_state(args.state)
+    recorded = read_state(args.state)
 
     if args.dry_run:
         print(
-            f"{tz_name} ({latitude:.4f}, {longitude:.4f}) "
-            f"sun {elevation:+.2f} deg -> {theme} (recorded: {current or 'none'})"
+            f"{tz_name} ({location.latitude:.4f}, {location.longitude:.4f}) "
+            f"sun {elevation:+.2f} deg -> {theme} "
+            f"(recorded: {recorded or 'none'})"
         )
         return 0
 
-    if theme == current and not args.force:
+    if theme is recorded and not args.force:
         return 0
 
     write_state(args.state, theme)

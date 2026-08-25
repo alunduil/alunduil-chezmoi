@@ -88,29 +88,32 @@ tar -xzf "$tmp/foot.tar.gz" -C "$tmp"
 
 src="$tmp/foot-${FOOT_VERSION}"
 
-cat >"$src/subprojects/fcft.wrap" <<EOF
+# Pin one subproject: NAME is the wrap meson looks for, DIRECTORY the
+# tarball's top-level directory (and, with .tar.gz, its filename). meson
+# verifies SHA after download, so a moved or rewritten tarball fails the
+# build rather than silently building something else.
+write_wrap() {
+  local name="$1" directory="$2" url="$3" sha="$4"
+  cat >"$src/subprojects/${name}.wrap" <<EOF
 [wrap-file]
-directory = fcft-${FCFT_VERSION}
-source_url = https://codeberg.org/dnkl/fcft/releases/download/${FCFT_VERSION}/fcft-${FCFT_VERSION}.tar.gz
-source_filename = fcft-${FCFT_VERSION}.tar.gz
-source_hash = ${FCFT_SHA256}
+directory = ${directory}
+source_url = ${url}
+source_filename = ${directory}.tar.gz
+source_hash = ${sha}
 EOF
+}
 
-cat >"$src/subprojects/tllist.wrap" <<EOF
-[wrap-file]
-directory = tllist-${TLLIST_VERSION}
-source_url = https://codeberg.org/dnkl/tllist/releases/download/${TLLIST_VERSION}/tllist-${TLLIST_VERSION}.tar.gz
-source_filename = tllist-${TLLIST_VERSION}.tar.gz
-source_hash = ${TLLIST_SHA256}
-EOF
+write_wrap fcft "fcft-${FCFT_VERSION}" \
+  "https://codeberg.org/dnkl/fcft/releases/download/${FCFT_VERSION}/fcft-${FCFT_VERSION}.tar.gz" \
+  "$FCFT_SHA256"
 
-cat >"$src/subprojects/wayland-protocols.wrap" <<EOF
-[wrap-file]
-directory = wayland-protocols-${WAYLAND_PROTOCOLS_VERSION}
-source_url = https://gitlab.freedesktop.org/wayland/wayland-protocols/-/archive/${WAYLAND_PROTOCOLS_VERSION}/wayland-protocols-${WAYLAND_PROTOCOLS_VERSION}.tar.gz
-source_filename = wayland-protocols-${WAYLAND_PROTOCOLS_VERSION}.tar.gz
-source_hash = ${WAYLAND_PROTOCOLS_SHA256}
-EOF
+write_wrap tllist "tllist-${TLLIST_VERSION}" \
+  "https://codeberg.org/dnkl/tllist/releases/download/${TLLIST_VERSION}/tllist-${TLLIST_VERSION}.tar.gz" \
+  "$TLLIST_SHA256"
+
+write_wrap wayland-protocols "wayland-protocols-${WAYLAND_PROTOCOLS_VERSION}" \
+  "https://gitlab.freedesktop.org/wayland/wayland-protocols/-/archive/${WAYLAND_PROTOCOLS_VERSION}/wayland-protocols-${WAYLAND_PROTOCOLS_VERSION}.tar.gz" \
+  "$WAYLAND_PROTOCOLS_SHA256"
 
 # custom-terminfo-install-location makes foot export $TERMINFO into the shell
 # it spawns, so `TERM=foot` resolves from a prefix ncurses does not search by

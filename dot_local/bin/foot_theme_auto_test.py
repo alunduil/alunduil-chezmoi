@@ -11,6 +11,7 @@ algorithm fails the test instead of being baked into it.
 """
 
 import importlib.util
+import signal
 import sys
 import tempfile
 import unittest
@@ -91,9 +92,80 @@ class CoordinatesForTimezone(unittest.TestCase):
             fta.coordinates_for_timezone("Mars/Olympus_Mons", self.ZONE_TAB)
 
 
+class ThemeEncoding(unittest.TestCase):
+    """The two ways foot is told to select a theme, which must not drift apart."""
+
+    def test_sections_match_foot_125(self):
+        self.assertEqual(fta.Theme.DARK.section, "1")
+        self.assertEqual(fta.Theme.LIGHT.section, "2")
+
+    def test_signals_match_foot_manual(self):
+        """foot(1): SIGUSR1 switches to dark, SIGUSR2 to light."""
+        self.assertEqual(fta.Theme.DARK.switch_signal, signal.SIGUSR1)
+        self.assertEqual(fta.Theme.LIGHT.switch_signal, signal.SIGUSR2)
+
+    def test_sections_are_distinct(self):
+        sections = [theme.section for theme in fta.Theme]
+        self.assertCountEqual(sections, set(sections))
+
+    def test_from_section_round_trips(self):
+        for theme in fta.Theme:
+            self.assertIs(fta.Theme.from_section(theme.section), theme)
+
+    def test_from_section_rejects_unknown(self):
+        with self.assertRaises(ValueError):
+            fta.Theme.from_section("3")
+
+    def test_str_is_the_human_name(self):
+        """--dry-run prints the theme, so this is user-facing output."""
+        self.assertEqual(str(fta.Theme.DARK), "dark")
+        self.assertEqual(str(fta.Theme.LIGHT), "light")
+
+
+class JulianDay(unittest.TestCase):
+    def test_j2000_epoch(self):
+        """J2000.0 is 2000-01-01 12:00 UTC, Julian Day 2451545.0 by definition."""
+        observed = fta.julian_day(datetime(2000, 1, 1, 12, 0, tzinfo=UTC))
+        self.assertAlmostEqual(observed, 2451545.0, places=6)
+
+    def test_century_is_zero_at_the_epoch(self):
+        observed = fta.julian_century(datetime(2000, 1, 1, 12, 0, tzinfo=UTC))
+        self.assertAlmostEqual(observed, 0.0, places=9)
+
+    def test_advances_one_per_day(self):
+        first = fta.julian_day(datetime(2026, 3, 1, 0, 0, tzinfo=UTC))
+        second = fta.julian_day(datetime(2026, 3, 2, 0, 0, tzinfo=UTC))
+        self.assertAlmostEqual(second - first, 1.0, places=9)
+
+    def test_january_crosses_the_year_boundary(self):
+        """January is month 13 of the prior year internally; the count must not jump."""
+        december = fta.julian_day(datetime(2025, 12, 31, 0, 0, tzinfo=UTC))
+        january = fta.julian_day(datetime(2026, 1, 1, 0, 0, tzinfo=UTC))
+        self.assertAlmostEqual(january - december, 1.0, places=9)
+
+
+class EquationOfTime(unittest.TestCase):
+    """Checked against published extremes, not against this implementation."""
+
+    def minutes(self, month, day):
+        when = datetime(2026, month, day, 12, 0, tzinfo=UTC)
+        return fta.equation_of_time(fta.solar_elements(fta.julian_century(when)))
+
+    def test_february_minimum(self):
+        self.assertAlmostEqual(self.minutes(2, 11), -14.2, delta=0.3)
+
+    def test_november_maximum(self):
+        self.assertAlmostEqual(self.minutes(11, 3), 16.4, delta=0.3)
+
+    def test_stays_within_the_annual_envelope(self):
+        """It never leaves roughly ±17 minutes; a runaway term would show here."""
+        for month in range(1, 13):
+            self.assertLess(abs(self.minutes(month, 15)), 17.0)
+
+
 class SolarElevation(unittest.TestCase):
     def elevation(self, when, latitude=LONDON_LAT, longitude=LONDON_LON):
-        return fta.solar_elevation(when, latitude, longitude)
+        return fta.solar_elevation(when, fta.Coordinates(latitude, longitude))
 
     def test_june_solstice_noon_matches_identity(self):
         """Noon elevation at the June solstice is 90 - latitude + obliquity."""
@@ -140,29 +212,29 @@ class SolarElevation(unittest.TestCase):
 
 class ThemeForElevation(unittest.TestCase):
     def test_above_horizon_is_light(self):
-        self.assertEqual(fta.theme_for_elevation(10.0), "light")
+        self.assertIs(fta.theme_for_elevation(10.0), fta.Theme.LIGHT)
 
     def test_below_horizon_is_dark(self):
-        self.assertEqual(fta.theme_for_elevation(-10.0), "dark")
+        self.assertIs(fta.theme_for_elevation(-10.0), fta.Theme.DARK)
 
     def test_threshold_is_refraction_corrected_not_zero(self):
         """Between -0.833 and 0 the sun is set by convention but geometrically up."""
-        self.assertEqual(fta.theme_for_elevation(-0.5), "light")
-        self.assertEqual(fta.theme_for_elevation(-1.0), "dark")
+        self.assertIs(fta.theme_for_elevation(-0.5), fta.Theme.LIGHT)
+        self.assertIs(fta.theme_for_elevation(-1.0), fta.Theme.DARK)
 
     def test_custom_horizon(self):
-        self.assertEqual(fta.theme_for_elevation(-3.0, horizon=-6.0), "light")
-        self.assertEqual(fta.theme_for_elevation(-8.0, horizon=-6.0), "dark")
+        self.assertIs(fta.theme_for_elevation(-3.0, horizon=-6.0), fta.Theme.LIGHT)
+        self.assertIs(fta.theme_for_elevation(-8.0, horizon=-6.0), fta.Theme.DARK)
 
 
 class StateFile(unittest.TestCase):
     def test_round_trip(self):
         with tempfile.TemporaryDirectory() as tmp:
             path = Path(tmp) / "foot" / "theme-state.ini"
-            fta.write_state(path, "light")
-            self.assertEqual(fta.read_state(path), "light")
-            fta.write_state(path, "dark")
-            self.assertEqual(fta.read_state(path), "dark")
+            fta.write_state(path, fta.Theme.LIGHT)
+            self.assertIs(fta.read_state(path), fta.Theme.LIGHT)
+            fta.write_state(path, fta.Theme.DARK)
+            self.assertIs(fta.read_state(path), fta.Theme.DARK)
 
     def test_missing_file_reads_none(self):
         with tempfile.TemporaryDirectory() as tmp:
@@ -180,7 +252,7 @@ class StateFile(unittest.TestCase):
         Without the [main] header, initial-color-theme would land in
         whatever section foot defaults to and be ignored.
         """
-        self.assertIn("[main]", fta.render_state("dark"))
+        self.assertIn("[main]", fta.render_state(fta.Theme.DARK))
 
     def test_rendered_state_uses_foot_125_section_numbers(self):
         """foot 1.25 takes 1 or 2, not dark or light.
@@ -188,8 +260,8 @@ class StateFile(unittest.TestCase):
         Writing the words instead would be silently ignored: foot rejects the
         value and keeps its default, so every window would come up dark.
         """
-        self.assertIn("initial-color-theme=1", fta.render_state("dark"))
-        self.assertIn("initial-color-theme=2", fta.render_state("light"))
+        self.assertIn("initial-color-theme=1", fta.render_state(fta.Theme.DARK))
+        self.assertIn("initial-color-theme=2", fta.render_state(fta.Theme.LIGHT))
 
     def test_state_ignores_a_theme_written_as_a_word(self):
         """A file left over from a 1.26+ config reads as unset, not as dark."""
@@ -201,7 +273,7 @@ class StateFile(unittest.TestCase):
     def test_write_leaves_no_scratch_file(self):
         with tempfile.TemporaryDirectory() as tmp:
             path = Path(tmp) / "theme-state.ini"
-            fta.write_state(path, "dark")
+            fta.write_state(path, fta.Theme.DARK)
             self.assertEqual([p.name for p in Path(tmp).iterdir()], [path.name])
 
 
