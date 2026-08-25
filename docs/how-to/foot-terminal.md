@@ -42,7 +42,7 @@ pkill -USR1 foot     # dark
 pkill -USR2 foot     # light
 ```
 
-Windows opened afterwards read `initial-color-theme` from
+Windows opened afterward read `initial-color-theme` from
 `~/.config/foot/theme-state.ini`, so pin a theme across new windows by editing
 that file. The timer rewrites it only when the computed theme changes, so
 either edit survives until the next sunrise or sunset.
@@ -52,8 +52,8 @@ either edit survives until the next sunrise or sunset.
 bookworm's `ncurses-term` ships only the `foot+base` fragment, not the `foot`
 entry, so `TERM=foot` doesn't resolve on a stock Debian 12 host. Locally that
 is covered: foot exports `$TERMINFO` pointing into its own prefix. The
-variable doesn't survive SSH, so remote curses programs fall back to
-dumb-terminal behaviour.
+variable doesn't survive SSH, so remote curses programs lose color and
+cursor addressing.
 
 Install foot's terminfo on the remote host once:
 
@@ -72,11 +72,10 @@ TERM=xterm-256color ssh HOST
 `fonts-jetbrains-mono` (in `.chezmoidata/packages.yaml`) supplies the face,
 set as `font=` in `dot_config/foot/foot.ini`.
 
-Check any replacement for `U+E0B0` before switching to it. That's the
-Powerline separator `zellij-rate-limit-status` draws, JetBrains Mono is the
-only font on this host that has it, and a font missing it doesn't fail
-loudly: fontconfig falls through to the Unifont CSUR bitmap and the separator
-renders as a mismatched blob.
+Check any replacement for `U+E0B0`, the Powerline separator
+`zellij-rate-limit-status` draws. JetBrains Mono is the only font on this host
+that covers it. A font that lacks it produces no error: fontconfig substitutes
+a Unifont bitmap, and the separator renders as a mismatched blob.
 
 ```bash
 fc-list ':charset=e0b0' family    # fonts that can draw the separator
