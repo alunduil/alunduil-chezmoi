@@ -49,6 +49,7 @@ command -v truenas-mcp                     # TrueNAS MCP server binary
 trivy --version                            # vulnerability scanner (aquasecurity/trivy)
 gh extension list                          # confirms gh-poi (squash-merge pruner)
 claude mcp list                            # confirms registered MCP servers
+foot --version                             # terminal (apt)
 ```
 
 SSH keys deploy from age-encrypted chezmoi source on apply, so `~/.ssh/{id_rsa,config}` land alongside the age-key paste step, so SSH to GitHub works as soon as `chezmoi init --apply` finishes. The bootstrap clones over HTTPS to bridge the gap before keys exist; swap the apply clone's remote back to SSH if preferred: `git -C ~/.local/share/chezmoi remote set-url origin git@github.com:alunduil/alunduil-chezmoi.git`.

@@ -45,3 +45,7 @@ packages:
     - unattended-upgrades
     - powermgmt-base
     - needrestart
+    # Depends on foot-terminfo, so TERM=foot resolves without listing it too.
+    - foot
+    # foot's font, and the only one here covering U+E0B0 (see foot.ini).
+    - fonts-jetbrains-mono
