@@ -47,5 +47,9 @@ packages:
     - needrestart
     # Depends on foot-terminfo, so TERM=foot resolves without listing it too.
     - foot
-    # foot's font, and the only one here covering U+E0B0 (see foot.ini).
+    # Depends on kitty-terminfo, so TERM=xterm-kitty resolves the same way.
+    # foot stays until kitty is confirmed working under sommelier.
+    - kitty
+    # The terminals' font, and the only one here covering U+E0B0 (see
+    # kitty.conf).
     - fonts-jetbrains-mono

@@ -8,6 +8,7 @@ alunduil
 
 # Host tooling
 foot
+kitty
 chezmoi
 lazygit
 datasource
