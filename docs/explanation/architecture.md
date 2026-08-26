@@ -46,7 +46,7 @@ Tool versions live in `script/install/*` (one script per tool, each pinning its 
 
 ## Host roles
 
-One repo, more than one kind of host. The workstation is a Debian/Crostini box that wants the full toolchain; a lean host—the Home Assistant "Advanced SSH & Web Terminal" add-on (Alpine/musl, ephemeral `/root`)—wants only enough to run a Claude session. The `role` data variable is the host-class axis. It defaults to `workstation`, so existing hosts and a plain `chezmoi init` are unchanged; each host otherwise sets it at bootstrap via `CHEZMOI_ROLE`, which the HA add-on passes through its `init_commands`.
+One repo, more than one kind of host. The workstation is a Debian/Crostini box that wants the full toolchain; a lean host—the Home Assistant "Advanced SSH & Web Terminal" add-on (Alpine/musl, ephemeral `/root`)—wants only enough to run a Claude session. The `role` data variable is the host-class axis. It defaults to `workstation`, so existing hosts and a plain `chezmoi init` are unchanged; each host otherwise sets it at bootstrap via `CHEZMOI_ROLE`, which the HA add-on passes through its `init_commands`. See [how-to/ha-terminal.md](../how-to/ha-terminal.md) for standing that profile up.
 
 Explicit, not detected. Detection would couple intent to incidental signals—OS id, hostname, filesystem markers—that grow brittle as profiles multiply. Setting the value where the host is bootstrapped scales to any number of profiles: a new role is a new value plus ignore rules, never new detection code.
 

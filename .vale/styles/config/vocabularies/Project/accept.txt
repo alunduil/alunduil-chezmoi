@@ -81,6 +81,7 @@ worktree
 worktrees
 
 # Common tech terms
+musl
 config
 configs
 hostname
