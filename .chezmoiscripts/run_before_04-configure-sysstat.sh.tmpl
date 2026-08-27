@@ -1,0 +1,60 @@
+#!/usr/bin/env bash
+# sysstat is the local, in-incident recorder. sadc runs as root in
+# system.slice, so it keeps sampling to /var/log/sysstat through a
+# user-1000.slice pids exhaustion -- the failure that stops every collector
+# sharing the user slice, including the Alloy shipper. See #404.
+#
+# ENABLED in /etc/default/sysstat gates the systemd units: the package's
+# postinst reads it and enables or disables sysstat.service and its timers.
+# That file is ucf- and debconf-managed, so the answer is set through debconf
+# and applied with dpkg-reconfigure. Writing the file directly works until the
+# next package upgrade rewrites it from the debconf database.
+#
+# The guard reads the deployed file rather than asking debconf, because
+# debconf-show needs root and a converged host must not reach sudo.
+
+set -euo pipefail
+
+log() { printf '==> %s\n' "$*" >&2; }
+
+changed=0
+
+# Takes `install`'s own argument list; the difference is that an unchanged
+# DEST is left alone, so a converged host never reaches sudo.
+install_if_changed() {
+  local src="${*: -2:1}" dest="${*: -1}"
+  if cmp -s "$src" "$dest"; then
+    return 0
+  fi
+  log "installing $dest"
+  sudo install "$@"
+  changed=1
+}
+
+SYSSTAT_SRC="{{ .chezmoi.sourceDir }}/etc"
+
+# ------------------------------------------------------------------- config
+install_if_changed -m 0644 "$SYSSTAT_SRC/sysstat/sysstat" /etc/sysstat/sysstat
+install_if_changed -D -m 0644 \
+  "$SYSSTAT_SRC/systemd/system/sysstat-collect.timer.d/interval.conf" \
+  /etc/systemd/system/sysstat-collect.timer.d/interval.conf
+
+if [ "$changed" -eq 1 ]; then
+  sudo systemctl daemon-reload
+fi
+
+# ----------------------------------------------------------------- collection
+if ! grep -qx 'ENABLED="true"' /etc/default/sysstat 2>/dev/null; then
+  log "enabling sysstat collection"
+  echo 'sysstat sysstat/enable boolean true' | sudo debconf-set-selections
+  sudo dpkg-reconfigure -f noninteractive sysstat
+fi
+
+for unit in sysstat.service sysstat-collect.timer; do
+  if ! systemctl is-enabled --quiet "$unit" 2>/dev/null; then
+    log "enabling $unit"
+    sudo systemctl enable --now "$unit"
+  fi
+done
+
+log "sysstat configured"

@@ -53,3 +53,10 @@ packages:
     # The terminals' font, and the only one here covering U+E0B0 (see
     # kitty.conf).
     - fonts-jetbrains-mono
+    # sadc runs as root in system.slice, so it keeps sampling to local disk
+    # through a user-1000.slice pids exhaustion -- the failure whose shape is
+    # lost when the recorder shares the cgroup that is running out of pids.
+    - sysstat
+    # On-demand fork ancestry during a repro; the kernel carries
+    # CONFIG_CONNECTOR and CONFIG_PROC_EVENTS, which forkstat needs.
+    - forkstat

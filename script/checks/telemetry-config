@@ -1,0 +1,25 @@
+#!/usr/bin/env bash
+# Validate the Alloy shipper config with Alloy's own checker. Needs alloy on
+# PATH (installed by script/install/alloy); skips cleanly when it is absent so
+# a pre-bootstrap `just check` does not fail. CI installs it, so there it
+# actually runs.
+set -uo pipefail
+
+ROOT="$(git -C "$(dirname "${BASH_SOURCE[0]}")" rev-parse --show-toplevel)"
+cd "$ROOT"
+
+if ! command -v alloy >/dev/null 2>&1; then
+  printf '==> telemetry-config: alloy not on PATH; skipping\n' >&2
+  exit 0
+fi
+
+# Alloy reads these through sys.env at parse time.
+state="${XDG_STATE_HOME:-$HOME/.local/state}"
+export ZELLIJ_DIAG="${ZELLIJ_DIAG:-$state/zellij-diag}"
+
+if alloy validate dot_config/alloy/config.alloy; then
+  printf 'OK: alloy\n'
+else
+  printf 'FAIL: alloy config invalid\n' >&2
+  exit 1
+fi

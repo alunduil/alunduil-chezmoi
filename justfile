@@ -18,7 +18,7 @@ check:
     #!/usr/bin/env bash
     set -uo pipefail
     rc=0
-    for c in check-pre-commit check-bats check-python check-zellij check-chezmoi check-chezmoi-templates check-settings-permissions check-observability check-systemd check-bootstrap-convergence; do
+    for c in check-pre-commit check-bats check-zellij check-chezmoi check-chezmoi-templates check-settings-permissions check-telemetry check-systemd check-bootstrap-convergence; do
       just "$c" || rc=1
     done
     exit "$rc"
@@ -33,11 +33,6 @@ check-pre-commit:
 check-bats:
     BATS_LIB_PATH="${BATS_LIB_PATH:+$BATS_LIB_PATH:}$HOME/.local/lib/bats" \
       bats --recursive dot_local dot_claude script
-
-# Python unit tests (zellijstat parsers), with the coverage report CI uploads.
-# bats coverage needs kcov, which like lychee is CI-only.
-check-python:
-    uv run --no-project --with pytest,pytest-cov pytest --cov --cov-report=xml --cov-report=term
 
 # Zellij KDL validation (needs zellij on PATH).
 check-zellij:
@@ -55,14 +50,12 @@ check-chezmoi-templates:
 check-settings-permissions:
     script/checks/settings-permissions
 
-# Observability config validation (skips when the stack binaries are absent;
-# the live metrics smoke is CI-only — it binds the running stack's ports).
-check-observability:
-    script/checks/observability-config
+# Alloy shipper config validation (skips when alloy is absent).
+check-telemetry:
+    script/checks/telemetry-config
 
 # systemd user unit validation (skips when the units' referenced binaries are
-# absent — kept apart from observability so the units keep their checker once
-# that stack is gone).
+# absent).
 check-systemd:
     script/checks/systemd-units
 
