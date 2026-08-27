@@ -12,6 +12,11 @@
 // instead of the pane's own command. The script has the specifics.
 post_command_discovery_hook "zellij-resurrect-command"
 
+// The pair layout puts a pane directly above a zjstatus line, and claude
+// and lazygit each anchor a status line to the pane bottom. They collide
+// without a bottom border between them.
+pane_frame_style "full"
+
 plugins {
     zellaude location="https://github.com/ishefi/zellaude/releases/download/v0.5.1/zellaude.wasm"
     zjstatus location="https://github.com/dj95/zjstatus/releases/download/v0.24.0/zjstatus.wasm"
