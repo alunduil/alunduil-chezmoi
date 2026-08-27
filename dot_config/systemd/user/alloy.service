@@ -4,6 +4,9 @@ Documentation=https://github.com/alunduil/alunduil-chezmoi/blob/main/docs/how-to
 
 [Service]
 Environment=ZELLIJ_DIAG=%S/zellij-diag
+# zellij writes its server log under /tmp keyed by uid, outside any directory
+# systemd would hand us, so the path is composed rather than declared.
+Environment=ZELLIJ_LOG=/tmp/zellij-%U/zellij-log/zellij.log
 ExecStart=%h/.local/bin/alloy run %h/.config/alloy/config.alloy \
   --storage.path=%S/alloy \
   --server.http.listen-addr=127.0.0.1:12345

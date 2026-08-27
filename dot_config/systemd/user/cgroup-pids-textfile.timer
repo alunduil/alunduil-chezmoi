@@ -1,0 +1,11 @@
+[Unit]
+Description=Sample user-slice pids accounting every minute
+
+[Timer]
+OnBootSec=1min
+OnUnitActiveSec=1min
+# The pool can drain in seconds, so a sample that drifts is worse than useless.
+AccuracySec=1s
+
+[Install]
+WantedBy=timers.target

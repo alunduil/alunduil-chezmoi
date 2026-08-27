@@ -1,0 +1,42 @@
+#!/usr/bin/env bash
+# Publish the user slice's pids accounting as a node_exporter textfile metric.
+#
+# No packaged collector emits cgroup pids accounting, and this is the pool the
+# freeze exhausts: once pids.current reaches pids.max, every fork in the user
+# slice fails with EAGAIN and the slice stops being able to do anything --
+# including run the collector that would have recorded it. This host is cgroup
+# v1, so the counters sit under the pids controller rather than beside the
+# slice as they would on v2.
+
+set -euo pipefail
+
+dir="${NODE_TEXTFILE_DIR:-${XDG_STATE_HOME:-$HOME/.local/state}/node-textfile}"
+slice="user-$(id -u).slice"
+cgroup="/sys/fs/cgroup/pids/user.slice/$slice"
+
+mkdir -p "$dir"
+out="$dir/cgroup_pids.prom"
+tmp="$out.$$"
+trap 'rm -f "$tmp"' EXIT
+
+current="$(cat "$cgroup/pids.current")"
+max="$(cat "$cgroup/pids.max")"
+
+# An unlimited pool reads "max". +Inf keeps the series numeric, so a headroom
+# expression against it still evaluates instead of going stale.
+if [ "$max" = "max" ]; then
+  max="+Inf"
+fi
+
+cat >"$tmp" <<EOF
+# HELP cgroup_pids_current Processes and threads currently in the cgroup.
+# TYPE cgroup_pids_current gauge
+cgroup_pids_current{slice="$slice"} $current
+# HELP cgroup_pids_max Ceiling above which forks in the cgroup fail with EAGAIN.
+# TYPE cgroup_pids_max gauge
+cgroup_pids_max{slice="$slice"} $max
+EOF
+
+# The collector reads whatever it finds whenever it scrapes, so publish by
+# rename rather than letting it catch a half-written file.
+mv "$tmp" "$out"

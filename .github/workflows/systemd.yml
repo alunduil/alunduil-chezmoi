@@ -9,6 +9,7 @@ on:
     paths: &paths
       - 'dot_config/systemd/user/**'
       - 'etc/systemd/system/**'
+      - 'dot_local/bin/executable_cgroup-pids-textfile'
       - 'dot_local/bin/executable_git-poi-all'
       - 'dot_local/bin/executable_git-worktree-poi'
       - 'dot_local/bin/executable_dev-cache-gc'
@@ -37,7 +38,7 @@ jobs:
         run: |
           mkdir -p "$HOME/.local/bin"
           script/install/alloy --bin-dir "$HOME/.local/bin"
-          for s in git-poi-all git-worktree-poi dev-cache-gc; do
+          for s in cgroup-pids-textfile git-poi-all git-worktree-poi dev-cache-gc; do
             install -m 0755 "dot_local/bin/executable_$s" "$HOME/.local/bin/$s"
           done
 

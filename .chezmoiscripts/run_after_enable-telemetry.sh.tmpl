@@ -1,17 +1,19 @@
 #!/usr/bin/env bash
-# The unit hash below re-runs this script whenever the unit changes, so edits
-# (new ExecStart flags) re-apply via daemon-reload + enable.
-# alloy unit:  {{ include "dot_config/systemd/user/alloy.service" | sha256sum }}
+# Unit hashes below re-run this script whenever a unit changes, so edits
+# (new ExecStart flags, added units) re-apply via daemon-reload + enable.
+# alloy unit:     {{ include "dot_config/systemd/user/alloy.service" | sha256sum }}
+# textfile unit:  {{ include "dot_config/systemd/user/cgroup-pids-textfile.service" | sha256sum }}
+# textfile timer: {{ include "dot_config/systemd/user/cgroup-pids-textfile.timer" | sha256sum }}
 
 set -euo pipefail
 
 # Skip where there is no user systemd manager to talk to (headless apply over
-# SSH without lingering, container builds). The unit is still deployed; a
+# SSH without lingering, container builds). The units are still deployed; a
 # later interactive apply, or a manual enable, brings the shipper up.
 if ! systemctl --user show-environment >/dev/null 2>&1; then
-  echo "==> telemetry: no user systemd session; leaving alloy disabled" >&2
+  echo "==> telemetry: no user systemd session; leaving units disabled" >&2
   exit 0
 fi
 
 systemctl --user daemon-reload
-systemctl --user enable --now alloy.service
+systemctl --user enable --now alloy.service cgroup-pids-textfile.timer
