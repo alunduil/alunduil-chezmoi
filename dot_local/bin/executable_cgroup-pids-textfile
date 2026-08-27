@@ -3,10 +3,8 @@
 #
 # No packaged collector emits cgroup pids accounting, and this is the pool the
 # freeze exhausts: once pids.current reaches pids.max, every fork in the user
-# slice fails with EAGAIN and the slice stops being able to do anything --
-# including run the collector that would have recorded it. This host is cgroup
-# v1, so the counters sit under the pids controller rather than beside the
-# slice as they would on v2.
+# slice fails with EAGAIN. cgroup v1 here, so the counters sit under the pids
+# controller rather than beside the slice as they would on v2.
 
 set -euo pipefail
 

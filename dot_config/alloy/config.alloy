@@ -1,9 +1,6 @@
-// Alloy ships workstation telemetry to Grafana Cloud. It deliberately keeps no
-// local store: a collector living in user-1000.slice goes dark exactly when
-// that slice exhausts its pids pool, which is the incident worth recording, and
-// a Crostini reset wipes the container wholesale. sysstat owns the local,
-// high-resolution, in-incident record (sadc runs as root in system.slice and
-// survives both); this owns durability and history off the box.
+// Ships host telemetry to Grafana Cloud and keeps nothing locally: a collector
+// in user-1000.slice goes dark when that slice exhausts its pids pool, which is
+// the incident worth recording. sysstat owns the local record.
 
 local.file "grafana_cloud_token" {
   filename  = sys.env("HOME") + "/.config/grafana-cloud/token"
@@ -19,9 +16,7 @@ local.file "grafana_cloud_token" {
 prometheus.exporter.unix "host" {
   enable_collectors = ["processes", "textfile"]
 
-  // Both this unit and the sampler derive the directory from systemd's %S
-  // rather than naming it, because %S is $XDG_CONFIG_HOME on systemd 252 user
-  // units, not ~/.local/state. Hardcoding either one makes them disagree.
+  // Supplied by the units, which have to agree with the sampler on one path.
   textfile {
     directory = sys.env("NODE_TEXTFILE_DIR")
   }

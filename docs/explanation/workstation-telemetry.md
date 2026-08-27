@@ -46,15 +46,15 @@ reset but not the incident.
 
 ## No local stores
 
-An earlier design ran Prometheus, Loki, Tempo and Grafana on the box. All four
-have been removed. They duplicated what Grafana Cloud already holds, they cost
-real capacity on a constrained machine, and every one of them ran in
-`user-1000.slice`, so the stores went down with the same event as the
-collectors. Redundancy that shares a failure mode isn't redundancy.
+Nothing is stored on the box beyond sar's own files. A local Prometheus, Loki
+or Tempo would duplicate what Grafana Cloud already holds, cost real capacity on
+a constrained machine, and run in `user-1000.slice`, so it would go down with
+the same event as the collectors. Redundancy that shares a failure mode isn't
+redundancy.
 
-The rule applied: drop any measurement system that duplicates another, unless it
+The rule: drop any measurement system that duplicates another, unless it
 captures something lost precisely because the remote copy is unreachable. sar
-passes that test. A local Prometheus doesn't.
+passes. A local Prometheus doesn't.
 
 ## What the metrics are for
 

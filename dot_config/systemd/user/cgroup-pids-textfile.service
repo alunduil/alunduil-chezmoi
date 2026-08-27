@@ -3,6 +3,6 @@ Description=Publish user-slice pids accounting as a node_exporter textfile
 
 [Service]
 Type=oneshot
-# Must match alloy.service. The script creates the directory.
+# Must match alloy.service. No StateDirectory: the script creates it.
 Environment=NODE_TEXTFILE_DIR=%h/.local/state/node-textfile
 ExecStart=%h/.local/bin/cgroup-pids-textfile
