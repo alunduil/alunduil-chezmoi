@@ -23,6 +23,15 @@ fi
 user_dir="dot_config/systemd/user"
 system_dir="etc/systemd/system"
 
+# Without nullglob a pattern that matches nothing is passed through literally,
+# and systemd-analyze fails on the pattern itself rather than reporting an
+# empty set. Removing the last unit of a kind is a normal thing to do.
+shopt -s nullglob
+user_units=("$user_dir"/*.service "$user_dir"/*.target "$user_dir"/*.timer)
+system_units=("$system_dir"/*.service "$system_dir"/*.timer)
+service_units=("$user_dir"/*.service "$system_dir"/*.service)
+shopt -u nullglob
+
 # verify needs every ExecStart binary present. Derive them from the units
 # (the first token after ExecStart=, %h expanded) instead of a hand-kept list,
 # so adding a unit needs no change here. A missing binary locally just means an
@@ -38,19 +47,23 @@ while IFS= read -r bin; do
   fi
   printf '==> systemd-units: %s not installed; skipping\n' "$bin" >&2
   exit 0
-done < <(grep -hoP '^ExecStart=\K[^ ]+' "$user_dir"/*.service "$system_dir"/*.service)
+done < <(printf '%s\0' "${service_units[@]}" |
+  xargs -0 -r grep -hoP '^ExecStart=\K[^ ]+')
 
 errfile="$(mktemp)"
 trap 'rm -f "$errfile"' EXIT
 # User units carry %h/%S specifiers, so they verify in --user mode; the root
 # units verify system-scope. Both runs append stderr so either scope's warning
 # fails the check.
-systemd-analyze --user verify \
-  "$user_dir"/*.service "$user_dir"/*.target "$user_dir"/*.timer >/dev/null 2>"$errfile"
-rc=$?
-systemd-analyze verify \
-  "$system_dir"/*.service "$system_dir"/*.timer >/dev/null 2>>"$errfile"
-rc=$((rc | $?))
+rc=0
+if [ "${#user_units[@]}" -gt 0 ]; then
+  systemd-analyze --user verify "${user_units[@]}" >/dev/null 2>"$errfile"
+  rc=$?
+fi
+if [ "${#system_units[@]}" -gt 0 ]; then
+  systemd-analyze verify "${system_units[@]}" >/dev/null 2>>"$errfile"
+  rc=$((rc | $?))
+fi
 if [ "$rc" -ne 0 ] || [ -s "$errfile" ]; then
   printf 'FAIL: systemd unit verification\n' >&2
   cat "$errfile" >&2
