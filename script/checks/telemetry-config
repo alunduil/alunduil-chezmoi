@@ -13,9 +13,12 @@ if ! command -v alloy >/dev/null 2>&1; then
   exit 0
 fi
 
-# Alloy reads these through sys.env at parse time.
-state="${XDG_STATE_HOME:-$HOME/.local/state}"
+# Alloy reads these through sys.env at parse time. systemd supplies them at
+# runtime from %S and %U; the values here only have to parse.
+state="${XDG_CONFIG_HOME:-$HOME/.config}"
 export ZELLIJ_DIAG="${ZELLIJ_DIAG:-$state/zellij-diag}"
+export ZELLIJ_LOG="${ZELLIJ_LOG:-/tmp/zellij-$(id -u)/zellij-log/zellij.log}"
+export NODE_TEXTFILE_DIR="${NODE_TEXTFILE_DIR:-$state/node-textfile}"
 
 if alloy validate dot_config/alloy/config.alloy; then
   printf 'OK: alloy\n'

@@ -3,14 +3,18 @@ Description=Grafana Alloy (workstation telemetry shipper)
 Documentation=https://github.com/alunduil/alunduil-chezmoi/blob/main/docs/how-to/viewing-workstation-telemetry.md
 
 [Service]
-Environment=ZELLIJ_DIAG=%S/zellij-diag
+# Paths are built from %h rather than %S: on systemd 252 user units %S is
+# $XDG_CONFIG_HOME, so %S/alloy would drop the write-ahead log into the same
+# directory chezmoi manages config.alloy in.
+Environment=ZELLIJ_DIAG=%h/.local/state/zellij-diag
 # zellij writes its server log under /tmp keyed by uid, outside any directory
 # systemd would hand us, so the path is composed rather than declared.
 Environment=ZELLIJ_LOG=/tmp/zellij-%U/zellij-log/zellij.log
+# Must match cgroup-pids-textfile.service.
+Environment=NODE_TEXTFILE_DIR=%h/.local/state/node-textfile
 ExecStart=%h/.local/bin/alloy run %h/.config/alloy/config.alloy \
-  --storage.path=%S/alloy \
+  --storage.path=%h/.local/state/alloy \
   --server.http.listen-addr=127.0.0.1:12345
-StateDirectory=alloy zellij-diag
 # Alloy buffers to its WAL and retries remote_write on its own, so a restart
 # loop here only means the process itself died.
 Restart=always

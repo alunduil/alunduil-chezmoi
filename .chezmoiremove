@@ -1,0 +1,20 @@
+# Targets chezmoi should delete from the destination. Deleting a source file
+# only stops chezmoi managing the target; it leaves the deployed copy in place.
+# These are the remnants of the local observability stack (#404), which would
+# otherwise keep their units installed and their configs on disk forever.
+#
+# run_before_00-remove-observability-stack stops and disables the units first,
+# so systemd is not left holding a unit file that has been deleted underneath
+# it. That pass also clears what chezmoi never managed: the downloaded
+# binaries and the data directories.
+.config/systemd/user/prometheus.service
+.config/systemd/user/loki.service
+.config/systemd/user/tempo.service
+.config/systemd/user/grafana.service
+.config/systemd/user/zellijstat.service
+.config/systemd/user/zellij-observability.target
+.config/prometheus
+.config/loki
+.config/tempo
+.config/grafana
+.local/bin/zellijstat

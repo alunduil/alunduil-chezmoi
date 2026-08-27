@@ -19,8 +19,11 @@ local.file "grafana_cloud_token" {
 prometheus.exporter.unix "host" {
   enable_collectors = ["processes", "textfile"]
 
+  // Both this unit and the sampler derive the directory from systemd's %S
+  // rather than naming it, because %S is $XDG_CONFIG_HOME on systemd 252 user
+  // units, not ~/.local/state. Hardcoding either one makes them disagree.
   textfile {
-    directory = sys.env("HOME") + "/.local/state/node-textfile"
+    directory = sys.env("NODE_TEXTFILE_DIR")
   }
 }
 
