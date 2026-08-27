@@ -1,72 +1,86 @@
-// Alloy: the unified collector for the zellij-freeze observability stack.
-// Three pipelines feed the always-on local backends:
-//
-//   1. metrics  zellijstat /metrics  -> Prometheus            (live now)
-//   2. logs     $ZELLIJ_DIAG/*.log    -> Loki                  (zellaude fork, #224)
-//   3. OTLP     forks -> {Prometheus, Loki, Tempo}             (zellij fork, #223)
-//
-// Only pipeline 1 carries data today; the log tail finds no files and the
-// OTLP receiver no clients until the forks emit, but wiring them now means no
-// re-plumbing when they land. ZELLIJ_DIAG is set by the systemd unit.
+// Ships host telemetry to Grafana Cloud and keeps nothing locally: a collector
+// in user-1000.slice goes dark when that slice exhausts its pids pool, which is
+// the incident worth recording. sysstat owns the local record.
 
-// --- 1. zellijstat metrics ---------------------------------------------------
-prometheus.scrape "zellijstat" {
-  targets         = [{ __address__ = "127.0.0.1:9095", job = "zellijstat" }]
-  scrape_interval = "2s"
-  scrape_timeout  = "1s"
-  forward_to      = [prometheus.remote_write.local.receiver]
+local.file "grafana_cloud_token" {
+  filename  = sys.env("HOME") + "/.config/grafana-cloud/token"
+  is_secret = true
 }
 
-prometheus.remote_write "local" {
+// ------------------------------------------------------------------- metrics
+
+// `processes` is off by default in node_exporter and is the reason this
+// exporter is here at all: node_forks_total, node_procs_running/blocked and
+// node_processes_state carry the fork-storm shape. `textfile` picks up the
+// cgroup pids pool, which no packaged collector emits on cgroup v1.
+prometheus.exporter.unix "host" {
+  enable_collectors = ["processes", "textfile"]
+
+  // Supplied by the units, which have to agree with the sampler on one path.
+  textfile {
+    directory = sys.env("NODE_TEXTFILE_DIR")
+  }
+}
+
+prometheus.scrape "host" {
+  targets    = prometheus.exporter.unix.host.targets
+  forward_to = [prometheus.remote_write.grafana_cloud.receiver]
+
+  // sysstat owns high resolution locally, so the remote copy is deliberately
+  // coarse -- enough to see a trend and to place an incident in time.
+  scrape_interval = "60s"
+}
+
+prometheus.remote_write "grafana_cloud" {
   endpoint {
-    url = "http://127.0.0.1:9090/api/v1/write"
+    url = "https://prometheus-prod-55-prod-gb-south-1.grafana.net/api/prom/push"
+
+    basic_auth {
+      username = "2471599"
+      password = local.file.grafana_cloud_token.content
+    }
   }
 }
 
-// --- 2. zellij-diag log files ------------------------------------------------
-local.file_match "zellij_diag" {
-  path_targets = [{ __path__ = sys.env("ZELLIJ_DIAG") + "/*.log" }]
+// ---------------------------------------------------------------------- logs
+
+loki.source.journal "host" {
+  forward_to = [loki.write.grafana_cloud.receiver]
+  labels     = {
+    job  = "systemd-journal",
+    host = constants.hostname,
+  }
 }
 
-loki.source.file "zellij_diag" {
-  targets    = local.file_match.zellij_diag.targets
-  forward_to = [loki.write.local.receiver]
+// The zellij server log carries plugin panics; the diagnose bundle carries
+// wedge-time snapshots. Both are lost with the container, so they ship.
+local.file_match "zellij" {
+  path_targets = [
+    {
+      __path__ = sys.env("ZELLIJ_LOG"),
+      job      = "zellij",
+      host     = constants.hostname,
+    },
+    {
+      __path__ = sys.env("ZELLIJ_DIAG") + "/*.txt",
+      job      = "zellij-diag",
+      host     = constants.hostname,
+    },
+  ]
 }
 
-loki.write "local" {
+loki.source.file "zellij" {
+  targets    = local.file_match.zellij.targets
+  forward_to = [loki.write.grafana_cloud.receiver]
+}
+
+loki.write "grafana_cloud" {
   endpoint {
-    url = "http://127.0.0.1:3100/loki/api/v1/push"
-  }
-}
+    url = "https://logs-prod-035.grafana.net/loki/api/v1/push"
 
-// --- 3. OTLP from the forks --------------------------------------------------
-otelcol.receiver.otlp "forks" {
-  grpc {
-    endpoint = "127.0.0.1:4317"
-  }
-  http {
-    endpoint = "127.0.0.1:4318"
-  }
-  output {
-    metrics = [otelcol.exporter.prometheus.forks.input]
-    logs    = [otelcol.exporter.loki.forks.input]
-    traces  = [otelcol.exporter.otlp.tempo.input]
-  }
-}
-
-otelcol.exporter.prometheus "forks" {
-  forward_to = [prometheus.remote_write.local.receiver]
-}
-
-otelcol.exporter.loki "forks" {
-  forward_to = [loki.write.local.receiver]
-}
-
-otelcol.exporter.otlp "tempo" {
-  client {
-    endpoint = "127.0.0.1:4417"
-    tls {
-      insecure = true
+    basic_auth {
+      username = "1231476"
+      password = local.file.grafana_cloud_token.content
     }
   }
 }

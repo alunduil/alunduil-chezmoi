@@ -35,7 +35,6 @@ Prometheus
 Loki
 Tempo
 Alloy
-zellijstat
 zellaude
 OTLP
 systemd
@@ -100,3 +99,12 @@ repo
 repos
 (?i)toolchains?
 facto
+cgroup
+cgroups
+pids
+sadc
+sar
+sysstat
+forkstat
+textfile
+node_exporter

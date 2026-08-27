@@ -99,36 +99,6 @@ jobs:
           disable_search: true
           flags: bats
 
-  python-tests:
-    name: Test python
-    runs-on: ubuntu-24.04
-    timeout-minutes: 10
-    permissions:
-      contents: read
-      id-token: write
-    steps:
-      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
-      - uses: actions/setup-python@5fda3b95a4ea91299a34e894583c3862153e4b97 # v7
-        with:
-          python-version: '3.x'
-
-      # uv supplies pytest and pytest-cov per run, so neither joins the repo's
-      # dependency surface.
-      - name: Install uv
-        run: |
-          script/install/uv --bin-dir "$HOME/.local/bin"
-          echo "$HOME/.local/bin" >> "$GITHUB_PATH"
-
-      - name: Test
-        run: uv run --no-project --with pytest,pytest-cov pytest --cov --cov-report=xml
-
-      - uses: codecov/codecov-action@fb8b3582c8e4def4969c97caa2f19720cb33a72f # v7.0.0
-        with:
-          use_oidc: true
-          files: coverage.xml
-          disable_search: true
-          flags: python
-
   chezmoi-source:
     name: Validate chezmoi source
     runs-on: ubuntu-24.04
@@ -176,11 +146,10 @@ jobs:
       - name: Check config
         run: script/checks/zellij-config
 
-  # Each service config is checked by its own tool's validator, hence the
-  # installs. Deliberately ungated, unlike observability-smoke.yml, so a broken
-  # config fails the build whatever changed.
-  observability-config:
-    name: Validate observability config
+  # Alloy validates its own config, hence the install. Deliberately ungated so
+  # a broken config fails the build whatever changed.
+  telemetry-config:
+    name: Validate telemetry config
     runs-on: ubuntu-24.04
     timeout-minutes: 10
     steps:
@@ -188,18 +157,16 @@ jobs:
       - uses: actions/cache@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6
         with:
           path: ~/.local/bin
-          key: obs-bins-${{ hashFiles('script/install/prometheus', 'script/install/alloy', 'script/install/loki', 'script/install/tempo', 'script/install/lib.sh') }}
+          key: alloy-bin-${{ hashFiles('script/install/alloy', 'script/install/lib.sh') }}
 
-      - name: Install stack binaries
+      - name: Install alloy
         run: |
           mkdir -p "$HOME/.local/bin"
-          for t in prometheus alloy loki tempo; do
-            script/install/"$t" --bin-dir "$HOME/.local/bin"
-          done
+          script/install/alloy --bin-dir "$HOME/.local/bin"
           echo "$HOME/.local/bin" >>"$GITHUB_PATH"
 
-      - name: Validate configs
-        run: script/checks/observability-config
+      - name: Validate config
+        run: script/checks/telemetry-config
 
   # vale's exit code ignores non-error severities, so reviewdog supplies the
   # gate: warnings on the lines a PR adds fail the build, suggestions land as

@@ -64,14 +64,10 @@ fi
 # bats-action lib-path output.
 "$INSTALL_DIR/bats-libs" --lib-dir "$HOME/.local/lib/bats"
 
-# zellij-freeze observability stack (see docs/how-to/viewing-zellij-freeze-data.md).
-# Always installed; the systemd services stay inert until enabled per host
-# with `systemctl --user enable --now zellij-observability.target`.
+# Alloy ships host telemetry to Grafana Cloud (see
+# docs/how-to/viewing-workstation-telemetry.md). Always installed; the unit
+# stays inert until enabled per host.
 "$INSTALL_DIR/alloy" --bin-dir "$HOME/.local/bin"
-"$INSTALL_DIR/prometheus" --bin-dir "$HOME/.local/bin"
-"$INSTALL_DIR/loki" --bin-dir "$HOME/.local/bin"
-"$INSTALL_DIR/tempo" --bin-dir "$HOME/.local/bin"
-"$INSTALL_DIR/grafana" --bin-dir "$HOME/.local/bin"
 
 # gcx ships its skill bundle inside the binary; `agent skills install
 # --all` extracts it to ~/.agents/skills (the cross-harness convention

@@ -1,0 +1,127 @@
+#!/usr/bin/env bash
+# diagnose-zellij-freeze — snapshot evidence during a live Zellij freeze.
+#
+# Run the MOMENT Zellij wedges, BEFORE killing the server — killing it destroys
+# the evidence (alunduil/alunduil-chezmoi#211). Read-only: it inspects
+# processes, kernel/user-space stacks, the IPC socket, and the server log; it
+# never writes Zellij state. Output is a self-contained bundle under
+# /tmp/zellij-freeze-<ts>/ (+ .tar.gz) to attach to an upstream report.
+#
+# Prime suspect: a `zellij pipe --name zellaude` from the Claude Code hook hangs
+# and the hook subprocesses stack. The decisive captures are the gdb backtrace
+# and kernel stack of the hung pipe + the server, and any plugin panic in the
+# log. gdb/strace//proc/<pid>/stack may be restricted under Crostini; missing
+# tools or denied permissions are recorded, not fatal — re-run under sudo for
+# deeper stacks if the manifest flags them unavailable.
+
+set -uo pipefail
+
+self=$$
+uid=$(id -u)
+ts=$(date +%Y%m%d-%H%M%S)
+bundle="/tmp/zellij-freeze-${ts}"
+mkdir -p "$bundle"
+manifest="$bundle/00-manifest.txt"
+serverlog="/tmp/zellij-${uid}/zellij-log/zellij.log"
+runtime_xdg="${XDG_RUNTIME_DIR:-/run/user/${uid}}/zellij" # sockets live here
+runtime_tmp="/tmp/zellij-${uid}"                          # logs live here
+
+note() { printf '%s\n' "$*" | tee -a "$manifest" >&2; }
+have() { command -v "$1" >/dev/null 2>&1; }
+
+# run <slug> <command-string> — execute via bash -c, save stdout+stderr, log it.
+run() {
+  local slug=$1 cmd=$2
+  {
+    printf '$ %s\n\n' "$cmd"
+    bash -c "$cmd"
+  } >"$bundle/${slug}.txt" 2>&1
+  printf '%-24s -> %s.txt\n' "$slug" "$slug" >>"$manifest"
+}
+
+note "zellij-freeze diagnostic — $ts"
+note "bundle: $bundle"
+note "tooling: gdb=$(have gdb && echo yes || echo MISSING) strace=$(have strace && echo yes || echo MISSING) ptrace_scope=$(cat /proc/sys/kernel/yama/ptrace_scope 2>/dev/null || echo '?')"
+note "note: with ptrace_scope>0 and root-only /proc/stack, gdb/strace/-stack need sudo;"
+note "      the server log (plugin panic) and ps wchan (kernel block point) need no privilege."
+note ""
+
+# --- whole-system view ------------------------------------------------------
+run procs "ps -eo pid,ppid,stat,wchan:32,pcpu,etime,cmd | grep -E 'zellij|zellaude' | grep -v -e grep -e diagnose-zellij-freeze"
+run hung-pipes "ps -eo pid,etime,cmd | grep 'zellij pipe' | grep -v grep"
+run sockets "ss -xp 2>/dev/null | grep -i zellij || echo '(no match / ss missing)'"
+run sockets-listening "ss -xlp 2>/dev/null | grep -i zellij || echo '(no match / ss missing)'"
+run runtime-dirs "for d in '$runtime_tmp' '$runtime_xdg'; do echo \"## \$d\"; ls -laR \"\$d\" 2>/dev/null || echo '(missing)'; echo; done"
+run lsof-runtime "if command -v lsof >/dev/null; then lsof +D '$runtime_xdg' 2>/dev/null; lsof +D '$runtime_tmp' 2>/dev/null; else echo '(lsof unavailable)'; fi"
+
+# --- server log -------------------------------------------------------------
+if [ -f "$serverlog" ]; then
+  cp "$serverlog" "$bundle/zellij.log" 2>/dev/null && note "copied server log"
+  run log-panic-grep "grep -niE 'panic|wasm|backtrace|unwrap|panicked|zellaude' '$serverlog' | tail -200 || echo '(no panic/wasm markers found)'"
+  run log-tail "tail -400 '$serverlog'"
+else
+  note "server log not found at $serverlog"
+fi
+
+# --- per-process deep capture ----------------------------------------------
+# /proc reads are cheap; gdb/strace pause the target briefly (fine — it's
+# already frozen) and may be denied by ptrace_scope. Each is best-effort.
+mapfile -t pids < <(pgrep -f 'zellij|zellaude' 2>/dev/null | grep -vx "$self" | sort -un)
+note "deep-capturing ${#pids[@]} process(es): ${pids[*]:-none}"
+for pid in "${pids[@]}"; do
+  [ -d "/proc/$pid" ] || continue
+  cmdline=$(tr '\0' ' ' <"/proc/$pid/cmdline" 2>/dev/null)
+  case "$cmdline" in
+  *diagnose-zellij-freeze*) continue ;; # never the harness itself
+  esac
+  d="$bundle/pid-$pid"
+  mkdir -p "$d"
+  printf '%s\n' "$cmdline" >"$d/cmdline.txt"
+  cat "/proc/$pid/status" >"$d/status.txt" 2>&1 || true
+  { cat "/proc/$pid/wchan" 2>/dev/null; echo; } >"$d/wchan.txt"
+  cat "/proc/$pid/stack" >"$d/kernel-stack.txt" 2>&1 || echo '(stack unavailable — needs privilege)' >"$d/kernel-stack.txt"
+  ls -l "/proc/$pid/fd" >"$d/fd.txt" 2>&1 || true
+  # Per-thread comm+wchan histogram — no privilege needed, and the decisive
+  # signal for the connection/thread-leak deadlock: hundreds of
+  # server_listener/server_router pairs all parked in futex_wait.
+  {
+    echo "threads: $(find "/proc/$pid/task" -maxdepth 1 -mindepth 1 2>/dev/null | wc -l)"
+    for t in "/proc/$pid/task"/*; do
+      printf '%s %s\n' "$(cat "$t/comm" 2>/dev/null)" "$(cat "$t/wchan" 2>/dev/null)"
+    done | sort | uniq -c | sort -rn
+  } >"$d/threads.txt" 2>/dev/null
+  if have gdb; then
+    timeout 25 gdb -p "$pid" -batch -ex 'thread apply all bt' >"$d/gdb-bt.txt" 2>&1
+    grep -q '#0' "$d/gdb-bt.txt" 2>/dev/null ||
+      printf '(gdb attach failed/denied)\nRe-run: sudo gdb -p %s -batch -ex "thread apply all bt"\n' "$pid" >>"$d/gdb-bt.txt"
+  else
+    printf '(gdb not installed)\nInstall gdb, then: sudo gdb -p %s -batch -ex "thread apply all bt"\n' "$pid" >"$d/gdb-bt.txt"
+  fi
+  if have strace; then
+    timeout 6 strace -p "$pid" -tt -e trace=network,desc,futex -o "$d/strace.txt" 2>/dev/null
+    [ -s "$d/strace.txt" ] ||
+      timeout 6 sudo -n strace -p "$pid" -tt -e trace=network,desc,futex -o "$d/strace.txt" 2>/dev/null
+    [ -s "$d/strace.txt" ] ||
+      printf '(strace -p needs CAP_SYS_PTRACE; ptrace_scope=%s)\nRe-run: sudo strace -p %s -tt -e trace=network,desc,futex\n' \
+        "$(cat /proc/sys/kernel/yama/ptrace_scope 2>/dev/null)" "$pid" >"$d/strace.txt"
+  fi
+done
+
+# --- is the server or just the client wedged? (timeout-guarded probe) -------
+run session-probe "timeout 5 zellij list-sessions; echo \"exit=\$? (124 = server not responding)\""
+
+# --- environment ------------------------------------------------------------
+run env-versions "{ echo '# zellij'; zellij --version; echo; echo '# config plugins'; grep -iE 'zellaude|zjstatus' ~/.config/zellij/config.kdl 2>/dev/null; echo; echo '# zellaude settings'; cat ~/.config/zellij/plugins/zellaude.json 2>/dev/null || echo '(none)'; }"
+run env-system "{ uname -a; echo; cat /etc/os-release 2>/dev/null; }"
+run claude-procs "pgrep -af claude 2>/dev/null | grep -v grep || echo '(none)'"
+
+cp ~/.config/zellij/plugins/zellaude-hook.sh "$bundle/zellaude-hook.sh" 2>/dev/null ||
+  note "hook script not found at ~/.config/zellij/plugins/zellaude-hook.sh"
+
+# --- archive ----------------------------------------------------------------
+if tar -czf "${bundle}.tar.gz" -C /tmp "$(basename "$bundle")" 2>/dev/null; then
+  note ""
+  note "archived: ${bundle}.tar.gz"
+fi
+note "done."
+printf '%s\n' "$bundle"

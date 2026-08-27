@@ -1,13 +1,10 @@
 .lycheecache
 **/__pycache__
 CLAUDE.md
-coverage
-coverage.xml
 docs
 etc
 justfile
 LICENSE
-pyproject.toml
 README.md
 lychee.toml
 renovate.json
@@ -16,7 +13,6 @@ script
 # (dot_local/bin, dot_claude/hooks). Skip them by pattern so apply installs
 # the scripts but not their tests or fixtures.
 **/*.bats
-**/*_test.py
 **/fixtures
 {{- if and (hasKey . "role") (eq .role "ha-terminal") }}
 

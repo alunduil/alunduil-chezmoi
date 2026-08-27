@@ -8,9 +8,6 @@ repos:
     hooks:
       - id: shellcheck
         files: (executable_|\.sh\.tmpl$)
-        # executable_zellijstat is Python, not shell; the executable_ glob
-        # would otherwise hand it to a shell linter.
-        exclude: ^dot_local/bin/executable_zellijstat$
         types: [text]
 
   - repo: https://github.com/scop/pre-commit-shfmt
@@ -19,7 +16,6 @@ repos:
       - id: shfmt
         args: ['-i', '2', '-ci']
         files: (executable_|\.sh\.tmpl$)
-        exclude: ^dot_local/bin/executable_zellijstat$
         types: [text]
 
   - repo: https://github.com/pre-commit/pre-commit-hooks
@@ -37,31 +33,7 @@ repos:
         exclude: \.tmpl$
       - id: check-toml
       - id: detect-private-key
-      - id: debug-statements
-      - id: check-ast
       - id: check-merge-conflict
-
-  # The Python hooks below also lint dot_local/bin/executable_zellijstat. It
-  # carries chezmoi's executable_ prefix, so it has no .py suffix and is stored
-  # non-executable; identify tags it only as `text`, so the default
-  # python-typed matching skips it. Match it by path instead.
-  - repo: https://github.com/astral-sh/ruff-pre-commit
-    rev: v0.16.4
-    hooks:
-      - id: ruff-check
-        args: [--fix]
-        types_or: [text]
-        files: (\.py$|/executable_zellijstat$)
-      - id: ruff-format
-        types_or: [text]
-        files: (\.py$|/executable_zellijstat$)
-
-  - repo: https://github.com/pre-commit/mirrors-mypy
-    rev: v2.3.1
-    hooks:
-      - id: mypy
-        types_or: [text]
-        files: (\.py$|/executable_zellijstat$)
 
   - repo: https://github.com/rhysd/actionlint
     rev: v1.7.12

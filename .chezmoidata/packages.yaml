@@ -53,3 +53,12 @@ packages:
     # The terminals' font, and the only one here covering U+E0B0 (see
     # kitty.conf).
     - fonts-jetbrains-mono
+    # Looks redundant with the Grafana Cloud shipper, and is not. sadc runs as
+    # root in system.slice, so it keeps sampling to local disk through a
+    # user-1000.slice pids exhaustion, which stops every collector living in
+    # that slice, Alloy included. Dropping this leaves no recorder that
+    # survives the incident it exists to record.
+    - sysstat
+    # On-demand fork ancestry during a repro; the kernel carries
+    # CONFIG_CONNECTOR and CONFIG_PROC_EVENTS, which forkstat needs.
+    - forkstat

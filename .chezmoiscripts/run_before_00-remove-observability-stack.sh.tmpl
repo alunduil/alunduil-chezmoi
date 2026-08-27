@@ -1,0 +1,67 @@
+#!/usr/bin/env bash
+# Clear the local observability stack retired in #404.
+#
+# .chezmoiremove deletes the unit files and configs chezmoi managed, but it
+# cannot stop a running service, and it never knew about the binaries the
+# install scripts downloaded or the data the services wrote. This runs before
+# the file phase so systemd is not left holding a unit file that vanished
+# underneath it.
+#
+# Everything here is user-owned, so a converged host reaches no sudo and no
+# prompt. Once every host has applied this, the pass and .chezmoiremove can
+# both go.
+
+set -euo pipefail
+
+log() { printf '==> %s\n' "$*" >&2; }
+
+remove_if_present() {
+  local path="$1"
+  [ -e "$path" ] || return 0
+  log "removing $path"
+  rm -rf "$path"
+}
+
+# A headless apply has no user manager to talk to. The units are inert there
+# anyway, and the file removals still happen.
+user_systemd=0
+if systemctl --user show-environment >/dev/null 2>&1; then
+  user_systemd=1
+fi
+
+UNITS=(
+  prometheus.service
+  loki.service
+  tempo.service
+  grafana.service
+  zellijstat.service
+  zellij-observability.target
+)
+
+# The deployed unit file is the guard: list-unit-files reports success even
+# with no match, so it would not narrow anything.
+if [ "$user_systemd" -eq 1 ]; then
+  for unit in "${UNITS[@]}"; do
+    if [ -e "$HOME/.config/systemd/user/$unit" ]; then
+      log "stopping $unit"
+      systemctl --user disable --now "$unit" >/dev/null 2>&1 || true
+    fi
+  done
+fi
+
+# Binaries from script/install/*, which .chezmoiremove never managed.
+for bin in prometheus loki tempo; do
+  remove_if_present "$HOME/.local/bin/$bin"
+done
+
+# grafana installed a versioned tree rather than a single binary.
+remove_if_present "$HOME/.local/share/grafana"
+
+# The services' own data. %S is $XDG_CONFIG_HOME for user units, so this sits
+# under .config; the .local/state path covers a host that resolved it there.
+remove_if_present "${XDG_CONFIG_HOME:-$HOME/.config}/zellij-observability"
+remove_if_present "$HOME/.local/state/zellij-observability"
+
+if [ "$user_systemd" -eq 1 ]; then
+  systemctl --user daemon-reload
+fi
