@@ -15,6 +15,22 @@ set -euo pipefail
 
 log() { printf '==> %s\n' "$*" >&2; }
 
+# rm -rf serves the single binaries and the trees alike, so one helper covers
+# every removal below.
+remove_if_present() {
+  local path="$1"
+  [ -e "$path" ] || return 0
+  log "removing $path"
+  rm -rf "$path"
+}
+
+# A headless apply has no user manager to talk to. The units are inert there
+# anyway, and the file removals still happen.
+user_systemd=0
+if systemctl --user show-environment >/dev/null 2>&1; then
+  user_systemd=1
+fi
+
 UNITS=(
   prometheus.service
   loki.service
@@ -24,12 +40,11 @@ UNITS=(
   zellij-observability.target
 )
 
-# A headless apply has no user manager to talk to; the units are inert there
-# anyway, and the file removals below still happen.
-if systemctl --user show-environment >/dev/null 2>&1; then
+# The deployed unit file is the guard: list-unit-files reports success even
+# with no match, so it would not narrow anything.
+if [ "$user_systemd" -eq 1 ]; then
   for unit in "${UNITS[@]}"; do
-    if systemctl --user list-unit-files "$unit" >/dev/null 2>&1 &&
-      [ -e "$HOME/.config/systemd/user/$unit" ]; then
+    if [ -e "$HOME/.config/systemd/user/$unit" ]; then
       log "stopping $unit"
       systemctl --user disable --now "$unit" >/dev/null 2>&1 || true
     fi
@@ -39,28 +54,17 @@ fi
 # Binaries from script/install/*, which .chezmoiremove never managed. Roughly
 # 400 MB between them.
 for bin in prometheus loki tempo; do
-  if [ -e "$HOME/.local/bin/$bin" ]; then
-    log "removing ~/.local/bin/$bin"
-    rm -f "$HOME/.local/bin/$bin"
-  fi
+  remove_if_present "$HOME/.local/bin/$bin"
 done
 
 # grafana installed a versioned tree rather than a single binary.
-if [ -d "$HOME/.local/share/grafana" ]; then
-  log "removing ~/.local/share/grafana"
-  rm -rf "$HOME/.local/share/grafana"
-fi
+remove_if_present "$HOME/.local/share/grafana"
 
 # The services' own data. %S expanded to $XDG_CONFIG_HOME on systemd 252 user
 # units, so this sits under .config rather than .local/state.
-for dir in "${XDG_CONFIG_HOME:-$HOME/.config}/zellij-observability" \
-  "$HOME/.local/state/zellij-observability"; do
-  if [ -d "$dir" ]; then
-    log "removing $dir"
-    rm -rf "$dir"
-  fi
-done
+remove_if_present "${XDG_CONFIG_HOME:-$HOME/.config}/zellij-observability"
+remove_if_present "$HOME/.local/state/zellij-observability"
 
-if systemctl --user show-environment >/dev/null 2>&1; then
+if [ "$user_systemd" -eq 1 ]; then
   systemctl --user daemon-reload
 fi

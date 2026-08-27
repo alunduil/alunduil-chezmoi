@@ -31,12 +31,12 @@ install_if_changed() {
   changed=1
 }
 
-SYSSTAT_SRC="{{ .chezmoi.sourceDir }}/etc"
+ETC_SRC="{{ .chezmoi.sourceDir }}/etc"
 
 # ------------------------------------------------------------------- config
-install_if_changed -m 0644 "$SYSSTAT_SRC/sysstat/sysstat" /etc/sysstat/sysstat
+install_if_changed -m 0644 "$ETC_SRC/sysstat/sysstat" /etc/sysstat/sysstat
 install_if_changed -D -m 0644 \
-  "$SYSSTAT_SRC/systemd/system/sysstat-collect.timer.d/interval.conf" \
+  "$ETC_SRC/systemd/system/sysstat-collect.timer.d/interval.conf" \
   /etc/systemd/system/sysstat-collect.timer.d/interval.conf
 
 if [ "$changed" -eq 1 ]; then
