@@ -12,11 +12,9 @@
 // instead of the pane's own command. The script has the specifics.
 post_command_discovery_hook "zellij-resurrect-command"
 
-// Zellij's default, "titles", draws a title line above each pane and no
-// border. The pair layout stacks a pane directly on a zjstatus line, so
-// without a bottom border the bottom-anchored status lines of claude and
-// lazygit render flush against it and read as overdraw. "full" is also
-// what separates the 40/60 claude|lazygit split.
+// The pair layout puts a pane directly above a zjstatus line, and claude
+// and lazygit each anchor a status line to the pane bottom. They collide
+// without a bottom border between them.
 pane_frame_style "full"
 
 plugins {
