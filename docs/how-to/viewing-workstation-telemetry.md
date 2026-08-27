@@ -49,4 +49,4 @@ User services stop with your session, so unattended capture needs lingering:
 loginctl enable-linger
 ```
 
-`sadc` is unaffected either way. It runs as root in `system.slice`.
+Lingering doesn't affect `sadc`. It runs as root in `system.slice`.

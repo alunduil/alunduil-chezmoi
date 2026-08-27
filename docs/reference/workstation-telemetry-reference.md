@@ -16,14 +16,14 @@ which are the only copies. To operate it, see
 
 ## Metrics this repo emits
 
-Everything else on the metrics side comes from node_exporter and is documented
-upstream. These two don't exist there, because no packaged collector reads
-cgroup pids accounting on cgroup v1:
+node_exporter supplies and documents everything else on the metrics side.
+These two don't exist there, because no packaged collector reads cgroup pids
+accounting on cgroup v1:
 
 | Metric | Type | Description |
 | ------ | ---- | ----------- |
 | `cgroup_pids_current` | gauge | Processes and threads in the slice. |
-| `cgroup_pids_max` | gauge | Ceiling above which forks fail with `EAGAIN`. |
+| `cgroup_pids_max` | gauge | The point where forks start failing with `EAGAIN`. |
 
 Both carry a `slice` label.
 
