@@ -6,7 +6,7 @@ set -euo pipefail
 # Python-CLI installer: `uv tool install` gives pre-commit a reproducible,
 # pinned home without a system `pip --user` (blocked here under PEP 668).
 # renovate: datasource=github-releases depName=astral-sh/uv
-UV_VERSION="0.12.5"
+UV_VERSION="0.12.6"
 ARCH="x86_64-unknown-linux-musl"
 
 # shellcheck source-path=SCRIPTDIR source=lib.sh
