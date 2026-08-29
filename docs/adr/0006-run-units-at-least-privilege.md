@@ -65,9 +65,8 @@ rule covers the common case, so only the exceptions need prose.
   maintenance to one login identity buys nothing. Its comment already says so.
 - The Alloy shipper takes its Grafana Cloud token through `LoadCredential=`
   rather than reading `$HOME`. The unit declares the secret, and `config.alloy`
-  reads `$CREDENTIALS_DIRECTORY`. Running Alloy by hand now needs that variable
-  set, which `script/checks/telemetry-config` does so the config still
-  validates.
+  reads `$CREDENTIALS_DIRECTORY`. Running Alloy outside systemd now means
+  setting that variable, or it looks for the token in the wrong place.
 - `DynamicUser=yes` has no user today. The one system unit this repo owns needs
   root. The clause is here so the next system daemon doesn't re-derive it.
 - The shipper stays in the user slice, so it still goes dark during a pids
