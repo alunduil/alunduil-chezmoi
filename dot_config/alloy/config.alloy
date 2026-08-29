@@ -23,13 +23,75 @@ prometheus.exporter.unix "host" {
   }
 }
 
-prometheus.scrape "host" {
+// node_exporter counts processes without naming them, so a pids pool can drain
+// with no record of what drained it. These matchers supply the attribution.
+//
+// A process joins the first group whose rules match. The catch-all matches
+// everything left over, so track_children never fires: a group counts processes
+// running a binary, not the work that spawned them.
+prometheus.exporter.process "host" {
+  // num_threads still reports the aggregate, which is what the pids pool counts.
+  // Per-thread series add a threadname label across five metrics.
+  track_threads = false
+  // Reads /proc/<pid>/smaps for every process on every scrape.
+  gather_smaps = false
+  // The catch-all creates a group per executable, so groups that stop matching
+  // have to retire or the set grows without bound.
+  remove_empty_groups = true
+
+  // The hook blocks on `zellij pipe`, so counting both shows pipes outliving the
+  // hooks that started them.
+  matcher {
+    name    = "zellij-pipe"
+    cmdline = ["zellij\\s+pipe"]
+  }
+  matcher {
+    name    = "zellaude-hook"
+    cmdline = ["zellaude-hook"]
+  }
+
+  // Timer-driven, once per pair tab, so these scale with tab count rather than
+  // with activity.
+  matcher {
+    name    = "zjstatus-command"
+    cmdline = ["zellij-(branch|pr|rate-limit)-status"]
+  }
+
+  matcher {
+    name    = "zellij-server"
+    cmdline = ["zellij\\s+--server"]
+  }
+
+  matcher {
+    name = "claude"
+    comm = ["claude"]
+  }
+
+  // Everything else, one group per executable basename. A matcher carrying no
+  // comm/exe/cmdline rule is not an always-match -- it makes process-exporter
+  // reject the whole group list, which is why this one needs an explicit `.+`.
+  matcher {
+    name    = "{{.ExeBase}}"
+    cmdline = [".+"]
+  }
+}
+
+prometheus.scrape "unix" {
   targets    = prometheus.exporter.unix.host.targets
   forward_to = [prometheus.remote_write.grafana_cloud.receiver]
 
-  // sysstat owns high resolution locally, so the remote copy is deliberately
-  // coarse -- enough to see a trend and to place an incident in time.
-  scrape_interval = "60s"
+  // A pids pool can drain between two 60s samples. These are a handful of
+  // counter reads, so resolution costs almost nothing here.
+  scrape_interval = "15s"
+}
+
+prometheus.scrape "process" {
+  targets    = prometheus.exporter.process.host.targets
+  forward_to = [prometheus.remote_write.grafana_cloud.receiver]
+
+  // Walks /proc once per process, so it costs most when the host is already
+  // starved. Half the resolution above still places a group inside a burst.
+  scrape_interval = "30s"
 }
 
 prometheus.remote_write "grafana_cloud" {

@@ -41,6 +41,31 @@ the machine forking:
 cgroup_pids_current / cgroup_pids_max
 ```
 
+## Find out what drained the pool
+
+Rank the groups over the incident window:
+
+```promql
+topk(10, namedprocess_namegroup_num_threads)
+```
+
+A group climbing here is holding processes open rather than churning through
+them:
+
+```promql
+topk(10, deriv(namedprocess_namegroup_num_procs[5m]))
+```
+
+Split a fork storm from a pile-up of processes waiting on something:
+
+```promql
+sum by (groupname) (namedprocess_namegroup_states{state="Running"})
+```
+
+A burst that moves `node_forks_total` but reaches none of these lived and died
+between two 30s samples. Run `sudo forkstat -e exec,fork` during a reproduction
+to catch those.
+
 ## Record while logged out
 
 User services stop with your session, so unattended capture needs lingering:
