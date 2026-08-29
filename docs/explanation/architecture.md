@@ -42,6 +42,8 @@ Bootstrap lives in `.chezmoiscripts/`: `run_*_before_*.sh.tmpl` install and conf
 - **Ordered where order is load-bearing.** The `before` passes carry a two-digit prefix because some installs depend on others (ghcup must exist before `cabal` can build); it's a stable sort key, not a reservation system—gaps are fine. The `after` passes are mutually independent, so they drop the number and name the concept. Filename is chezmoi's only ordering lever, so numbers earn their place only where a real dependency exists.
 - **One concern per script** so a failed run names its own scope. Scripts map to a product family, not an install mechanism: a tool needing both `apt` and a binary download lives in one script, not split across passes.
 
+Which pass enables a unit is a separate question from where that unit runs. [ADR 0006](../adr/0006-run-units-at-least-privilege.md) carries the rule for picking a systemd manager and a run-as identity.
+
 Tool versions live in `script/install/*` (one script per tool, each pinning its own `*_VERSION`), and both bootstrap and CI reuse them, so there's exactly one place to bump. Zellij *plugins* (`zellaude`, `zjstatus`) pin via alias tags in `dot_config/zellij/config.kdl`, since the plugin registry is independent of the binary.
 
 ## Host roles
