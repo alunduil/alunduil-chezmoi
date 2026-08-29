@@ -12,9 +12,9 @@
 // instead of the pane's own command. The script has the specifics.
 post_command_discovery_hook "zellij-resurrect-command"
 
-// Declared here rather than dismissed in the UI: saving a preference from
-// inside zellij makes it serialize the whole merged config -- every default
-// keybind and option -- over this file, moving ours to config.kdl.bak.N.
+// Without this, zellij shows a startup-tips screen whose dismissal saves
+// a preference. Saving a preference from inside zellij serializes its
+// whole merged config over this file.
 show_startup_tips false
 
 // The pair layout puts a pane directly above a zjstatus line, and claude
