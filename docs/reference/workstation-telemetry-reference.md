@@ -50,10 +50,13 @@ the catch-all carries `cmdline = [".+"]`.
 
 ## Scrape intervals
 
-| Scrape | Interval | Why |
-| ------ | -------- | --- |
-| `host` (node_exporter) | 15s | A pool can drain between two 60s samples. |
-| `processes` | 30s | Walks `/proc` per process, so it costs most under load. |
+Each scrape is named for the exporter it drains. The `job` label is set by the
+exporter, not by the scrape, so it's what selects these series remotely:
+
+| Scrape | `job` | Interval | Why |
+| ------ | ----- | -------- | --- |
+| `unix` | `integrations/unix` | 15s | A pool can drain between two 60s samples. |
+| `process` | `integrations/process` | 30s | Walks `/proc` per process, so it costs most under load. |
 
 Both are sampled populations. A process that lives and dies inside one
 interval is counted by `node_forks_total` and named by nothing.

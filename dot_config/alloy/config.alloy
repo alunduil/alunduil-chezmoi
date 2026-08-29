@@ -45,14 +45,14 @@ prometheus.exporter.process "host" {
   // groups that no longer match is what keeps that set from growing forever.
   remove_empty_groups = true
 
-  // Each Claude tool call runs this hook, which blocks on `zellij pipe`. Both
-  // halves are counted separately because the interesting failure is the gap
-  // between them: pipes outliving the hooks that started them.
+  // Each Claude tool call runs this hook, which blocks on `zellij pipe`. The
+  // two are counted separately because the interesting failure is the gap
+  // between them: pipes outliving the hooks that started them. They stay
+  // adjacent -- the pair is the measurement, neither half means much alone.
   matcher {
     name    = "zellij-pipe"
     cmdline = ["zellij\\s+pipe"]
   }
-
   matcher {
     name    = "zellaude-hook"
     cmdline = ["zellaude-hook"]
@@ -87,7 +87,7 @@ prometheus.exporter.process "host" {
   }
 }
 
-prometheus.scrape "host" {
+prometheus.scrape "unix" {
   targets    = prometheus.exporter.unix.host.targets
   forward_to = [prometheus.remote_write.grafana_cloud.receiver]
 
@@ -98,7 +98,7 @@ prometheus.scrape "host" {
   scrape_interval = "15s"
 }
 
-prometheus.scrape "processes" {
+prometheus.scrape "process" {
   targets    = prometheus.exporter.process.host.targets
   forward_to = [prometheus.remote_write.grafana_cloud.receiver]
 
