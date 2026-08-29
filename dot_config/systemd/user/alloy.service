@@ -3,6 +3,8 @@ Description=Grafana Alloy (workstation telemetry shipper)
 Documentation=https://github.com/alunduil/alunduil-chezmoi/blob/main/docs/how-to/viewing-workstation-telemetry.md
 
 [Service]
+# config.alloy reads this by id from $CREDENTIALS_DIRECTORY. See ADR 0006.
+LoadCredential=grafana-cloud-token:%h/.config/grafana-cloud/token
 # %S is $XDG_CONFIG_HOME for user units, so %S/alloy would put the write-ahead
 # log in the directory chezmoi manages config.alloy in. %h avoids that.
 Environment=ZELLIJ_DIAG=%h/.local/state/zellij-diag

@@ -101,6 +101,8 @@ repos
 facto
 cgroup
 cgroups
+uid
+tmpfs
 pids
 sadc
 sar

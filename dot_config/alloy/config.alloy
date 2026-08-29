@@ -2,8 +2,9 @@
 // in user-1000.slice goes dark when that slice exhausts its pids pool, which is
 // the incident worth recording. sysstat owns the local record.
 
+// The id must match alloy.service's LoadCredential=.
 local.file "grafana_cloud_token" {
-  filename  = sys.env("HOME") + "/.config/grafana-cloud/token"
+  filename  = sys.env("CREDENTIALS_DIRECTORY") + "/grafana-cloud-token"
   is_secret = true
 }
 
