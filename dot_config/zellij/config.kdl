@@ -12,6 +12,11 @@
 // instead of the pane's own command. The script has the specifics.
 post_command_discovery_hook "zellij-resurrect-command"
 
+// Without this, zellij shows a startup-tips screen whose dismissal saves
+// a preference. Saving a preference from inside zellij serializes its
+// whole merged config over this file.
+show_startup_tips false
+
 // The pair layout puts a pane directly above a zjstatus line, and claude
 // and lazygit each anchor a status line to the pane bottom. They collide
 // without a bottom border between them.
