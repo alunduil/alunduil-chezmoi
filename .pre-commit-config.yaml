@@ -81,7 +81,7 @@ repos:
         files: \.(md|kdl)$
 
   - repo: https://github.com/renovatebot/pre-commit-hooks
-    rev: 44.46.0
+    rev: 44.46.1
     hooks:
       - id: renovate-config-validator
         args: [--strict, --no-global]
