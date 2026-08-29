@@ -43,30 +43,28 @@ cgroup_pids_current / cgroup_pids_max
 
 ## Find out what drained the pool
 
-The pool series says a burst happened; these say what it was made of. Rank the
-groups over the incident window:
+Rank the groups over the incident window:
 
 ```promql
 topk(10, namedprocess_namegroup_num_threads)
 ```
 
-Then separate a group that grew from one that merely churned. A group climbing
-here is holding processes open:
+A group climbing here is holding processes open rather than churning through
+them:
 
 ```promql
 topk(10, deriv(namedprocess_namegroup_num_procs[5m]))
 ```
 
-A burst that never shows up in either, but does move `node_forks_total`, was
-short-lived enough to live and die between two 30s samples. Reach for
-`sudo forkstat -e exec,fork` during a reproduction to see those.
-
-Blocked work concentrates in one state, which separates a fork storm from a
-pile-up of processes waiting on something:
+Split a fork storm from a pile-up of processes waiting on something:
 
 ```promql
 sum by (groupname) (namedprocess_namegroup_states{state="Running"})
 ```
+
+A burst that moves `node_forks_total` but reaches none of these lived and died
+between two 30s samples. Run `sudo forkstat -e exec,fork` during a reproduction
+to catch those.
 
 ## Record while logged out
 

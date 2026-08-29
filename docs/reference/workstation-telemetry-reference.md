@@ -31,35 +31,32 @@ Both carry a `slice` label.
 
 `prometheus.exporter.process` reports `namedprocess_namegroup_num_procs`,
 `_num_threads` and `_states{state=…}` per group. The group names are this
-repo's choice; a process joins the first matcher it matches:
+repo's choice. A process joins the first matcher it matches:
 
-| Group | Matches |
-| ----- | ------- |
+| Group | Covers |
+| ----- | ------ |
 | `zellij-pipe` | `zellij pipe`, one per Claude tool call |
-| `zellaude-hook` | the hook script that blocks on the pipe above |
+| `zellaude-hook` | the hook script that blocks on that pipe |
 | `zjstatus-command` | the `zellij-*-status` scripts zjstatus runs on a timer |
-| `zellij-server` | the server itself |
+| `zellij-server` | the server process |
 | `claude` | Claude Code |
 | *executable basename* | everything else, one group per binary |
 
-The catch-all matches every remaining process, so nothing is left for
-`track_children` to attribute upward: a group counts processes running that
-binary, not the work that spawned them. A matcher with no `comm`, `exe`, or
-`cmdline` rule is rejected rather than treated as always-match, which is why
-the catch-all carries `cmdline = [".+"]`.
+A group counts processes running that binary, not the work that spawned them.
+The catch-all leaves nothing for `track_children` to attribute upward.
 
 ## Scrape intervals
 
-Each scrape is named for the exporter it drains. The `job` label is set by the
-exporter, not by the scrape, so it's what selects these series remotely:
+The `job` label comes from the exporter, not the scrape, so it's what selects
+these series remotely:
 
 | Scrape | `job` | Interval | Why |
 | ------ | ----- | -------- | --- |
-| `unix` | `integrations/unix` | 15s | A pool can drain between two 60s samples. |
+| `unix` | `integrations/unix` | 15s | A pids pool can drain between two 60s samples. |
 | `process` | `integrations/process` | 30s | Walks `/proc` per process, so it costs most under load. |
 
-Both are sampled populations. A process that lives and dies inside one
-interval is counted by `node_forks_total` and named by nothing.
+Both sample a population at an instant. A process that lives and dies inside one
+interval moves `node_forks_total` and appears in no group.
 
 ## Local equivalents
 
