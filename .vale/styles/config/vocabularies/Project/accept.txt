@@ -110,3 +110,6 @@ sysstat
 forkstat
 textfile
 node_exporter
+zjstatus
+basename
+process_exporter

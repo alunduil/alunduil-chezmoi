@@ -23,13 +23,89 @@ prometheus.exporter.unix "host" {
   }
 }
 
+// node_exporter answers "how many" but never "which". The 2026-08-29 pids
+// exhaustion left ~7500 tasks standing for a minute with nothing recording what
+// they were, so attribution is the reason this exporter is here.
+//
+// Matchers are ordered most-specific first; a process joins the first group
+// that matches. The trailing catch-all matches everything, which means no
+// process is ever left over for track_children to attribute to its parent's
+// group -- every process is named for its own binary rather than the script
+// that spawned it. That is the deliberate trade: complete coverage of an
+// unknown population, at the cost of ancestry.
+prometheus.exporter.process "host" {
+  // Per-thread series carry a threadname label across five metrics and cost far
+  // more than they answer; the aggregate num_threads survives this being off,
+  // and threads are what the pids pool actually counts.
+  track_threads = false
+  // Reads /proc/<pid>/smaps for every process on every scrape. Memory is not
+  // the resource that runs out here.
+  gather_smaps = false
+  // The catch-all below mints a group per distinct executable, so retiring
+  // groups that no longer match is what keeps that set from growing forever.
+  remove_empty_groups = true
+
+  // Each Claude tool call runs this hook, which blocks on `zellij pipe`. Both
+  // halves are counted separately because the interesting failure is the gap
+  // between them: pipes outliving the hooks that started them.
+  matcher {
+    name    = "zellij-pipe"
+    cmdline = ["zellij\\s+pipe"]
+  }
+
+  matcher {
+    name    = "zellaude-hook"
+    cmdline = ["zellaude-hook"]
+  }
+
+  // zjstatus runs these on 30s/60s timers, once per pair tab, so they scale
+  // with tab count rather than with anything the user did.
+  matcher {
+    name    = "zjstatus-command"
+    cmdline = ["zellij-(branch|pr|rate-limit)-status"]
+  }
+
+  matcher {
+    name    = "zellij-server"
+    cmdline = ["zellij\\s+--server"]
+  }
+
+  matcher {
+    name = "claude"
+    comm = ["claude"]
+  }
+
+  // Everything else, one group per executable basename. Deliberately broad: the
+  // question this exporter exists to answer is what an unexpected population is
+  // made of, which a curated matcher list cannot know in advance. The `.+` is
+  // load-bearing -- a matcher carrying no comm/exe/cmdline rule is not an
+  // always-match, it makes process-exporter reject the whole group list with
+  // "process_names is invalid: no matchers provided".
+  matcher {
+    name    = "{{.ExeBase}}"
+    cmdline = [".+"]
+  }
+}
+
 prometheus.scrape "host" {
   targets    = prometheus.exporter.unix.host.targets
   forward_to = [prometheus.remote_write.grafana_cloud.receiver]
 
-  // sysstat owns high resolution locally, so the remote copy is deliberately
-  // coarse -- enough to see a trend and to place an incident in time.
-  scrape_interval = "60s"
+  // A pool drains faster than it is sampled: the 2026-08-29 exhaustion ramped
+  // from 1092 to over 10813 tasks inside 70s, which a 60s interval reduces to a
+  // single sample mid-ramp. These are a handful of counter reads, so the
+  // interval is set by what resolves the incident, not by what it costs.
+  scrape_interval = "15s"
+}
+
+prometheus.scrape "processes" {
+  targets    = prometheus.exporter.process.host.targets
+  forward_to = [prometheus.remote_write.grafana_cloud.receiver]
+
+  // Walks /proc once per process per scrape, so it gets costly exactly when the
+  // host is already starved. Half the resolution of the counters above still
+  // places a group inside a 70s burst, at half the read amplification.
+  scrape_interval = "30s"
 }
 
 prometheus.remote_write "grafana_cloud" {

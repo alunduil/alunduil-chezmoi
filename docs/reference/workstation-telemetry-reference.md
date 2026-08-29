@@ -27,6 +27,37 @@ accounting on cgroup v1:
 
 Both carry a `slice` label.
 
+## Process groups
+
+`prometheus.exporter.process` reports `namedprocess_namegroup_num_procs`,
+`_num_threads` and `_states{state=…}` per group. The group names are this
+repo's choice; a process joins the first matcher it matches:
+
+| Group | Matches |
+| ----- | ------- |
+| `zellij-pipe` | `zellij pipe`, one per Claude tool call |
+| `zellaude-hook` | the hook script that blocks on the pipe above |
+| `zjstatus-command` | the `zellij-*-status` scripts zjstatus runs on a timer |
+| `zellij-server` | the server itself |
+| `claude` | Claude Code |
+| *executable basename* | everything else, one group per binary |
+
+The catch-all matches every remaining process, so nothing is left for
+`track_children` to attribute upward: a group counts processes running that
+binary, not the work that spawned them. A matcher with no `comm`, `exe`, or
+`cmdline` rule is rejected rather than treated as always-match, which is why
+the catch-all carries `cmdline = [".+"]`.
+
+## Scrape intervals
+
+| Scrape | Interval | Why |
+| ------ | -------- | --- |
+| `host` (node_exporter) | 15s | A pool can drain between two 60s samples. |
+| `processes` | 30s | Walks `/proc` per process, so it costs most under load. |
+
+Both are sampled populations. A process that lives and dies inside one
+interval is counted by `node_forks_total` and named by nothing.
+
 ## Local equivalents
 
 sar and node_exporter measure the same machine under different names. During an
