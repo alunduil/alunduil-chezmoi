@@ -55,6 +55,13 @@ Anthropic
 Claustre
 claustre
 Copilot
+Readwise
+
+# Security and identity
+OAuth
+plaintext
+keyless
+mitigations
 
 # Languages and ecosystems
 TypeScript

@@ -58,6 +58,11 @@ effect on `apply` until committed and pulled into the apply clone. Use
   inline in the script (e.g. `GH_POI_VERSION`).
 - `dot_local/bin/executable_gh` shadows system `gh` to enforce `--draft`
   on `gh pr create`. PRs Claude opens go through this wrapper.
+- `docs/explanation/data-flow.md` carries the data flow diagram for the
+  workstation and the MCP fleet. Update it in the same change that adds,
+  removes, or reshapes an element it shows — an MCP server, an encrypted
+  secret, a hook's job, a telemetry sink, a store a session reads or
+  writes. It is inline Mermaid, so there is no export step.
 
 ## Sensors
 
