@@ -61,7 +61,7 @@ effect on `apply` until committed and pulled into the apply clone. Use
 - `docs/explanation/data-flow.md` carries the data flow diagram for the
   workstation and the MCP fleet. Update it in the same change that adds,
   removes, or reshapes an element it shows — an MCP server, an encrypted
-  secret, a hook's job, a telemetry sink. `script/checks/dfd-balance`
+  secret, a hook's job, a telemetry sink. `script/checks/dfd_balance.py`
   gates the levels against each other; the `dfd` skill carries the rules
   it enforces.
 
@@ -80,7 +80,7 @@ pre-commit run --all-files     # shellcheck, shfmt, check-json
 bats --recursive dot_local dot_claude script  # unit tests
 script/checks/zellij-config    # zellij KDL validation (needs zellij)
 script/checks/chezmoi-apply    # apply round-trip (needs chezmoi + age)
-script/checks/dfd-balance      # data flow diagram levels balance
+script/checks/dfd_balance.py   # data flow diagram levels balance
 ```
 
 ## Two CLAUDE.md files

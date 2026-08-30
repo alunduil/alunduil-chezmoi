@@ -78,10 +78,10 @@ repos:
       # or invents a flow fails here rather than at the next reader.
       - id: dfd-balance
         name: dfd-balance
-        entry: script/checks/dfd-balance
+        entry: script/checks/dfd_balance.py
         language: system
         pass_filenames: false
-        files: ^docs/explanation/data-flow\.md$
+        files: ^(docs/explanation/data-flow\.md|script/checks/dfd_balance\.py)$
 
       - id: lychee
         name: lychee

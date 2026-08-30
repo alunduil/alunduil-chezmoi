@@ -18,7 +18,7 @@ check:
     #!/usr/bin/env bash
     set -uo pipefail
     rc=0
-    for c in check-pre-commit check-bats check-zellij check-chezmoi check-chezmoi-templates check-settings-permissions check-telemetry check-systemd check-bootstrap-convergence check-dfd; do
+    for c in check-pre-commit check-bats check-zellij check-chezmoi check-chezmoi-templates check-settings-permissions check-telemetry check-systemd check-bootstrap-convergence check-dfd check-unit; do
       just "$c" || rc=1
     done
     exit "$rc"
@@ -65,4 +65,8 @@ check-bootstrap-convergence:
 
 # Data flow diagram levels balance and obey the drawing rules.
 check-dfd:
-    script/checks/dfd-balance
+    script/checks/dfd_balance.py
+
+# Python unit tests, beside the scripts they exercise.
+check-unit:
+    python3 -m unittest discover --start-directory script/checks --pattern '*_test.py'

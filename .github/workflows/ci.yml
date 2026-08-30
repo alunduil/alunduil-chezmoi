@@ -34,6 +34,18 @@ jobs:
       # has to pin its own inner steps, or the chain breaks there.
       - uses: tox-dev/action-pre-commit-uv@e09b8958484dfe71f4ac3bc7afb230ba506402ec # v1.0.5
 
+  # Beside the shell tests, not folded into them: bats and unittest need
+  # different runners, and a Python failure should name itself in the job list.
+  python-tests:
+    name: Test python scripts
+    runs-on: ubuntu-24.04
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
+
+      - name: Run unit tests
+        run: python3 -m unittest discover --start-directory script/checks --pattern '*_test.py' --verbose
+
   shell-tests:
     name: Test shell scripts
     runs-on: ubuntu-24.04
