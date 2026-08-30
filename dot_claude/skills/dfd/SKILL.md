@@ -33,9 +33,13 @@ take verb phrases, flows take the name of the data itself
 
 Each level decomposes one process from the level above.
 
-- **Context** — the whole system as a single process numbered `0`,
-  surrounded by every external entity it exchanges data with. No data
-  stores; internal storage is inside the system.
+- **Context** — a table. One row per external entity the system
+  exchanges data with, columns for the trust boundary it sits in and
+  the named flows each way. Every flow touches process `0` by
+  construction, so the table carries the whole level and stays
+  scannable at a glance. Backtick each flow name, so one containing a
+  comma stays a single token. No data stores; internal storage is
+  inside the system.
 - **Level 0** — process `0` opened up into its major processes,
   numbered `1.0`, `2.0`, `3.0`. Data stores appear here first.
 - **Level 1 onward** — one process from the level above opened up,
@@ -78,6 +82,7 @@ Currency:
 
 ## Output
 
+A context level is a table (see *Levels*). Every level below it is a
 Mermaid `flowchart`, fenced inline in the markdown document. Renders on
 GitHub with no export step and no tool to install. Classic node shapes
 only — the `A@{ shape: ... }` extended syntax needs a Mermaid version

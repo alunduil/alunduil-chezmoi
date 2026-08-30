@@ -6,66 +6,21 @@ Cloud and home-network internals live in `alunduil-infrastructure`. GitHub, Clou
 
 ## Context
 
-The user is the trust root and sits outside every boundary. Every other entity belongs to someone else.
+The user is the trust root and sits outside every boundary. Every other entity belongs to someone else. Grafana Cloud is the only one that sends nothing back, and the tailnet the only one that opens a connection the workstation didn't ask for.
 
-```mermaid
-flowchart LR
-  user[User]
-  github[GitHub]
-  anthropic[Anthropic]
-  cloudflare[Cloudflare]
-  context7[Context7]
-  uptimerobot[Uptime Robot]
-  codecov[Codecov]
-  truenas[TrueNAS appliance]
-  grafana[Grafana Cloud]
-  upstream[Debian archives and release hosts]
-  tailnet[Tailnet peers]
-
-  p0(0 Operate the chezmoi-managed workstation)
-
-  user -->|prompt| p0
-  user -->|shell command| p0
-  user -->|age identity| p0
-  user -->|GPG passphrase| p0
-  user -->|login credential| p0
-  p0 -->|session output| user
-  p0 -->|status line| user
-  p0 -->|command output| user
-
-  github -->|chezmoi source| p0
-  github -->|repository data| p0
-  p0 -->|signed commit and pull request| github
-  p0 -->|authenticated repository query| github
-
-  anthropic -->|completion and tool call| p0
-  anthropic -->|connector document| p0
-  p0 -->|prompt, file content, and tool result| anthropic
-  p0 -->|connector query| anthropic
-
-  cloudflare -->|zone, DNS analytics, and documentation| p0
-  p0 -->|zone and documentation query| cloudflare
-
-  context7 -->|library documentation| p0
-  p0 -->|library documentation query| context7
-
-  uptimerobot -->|monitor and incident data| p0
-  p0 -->|authenticated monitor query| uptimerobot
-
-  codecov -->|coverage and test result data| p0
-  p0 -->|authenticated coverage query| codecov
-
-  truenas -->|pool, app, and alert data| p0
-  p0 -->|authenticated storage query| truenas
-
-  p0 -->|authenticated host metrics and logs| grafana
-
-  upstream -->|package and release binary| p0
-  p0 -->|package and release request| upstream
-
-  tailnet -->|inbound peer connection| p0
-  p0 -->|outbound peer connection| tailnet
-```
+| Entity | Boundary | Sends the workstation | Receives from the workstation |
+| --- | --- | --- | --- |
+| User | trust root, outside every boundary | `prompt`, `shell command`, `age identity`, `GPG passphrase`, `login credential` | `session output`, `status line`, `command output` |
+| GitHub | GitHub | `chezmoi source`, `repository data` | `signed commit and pull request`, `authenticated repository query` |
+| Anthropic | Anthropic | `completion and tool call`, `connector document` | `prompt, file content, and tool result`, `connector query` |
+| Cloudflare | Cloudflare | `zone, DNS analytics, and documentation` | `zone and documentation query` |
+| Context7 | third-party SaaS | `library documentation` | `library documentation query` |
+| Uptime Robot | third-party SaaS | `monitor and incident data` | `authenticated monitor query` |
+| Codecov | third-party SaaS | `coverage and test result data` | `authenticated coverage query` |
+| Grafana Cloud | third-party SaaS | nothing | `authenticated host metrics and logs` |
+| TrueNAS appliance | home network | `pool, app, and alert data` | `authenticated storage query` |
+| Debian archives and release hosts | distribution and release hosts | `package and release binary` | `package and release request` |
+| tailnet peers | tailnet | `inbound peer connection` | `outbound peer connection` |
 
 The age identity is the only inbound secret with no network path: a password manager holds it and the user restores it by hand on a fresh host. It unlocks everything chezmoi manages. That's less than everything the host needs: eight further credentials arrive through interactive logins and never enter the source tree.
 
