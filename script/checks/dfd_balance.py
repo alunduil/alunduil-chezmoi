@@ -35,6 +35,7 @@ ENTITY = re.compile(r"^\s*(\w+)\[(?!\()([^\]]+)\]")
 NAMED = re.compile(r"^- \*\*([^*]+)\*\*", re.M)
 CONTEXT = re.compile(r"## Context\n(.*?)\n## ", re.S)
 FENCE = re.compile(r"^\s*```")
+LOCAL_PATH = re.compile(r"`(~[^`]*|[^`]*/[^`]*)`")
 # "threat model" itself stays legal: a DFD may say where the rest of the
 # analysis lives, it just may not do it.
 ANALYSIS = re.compile(
@@ -212,7 +213,17 @@ def check_drawing(blocks):
 
 
 def check_scope(source):
-    findings, fenced = [], False
+    # A context entry naming a local path has drifted into level 0: the level
+    # describes what sits outside, and storage is inside.
+    findings = []
+    section = CONTEXT.search(source)
+    if section:
+        for path in LOCAL_PATH.findall(section.group(1)):
+            findings.append(
+                f"context: {path!r} is a local path; the context level describes "
+                f"what is outside, and storage belongs to level 0"
+            )
+    fenced = False
     for number, line in enumerate(source.splitlines(), 1):
         if FENCE.match(line):
             fenced = not fenced

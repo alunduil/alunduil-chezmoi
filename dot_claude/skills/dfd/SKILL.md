@@ -41,8 +41,10 @@ take verb phrases, flows take the name of the data itself
 Each level decomposes one process from the level above.
 
 - **Context** — a list. One entry per external entity the system
-  exchanges data with, saying what the system uses it for and what
-  data it exchanges. Every flow touches process `0` by
+  exchanges data with, saying what the system uses it for, what data
+  it exchanges, and how the exchange authenticates. Where a credential
+  then sits, and which local process holds it, are Level 0's. Every
+  flow touches process `0` by
   construction, so purpose is what this level carries; flow names
   belong to Level 0, where they balance against a decomposition. Name
   the same entities Level 0 names. No data stores; internal storage is

@@ -131,6 +131,17 @@ class CatchesThreatModelReasoning(unittest.TestCase):
             "security idiom for a plain data state should be a finding",
         )
 
+    def test_context_entry_naming_a_local_path(self):
+        broken = document().replace(
+            "authenticated by a bearer token.",
+            "on a bearer token stored in `~/.claude.json`.",
+            1,
+        )
+        self.assertTrue(
+            [f for f in findings_for(broken) if "is a local path" in f],
+            "a context entry naming local storage should be a finding",
+        )
+
     def test_ignores_diagram_bodies(self):
         # Flow names are data, not prose; a store called "compromised backup"
         # would be an element name rather than an inference.

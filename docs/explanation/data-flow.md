@@ -10,13 +10,13 @@ Eleven parties sit outside the workstation, each exchanging a different kind of 
 
 - **User.** The trust root, outside every boundary. Supplies the age identity, the commit-signing passphrase, and all eight interactive logins, so every credential the host holds traces back to a person at a keyboard.
 - **Anthropic.** Drives every session. Prompts, file contents, and tool results leave the host here, the least structured outflow it has. The claude.ai connectors answer through the same boundary on an account-side grant, so the host holds no credential for them.
-- **GitHub.** Holds the chezmoi source and every repository the host works on. Three processes reach it with three different credentials: the SSH key for transport, the MCP server's token, and `gh`'s own OAuth token, which a weekly timer also spends.
-- **Cloudflare.** Three MCP servers answering zone, analytics, and documentation queries. They authenticate on a browser-obtained grant, not on the decrypted Cloudflare token on disk.
+- **GitHub.** Holds the chezmoi source and every repository the host works on. Three processes reach it with three different credentials: the SSH key for transport, the MCP server's token, and `gh`'s own OAuth token.
+- **Cloudflare.** Three MCP servers answering zone, analytics, and documentation queries, authenticated by a browser-obtained grant.
 - **Context7.** Library documentation, reached without a credential at all.
-- **Uptime Robot.** Monitor and incident state, on a bearer token that Claude Code stores unencrypted in `~/.claude.json`.
-- **Codecov.** Coverage and test results, on a token every interactive shell exports whether it needs it or not.
+- **Uptime Robot.** Monitor and incident state, authenticated by a bearer token.
+- **Codecov.** Coverage and test results, authenticated by an API token.
 - **Grafana Cloud.** Receives host metrics and logs and sends nothing back, the only pure sink. Journal entries and Zellij logs leave the host to reach it.
-- **TrueNAS appliance.** The only flow terminating inside the home network, over a stdio binary running with certificate verification turned off.
+- **TrueNAS appliance.** Pool, app, and alert data, authenticated by an API key. The only exchange terminating inside the home network.
 - **Debian archives and release hosts.** Where executable code comes from: seven vendor apt repositories, pinned release binaries, and two installers piped into a shell.
 - **tailnet peers.** The only path into the host that the host didn't open.
 
