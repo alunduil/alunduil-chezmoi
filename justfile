@@ -18,7 +18,7 @@ check:
     #!/usr/bin/env bash
     set -uo pipefail
     rc=0
-    for c in check-pre-commit check-bats check-zellij check-chezmoi check-chezmoi-templates check-settings-permissions check-telemetry check-systemd check-bootstrap-convergence; do
+    for c in check-pre-commit check-bats check-zellij check-chezmoi check-chezmoi-templates check-settings-permissions check-telemetry check-systemd check-bootstrap-convergence check-dfd; do
       just "$c" || rc=1
     done
     exit "$rc"
@@ -62,3 +62,7 @@ check-systemd:
 # Bootstrap passes stay convergent (no run_once_, no `dpkg -s` presence guard).
 check-bootstrap-convergence:
     script/checks/bootstrap-convergence
+
+# Data flow diagram levels balance and obey the drawing rules.
+check-dfd:
+    script/checks/dfd-balance
