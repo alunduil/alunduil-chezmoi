@@ -4,7 +4,7 @@ Where data moves on a chezmoi-managed workstation, what transforms it, and which
 
 Scope is the workstation-bounded slice of alunduil's personal systems—the surface chezmoi manages, plus the Model Context Protocol (MCP) fleet a Claude Code session talks to. The cloud and home-network slice has its own diagram in `alunduil-infrastructure`, which owns the decomposition of GitHub, Cloudflare, and the home network; here they stay external entities. Controls and mitigations belong to the threat model, not here—a data flow diagram carries boundaries, not defences.
 
-These are *physical* diagrams: elements name the software, hosts, and files doing the work rather than abstract activities. Processes are rounded, data stores are cylinders, external entities are rectangles, and each trust boundary is a `subgraph` named for whoever controls that side. The `dfd` skill under `dot_claude/skills/dfd/` carries the notation and the correctness rules the diagrams are checked against. A diagram that has drifted from the system is worse than none, because it's trusted; the repo's `CLAUDE.md` carries the rule that keeps this one current.
+These are *physical* diagrams: elements name the software, hosts, and files doing the work rather than abstract activities. Processes are rounded, data stores are cylinders, external entities are rectangles, and each trust boundary is a `subgraph` named for whoever controls that side. The `dfd` skill under `dot_claude/skills/dfd/` carries the notation and the correctness rules the diagrams are checked against, and the repo's `CLAUDE.md` carries the rule that keeps this document current.
 
 ## Context
 
@@ -68,7 +68,7 @@ The age identity is the only inbound secret with no network path: a password man
 
 ## The workstation and its stores
 
-Process `0` opens into five: getting the source onto the host and decrypted, turning decrypted tokens into MCP registrations, running a session, running everything the session and the user shell out to, and shipping telemetry off the box.
+The boundary that carries the most weight is the workstation edge, because there is no privilege separation inside it: a bootstrap pass and a model-driven session run as the same user, over the same stores.
 
 ```mermaid
 flowchart TB
@@ -180,13 +180,13 @@ flowchart TB
   p5 -->|authenticated host metrics and logs| grafana
 ```
 
-Three stores hold credentials in the clear and the source tree holds none of them, since it only ever carries the age-encrypted blob. *Service tokens* and *Signing and transport identities* are both chezmoi targets, written on apply with the encryption stripped off. They're drawn as two stores rather than one `~/.config` bucket because they have different reach: the tokens fan out to three processes and, through the registry, into a file that holds them in plaintext, while the identities are read by one.
+Three stores hold credentials in the clear; the source tree holds none of them, carrying only the age-encrypted blob. *Service tokens* and *Signing and transport identities* are chezmoi targets, written on apply with the encryption stripped off. Their reach differs sharply: the tokens fan out to three processes and, through the registry, into a file that holds them in plaintext, while a single process reads the identities.
 
-*MCP registry* is `~/.claude.json`, which Claude Code owns and rewrites. Registration happens through a bootstrap pass rather than a deployed config file because chezmoi can't manage a file another program writes to, which is also why a rotated token has to re-register rather than merely re-deploy.
+*MCP registry* is `~/.claude.json`, which Claude Code owns and rewrites, so chezmoi can't manage it and registration runs from a bootstrap pass instead. Bearer tokens and stdio environment variables land there in plaintext, and a rotated token has to re-register rather than merely re-deploy.
 
 *Session record* covers transcripts and the per-project auto memory under `~/.claude/projects/`. It's machine-local with no cross-machine path in either direction, so it never crosses a boundary except as prompt content the model already sees.
 
-The lean host role narrows this picture rather than adding to it. `.chezmoiignore` drops the age-backed signing and SSH sources for that role—the whole *Signing and transport identities* store—so a network-exposed host next to home automation carries only the narrowly scoped tokens it needs. That the role axis cuts along the same line the two stores do is the argument for drawing them separately.
+The lean host role narrows this picture. `.chezmoiignore` drops the whole *Signing and transport identities* store for that role, so a network-exposed host next to home automation carries only the narrowly scoped tokens it needs.
 
 ## Applying the source
 
@@ -233,13 +233,13 @@ flowchart LR
   upstream -->|package and release binary| p13
 ```
 
-The apply clone at `~/.local/share/chezmoi` is the store `1.2` reads, not this working tree—an edit here has no effect until it's committed and pulled. That separation exists so a half-finished edit can't corrupt a live apply, and it means the diagram's `chezmoi source` flow always originates at GitHub rather than at the developer's checkout.
+`1.2` reads the apply clone at `~/.local/share/chezmoi`, never a developer's working tree, which is why `chezmoi source` always originates at GitHub. [Architecture](architecture.md) covers why the two clones are separate.
 
-The GPG key crosses `1.3` still encrypted. The armored blob is passphrase-protected by GPG independently of age, so the trust chain for signing is age identity *and* GPG passphrase, while SSH needs only the age identity. That asymmetry is deliberate: SSH-to-GitHub has to work unattended for `chezmoi init --apply` to bootstrap a host in one command, whereas signing already has a human at the keyboard.
+The GPG key crosses `1.3` still encrypted, because the armored blob is passphrase-protected by GPG independently of age. Signing therefore needs age identity *and* GPG passphrase, while SSH needs only the age identity—the asymmetry that lets `chezmoi init --apply` reach GitHub unattended on a fresh host.
 
 ## The session and the MCP fleet
 
-Process `3.0` opens into the turn loop, the hooks that sit between the model and the host, the MCP dispatcher, and the status line. This is the level where the fleet's trust boundaries separate.
+This is the level where the fleet's trust boundaries separate.
 
 ```mermaid
 flowchart TB
@@ -318,20 +318,20 @@ flowchart TB
 
 Processes `3.2` and `3.3` are this repo's own guardrails between a model-proposed action and the host, layered over Claude Code's permission prompts rather than replacing them. They're two processes because they hold different powers at different moments. `3.2` is the `PreToolUse` phase and is the only one that can stop anything: the pull-request guard rejects a `create_pull_request` call missing `draft: true`, and the `rtk` hook rewrites a Bash command to run through a filtering proxy. `3.3` is the `PostToolUse` phase and can only add: lint on a just-written file, and the session events the Zellij pane title reads.
 
-The rewrite in `3.2` is why the `command output` arriving at `3.3` is already trimmed—`4.0` ran the proxy, not the bare command. What `3.1` finally reads is a summary of what the host said rather than the host's own answer, and the diagram places that transformation before the crossing rather than after it.
+The rewrite in `3.2` is why the `command output` arriving at `3.3` is already trimmed—`4.0` ran the proxy, not the bare command. What `3.1` finally reads is a summary of what the host said, not the host's own answer.
 
-Four kinds of credential relationship show up across the fleet, and the difference matters more than the vendor does:
+Four kinds of credential relationship show up across the fleet:
 
 - **No local credential.** The claude.ai connectors authenticate by an OAuth grant held on the Anthropic account. Nothing for Notion or Readwise is deployed to this host, so a compromised workstation reaches them only for as long as it can drive a session.
 - **OAuth held by Claude Code.** The Cloudflare endpoints are Cloudflare-hosted and obtain their grant through a browser on first use. The grant lives outside the chezmoi source, so rotating it isn't an apply-time operation.
 - **Bearer token in the registry.** GitHub and Uptime Robot pass a token via `--header`, which Claude Code writes into `~/.claude.json` in plaintext. GitHub takes this route because its OAuth endpoint wants a pre-registered client that Claude Code's dynamic registration doesn't satisfy.
 - **Environment variable to a local process.** TrueNAS runs as a stdio binary on this host with its URL and API key passed as `-e` variables, also persisted into `~/.claude.json`. It's the only flow that terminates inside the home network, and it runs with certificate verification disabled because the appliance's certificate carries no IP subject alternative name.
 
-Context7 sits outside all four: it runs keyless by choice. Anonymous use is rate-limited and a key would raise the ceiling, but no limit pressure has appeared, so the cheapest configuration is the one with no secret to leak.
+Context7 sits outside all four, running keyless. Anonymous use is rate-limited and a key would raise the ceiling, but no limit pressure has appeared.
 
 ## Running developer tooling
 
-Process `4.0` is the catch-all both the user and the session shell into. Opening it makes the environment-variable credentials legible: the shell holds them, and hands on only what a tool asks for.
+Process `4.0` is the catch-all both the user and the session shell into, and the one place a credential lives in an environment variable rather than a file.
 
 ```mermaid
 flowchart LR
@@ -377,9 +377,9 @@ flowchart LR
   p43 -->|authenticated coverage query| codecov
 ```
 
-`4.1` is `dot_bashrc` exporting the decrypted tokens into the environment, where every child shell inherits them whether or not it needs them. `4.2` is the only process anywhere on the diagram that reads the signing and transport identities, which is the shape worth noticing: a token compromise never becomes a signed commit, because no path leads from the registry to the GPG key.
+`4.1` is `dot_bashrc` exporting the decrypted tokens, which every child shell then inherits whether or not it needs them. Only `4.2` reads the signing and transport identities, and no path leads from the MCP registry to the GPG key, so a token compromise never produces a signed commit.
 
-The Cloudflare API token enters `4.1` and leaves through no drawn flow. That's a grey hole—an input the outputs can't account for—and a grey hole means one of two things. Either a flow is missing, because someone reaches Cloudflare interactively and the diagram doesn't know, or the credential is dead and the encrypted blob is carrying risk for nothing. The diagram can't distinguish them: ad-hoc shell use leaves no trace in the source tree, which is exactly why a search of that tree was never going to settle it. What it does establish is that nothing this repo manages consumes the token, which narrows the question to one the user can answer from memory.
+The Cloudflare API token enters `4.1` and leaves through no drawn flow: a grey hole, an input the outputs can't account for. Either a flow is missing because someone reaches Cloudflare interactively, or the credential is dead and its blob carries risk for nothing. Ad-hoc shell use leaves no trace in the source tree, so the diagram settles only the narrower claim—nothing this repo manages consumes the token.
 
 ## Deployed secrets
 
@@ -397,6 +397,6 @@ Every credential the source tree carries, and what reaches what once it's decryp
 | Grafana Cloud token | `~/.config/grafana-cloud/token` | `alloy.service` via `LoadCredential` | Grafana Cloud |
 | Cloudflare token | `~/.config/cloudflare/token` | `CLOUDFLARE_API_TOKEN` in the shell | none drawn |
 
-The Cloudflare row reads `none drawn` because the three Cloudflare MCP servers are Cloudflare-hosted and authenticate by OAuth, not by this token—the grey hole in `4.0` above.
+Cloudflare crosses no boundary because its three MCP servers authenticate by OAuth rather than by this token—the grey hole in `4.0`.
 
-Two other rows are worth reading together. The GitHub token and the SSH key both reach GitHub, but through different processes with different blast radii: the SSH key authenticates git transport and is scoped by the key's own registration, while the token authenticates the MCP server and carries whatever fine-grained permissions were granted at issue time. A single compromise of `~/.claude.json` reaches the second and not the first.
+The GitHub token and the SSH key both reach GitHub, through different processes with different blast radii. The SSH key authenticates git transport and is scoped by its own registration; the token authenticates the MCP server and carries whatever fine-grained permissions were granted at issue time. A compromise of `~/.claude.json` reaches the token and not the key.
