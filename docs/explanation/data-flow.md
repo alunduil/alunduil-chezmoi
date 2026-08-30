@@ -6,23 +6,19 @@ Cloud and home-network internals live in `alunduil-infrastructure`. GitHub, Clou
 
 ## Context
 
-The user is the trust root and sits outside every boundary. Every other entity belongs to someone else. Grafana Cloud is the only one that sends nothing back, and the tailnet the only one that opens a connection the workstation didn't ask for.
+Eleven parties sit outside the workstation, and what each is for decides what crossing to it costs.
 
-| Entity | Boundary | Sends the workstation | Receives from the workstation |
-| --- | --- | --- | --- |
-| User | trust root, outside every boundary | `prompt`, `shell command`, `age identity`, `GPG passphrase`, `login credential` | `session output`, `status line`, `command output` |
-| GitHub | GitHub | `chezmoi source`, `repository data` | `signed commit and pull request`, `authenticated repository query` |
-| Anthropic | Anthropic | `completion and tool call`, `connector document` | `prompt, file content, and tool result`, `connector query` |
-| Cloudflare | Cloudflare | `zone, DNS analytics, and documentation` | `zone and documentation query` |
-| Context7 | third-party SaaS | `library documentation` | `library documentation query` |
-| Uptime Robot | third-party SaaS | `monitor and incident data` | `authenticated monitor query` |
-| Codecov | third-party SaaS | `coverage and test result data` | `authenticated coverage query` |
-| Grafana Cloud | third-party SaaS | nothing | `authenticated host metrics and logs` |
-| TrueNAS appliance | home network | `pool, app, and alert data` | `authenticated storage query` |
-| Debian archives and release hosts | distribution and release hosts | `package and release binary` | `package and release request` |
-| tailnet peers | tailnet | `inbound peer connection` | `outbound peer connection` |
-
-The age identity is the only inbound secret with no network path: a password manager holds it and the user restores it by hand on a fresh host. It unlocks everything chezmoi manages. That's less than everything the host needs: eight further credentials arrive through interactive logins and never enter the source tree.
+- **User.** The trust root, outside every boundary. Supplies the age identity, the commit-signing passphrase, and all eight interactive logins, so every credential the host holds traces back to a person at a keyboard.
+- **Anthropic.** Drives every session. Prompts, file contents, and tool results leave the host here, the largest and least structured outflow it has. The claude.ai connectors answer through the same boundary on an account-side grant, so the host holds no credential for them.
+- **GitHub.** Holds the chezmoi source and every repository the host works on. Three processes reach it with three different credentials: the SSH key for transport, the MCP server's token, and `gh`'s own OAuth token, which a weekly timer also spends.
+- **Cloudflare.** Three MCP servers answering zone, analytics, and documentation queries. They authenticate on a browser-obtained grant, not on the Cloudflare token sitting decrypted on disk.
+- **Context7.** Library documentation, reached without a credential at all.
+- **Uptime Robot.** Monitor and incident state, on a bearer token that Claude Code writes into `~/.claude.json` in the clear.
+- **Codecov.** Coverage and test results, on a token every interactive shell exports whether it needs it or not.
+- **Grafana Cloud.** Receives host metrics and logs and sends nothing back, the only pure sink. Journal entries and Zellij logs leave the host to reach it.
+- **TrueNAS appliance.** The only flow terminating inside the home network, over a stdio binary running with certificate verification turned off.
+- **Debian archives and release hosts.** Where executable code comes from: seven vendor apt repositories, pinned release binaries, and two installers piped into a shell.
+- **tailnet peers.** The only path into the host that the host didn't open.
 
 ## The workstation and its stores
 
