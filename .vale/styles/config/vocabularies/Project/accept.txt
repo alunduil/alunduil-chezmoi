@@ -63,6 +63,7 @@ Readwise
 # Security and identity
 OAuth
 plaintext
+unencrypted
 keyless
 mitigations
 

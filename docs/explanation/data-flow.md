@@ -11,9 +11,9 @@ Eleven parties sit outside the workstation, each exchanging a different kind of 
 - **User.** The trust root, outside every boundary. Supplies the age identity, the commit-signing passphrase, and all eight interactive logins, so every credential the host holds traces back to a person at a keyboard.
 - **Anthropic.** Drives every session. Prompts, file contents, and tool results leave the host here, the least structured outflow it has. The claude.ai connectors answer through the same boundary on an account-side grant, so the host holds no credential for them.
 - **GitHub.** Holds the chezmoi source and every repository the host works on. Three processes reach it with three different credentials: the SSH key for transport, the MCP server's token, and `gh`'s own OAuth token, which a weekly timer also spends.
-- **Cloudflare.** Three MCP servers answering zone, analytics, and documentation queries. They authenticate on a browser-obtained grant, not on the Cloudflare token sitting decrypted on disk.
+- **Cloudflare.** Three MCP servers answering zone, analytics, and documentation queries. They authenticate on a browser-obtained grant, not on the decrypted Cloudflare token on disk.
 - **Context7.** Library documentation, reached without a credential at all.
-- **Uptime Robot.** Monitor and incident state, on a bearer token that Claude Code writes into `~/.claude.json` in the clear.
+- **Uptime Robot.** Monitor and incident state, on a bearer token that Claude Code stores unencrypted in `~/.claude.json`.
 - **Codecov.** Coverage and test results, on a token every interactive shell exports whether it needs it or not.
 - **Grafana Cloud.** Receives host metrics and logs and sends nothing back, the only pure sink. Journal entries and Zellij logs leave the host to reach it.
 - **TrueNAS appliance.** The only flow terminating inside the home network, over a stdio binary running with certificate verification turned off.
@@ -164,9 +164,9 @@ flowchart TB
   p8 -->|outbound peer connection| tailnet
 ```
 
-Three stores hold credentials in the clear. The source tree holds none of them, carrying only the age-encrypted blob. *Service tokens* and *Signing and transport identities* are chezmoi targets, written on apply with the encryption stripped off. Their reach differs: the tokens fan out to three processes and, through the registry, into a file that holds them in plaintext, while a single process reads the identities.
+Three stores hold unencrypted credentials. The source tree holds none of them, carrying only the age-encrypted blob. *Service tokens* and *Signing and transport identities* are chezmoi targets, written on apply with the encryption stripped off. Their reach differs: the tokens fan out to three processes and, through the registry, into a file that holds them unencrypted, while a single process reads the identities.
 
-*MCP registry* is `~/.claude.json`, which Claude Code owns and rewrites, so chezmoi can't manage it and registration runs from a bootstrap pass instead. Bearer tokens and stdio environment variables land there in plaintext, and a rotated token has to re-register rather than merely re-deploy.
+*MCP registry* is `~/.claude.json`, which Claude Code owns and rewrites, so chezmoi can't manage it and registration runs from a bootstrap pass instead. Bearer tokens and stdio environment variables land there unencrypted, and a rotated token has to re-register rather than merely re-deploy.
 
 *Session record* covers transcripts and the per-project auto memory under `~/.claude/projects/`. It's machine-local with no cross-machine path in either direction, so it never crosses a boundary except as prompt content the model already sees.
 
@@ -317,9 +317,9 @@ The rewrite in `3.2` is why the `command output` arriving at `3.3` is already tr
 
 Four kinds of credential relationship show up across the fleet:
 
-- **No local credential.** The claude.ai connectors authenticate by an OAuth grant held on the Anthropic account. This host holds no credential for either; the grant lives on the account.
+- **No local credential.** The claude.ai connectors authenticate by an OAuth grant held on the Anthropic account. This host holds no credential for either.
 - **OAuth held by Claude Code.** The Cloudflare endpoints are Cloudflare-hosted and obtain their grant through a browser on first use. The grant lives outside the chezmoi source, so rotating it happens outside apply.
-- **Bearer token in the registry.** GitHub and Uptime Robot pass a token via `--header`, which Claude Code writes into `~/.claude.json` in plaintext. GitHub takes this route because its OAuth endpoint wants a pre-registered client that Claude Code's dynamic registration doesn't satisfy.
+- **Bearer token in the registry.** GitHub and Uptime Robot pass a token via `--header`, which Claude Code stores unencrypted in `~/.claude.json`. GitHub takes this route because its OAuth endpoint wants a pre-registered client that Claude Code's dynamic registration doesn't satisfy.
 - **Environment variable to a local process.** TrueNAS runs as a stdio binary on this host with its endpoint and API key passed as `-e` variables, also persisted into `~/.claude.json`. It's the only flow terminating inside the home network, and it runs with certificate verification turned off because the appliance's certificate carries no IP subject alternative name.
 
 Context7 sits outside all four, running keyless. Anonymous use is rate-limited and a key would raise the ceiling, but no limit pressure has appeared.
@@ -426,4 +426,4 @@ None of these is chezmoi-managed, none rotates on apply, and a fresh host re-est
 
 Two of these reach further than any chezmoi-managed secret. The `gh` OAuth token is the only credential on the host spent with no person present, since `7.0` uses the same token an interactive `gh` does. The Claude Code session credential gates every MCP flow in `3.0`: the tokens in `~/.claude.json` authenticate to vendors, while this one authenticates to the model that decides which vendor to call.
 
-The GitHub token and the SSH key both reach GitHub, through different processes and different grants. The SSH key authenticates git transport, and its own registration scopes it. The token authenticates the MCP server and carries whatever fine-grained permissions it received at issue time. Only the token is stored in `~/.claude.json`; the key stays in `~/.ssh/`.
+The GitHub token and the SSH key both reach GitHub, through different processes and different grants. The SSH key authenticates git transport, and its own registration scopes it. The token authenticates the MCP server and carries whatever fine-grained permissions it received at issue time. `~/.claude.json` holds the token. The key stays in `~/.ssh/`.

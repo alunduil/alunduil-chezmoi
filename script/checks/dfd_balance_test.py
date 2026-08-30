@@ -120,6 +120,17 @@ class CatchesThreatModelReasoning(unittest.TestCase):
         )
         self.assertEqual(findings_for(allowed), [])
 
+    def test_security_idiom_for_a_data_state(self):
+        broken = document().replace(
+            "Three stores hold unencrypted credentials.",
+            "Three stores hold credentials in the clear.",
+            1,
+        )
+        self.assertTrue(
+            [f for f in findings_for(broken) if "in the clear" in f],
+            "security idiom for a plain data state should be a finding",
+        )
+
     def test_ignores_diagram_bodies(self):
         # Flow names are data, not prose; a store called "compromised backup"
         # would be an element name rather than an inference.

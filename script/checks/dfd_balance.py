@@ -38,7 +38,7 @@ FENCE = re.compile(r"^\s*```")
 # "threat model" itself stays legal: a DFD may say where the rest of the
 # analysis lives, it just may not do it.
 ANALYSIS = re.compile(
-    r"\b(compromis\w*|attacker\w*|adversar\w*|blast radius|mitigat\w*|exfiltrat\w*)\b",
+    r"\b(compromis\w*|attacker\w*|adversar\w*|blast radius|mitigat\w*|exfiltrat\w*|in the clear)\b",
     re.I,
 )
 
