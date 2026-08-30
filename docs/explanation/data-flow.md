@@ -22,6 +22,7 @@ flowchart LR
   truenas[TrueNAS appliance]
   grafana[Grafana Cloud]
   upstream[Debian archives and release hosts]
+  tailnet[Tailnet peers]
 
   p0(0 Operate the chezmoi-managed workstation)
 
@@ -29,6 +30,7 @@ flowchart LR
   user -->|shell command| p0
   user -->|age identity| p0
   user -->|GPG passphrase| p0
+  user -->|login credential| p0
   p0 -->|session output| user
   p0 -->|status line| user
   p0 -->|command output| user
@@ -62,9 +64,12 @@ flowchart LR
 
   upstream -->|package and release binary| p0
   p0 -->|package and release request| upstream
+
+  tailnet -->|inbound peer connection| p0
+  p0 -->|outbound peer connection| tailnet
 ```
 
-The age identity is the only inbound secret with no network path: a password manager holds it and the user restores it by hand on a fresh host. Everything else the host needs unlocks from that one value.
+The age identity is the only inbound secret with no network path: a password manager holds it and the user restores it by hand on a fresh host. It unlocks everything chezmoi manages, which is less than everything the host needs—eight further credentials are established interactively and never enter the source tree.
 
 ## The workstation and its stores
 
@@ -80,6 +85,9 @@ flowchart TB
     p3(3.0 Run a Claude Code session)
     p4(4.0 Run developer tooling)
     p5(5.0 Ship host telemetry)
+    p6(6.0 Authenticate interactively)
+    p7(7.0 Run scheduled maintenance)
+    p8(8.0 Serve the tailnet)
 
     s1[(Apply clone)]
     s2[(age identity)]
@@ -89,6 +97,8 @@ flowchart TB
     s5[(Claude configuration)]
     s6[(Session record)]
     s7[(Host telemetry)]
+    s9[(Interactive login credentials)]
+    s10[(Working tree)]
   end
 
   subgraph gh[GitHub]
@@ -118,10 +128,16 @@ flowchart TB
     upstream[Debian archives and release hosts]
   end
 
+  subgraph tn[Tailnet]
+    tailnet[Tailnet peers]
+  end
+
   user -->|age identity| p1
   user -->|prompt| p3
   user -->|shell command| p4
   user -->|GPG passphrase| p4
+  user -->|login credential| p6
+  p6 -->|session credential| s9
   p3 -->|session output| user
   p3 -->|status line| user
   p4 -->|command output| user
@@ -146,6 +162,9 @@ flowchart TB
   s4 -->|MCP endpoint and credential| p3
   s5 -->|Claude configuration| p3
   s6 -->|transcript and memory| p3
+  s9 -->|Anthropic session credential| p3
+  s10 -->|file content| p3
+  p3 -->|edited file| s10
   p3 -->|transcript and memory| s6
   p3 -->|shell command| p4
   p4 -->|command output| p3
@@ -169,6 +188,9 @@ flowchart TB
   s3 -->|Codecov API token| p4
   s3 -->|Cloudflare API token| p4
   s8 -->|SSH key and GPG key| p4
+  s9 -->|gh OAuth token| p4
+  s10 -->|file content| p4
+  p4 -->|checked-out file| s10
   github -->|repository data| p4
   p4 -->|authenticated repository query| github
   p4 -->|signed commit and pull request| github
@@ -178,6 +200,19 @@ flowchart TB
   s3 -->|Grafana Cloud token| p5
   s7 -->|journal entry, zellij log, and process metric| p5
   p5 -->|authenticated host metrics and logs| grafana
+
+  s9 -->|gh OAuth token| p7
+  s10 -->|file content| p7
+  github -->|repository data| p7
+  p7 -->|authenticated repository query| github
+  p7 -->|pruned branch| s10
+  p7 -->|package and release request| upstream
+  upstream -->|package and release binary| p7
+  p7 -->|process metric| s7
+
+  s9 -->|node key| p8
+  tailnet -->|inbound peer connection| p8
+  p8 -->|outbound peer connection| tailnet
 ```
 
 Three stores hold credentials in the clear; the source tree holds none of them, carrying only the age-encrypted blob. *Service tokens* and *Signing and transport identities* are chezmoi targets, written on apply with the encryption stripped off. Their reach differs sharply: the tokens fan out to three processes and, through the registry, into a file that holds them in plaintext, while a single process reads the identities.
@@ -237,6 +272,8 @@ flowchart LR
 
 The GPG key crosses `1.3` still encrypted, because the armored blob is passphrase-protected by GPG independently of age. Signing therefore needs age identity *and* GPG passphrase, while SSH needs only the age identity—the asymmetry that lets `chezmoi init --apply` reach GitHub unattended on a fresh host.
 
+`1.3` is also where executable code enters, from more sources than any other process. The bootstrap adds apt repositories and signing keys for HashiCorp, GitHub CLI, Signal, Keybase, Docker, 1Password, and Adoptium; downloads VS Code and the pinned binaries under `script/install/`; and pipes two vendor installers, chezmoi's and Tailscale's, into a shell. The pinned downloads check a sha256 fetched from the same release as the artifact, which catches a corrupted transfer but not a compromised release.
+
 ## The session and the MCP fleet
 
 This is the level where the fleet's trust boundaries separate.
@@ -251,12 +288,15 @@ flowchart TB
     p33(3.3 Annotate the tool result)
     p34(3.4 Call an MCP server)
     p35(3.5 Render the status line)
+    p36(3.6 Edit a working tree file)
     p4(4.0 Run developer tooling)
 
     s4[(MCP registry)]
     s5[(Claude configuration)]
     s6[(Session record)]
     s7[(Host telemetry)]
+    s9[(Interactive login credentials)]
+    s10[(Working tree)]
   end
 
   subgraph anth[Anthropic]
@@ -284,6 +324,7 @@ flowchart TB
   user -->|prompt| p31
   s5 -->|Claude configuration| p31
   s6 -->|transcript and memory| p31
+  s9 -->|Anthropic session credential| p31
   p31 -->|transcript and memory| s6
   p31 -->|session output| user
   p31 -->|zellij log and process metric| s7
@@ -296,7 +337,12 @@ flowchart TB
   p31 -->|proposed tool call| p32
   p32 -->|shell command| p4
   p32 -->|approved tool call| p34
+  p32 -->|approved file edit| p36
   p34 -->|tool result| p33
+
+  s10 -->|file content| p36
+  p36 -->|edited file| s10
+  p36 -->|tool result| p33
 
   p4 -->|command output| p33
   p33 -->|annotated tool result| p31
@@ -345,6 +391,8 @@ flowchart LR
 
     s3[(Service tokens)]
     s8[(Signing and transport identities)]
+    s9[(Interactive login credentials)]
+    s10[(Working tree)]
   end
 
   subgraph gh[GitHub]
@@ -369,6 +417,9 @@ flowchart LR
 
   user -->|GPG passphrase| p42
   s8 -->|SSH key and GPG key| p42
+  s9 -->|gh OAuth token| p42
+  s10 -->|file content| p42
+  p42 -->|checked-out file| s10
   github -->|repository data| p42
   p42 -->|authenticated repository query| github
   p42 -->|signed commit and pull request| github
@@ -381,9 +432,19 @@ flowchart LR
 
 The Cloudflare API token enters `4.1` and leaves through no drawn flow: a grey hole, an input the outputs can't account for. Either a flow is missing because someone reaches Cloudflare interactively, or the credential is dead and its blob carries risk for nothing. Ad-hoc shell use leaves no trace in the source tree, so the diagram settles only the narrower claim—nothing this repo manages consumes the token.
 
+## Logins, timers, and the inbound path
+
+Three Level 0 processes have no counterpart in the sections above, and each answers a question a threat model asks early.
+
+`6.0` is the one that must be interactive. Eight tools authenticate once per machine—`gh`, `claude`, `op`, `gcx`, `readwise`, `tailscale`, `keybase`, and `signal-cli`—and each writes a credential the chezmoi source never sees. Two of them then authenticate flows drawn elsewhere on these diagrams, which is why `s9` feeds both `3.0` and `4.0`.
+
+`7.0` is the systemd timer set, and it runs with nobody present. `git-poi-all` and `git-worktree-poi` walk every GitHub clone under `$HOME` weekly and call the GitHub API with the `gh` OAuth token; `unattended-upgrades` installs security updates from every apt source the bootstrap configured. The rest—`docker-prune`, `dev-cache-gc`, `cgroup-pids-textfile`—stay local. A credential spent here leaves a journal entry and nothing else to attribute it by.
+
+`8.0` is `tailscaled`, and it's the only inbound flow anywhere in this document: every other arrow starts on the workstation. The bootstrap installs and enables it, though joining a tailnet stays a manual `tailscale up`. What crosses that boundary is opaque by design—the tunnel carries whatever a peer sends—so the diagram names the path and stops, and the threat model takes it from there.
+
 ## Deployed secrets
 
-Every credential the source tree carries, and what reaches what once it's decrypted.
+Every credential the source tree carries, and what reaches what once it's decrypted. The host carries more than these; the second table covers the rest.
 
 | Secret | Deployed to | Read by | Boundary it crosses |
 | --- | --- | --- | --- |
@@ -398,5 +459,22 @@ Every credential the source tree carries, and what reaches what once it's decryp
 | Cloudflare token | `~/.config/cloudflare/token` | `CLOUDFLARE_API_TOKEN` in the shell | none drawn |
 
 Cloudflare crosses no boundary because its three MCP servers authenticate by OAuth rather than by this token—the grey hole in `4.0`.
+
+### Credentials the source tree never sees
+
+None of these is chezmoi-managed, none rotates on apply, and a fresh host re-establishes each by hand.
+
+| Credential | Stored at | Authenticates |
+| --- | --- | --- |
+| Claude Code session | `~/.claude/.credentials.json` | `3.1` to the Anthropic API |
+| `gh` OAuth token | `~/.config/gh/` | `4.2` interactively, `7.0` weekly, both to GitHub |
+| Tailscale node key | `tailscaled` state | `8.0` to the tailnet |
+| 1Password session | `~/.config/op/` | the `op` CLI |
+| Grafana Cloud login | `~/.config/gcx/` | the `gcx` CLI |
+| Readwise token | `~/.readwise-cli.json` | the `readwise` CLI |
+| Keybase device keys | `~/.config/keybase/` | Keybase and KBFS |
+| signal-cli registration | `~/.local/share/signal-cli/` | Signal |
+
+Two of these outrank anything in the first table. The `gh` OAuth token is the only credential on the host spent with no person present, since `7.0` uses the same token an interactive `gh` does. And the Claude Code session credential is what makes every MCP flow in `3.0` reachable at all: the tokens in `~/.claude.json` authenticate to vendors, while this one authenticates to the model that decides which vendor to call.
 
 The GitHub token and the SSH key both reach GitHub, through different processes with different blast radii. The SSH key authenticates git transport and is scoped by its own registration; the token authenticates the MCP server and carries whatever fine-grained permissions were granted at issue time. A compromise of `~/.claude.json` reaches the token and not the key.
