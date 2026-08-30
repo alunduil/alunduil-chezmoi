@@ -1,6 +1,6 @@
 ---
 name: dfd
-description: Audit, write, or revise a data flow diagram (DFD). Use when asked to draw or model how data moves through a system, when standing up a DFD with trust boundaries for threat modeling or security review, or when checking an existing DFD for drawing and balancing errors. Pins Mermaid `flowchart` as the output notation and the correctness rules a DFD must satisfy.
+description: Audit, write, or revise a data flow diagram (DFD). Use when asked to draw or model how data moves through a system, when standing up a DFD with trust boundaries for threat modeling or security review, or when checking an existing DFD for drawing and balancing errors. Pins the output notation for each level and the correctness rules a DFD must satisfy.
 ---
 
 # DFD
@@ -36,11 +36,10 @@ Each level decomposes one process from the level above.
 - **Context** — a list. One entry per external entity the system
   exchanges data with, saying what the system uses it for and what
   crossing to it costs. Every flow touches process `0` by
-  construction, so adjacency carries no information at this level and
-  purpose is what a reader comes for; flow names belong to Level 0,
-  where they balance against a decomposition. Name the same entities
-  Level 0 names. No data stores; internal storage is inside the
-  system.
+  construction, so purpose is what this level carries; flow names
+  belong to Level 0, where they balance against a decomposition. Name
+  the same entities Level 0 names. No data stores; internal storage is
+  inside the system.
 - **Level 0** — process `0` opened up into its major processes,
   numbered `1.0`, `2.0`, `3.0`. Data stores appear here first.
 - **Level 1 onward** — one process from the level above opened up,
@@ -123,7 +122,8 @@ Draw:
 
 1. Fix the system boundary — what is inside, which external entities
    exchange data with it, and, for security work, which trust
-   boundaries the data crosses. Draw the context diagram.
+   boundaries the data crosses. List those entities and what the
+   system uses each for.
 2. List what each process consumes and produces before drawing its
    flows. A process whose two lists you can't complete is the wrong
    process, or sits on the wrong side of the boundary.
@@ -134,4 +134,5 @@ Draw:
 Check:
 
 1. Walk *Rules* against the result, drawing rules first.
-2. Balance each child diagram against its parent's flow set.
+2. Balance each child diagram against its parent's flow set, and
+   Level 0's entities against the context list.

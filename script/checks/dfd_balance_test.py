@@ -1,8 +1,6 @@
 #!/usr/bin/env python3
-"""Each case breaks the live document one way and asserts the matching finding.
-
-Mutating the real diagram rather than a fixture keeps the tests honest: a
-check that stops firing because the document outgrew its parser fails here.
+"""Cases mutate the live diagram rather than a fixture, so a check that stops
+firing because the document outgrew its parser fails here.
 """
 
 import pathlib
@@ -41,9 +39,7 @@ class CatchesBalanceDefects(unittest.TestCase):
         )
 
     def test_decomposition_of_a_process_level_zero_lacks(self):
-        # Collecting parents from every diagram rather than level 0 left this
-        # case unresolvable, and an unresolved parent skipped the comparison
-        # instead of reporting it.
+        # Skipping a comparison for want of a parent would read as balanced.
         broken = document().replace("p3(3.0 Run a Claude Code session)", "p3(9.0 Run something else)", 1)
         self.assertIn(
             "the 3.0 decomposition decomposes 3.0, which level 0 does not have",

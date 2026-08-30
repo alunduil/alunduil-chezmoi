@@ -75,7 +75,7 @@ repos:
         files: ^\.chezmoiscripts/
 
       # Gates the same-change rule CLAUDE.md states: a diagram edit that drops
-      # or invents a flow fails here rather than at the next reader.
+      # or invents a flow fails at the commit that made it.
       - id: dfd-balance
         name: dfd-balance
         entry: script/checks/dfd_balance.py

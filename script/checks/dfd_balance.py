@@ -1,26 +1,18 @@
 #!/usr/bin/env python3
 """Check a data flow diagram's levels against the dfd skill's rules.
 
-Python rather than bash like its sibling checks: the body is markdown and
-Mermaid parsing plus set algebra over flow names, which bash would need awk
-state machines and nameref arrays to express.
+Python among bash siblings: the body is markdown and Mermaid parsing plus set
+algebra over flow names.
 
-Two classes of finding, neither of which a linter can see:
+Two classes of finding, neither visible to a linter. Balancing: a child
+diagram's boundary-crossing flows match its parent process's exactly, and the
+context level, which names systems rather than flows, matches level 0's
+external entities. Drawing: a process with no input is a miracle, one with no
+output a black hole, and a flow between two passive elements is missing the
+process that transforms it.
 
-Balancing. A child diagram's boundary-crossing flows must match its parent
-process's exactly, so a decomposition can't invent or drop a flow. The
-context level names systems rather than flows, so it balances on the set of
-external entities instead.
-
-Drawing. A process with no input is a miracle and one with no output a black
-hole; data stores and external entities are passive, so a flow between two of
-them is missing the process that transforms it.
-
-Levels come from the process numbering: `N.0` marks level 0, `N.M` marks a
-decomposition of `N.0`. Adding a level needs no change here.
-
-`review()` takes document text and returns findings, so the checks are
-exercised directly by dfd_balance_test.py rather than through a subprocess.
+Levels come from the process numbering, so adding one needs no change here:
+`N.0` is level 0, `N.M` decomposes `N.0`.
 """
 
 import argparse
@@ -45,7 +37,7 @@ class Malformed(Exception):
 
 
 class Level:
-    """One Mermaid block: its nodes by kind, its edges, and its boundaries."""
+    """One Mermaid block from the document."""
 
     def __init__(self, body):
         self.edges, self.processes, self.stores = [], {}, set()
@@ -89,14 +81,14 @@ class Level:
         return {f for s, f, t in self.edges if s in inside and t not in inside}
 
     def children(self):
-        """Processes decomposing a parent, keyed by node id."""
+        """Processes decomposing a parent."""
         return {n: v for n, v in self.processes.items() if not v.endswith(TOP)}
 
     def is_top(self):
         return bool(self.processes) and not self.children()
 
     def parent_number(self):
-        """The level 0 process this diagram opens up, or None."""
+        """The level 0 process this diagram opens up."""
         parents = {v.split(".")[0] + TOP for v in self.children().values()}
         return parents.pop() if len(parents) == 1 else None
 
@@ -168,9 +160,8 @@ def check_context(top, named):
 
 
 def check_balance(blocks, top):
-    # Parents come from level 0 alone. Collecting them across every diagram
-    # lets two blocks claim one process number, and the loser's flows then
-    # compare against an absent node -- a false balance, not an error.
+    # A parent is a level 0 process by definition, so an unresolvable one is a
+    # finding: a comparison skipped for want of a parent reads as a balanced one.
     parents = {number: node for node, number in top.processes.items()}
     findings = []
     for block in blocks:
