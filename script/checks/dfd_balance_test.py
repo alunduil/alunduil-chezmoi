@@ -100,6 +100,39 @@ class CatchesDrawingDefects(unittest.TestCase):
         )
 
 
+class CatchesThreatModelReasoning(unittest.TestCase):
+    def test_conclusion_that_needs_an_adversary(self):
+        broken = document().replace(
+            "Only `4.2` reads the signing and transport identities",
+            "A compromise of the registry never reaches the key, and only `4.2` reads them",
+            1,
+        )
+        self.assertTrue(
+            [f for f in findings_for(broken) if "reasons about an adversary" in f],
+            "a compromise claim should be a finding",
+        )
+
+    def test_pointing_at_the_threat_model_stays_legal(self):
+        allowed = document().replace(
+            "belongs to the threat model.",
+            "belongs to the threat model, which walks these levels.",
+            1,
+        )
+        self.assertEqual(findings_for(allowed), [])
+
+    def test_ignores_diagram_bodies(self):
+        # Flow names are data, not prose; a store called "compromised backup"
+        # would be an element name rather than an inference.
+        allowed = document().replace(
+            "  s9 -->|node key| p8\n",
+            "  s9 -->|node key| p8\n  s9 -->|compromised backup| p8\n",
+            1,
+        )
+        self.assertEqual(
+            [f for f in findings_for(allowed) if "adversary" in f], []
+        )
+
+
 class RefusesDocumentsItCannotTrust(unittest.TestCase):
     def test_no_diagrams(self):
         with self.assertRaisesRegex(dfd_balance.Malformed, "no mermaid blocks"):

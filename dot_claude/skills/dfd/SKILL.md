@@ -14,6 +14,13 @@ A DFD shows where data moves and what transforms it. Sequencing belongs
 in a flowchart, object structure in UML; a DFD carries neither. Control
 signals are not data — leave them out.
 
+Every claim in a DFD holds in a world with no adversary. "No flow
+connects the token store to the signing key" is a DFD statement; "so a
+stolen token can't sign a commit" is the threat model's conclusion from
+it. Write the reachability and let the threat model draw on it — it
+needs the fact as input, and inheriting a conclusion costs it the step
+where that conclusion gets checked.
+
 ## Components
 
 Four, and only four:
@@ -35,7 +42,7 @@ Each level decomposes one process from the level above.
 
 - **Context** — a list. One entry per external entity the system
   exchanges data with, saying what the system uses it for and what
-  crossing to it costs. Every flow touches process `0` by
+  data it exchanges. Every flow touches process `0` by
   construction, so purpose is what this level carries; flow names
   belong to Level 0, where they balance against a decomposition. Name
   the same entities Level 0 names. No data stores; internal storage is
@@ -76,6 +83,13 @@ Balancing:
 - Only boundary-crossing flows balance; flows internal to the
   decomposition are new at the child level.
 - Renaming a flow at one level renames it at every level it appears.
+
+Scope:
+
+- State what is. Data at rest is plaintext or encrypted, a flow carries
+  a named credential, a process runs unattended, one entity is the only
+  inbound path — all diagram facts. Blast radius, attribution gaps, what
+  an intruder reaches, and every mitigation belong to the threat model.
 
 Currency:
 

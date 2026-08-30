@@ -13,6 +13,10 @@ process that transforms it.
 
 Levels come from the process numbering, so adding one needs no change here:
 `N.0` is level 0, `N.M` decomposes `N.0`.
+
+Scope is the third class. Every claim in a DFD holds with no adversary in
+the world, so vocabulary that only makes sense once there is one marks a
+conclusion the threat model should reach on its own.
 """
 
 import argparse
@@ -30,6 +34,13 @@ STORE = re.compile(r"^\s*(\w+)\[\(")
 ENTITY = re.compile(r"^\s*(\w+)\[(?!\()([^\]]+)\]")
 NAMED = re.compile(r"^- \*\*([^*]+)\*\*", re.M)
 CONTEXT = re.compile(r"## Context\n(.*?)\n## ", re.S)
+FENCE = re.compile(r"^\s*```")
+# "threat model" itself stays legal: a DFD may say where the rest of the
+# analysis lives, it just may not do it.
+ANALYSIS = re.compile(
+    r"\b(compromis\w*|attacker\w*|adversar\w*|blast radius|mitigat\w*|exfiltrat\w*)\b",
+    re.I,
+)
 
 
 class Malformed(Exception):
@@ -200,11 +211,32 @@ def check_drawing(blocks):
     return findings
 
 
+def check_scope(source):
+    findings, fenced = [], False
+    for number, line in enumerate(source.splitlines(), 1):
+        if FENCE.match(line):
+            fenced = not fenced
+            continue
+        if fenced:
+            continue
+        for word in ANALYSIS.findall(line):
+            findings.append(
+                f"line {number}: {word!r} reasons about an adversary; "
+                f"state the flow and leave the conclusion to the threat model"
+            )
+    return findings
+
+
 def review(source):
     """Every finding in a document, or Malformed if it isn't a DFD."""
     blocks, top = parse(source)
     named = context_systems(source)
-    return check_context(top, named) + check_balance(blocks, top) + check_drawing(blocks)
+    return (
+        check_context(top, named)
+        + check_balance(blocks, top)
+        + check_drawing(blocks)
+        + check_scope(source)
+    )
 
 
 def main():

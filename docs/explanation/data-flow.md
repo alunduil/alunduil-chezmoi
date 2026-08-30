@@ -2,14 +2,14 @@
 
 Every credential on a chezmoi-managed workstation, what reaches it, and which trust boundary it crosses. Elements name real software, hosts, and files: the Model Context Protocol (MCP) servers a Claude Code session calls, the systemd timers, the tokens on disk.
 
-Cloud and home-network internals live in `alunduil-infrastructure`. GitHub, Cloudflare, and the home network stay external entities here, and mitigations belong to the threat model. Notation comes from the `dfd` skill under `dot_claude/skills/dfd/`. `CLAUDE.md` carries the rule that keeps this current.
+Cloud and home-network internals live in `alunduil-infrastructure`. GitHub, Cloudflare, and the home network stay external entities here, and everything that follows from these flows belongs to the threat model. Notation comes from the `dfd` skill under `dot_claude/skills/dfd/`. `CLAUDE.md` carries the rule that keeps this current.
 
 ## Context
 
-Eleven parties sit outside the workstation, and what each is for decides what crossing to it costs.
+Eleven parties sit outside the workstation, each exchanging a different kind of data with it.
 
 - **User.** The trust root, outside every boundary. Supplies the age identity, the commit-signing passphrase, and all eight interactive logins, so every credential the host holds traces back to a person at a keyboard.
-- **Anthropic.** Drives every session. Prompts, file contents, and tool results leave the host here, the largest and least structured outflow it has. The claude.ai connectors answer through the same boundary on an account-side grant, so the host holds no credential for them.
+- **Anthropic.** Drives every session. Prompts, file contents, and tool results leave the host here, the least structured outflow it has. The claude.ai connectors answer through the same boundary on an account-side grant, so the host holds no credential for them.
 - **GitHub.** Holds the chezmoi source and every repository the host works on. Three processes reach it with three different credentials: the SSH key for transport, the MCP server's token, and `gh`'s own OAuth token, which a weekly timer also spends.
 - **Cloudflare.** Three MCP servers answering zone, analytics, and documentation queries. They authenticate on a browser-obtained grant, not on the Cloudflare token sitting decrypted on disk.
 - **Context7.** Library documentation, reached without a credential at all.
@@ -221,7 +221,7 @@ flowchart LR
 
 The GNU Privacy Guard (GPG) key crosses `1.3` still encrypted, because the armored blob carries its own passphrase independently of age. Signing therefore needs age identity *and* GPG passphrase. SSH needs only the age identity, and that asymmetry lets `chezmoi init --apply` reach GitHub unattended on a fresh host.
 
-`1.3` is also where executable code enters, from more sources than any other process. The bootstrap adds apt repositories and signing keys for HashiCorp, GitHub CLI, Signal, Keybase, Docker, 1Password, and Adoptium. It downloads VS Code and the pinned binaries under `script/install/`, and pipes two vendor installers, chezmoi's and Tailscale's, into a shell. The pinned downloads check a sha256 fetched from the same release as the artifact, which catches a corrupted transfer but not a compromised release.
+`1.3` is also where executable code enters, from more sources than any other process. The bootstrap adds apt repositories and signing keys for HashiCorp, GitHub CLI, Signal, Keybase, Docker, 1Password, and Adoptium. It downloads VS Code and the pinned binaries under `script/install/`, and pipes two vendor installers, chezmoi's and Tailscale's, into a shell. The pinned downloads check a sha256 published in the same release as the artifact it covers.
 
 ## The session and its server fleet
 
@@ -317,10 +317,10 @@ The rewrite in `3.2` is why the `command output` arriving at `3.3` is already tr
 
 Four kinds of credential relationship show up across the fleet:
 
-- **No local credential.** The claude.ai connectors authenticate by an OAuth grant held on the Anthropic account. This host holds no credential for either, so a compromised workstation reaches them only for as long as it can drive a session.
+- **No local credential.** The claude.ai connectors authenticate by an OAuth grant held on the Anthropic account. This host holds no credential for either; the grant lives on the account.
 - **OAuth held by Claude Code.** The Cloudflare endpoints are Cloudflare-hosted and obtain their grant through a browser on first use. The grant lives outside the chezmoi source, so rotating it happens outside apply.
 - **Bearer token in the registry.** GitHub and Uptime Robot pass a token via `--header`, which Claude Code writes into `~/.claude.json` in plaintext. GitHub takes this route because its OAuth endpoint wants a pre-registered client that Claude Code's dynamic registration doesn't satisfy.
-- **Environment variable to a local process.** TrueNAS runs as a stdio binary on this host with its endpoint and API key passed as `-e` variables, also persisted into `~/.claude.json`. It's the only flow that terminates inside the home network, and it runs with certificate verification turned off because the appliance's certificate carries no IP subject alternative name.
+- **Environment variable to a local process.** TrueNAS runs as a stdio binary on this host with its endpoint and API key passed as `-e` variables, also persisted into `~/.claude.json`. It's the only flow terminating inside the home network, and it runs with certificate verification turned off because the appliance's certificate carries no IP subject alternative name.
 
 Context7 sits outside all four, running keyless. Anonymous use is rate-limited and a key would raise the ceiling, but no limit pressure has appeared.
 
@@ -377,9 +377,9 @@ flowchart LR
   p43 -->|authenticated coverage query| codecov
 ```
 
-`4.1` is `dot_bashrc` exporting the decrypted tokens, which every child shell then inherits whether it needs them or not. Only `4.2` reads the signing and transport identities, and no path leads from the MCP registry to the GPG key, so a token compromise never produces a signed commit.
+`4.1` is `dot_bashrc` exporting the decrypted tokens, which every child shell then inherits whether it needs them or not. Only `4.2` reads the signing and transport identities, and no path leads from the MCP registry to the GPG key.
 
-The Cloudflare API token enters `4.1` and leaves through no drawn flow: a grey hole, an input the outputs can't account for. Either a flow is missing because someone reaches Cloudflare interactively, or the credential is dead and its blob carries risk for nothing. Ad-hoc shell use leaves no trace in the source tree, so the diagram settles only the narrower claim—nothing this repo manages consumes the token.
+The Cloudflare API token enters `4.1` and leaves through no drawn flow: a grey hole, an input the outputs can't account for. Either a flow is missing because someone reaches Cloudflare interactively, or nothing consumes the token at all. Ad-hoc shell use leaves no trace in the source tree, so the diagram settles only the narrower claim: nothing this repo manages reads it.
 
 ## Logins, timers, and the inbound path
 
@@ -387,7 +387,7 @@ Three Level 0 processes carry credentials without a person at the keyboard, or a
 
 `6.0` is the one that must be interactive. Eight tools authenticate once per machine—`gh`, `claude`, `op`, `gcx`, `readwise`, `tailscale`, `keybase`, and `signal-cli`—and each writes a credential the chezmoi source never sees. Two of them then authenticate flows drawn elsewhere on these diagrams, which is why `s9` feeds both `3.0` and `4.0`.
 
-`7.0` is the systemd timer set, and it runs with nobody present. `git-poi-all` and `git-worktree-poi` walk every GitHub clone under `$HOME` weekly, calling the GitHub API with the `gh` OAuth token. `unattended-upgrades` installs security updates from every apt source the bootstrap configured. The rest—`docker-prune`, `dev-cache-gc`, `cgroup-pids-textfile`—stay local. A credential spent here leaves a journal entry and nothing else to attribute it by.
+`7.0` is the systemd timer set, and it runs with nobody present. `git-poi-all` and `git-worktree-poi` walk every GitHub clone under `$HOME` weekly, calling the GitHub API with the `gh` OAuth token. `unattended-upgrades` installs security updates from every apt source the bootstrap configured. The rest—`docker-prune`, `dev-cache-gc`, `cgroup-pids-textfile`—stay local. The journal is the only record that any of them ran.
 
 `8.0` is `tailscaled`, the only path into the host that the host didn't open. The bootstrap installs and enables it, though joining a tailnet stays a manual `tailscale up`. A tunnel carries whatever a peer sends, so its contents stay outside this diagram and the threat model owns the rest.
 
@@ -424,6 +424,6 @@ None of these is chezmoi-managed, none rotates on apply, and a fresh host re-est
 | Keybase device keys | `~/.config/keybase/` | Keybase and its filesystem |
 | signal-cli registration | `~/.local/share/signal-cli/` | Signal |
 
-Two of these carry more reach than any chezmoi-managed secret. The `gh` OAuth token is the only credential on the host spent with no person present, since `7.0` uses the same token an interactive `gh` does. The Claude Code session credential gates every MCP flow in `3.0`: the tokens in `~/.claude.json` authenticate to vendors, while this one authenticates to the model that decides which vendor to call.
+Two of these reach further than any chezmoi-managed secret. The `gh` OAuth token is the only credential on the host spent with no person present, since `7.0` uses the same token an interactive `gh` does. The Claude Code session credential gates every MCP flow in `3.0`: the tokens in `~/.claude.json` authenticate to vendors, while this one authenticates to the model that decides which vendor to call.
 
-The GitHub token and the SSH key both reach GitHub, through different processes with different blast radii. The SSH key authenticates git transport, and its own registration scopes it. The token authenticates the MCP server and carries whatever fine-grained permissions it received at issue time. A compromise of `~/.claude.json` reaches the token and not the key.
+The GitHub token and the SSH key both reach GitHub, through different processes and different grants. The SSH key authenticates git transport, and its own registration scopes it. The token authenticates the MCP server and carries whatever fine-grained permissions it received at issue time. Only the token is stored in `~/.claude.json`; the key stays in `~/.ssh/`.
