@@ -2,7 +2,7 @@
 set -euo pipefail
 
 # renovate: datasource=github-releases depName=zellij-org/zellij
-ZELLIJ_VERSION="v0.45.0"
+ZELLIJ_VERSION="v0.45.1"
 ARCH="x86_64-unknown-linux-musl"
 
 # shellcheck source-path=SCRIPTDIR source=lib.sh
