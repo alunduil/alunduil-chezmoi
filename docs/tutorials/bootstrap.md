@@ -3,7 +3,7 @@
 Zero to a fully configured host. Requires a Debian/Crostini host and the age key from a password manager.
 
 ```bash
-CHEZMOI_VERSION="v2.72.0"
+CHEZMOI_VERSION="v2.72.1"
 sh -c "$(curl -fsLS get.chezmoi.io)" -- -b "$HOME/.local/bin" -t "$CHEZMOI_VERSION"
 
 mkdir -p ~/.config/chezmoi
