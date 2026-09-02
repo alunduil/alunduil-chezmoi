@@ -60,7 +60,7 @@ class CatchesBalanceDefects(unittest.TestCase):
 
 class CatchesContextDrift(unittest.TestCase):
     def test_entity_left_undescribed(self):
-        broken = document().replace("- **Codecov.** Coverage", "- **Codeanalysis.** Coverage", 1)
+        broken = document().replace("- **Codecov.**", "- **Codeanalysis.**", 1)
         self.assertIn(
             "context: level 0 has 'Codecov', context describes no such system",
             findings_for(broken),
@@ -133,8 +133,8 @@ class CatchesThreatModelReasoning(unittest.TestCase):
 
     def test_context_entry_naming_a_local_path(self):
         broken = document().replace(
-            "authenticated by a bearer token.",
-            "on a bearer token stored in `~/.claude.json`.",
+            "- **Uptime Robot.**",
+            "- **Uptime Robot.** Read from `~/.claude.json`.",
             1,
         )
         self.assertTrue(

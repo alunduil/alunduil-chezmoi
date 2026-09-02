@@ -6,19 +6,19 @@ Cloud and home-network internals live in `alunduil-infrastructure`. GitHub, Clou
 
 ## Context
 
-Eleven parties sit outside the workstation, each exchanging a different kind of data with it.
+Eleven parties sit outside the workstation, and the host wants something different from each.
 
 - **User.** The trust root, outside every boundary. Supplies the age identity, the commit-signing passphrase, and all eight interactive logins, so every credential the host holds traces back to a person at a keyboard.
-- **Anthropic.** Drives every session. Prompts, file contents, and tool results leave the host here, the least structured outflow it has. The claude.ai connectors answer through the same boundary on an account-side grant, so the host holds no credential for them.
-- **GitHub.** Holds the chezmoi source and every repository the host works on. Three processes reach it with three different credentials: the SSH key for transport, the MCP server's token, and `gh`'s own OAuth token.
-- **Cloudflare.** Three MCP servers answering zone, analytics, and documentation queries, authenticated by a browser-obtained grant.
-- **Context7.** Library documentation, reached without a credential at all.
-- **Uptime Robot.** Monitor and incident state, authenticated by a bearer token.
-- **Codecov.** Coverage and test results, authenticated by an API token.
-- **Grafana Cloud.** Receives host metrics and logs and sends nothing back, the only pure sink. Journal entries and Zellij logs leave the host to reach it.
-- **TrueNAS appliance.** Pool, app, and alert data, authenticated by an API key. The only exchange terminating inside the home network.
+- **Anthropic.** Runs the model each session turn goes through, and fronts the claude.ai connectors, so Notion pages and Readwise highlights arrive across the same boundary. Prompts, file contents, and tool results leave the host here, the least structured outflow it has.
+- **GitHub.** Origin of the chezmoi source itself and of every repository worked on here. Takes signed commits over SSH and answers issue and pull request queries over the Copilot server, which is why three processes cross this boundary holding three different credentials.
+- **Cloudflare.** Read-only inspection of zones this host doesn't own: name-resolution analytics, GraphQL analytics, and product documentation, each a separate Cloudflare-hosted server. Terraform in `alunduil-infrastructure` owns the records themselves.
+- **Context7.** Library and framework documentation current enough to correct a model whose training data lags the release. The one party reached with no credential.
+- **Uptime Robot.** Whether the services it watches are still answering, and the incident history for when they weren't.
+- **Codecov.** Flaky-test signal, failure history, and per-pull-request coverage, queried over the API because the web interface sits behind a login wall.
+- **Grafana Cloud.** Keeps the telemetry that has to outlive the incident it records: node and per-process metrics, the journal, and the Zellij server log. The shipper retains no local copy, because a collector inside the user slice goes dark exactly when that slice exhausts its process pool.
+- **TrueNAS appliance.** The home storage appliance: pools and snapshots, the apps it runs, and the alerts it raises. The only exchange terminating inside the home network.
 - **Debian archives and release hosts.** Where executable code comes from: seven vendor apt repositories, pinned release binaries, and two installers piped into a shell.
-- **tailnet peers.** The only path into the host that the host didn't open.
+- **tailnet peers.** A private network joining this host to the user's other machines, and the only path in that the host didn't open.
 
 ## The workstation and its stores
 
