@@ -170,7 +170,7 @@ Three stores hold unencrypted credentials. The source tree holds none of them, c
 
 *Session record* covers transcripts and the per-project auto memory under `~/.claude/projects/`. It's machine-local with no cross-machine path in either direction, so it never crosses a boundary except as prompt content the model already sees.
 
-The lean host role narrows this picture. `.chezmoiignore` drops the whole *Signing and transport identities* store for that role, so a network-exposed host next to home automation carries only the narrowly scoped tokens it needs.
+These diagrams describe the `workstation` role. The lean `ha-terminal` role deploys the Claude session config and a `.vimrc`, and nothing beneath them. `.chezmoiignore` drops the bootstrap scripts, the whole of `~/.config`, `~/.local/bin`, the shell profile, and the signing and transport sources. That host holds none of the credentials in either table, and sits inside the home network rather than reaching into it.
 
 ## Applying the source
 
