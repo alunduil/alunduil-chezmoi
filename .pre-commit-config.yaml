@@ -74,6 +74,15 @@ repos:
         pass_filenames: false
         files: ^\.chezmoiscripts/
 
+      # Gates the same-change rule CLAUDE.md states: a diagram edit that drops
+      # or invents a flow fails at the commit that made it.
+      - id: dfd-balance
+        name: dfd-balance
+        entry: script/checks/dfd_balance.py
+        language: system
+        pass_filenames: false
+        files: ^(docs/explanation/data-flow\.md|script/checks/dfd_balance\.py)$
+
       - id: lychee
         name: lychee
         entry: lychee --config lychee.toml --no-progress --offline --include-fragments=full

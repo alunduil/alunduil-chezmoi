@@ -10,6 +10,9 @@ alunduil
 foot
 kitty
 chezmoi
+Tailscale
+tailnet
+Adoptium
 lazygit
 datasource
 Crostini
@@ -55,6 +58,14 @@ Anthropic
 Claustre
 claustre
 Copilot
+Readwise
+
+# Security and identity
+OAuth
+plaintext
+unencrypted
+keyless
+mitigations
 
 # Languages and ecosystems
 TypeScript
