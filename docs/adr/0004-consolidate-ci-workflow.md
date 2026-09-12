@@ -4,11 +4,11 @@
 
 Accepted
 
-Supersedes [0002](0002-keep-per-workflow-ci.md).
+Supersedes [0007](0007-keep-per-workflow-ci.md).
 
 ## Context
 
-ADR 0002 kept one workflow per sensor and rejected consolidation into a
+ADR 0007 kept one workflow per sensor and rejected consolidation into a
 shared `ci.yml`. Its reasoning was sound on the axis it considered, which
 was whether to collapse *everything*. It never weighed the naming
 question as its own axis.
@@ -21,7 +21,7 @@ when, and the tool-named ones proliferate one file per tool per trigger.
 The scheduled half of the repo already got this right: `weekly.yml` is
 named for its cadence and holds the link check as job `external-links`.
 
-The distinction that ADR 0002 missed, and that resolves it, is that "when"
+The distinction that ADR 0007 missed, and that resolves it, is that "when"
 comes at more than one granularity. Most sensors run on every integration
 event: a push to main or a pull request. Others run on a narrower condition,
 only when specific paths change, because their setup is expensive
@@ -29,10 +29,10 @@ only when specific paths change, because their setup is expensive
 real ports). Those are different whens, so they're different files.
 
 Consolidating the always-on set and keeping the path-gated set split is
-therefore not a compromise between 0002 and its alternative. Both fall
+therefore not a compromise between 0007 and its alternative. Both fall
 out of the same rule.
 
-ADR 0002's three arguments resolve as follows:
+ADR 0007's three arguments resolve as follows:
 
 - **Independent status check per sensor.** Retained. GitHub emits a check
   run per job, so each sensor still reports on its own; the consolidated
@@ -61,7 +61,7 @@ A new check lands as a job in the file matching its when. A new file is
 warranted only by a genuinely different when, which in practice means a
 new trigger, a new cadence, or a path gate.
 
-Gating remains reserved for expensive setup, per 0002's still-standing
+Gating remains reserved for expensive setup, per 0007's still-standing
 rule. A check whose only cost is fast validation runs unconditionally, so
 missing coverage never goes unnoticed.
 

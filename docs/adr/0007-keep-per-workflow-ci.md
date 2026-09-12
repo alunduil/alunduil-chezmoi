@@ -1,4 +1,4 @@
-# 2. Keep one workflow per sensor
+# 7. Keep one workflow per sensor
 
 ## Status
 
