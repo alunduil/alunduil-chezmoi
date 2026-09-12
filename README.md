@@ -22,6 +22,7 @@ Organised by [Diátaxis](https://diataxis.fr):
   - [PGP commit signing](docs/how-to/pgp-signing.md): includes paper-key backup and key rotation.
 - Explanation
   - [Architecture](docs/explanation/architecture.md)—source vs. apply clone, bootstrap shape, layered trust, the `gh` shim, the two `CLAUDE.md` files.
+  - [Data flow](docs/explanation/data-flow.md)—trust boundaries, credential paths, and every Model Context Protocol server the host talks to. Cloud and home-network flows have their own data flow diagram in the `alunduil-infrastructure` repo.
 
 ## Contributing
 
