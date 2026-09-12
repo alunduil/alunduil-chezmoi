@@ -1,4 +1,4 @@
-# 2. Port git-worktree-poi to Rust
+# 7. Port git-worktree-poi to Rust
 
 ## Status
 
