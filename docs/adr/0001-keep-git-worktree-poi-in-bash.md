@@ -2,7 +2,7 @@
 
 ## Status
 
-Superseded by [0002](0002-port-git-worktree-poi-to-rust.md).
+Superseded by [0007](0007-port-git-worktree-poi-to-rust.md).
 
 ## Context
 
