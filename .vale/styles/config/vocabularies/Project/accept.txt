@@ -113,3 +113,12 @@ node_exporter
 zjstatus
 basename
 process_exporter
+
+# Acronyms kept unexpanded. Listing them here also clears
+# Microsoft.Acronyms, which otherwise wants a "Name Of Thing (NOT)"
+# definition on first use. GPG has no usable expansion: every spelling of
+# it contains GNU, which the rule flags in turn and which cannot expand
+# at all.
+GPG
+ANSI
+TUI

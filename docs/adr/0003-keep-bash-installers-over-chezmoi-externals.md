@@ -6,12 +6,12 @@ Accepted
 
 ## Context
 
-`script/install/*` plus `lib.sh` duplicate a download-verify-extract
+`script/install/*` plus `lib.sh` duplicate a download-verify-unpack
 pipeline that chezmoi ships natively as `.chezmoiexternal` externals.
 For a single binary from a public release tarball, one external stanza
 would replace a whole installer. #309 asked whether to migrate, and #295
-is poised to add another script on the pattern. So the question wants a
-recorded answer, not a per-tool reflex.
+queues another script on the pattern. So the question wants a recorded
+answer, not a per-tool reflex.
 
 Of the eighteen installers, six can't move regardless: `signal-cli`
 (GPG-pinned), `grafana` (multi-file tree), `prometheus` (two binaries),
@@ -36,12 +36,12 @@ hand, the step Renovate can't automate.
 
 ## Decision
 
-We keep the bash installers and reject the move to `.chezmoiexternal`.
+Keep the bash installers and reject the move to `.chezmoiexternal`.
 New tools land as a `script/install/*` script on the `lib.sh` pattern.
 Migrating only splits the install model in two, since six tools stay
 scripts regardless, and still can't replace the scripts CI depends on.
 
-We revisit when any trigger fires:
+Revisit when any trigger fires:
 
 - chezmoi gains remote checksum verification, so a pin can match a
   `checksums.txt` entry instead of a hand-copied hash.
