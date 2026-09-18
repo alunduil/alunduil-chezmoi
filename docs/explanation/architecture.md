@@ -27,9 +27,9 @@ C4Container
 
 ## Source versus apply clone
 
-chezmoi separates the *source* (this checkout) from the *applied clone* at `~/.local/share/chezmoi`. `chezmoi diff` and `chezmoi apply` read the apply clone, not the working tree, so edits here only take effect after you commit them and update the apply clone. Use `chezmoi diff --source-path .` to preview from this checkout.
+chezmoi separates the *source clone* (this checkout) from the *apply clone* at `~/.local/share/chezmoi`. `chezmoi diff` and `chezmoi apply` read the apply clone, not the source clone, so edits here only take effect after you commit them and update the apply clone. Use `chezmoi diff --source-path .` to preview from the source clone instead.
 
-The split exists so a half-finished edit in the dev clone can't corrupt a live `chezmoi apply`. The cost—commit + pull before changes go live—buys an always-coherent apply path.
+The split exists so a half-finished edit in the source clone can't corrupt a live `chezmoi apply`. The cost—commit + pull before changes go live—buys an apply that's always coherent.
 
 ## Ordered convergent bootstrap
 
@@ -56,7 +56,7 @@ Explicit, not detected. Detection would couple intent to incidental signals—OS
 
 The exclusions also shrink the secret blast radius. A network-exposed, ephemeral host next to home automation carries only the narrowly scoped tokens it needs, never the long-lived signing and SSH identities the workstation holds.
 
-## Layered trust: Everything behind age
+## Everything behind age
 
 The source tree stores long-lived secrets as age-encrypted blobs that unlock at `apply` time:
 
@@ -70,7 +70,7 @@ Age secures secrets at rest but can't itself sign commits or authenticate to SSH
 
 `dot_local/bin/executable_gh` shadows system `gh` to enforce `--draft` on `gh pr create`. The shim exists because Claude Code opens PRs through `gh`, and the project rule is "every PR opens as draft, human promotes to ready." Enforcing this in a wrapper rather than via memory keeps the rule load-bearing even when memory slips. `GH_DRAFT_GUARD=off` overrides for the rare manual case.
 
-`gh` extensions install in `.chezmoiscripts/run_before_05-*` alongside other bespoke installers, not script 02—they're managed by `gh extension`, not the `script/install/` download-and-verify pattern, so they don't fit that script's shape. Version pin lives inline (for example, `GH_POI_VERSION`).
+`gh` extensions install in `.chezmoiscripts/run_before_05-*` alongside other bespoke installers, not script 02—they're managed by `gh extension`, not the `script/install/` download-and-verify pattern. Version pin lives inline (for example, `GH_POI_VERSION`).
 
 ## Two `CLAUDE.md` files
 
@@ -79,7 +79,7 @@ Two files, two audiences:
 - `CLAUDE.md` (this repo's root) loads into Claude's context every relevant turn when editing the chezmoi *source*. It's optimised for tokens, not readability—terse rules, no decorative prose.
 - `dot_claude/CLAUDE.md` deploys to `~/.claude/CLAUDE.md` on apply, and Claude loads it into context for *every* project on this host. Cross-cutting defaults live there.
 
-Editing the deployed file directly would lose the change on the next `chezmoi apply`, so the source-of-truth is always the chezmoi-managed copy. This document, by contrast, targets human contributors and can be longer and more discursive.
+Editing the deployed file directly would lose the change on the next `chezmoi apply`, so the source-of-truth is always the chezmoi-managed copy.
 
 ## What reaches a web session
 
@@ -95,4 +95,7 @@ It doesn't load `~/.claude/CLAUDE.md`, `~/.claude/skills/`, the hooks in `~/.cla
 
 The split is deliberate. [ADR 0005](../adr/0005-treat-the-checkout-as-the-only-portable-context.md) records why the alternatives lost.
 
-Two consequences for anyone editing here. `dot_claude/CLAUDE.md` stays host-specific, because the `gh` shim, the `rtk` output-filtering proxy, and worktree paths describe machinery a cloud VM doesn't have. And a skill under `dot_claude/skills/` runs on this host only. One that must also work on the web belongs in the repo that needs it, written to stand on its own rather than reaching for `~/.claude/` or memory.
+Two consequences for anyone editing here:
+
+- `dot_claude/CLAUDE.md` stays host-specific, because the `gh` shim, the `rtk` output-filtering proxy, and worktree paths describe machinery a cloud VM doesn't have.
+- A skill under `dot_claude/skills/` runs on this host only. One that must also work on the web belongs in the repo that needs it, written to stand on its own rather than reaching for `~/.claude/` or memory.
