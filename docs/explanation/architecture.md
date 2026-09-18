@@ -25,7 +25,7 @@ C4Container
     Rel(apply, home, "chezmoi apply")
 ```
 
-## Source vs. apply clone
+## Source versus apply clone
 
 chezmoi separates the *source* (this checkout) from the *applied clone* at `~/.local/share/chezmoi`. `chezmoi diff` and `chezmoi apply` read the apply clone, not the working tree, so edits here only take effect after you commit them and update the apply clone. Use `chezmoi diff --source-path .` to preview from this checkout.
 
