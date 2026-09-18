@@ -42,8 +42,8 @@ effect on `apply` until committed and pulled into the apply clone. Use
   lists arrive via `read -ra <<<'{{ … }}'` rather than an array literal.
 - Tool versions live in `script/install/*` (one script per tool, each
   pinning its own `*_VERSION`) and are reused by both bootstrap and CI.
-  Bump in one place. Zellij *plugins*
-  (`zellaude`, `zjstatus`) are pinned separately as alias tags in
+  Bump in one place. Zellij *plugins* (`zellaude`, `zjstatus`) pin their
+  version inside the release URL in the `plugins` block of
   `dot_config/zellij/config.kdl`.
 - Every `*_VERSION` pin carries a `# renovate: datasource=… depName=…`
   line directly above it (order: datasource, depName, packageName,
