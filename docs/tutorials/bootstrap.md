@@ -56,4 +56,4 @@ systemctl is-active sysstat-collect.timer  # confirms sar is sampling
 systemctl --user is-active alloy.service   # confirms the Grafana Cloud shipper
 ```
 
-SSH keys deploy from age-encrypted chezmoi source on apply, so `~/.ssh/{id_rsa,config}` land alongside the age-key paste step, so SSH to GitHub works as soon as `chezmoi init --apply` finishes. The bootstrap clones over HTTPS to bridge the gap before keys exist. Swap the apply clone's remote back to SSH if preferred: `git -C ~/.local/share/chezmoi remote set-url origin git@github.com:alunduil/alunduil-chezmoi.git`.
+SSH to GitHub works as soon as `chezmoi init --apply` finishes. The keys deploy from age-encrypted chezmoi source, so `~/.ssh/{id_rsa,config}` land alongside the age-key paste step. The bootstrap clones over HTTPS to bridge the gap before keys exist. Swap the apply clone's remote back to SSH if preferred: `git -C ~/.local/share/chezmoi remote set-url origin git@github.com:alunduil/alunduil-chezmoi.git`.
