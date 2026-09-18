@@ -23,9 +23,9 @@ Four facts shape it, each checked on `penguin` at systemd 252.
   uid. The setting only ever applies to system units.
 - `LoadCredential=` does work in the user manager. Either manager can use it to
   hand a unit one secret.
-- Access doesn't settle every case. The Docker socket is owned by `root:docker`
-  and the login user is in the `docker` group, so a user unit could run the
-  prune. Root isn't forced.
+- Access doesn't settle every case. `root:docker` owns the Docker socket, and
+  the login user is in the `docker` group, so a user unit could run the prune.
+  Root isn't forced.
 - Privilege sometimes buys survival rather than access. `sysstat-collect.service`
   runs as root in `system.slice`, so `sadc` keeps sampling when the user slice
   runs out of pids. That's the failure #404 exists to record, and a user unit
@@ -59,7 +59,7 @@ A unit that departs from this says why in a comment beside the setting.
   and `config.alloy` reads `$CREDENTIALS_DIRECTORY`. Running Alloy outside
   systemd means setting that variable, or it looks in the wrong place.
 - `DynamicUser=yes` has no user yet, because the system units here need root.
-  The clause is written down so the next system daemon doesn't re-derive it.
+  Writing the clause down keeps the next system daemon from re-deriving it.
 - The shipper stays in the user slice, so it still goes dark during a pids
   exhaustion. That's accepted rather than overlooked: sar owns the local
   record (#404).

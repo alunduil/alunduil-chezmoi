@@ -20,34 +20,34 @@ Two pressures motivate the question (#150):
   worktrees in flight.
 - **Complexity drift.** 234 lines of bash with more state, more
   parsing, more places shell quoting and `mapfile` plumbing get in the
-  way. Each addition has been tractable; the trajectory is consistent.
+  way. Each addition has been tractable. The trajectory is consistent.
 
 The natural reference point is `gh-poi` itself: Go, `fatih/color`,
 distributed via `gh extension install`. The host already runs it
 (pinned in `.chezmoiscripts/run_before_05-install-standalone-tools.sh.tmpl`), so a
 `gh-worktree-poi` rewrite would slot into the same install pass.
 
-Three options were considered: a) stay bash and port the UX in place,
-b) Go rewrite as `gh-worktree-poi`, c) Rust rewrite. Option c is
-ruled out by ecosystem fit—Go is the de facto language for `gh`
-extensions, and a Rust binary buys little here.
+Three options stood open: a) stay bash and port the UX in place,
+b) Go rewrite as `gh-worktree-poi`, c) Rust rewrite. Ecosystem fit
+rules out option c—Go is the de facto language for `gh` extensions,
+and a Rust binary buys little here.
 
 The reversibility asymmetry between (a) and (b) is the dominant force.
 Bash → rewrite is straightforward at any size. Rewrite → bash is rare
 in practice. Picking the irreversible direction earlier than necessary
 forfeits optionality. 234 lines sits below the threshold where bash
-becomes a tax: `classify`/`gather`/`print_section` are bounded helpers,
-and the next pending feature (#147 GraphQL batching) is awkward in
-bash but reachable with a `gh api graphql` heredoc and `jq`
-distribution. The motivating UX pain (color, tighter rows, dimmed
-metadata, progress markers) is reachable from `tput`/ANSI inside
-`print_section` without touching the classifier.
+becomes a tax: `classify`/`gather`/`print_section` are bounded helpers.
+The next pending feature (#147 GraphQL batching) is awkward in bash but
+reachable with a `gh api graphql` heredoc and `jq` distribution. The
+motivating UX pain (color, tighter rows, dimmed metadata, progress
+markers) is reachable from `tput`/ANSI inside `print_section` without
+touching the classifier.
 
 ## Decision
 
 Keep `git-worktree-poi` in bash and port the `gh-poi`-style interface
-in place. The `gh-worktree-poi` Go rewrite (option b in #150) is
-deferred, not rejected.
+in place. Defer the `gh-worktree-poi` Go rewrite (option b in #150)
+rather than rejecting it.
 
 Revisit when any of these triggers fire:
 
@@ -66,16 +66,15 @@ the post-trigger surface.
 
 ## Consequences
 
-- chezmoi-managed deployment via `dot_local/bin/` stays in place;
-  existing `bats` coverage and the small dependency surface are
-  preserved.
+- chezmoi-managed deployment via `dot_local/bin/` stays in place, and
+  existing `bats` coverage and the small dependency surface carry over.
 - UX work (color, single-line rows, dimmed metadata, progress markers)
-  is unblocked and lives in `print_section` plus terminal-capability
-  helpers. No new repo, no publishing flow, no Go in CI.
+  goes ahead in `print_section` plus terminal-capability helpers. No new
+  repo, no publishing flow, no Go in CI.
 - #147 lands as bash. Future classifier additions continue paying the
   shell-quoting and `mapfile` tax.
-- ANSI/`tput` in bash is awkward compared to `fatih/color`; struct-based
-  mocks remain unavailable; complexity drift continues, just bounded by
-  the re-evaluation triggers above.
+- ANSI/`tput` in bash is awkward compared to `fatih/color`, and
+  struct-based mocks remain unavailable. Complexity drift continues,
+  bounded only by the re-evaluation triggers listed earlier.
 - The triggers are the load-bearing part: without them this becomes
-  "stay bash forever," which isn't the decision being made.
+  "stay bash forever," which isn't the decision.

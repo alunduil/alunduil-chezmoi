@@ -26,10 +26,11 @@ that point.
 
 ADR 0001 also picked Go, on the reasoning that Go is the de facto
 language for `gh` extensions and `gh-poi` is the reference point. That
-framing no longer holds: `git-worktree-poi` never became a `gh`
-extension—it's a standalone binary in `dot_local/bin/`—and the
-companion CLIs have since standardized on Rust (`git-repo-picker`,
-alunduil-infrastructure#54; `zellij-git-status`, alunduil-infrastructure#26).
+framing no longer holds. `git-worktree-poi` never became a `gh`
+extension—it's a standalone binary in `dot_local/bin/`. The companion
+CLIs have since standardized on Rust (`git-repo-picker` in
+alunduil-infrastructure#54, `zellij-git-status` in
+alunduil-infrastructure#26).
 rustup is already bootstrapped in chezmoi. Rust aligns the toolchain
 with the tools `git-worktree-poi` ships alongside.
 
@@ -39,13 +40,12 @@ Port `git-worktree-poi` out of chezmoi-managed bash into a
 standalone Rust binary repository, reversing ADR 0001's "keep bash"
 decision and its Go language pick.
 
-Project execution—repo bootstrap, milestones, CI/release, and the
-chezmoi consumer swap (`script/install/` pin, bash removal, systemd
-`ExecStart` swap, bats removal)—is carried in
-alunduil-infrastructure#116, mirroring the `git-repo-picker` planning
-artifact (alunduil-infrastructure#54). This ADR records only the
-decision to reverse 0001 and the language; the milestone tracking lives
-in the infrastructure issue.
+alunduil-infrastructure#116 carries project execution: repo bootstrap,
+milestones, CI/release, and the chezmoi consumer swap (`script/install/`
+pin, bash removal, systemd `ExecStart` swap, bats removal). It mirrors
+the `git-repo-picker` planning artifact (alunduil-infrastructure#54).
+This ADR records only the decision to reverse 0001 and the language. The
+milestone tracking lives in the infrastructure issue.
 
 ## Consequences
 
@@ -58,5 +58,5 @@ in the infrastructure issue.
 - Costs: a new repository, its publishing and release flow, and Rust in
   that repo's CI. chezmoi gains a `script/install/` pin and loses the
   bash bin plus its `bats` coverage (moved to the new repo).
-- ADR 0001 is retained as the historical record of why bash was
-  originally chosen and which triggers governed the reversal.
+- ADR 0001 stands as the historical record: why bash won originally, and
+  which triggers governed the reversal.
