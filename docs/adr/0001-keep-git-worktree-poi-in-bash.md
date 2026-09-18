@@ -49,7 +49,7 @@ Keep `git-worktree-poi` in bash and port the `gh-poi`-style interface
 in place. Defer the `gh-worktree-poi` Go rewrite (option b in #150)
 rather than rejecting it.
 
-Revisit when any of these triggers fire:
+Revisit when any trigger fires:
 
 - A feature needs more than 100 lines of bash addition—for
   example, interactive selection, a real TUI, or anything beyond
