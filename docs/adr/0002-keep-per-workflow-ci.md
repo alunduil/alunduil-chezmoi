@@ -36,7 +36,7 @@ A workflow is path-gated only when its setup is expensive, such as a
 heavy install or binding real ports. A check whose only cost is fast
 validation runs unconditionally, so missing coverage never goes unnoticed.
 
-Revisit when either trigger fires:
+Revisit only if one of these becomes true:
 
 - Enough checks become genuine `just <check>` one-liners with no bespoke
   setup that a shared job matrix would remove real duplication.

@@ -22,8 +22,8 @@ Status, Context, Decision, Consequences). Name files
 
 New ADRs land with `Status: Accepted`—the PR review that merges them
 is the acceptance step. Later transitions to `Superseded by NNNN` or
-`Deprecated` happen by edit. `Proposed` covers the rare case of an ADR
-published as a discussion artifact ahead of any implementing PR.
+`Deprecated` happen by edit. Use `Proposed` only for the rare case of an
+ADR published as a discussion artifact ahead of any implementing PR.
 
 Skip ADRs for tactical implementation choices, framework
 defaults, or anything a commit message carries adequately. Sprawl makes
