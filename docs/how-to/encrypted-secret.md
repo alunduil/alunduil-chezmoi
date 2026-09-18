@@ -1,6 +1,6 @@
 # Adding an encrypted secret
 
-For credentials that should replay across machines (API tokens, etc.), encrypt with chezmoi/age rather than leaving them out of source. Run from this checkout's root so `--source` lands the file here. Without it, `chezmoi add` writes to the apply clone (`~/.local/share/chezmoi`), which is read-only by convention.
+For credentials that should replay across machines (API tokens, etc.), encrypt with chezmoi/age rather than leaving them out of source. Run from this checkout's root so `--source` lands the file here. Without it, `chezmoi add` writes to the apply clone (`~/.local/share/chezmoi`), and convention keeps that clone read-only.
 
 ```bash
 mkdir -p ~/.config/<service>

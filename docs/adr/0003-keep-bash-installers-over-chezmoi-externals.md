@@ -6,7 +6,7 @@ Accepted
 
 ## Context
 
-`script/install/*` plus `lib.sh` duplicate a download-verify-extract
+`script/install/*` plus `lib.sh` duplicate a download-verify-unpack
 pipeline that chezmoi ships natively as `.chezmoiexternal` externals.
 For a single binary from a public release tarball, one external stanza
 would replace a whole installer. #309 asked whether to migrate, and #295

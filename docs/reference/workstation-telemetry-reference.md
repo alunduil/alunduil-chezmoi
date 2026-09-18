@@ -55,7 +55,7 @@ these series remotely:
 | `unix` | `integrations/unix` | 15s | A pids pool can drain between two 60s samples. |
 | `process` | `integrations/process` | 30s | Walks `/proc` per process, so it costs most under load. |
 
-Both sample a population at an instant. A process that lives and dies inside one
+Both capture a population at an instant. A process that lives and dies inside one
 interval moves `node_forks_total` and appears in no group.
 
 ## Local equivalents

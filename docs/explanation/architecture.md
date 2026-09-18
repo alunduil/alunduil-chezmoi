@@ -44,7 +44,7 @@ Bootstrap lives in `.chezmoiscripts/`: `run_*_before_*.sh.tmpl` install and conf
 
 Which manager a unit belongs in, and what it runs as, is a separate question. [ADR 0006](../adr/0006-run-units-at-least-privilege.md) carries that rule.
 
-Tool versions live in `script/install/*` (one script per tool, each pinning its own `*_VERSION`), and both bootstrap and CI reuse them, so there's exactly one place to bump. Zellij *plugins* (`zellaude`, `zjstatus`) pin via alias tags in `dot_config/zellij/config.kdl`, since the plugin registry is independent of the binary.
+Tool versions live in `script/install/*` (one script per tool, each pinning its own `*_VERSION`), and both bootstrap and CI reuse them, so there's exactly one place to bump. Zellij *plugins* (`zellaude`, `zjstatus`) pin their versions in the release URLs under the `plugins` block of `dot_config/zellij/config.kdl`, since the plugin registry is independent of the binary.
 
 ## Host roles
 

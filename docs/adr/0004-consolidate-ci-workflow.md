@@ -76,7 +76,7 @@ their own drift risk.
 - The always-on sensors share one set of trigger, permissions, and
   concurrency boilerplate rather than one copy each.
 - `prose` needs `if: github.event_name == 'pull_request'`, because
-  `reviewdog` has no diff to filter against otherwise. A job `if:` covers
+  `reviewdog` otherwise has no diff to filter. A job `if:` covers
   conditions GitHub evaluates at job level, which is why it suits the event
   name and not `paths:`.
 - The path-gated workflows keep their `paths:` filter next to the job it

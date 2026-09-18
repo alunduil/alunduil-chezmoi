@@ -36,12 +36,12 @@ The reversibility asymmetry between (a) and (b) is the dominant force.
 Bash → rewrite is straightforward at any size. Rewrite → bash is rare
 in practice. Picking the irreversible direction earlier than necessary
 forfeits optionality. 234 lines sits below the threshold where bash
-becomes a tax: `classify`/`gather`/`print_section` are bounded helpers.
-The next pending feature (#147 GraphQL batching) is awkward in bash but
-reachable with a `gh api graphql` heredoc and `jq` distribution. The
-motivating UX pain (color, tighter rows, dimmed metadata, progress
-markers) is reachable from `tput`/ANSI inside `print_section` without
-touching the classifier.
+becomes a tax: `classify`/`gather`/`print_section` each do one bounded
+job. The next pending feature (#147 GraphQL batching) is awkward in
+bash but reachable with a `gh api graphql` heredoc and `jq`
+distribution. The motivating UX pain (color, tighter rows, dimmed
+metadata, progress markers) is reachable from `tput`/ANSI inside
+`print_section` without touching the classifier.
 
 ## Decision
 

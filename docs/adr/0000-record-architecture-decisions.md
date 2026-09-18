@@ -31,8 +31,8 @@ the collection worth less.
 
 ## Consequences
 
-- Future readers can challenge a decision against the forces in play at
-  the time, instead of inferring intent from diffs.
+- Future readers can re-examine a decision in light of the forces in
+  play at the time, instead of inferring intent from diffs.
 - Adding an ADR is a small discipline cost on the proposer. Reading the
   set is a small load on anyone touching an area with prior decisions.
 - Deferred decisions—"stay bash for now, revisit when X fires"—have a
