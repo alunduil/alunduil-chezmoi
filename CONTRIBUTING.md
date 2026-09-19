@@ -2,8 +2,6 @@
 
 This is personal configuration, not a project looking for contributors. No roadmap, no support, no promise that a change lands. Fork it under [0BSD](LICENSE) and take what's useful.
 
-This page covers what happens to a pull request opened here, and the mechanics you can't discover from the checkout.
-
 ## What happens to your pull request
 
 One maintainer, reviewing when time allows, on a repo that isn't looking for changes. Most pull requests here won't merge, and that isn't a judgement on the work. Decide whether it's worth your time before you spend it.
@@ -14,7 +12,7 @@ A pull request that goes quiet for 30 days picks up a `stale` label and closes 1
 
 The repo squash-merges with `squash_merge_commit_message: PR_BODY`, so GitHub copies your title and description verbatim into `git log` and discards the commits on your branch. The description is the only thing that survives the merge.
 
-Write it as a commit message, following the [seven rules of a great commit message](https://cbea.ms/git-commit/). Two things that list doesn't cover:
+Write it as a commit message, following the [seven rules of a great commit message](https://cbea.ms/git-commit/).
 
 - Write the body as prose, not as a structured document. An H1 repeating the title, `##` section headings, checkbox lists, and a trailing disclosure block all land in `git log` as noise.
 - Trailers don't survive. `Signed-off-by`, `Assisted-by`, and the rest sit on the branch commits that the squash throws away.

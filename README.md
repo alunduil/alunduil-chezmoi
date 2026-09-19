@@ -25,4 +25,4 @@ Organised by [Diátaxis](https://diataxis.fr):
 
 ## Contributing
 
-Personal configuration—not accepting contributions. Fork under [0BSD](LICENSE). If you open a pull request anyway, [CONTRIBUTING.md](CONTRIBUTING.md) has the mechanics.
+Personal configuration—not accepting contributions. Fork under [0BSD](LICENSE). [CONTRIBUTING.md](CONTRIBUTING.md) covers pull request mechanics.
