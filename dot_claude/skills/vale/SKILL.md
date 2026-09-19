@@ -107,7 +107,7 @@ Default package rules trip on inline code, tables, and technical strings. Scope 
 
 - `IgnoredScopes` — inline HTML tags Vale skips entirely. Defaults to `code, tt`. Add `kbd, var` if used.
 - `SkippedScopes` — block HTML tags Vale skips. Defaults to `script, style, pre`. Add `figure, blockquote` for untrimmed quoted sources.
-- `BlockIgnores` / `TokenIgnores` — regex escape hatches for block and inline content with no HTML tag. **Markdown, reStructuredText, AsciiDoc, Org only**, and both belong inside a format section; at the top level Vale refuses to start with `E201: 'BlockIgnores' is a syntax-specific option`. Use for fenced shell prompts and custom MDX directives.
+- `BlockIgnores` / `TokenIgnores` — regex escape hatches for block and inline content with no HTML tag, for fenced shell prompts and custom MDX directives. **Markdown, reStructuredText, AsciiDoc, Org only.** Both belong inside a format section; at the top level Vale refuses to start with `E201: 'BlockIgnores' is a syntax-specific option`.
 - `IgnoredClasses` — by HTML class. Useful for rendered output linting.
 - `CommentDelimiters` — comment markers Vale honours for `<!-- vale off -->` directives. Default `<!-- -->`; set to `{/* */}` for MDX where HTML comments don't render.
 - `BasedOnStyles` is **additive across sections, not overriding**: a child block's `BasedOnStyles = X, Y` doesn't remove `Z` inherited from a broader block's `BasedOnStyles = X, Y, Z`. To silence a package's rules inside a sub-block, disable each rule explicitly (`Readability.LIX = NO`), not by dropping it from the child's list.
@@ -124,7 +124,7 @@ Which fix a finding admits — backticks, vocabulary, or rewording — depends o
 
 `Vocab = <Project>` enables two implicit rules sourced from `<StylesPath>/config/vocabularies/<Project>/`:
 
-- `accept.txt` → `Vale.Terms`. Accepted terms; see Casing below.
+- `accept.txt` → `Vale.Terms`.
 - `reject.txt` → `Vale.Avoid`. Flags banned terms.
 
 Both files: one regex per line, case-sensitive, `#` for comments. The built-in `Vale` style must be in `BasedOnStyles` for these rules to fire.
@@ -137,8 +137,8 @@ A starter `accept.txt` ships next to this skill at `~/.claude/skills/vale/accept
 
 `Vale.Terms` enforces whatever casing a pattern carries, so the canonical form decides which kind a term is:
 
-- **Canonical form carries a capital → bare literal.** `TrueNAS`, `Diátaxis`, `ADRs?`. Enforcing that capital is the point, and a lowercase `diataxis` becomes an error.
-- **All-lowercase canonical form → `(?i)`.** Such a term meets one casing variation in real prose: its own sentence-initial capital, which is correct English. A literal `pre-commit` turns "Pre-commit hooks must pass" into an error. Fold inflections into the same pattern: `(?i)repos?`.
+- **Canonical form carries a capital → bare literal.** `TrueNAS`, `Diátaxis`, `ADRs?`. A lowercase `diataxis` is then an error.
+- **All-lowercase canonical form → `(?i)`.** The only casing variation such a term meets is its own sentence-initial capital, which is correct English. A literal `pre-commit` turns "Pre-commit hooks must pass" into an error. Fold inflections into the same pattern: `(?i)repos?`.
 - **One entry per term.** Carrying both `alunduil` and `Alunduil` makes Vale pick one canonical form and error on every use of the other.
 
 ## Validation (pre-commit)

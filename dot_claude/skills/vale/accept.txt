@@ -1,6 +1,5 @@
 # Starter Vale.Terms list. Copy into <StylesPath>/config/vocabularies/<Project>/
-# and extend per-project. One regex per line; lines starting with # are
-# comments.
+# and extend per-project. One regex per line.
 #
 # A bare literal makes Vale.Terms enforce that capitalization everywhere the
 # word appears. Names whose canonical form carries a capital — TrueNAS,
@@ -17,11 +16,10 @@
 #   - Proper nouns: product names, people, places, organizations.
 #   - Established acronyms with no surrounding-text rewrite available
 #     (ADR, MADR).
-#   - Other terms that appear unbackticked in prose. A package ID or code
-#     symbol takes backticks instead (`magpie-root`), which skip Vale.Terms.
+#   - Other terms that appear unbackticked in prose. Backticked tokens skip
+#     Vale.Terms, so a package ID or code symbol takes backticks instead.
 #
-# A rule that fired on standard English is not a vocabulary problem: rewrite
-# the prose to comply. Demoting the rule so it stops firing is the wrong fix.
+# A rule that fired on standard English wants the prose rewritten to comply.
 
 # Identity
 (?i)alunduil
