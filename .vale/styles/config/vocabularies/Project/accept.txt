@@ -1,14 +1,12 @@
-# Vale project vocabulary. One pattern per line; # starts a comment.
+# A bare literal makes Vale.Terms enforce that capitalization everywhere the
+# word appears. Names worth spelling one way — products, projects, people,
+# acronyms — are literals.
 #
-# A bare literal makes Vale.Terms enforce that exact capitalization wherever
-# the word appears, so a name worth spelling one way — a product, project,
-# person, or acronym — is a literal. An ordinary noun has no capitalization to
-# enforce, and a case-sensitive one flags its own sentence-initial capital at
-# error severity, so it takes (?i) and folds its inflections into one pattern:
-# (?i)repos?, not repo alongside repos.
+# An ordinary noun has no capitalization to enforce, and a case-sensitive one
+# rejects its own sentence-initial capital. Those take (?i), inflections
+# folded into one pattern: (?i)repos?.
 #
-# Every entry appears in the linted set (README.md and docs/). A term the
-# repository uses only outside that set is re-added on its first documented use.
+# Add a term when a linted doc first uses it.
 
 # Identity
 alunduil
@@ -44,7 +42,7 @@ zjstatus
 
 # AI and Claude ecosystem
 Claude
-# Exempts the lowercase host from the Claude casing rule above.
+# Exempts the lowercase host from the Claude casing rule.
 claude.ai
 Anthropic
 
