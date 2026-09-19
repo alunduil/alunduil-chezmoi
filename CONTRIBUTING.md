@@ -2,7 +2,7 @@
 
 This is personal configuration, not a project looking for contributors. No roadmap, no support, no promise that a change lands. Fork it under [0BSD](LICENSE) and take what's useful.
 
-Pull requests arrive anyway. This page covers what happens to yours and the mechanics you can't discover from the checkout.
+This page covers what happens to a pull request opened here, and the mechanics you can't discover from the checkout.
 
 ## What happens to your pull request
 

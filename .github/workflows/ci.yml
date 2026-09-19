@@ -198,8 +198,10 @@ jobs:
         env:
           REVIEWDOG_GITHUB_API_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
-          # Same set the pre-commit vale hook lints, so no exclude regex.
-          vale --output=JSON README.md CONTRIBUTING.md docs/ > vale.json || true
+          # Named paths rather than `vale .`, which walks into the vendored
+          # styles under .vale/styles/ and dies on frontmatter it can't parse
+          # in dot_claude/. CLAUDE.md is the one root doc that stays out.
+          vale --output=JSON --glob='!CLAUDE.md' ./*.md docs/ > vale.json || true
           # A vale crash yields no JSON; fail here rather than report nothing.
           jq -e . vale.json > /dev/null
           jq -c '
