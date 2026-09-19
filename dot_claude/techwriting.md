@@ -1,14 +1,12 @@
 # Technical writing
 
-Register for every piece of English prose, whatever its audience or
-format: ADRs, how-tos, READMEs, Diátaxis docs, PR and issue bodies,
-commit messages, blog posts, chat. `voice.md` layers tone onto prose
-posted under alunduil's name and leaves these rules standing.
+Register for documentation prose: ADRs, how-tos, READMEs, Diátaxis
+docs. Blog posts are out of scope — they keep their own register.
 
 Vale enforces mechanics: passive voice, sentence length, wordiness,
-clichés. It cannot see register. Google's [developer documentation
-style guide](https://developers.google.com/style) governs what these
-rules leave open.
+clichés. It cannot see register. Anything unstated here defers to
+Google's [developer documentation style
+guide](https://developers.google.com/style).
 
 ## Cut packaging
 
@@ -22,9 +20,6 @@ Delete:
   Say what happened in the plainest available words.
 - Sentences present for rhythm: the third clause balancing the first
   two, the closing restatement.
-- Metanarrative — "this page covers", "as noted above", "the section
-  below", "two things that list doesn't cover". Write the subject;
-  headings and links already map the text.
 
 ## Sentences and paragraphs
 
@@ -42,9 +37,8 @@ Delete:
 - Name the reader before writing: role, goal, and what they already
   know. Spend words on what is specific to this project, not on
   general programming.
-- State assumptions as facts about the subject — "these steps assume
-  Debian" — so the reader meets a boundary in the material rather than
-  in a preamble about the text.
+- The introduction states scope, assumed knowledge, and what the
+  document does not cover.
 - Headings name the reader's task ("Create the site"), not internal
   machinery ("Initialise the template engine").
 - Explain why a step exists before asking for it.
