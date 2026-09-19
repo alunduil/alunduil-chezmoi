@@ -34,6 +34,13 @@ Grafana
 Alloy
 zellaude
 systemd
+sadc
+sar
+sysstat
+forkstat
+(?i)textfile
+node_exporter
+zjstatus
 
 # AI and Claude ecosystem
 Claude
@@ -69,13 +76,6 @@ VMs
 (?i)cgroups?
 (?i)uid
 (?i)pids
-sadc
-sar
-sysstat
-forkstat
-(?i)textfile
-node_exporter
-zjstatus
 basename
 
 # Acronyms kept unexpanded. Listing them here also clears
