@@ -1,9 +1,14 @@
-# Starter Vale.Terms list. Copy into <StylesPath>/config/vocabularies/<Project>/
-# and extend per-project. One regex per line; case-sensitive; prefix (?i) for
-# case-insensitive. Lines starting with # are comments.
+# A bare literal makes Vale.Terms enforce that capitalization everywhere the
+# word appears. Names worth spelling one way — products, projects, people,
+# acronyms — are literals.
+#
+# An ordinary noun has no capitalization to enforce, and a case-sensitive one
+# rejects its own sentence-initial capital. Those take (?i), inflections
+# folded into one pattern: (?i)repos?.
+#
+# Add a term when a linted doc first uses it.
 
 # Identity
-Alunduil
 alunduil
 
 # Host tooling
@@ -15,104 +20,61 @@ datasource
 Crostini
 Zellij
 TrueNAS
-Cloudflare
 Renovate
-Dependabot
-Codecov
-markdownlint
 pre-commit
 Diátaxis
-devcontainer
-DevContainer
-Codespaces
 ghcup
 Keybase
 paperkey
 
 # Observability stack
 Grafana
-Prometheus
-Loki
-Tempo
 Alloy
 zellaude
-OTLP
 systemd
-loopback
-substring
-wchan
-futex
-
-# Editors and OSes
-VSCode
-macOS
-Linux
-
-# AI and Claude ecosystem
-Claude
-claude.ai
-Anthropic
-Claustre
-claustre
-Copilot
-
-# Languages and ecosystems
-TypeScript
-JavaScript
-Haskell
-Erlang
-Cabal
-pnpm
-corepack
-rustup
-CLIs
-
-# Doc conventions
-README
-CHANGELOG
-ADR
-ADRs
-Nygard
-MADR
-frontmatter
-nayafia
-worktree
-worktrees
-
-# Common tech terms
-config
-configs
-hostname
-VMs
-denylist
-allowlist
-(?i)denylist(ing)?
-(?i)allowlist(ing)?
-justfile
-dev
-dotfile
-dotfiles
-heredoc
-keybinds
-namespaced
-repo
-repos
-(?i)toolchains?
-facto
-cgroup
-cgroups
-uid
-tmpfs
-pids
 sadc
 sar
 sysstat
 forkstat
-textfile
+(?i)textfile
 node_exporter
 zjstatus
+
+# AI and Claude ecosystem
+Claude
+# Exempts the lowercase host from the Claude casing rule.
+claude.ai
+Anthropic
+
+# Languages and ecosystems
+Haskell
+pnpm
+rustup
+CLIs
+
+# Doc conventions
+ADRs?
+Nygard
+(?i)worktrees?
+
+# Common tech terms
+(?i)configs?
+(?i)hostname
+VMs
+(?i)denylist(ing)?
+(?i)allowlist(ing)?
+(?i)justfile
+(?i)dotfiles?
+(?i)heredoc
+(?i)keybinds
+(?i)namespaced
+(?i)repos?
+(?i)toolchains?
+(?i)facto
+(?i)cgroups?
+(?i)uid
+(?i)pids
 basename
-process_exporter
 
 # Acronyms kept unexpanded. Listing them here also clears
 # Microsoft.Acronyms, which otherwise wants a "Name Of Thing (NOT)"
