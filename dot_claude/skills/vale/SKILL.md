@@ -107,11 +107,18 @@ Default package rules trip on inline code, tables, and technical strings. Scope 
 
 - `IgnoredScopes` — inline HTML tags Vale skips entirely. Defaults to `code, tt`. Add `kbd, var` if used.
 - `SkippedScopes` — block HTML tags Vale skips. Defaults to `script, style, pre`. Add `figure, blockquote` for untrimmed quoted sources.
-- `BlockIgnores` / `TokenIgnores` — regex escape hatches for block and inline content with no HTML tag. **Markdown, reStructuredText, AsciiDoc, Org only.** Use for fenced shell prompts, custom MDX directives, file paths.
+- `BlockIgnores` / `TokenIgnores` — regex escape hatches for block and inline content with no HTML tag. **Markdown, reStructuredText, AsciiDoc, Org only**, and both belong inside a format section; at the top level Vale refuses to start with `E201: 'BlockIgnores' is a syntax-specific option`. Use for fenced shell prompts and custom MDX directives.
 - `IgnoredClasses` — by HTML class. Useful for rendered output linting.
 - `CommentDelimiters` — comment markers Vale honours for `<!-- vale off -->` directives. Default `<!-- -->`; set to `{/* */}` for MDX where HTML comments don't render.
 - `BasedOnStyles` is **additive across sections, not overriding**: a child block's `BasedOnStyles = X, Y` doesn't remove `Z` inherited from a broader block's `BasedOnStyles = X, Y, Z`. To silence a package's rules inside a sub-block, disable each rule explicitly (`Readability.LIX = NO`), not by dropping it from the child's list.
 - **Don't lint machine-generated prose.** Auto-managed files (release-please `CHANGELOG.md`, changesets entries, towncrier fragments) are dense and structured by design. Scope them out with a `[CHANGELOG.md]` block disabling `Readability.*` and the stylistic `Microsoft.*` rules (`Contractions`, `FirstPerson`, `HeadingColons`, `Dashes`).
+
+### What markdown tokenises as prose
+
+Which fix is available depends on what Vale considers prose in the first place. Two cases decide between backticks, vocabulary, and rewording:
+
+- **Link text is prose; destinations and autolinks aren't.** A bare path used as link text gets tokenised as words, and hyphens are word boundaries, so `[scripts/truenas-takeout-extract.sh](../scripts/truenas-takeout-extract.sh)` fires `Vale.Terms` on `truenas` and `Microsoft.Wordiness` on `extract`. Backticking the link text clears both. Paths need no `BlockIgnores`/`TokenIgnores` entry — the destination was never linted.
+- **YAML frontmatter is prose.** Vale lints `description:` and every other string field. Backticks are literal characters there rather than a code span, so they don't exempt a token, and neither `BlockIgnores` nor `TokenIgnores` reaches the block. Reword the field, or add the term to `accept.txt`.
 
 ## Vocabularies
 
@@ -120,7 +127,13 @@ Default package rules trip on inline code, tables, and technical strings. Scope 
 - `accept.txt` → `Vale.Terms`. Enforces exact casing; if the file lists `Diátaxis`, then `diataxis` becomes an error.
 - `reject.txt` → `Vale.Avoid`. Flags banned terms.
 
-Both files: one regex per line, case-sensitive (prefix `(?i)` for case-insensitive), `#` for comments. The built-in `Vale` style must be in `BasedOnStyles` for these rules to fire.
+Both files: one regex per line, `#` for comments. The built-in `Vale` style must be in `BasedOnStyles` for these rules to fire.
+
+Patterns are case-sensitive, and the canonical form decides which kind a term is:
+
+- **Canonical form carries a capital → bare literal.** `TrueNAS`, `Diátaxis`, `ADRs?`. Enforcing that capital is the point.
+- **All-lowercase canonical form → `(?i)`.** Such a term meets one casing variation in real prose: its own sentence-initial capital, which is correct English. A literal `pre-commit` turns "Pre-commit hooks must pass" into an error. Fold inflections into the same pattern: `(?i)repos?`.
+- **One entry per term.** Carrying both `alunduil` and `Alunduil` makes Vale pick one canonical form and error on every use of the other.
 
 Backticked tokens skip `Vale.Terms`, so prefer wrapping a package ID or code symbol in backticks (`magpie-root`) over whitelisting the bare token in `accept.txt`. Reserve `accept.txt` for terms that appear unbackticked in prose.
 
