@@ -1,9 +1,16 @@
-# Starter Vale.Terms list. Copy into <StylesPath>/config/vocabularies/<Project>/
-# and extend per-project. One regex per line; case-sensitive; prefix (?i) for
-# case-insensitive. Lines starting with # are comments.
+# Vale project vocabulary. One pattern per line; # starts a comment.
+#
+# A bare literal makes Vale.Terms enforce that exact capitalization wherever
+# the word appears, so a name worth spelling one way — a product, project,
+# person, or acronym — is a literal. An ordinary noun has no capitalization to
+# enforce, and a case-sensitive one flags its own sentence-initial capital at
+# error severity, so it takes (?i) and folds its inflections into one pattern:
+# (?i)repos?, not repo alongside repos.
+#
+# Every entry appears in the linted set (README.md and docs/). A term the
+# repository uses only outside that set is re-added on its first documented use.
 
 # Identity
-Alunduil
 alunduil
 
 # Host tooling
@@ -15,104 +22,61 @@ datasource
 Crostini
 Zellij
 TrueNAS
-Cloudflare
 Renovate
-Dependabot
-Codecov
-markdownlint
 pre-commit
 Diátaxis
-devcontainer
-DevContainer
-Codespaces
 ghcup
 Keybase
 paperkey
 
 # Observability stack
 Grafana
-Prometheus
-Loki
-Tempo
 Alloy
 zellaude
-OTLP
 systemd
-loopback
-substring
-wchan
-futex
-
-# Editors and OSes
-VSCode
-macOS
-Linux
 
 # AI and Claude ecosystem
 Claude
+# Exempts the lowercase host from the Claude casing rule above.
 claude.ai
 Anthropic
-Claustre
-claustre
-Copilot
 
 # Languages and ecosystems
-TypeScript
-JavaScript
 Haskell
-Erlang
-Cabal
 pnpm
-corepack
 rustup
 CLIs
 
 # Doc conventions
-README
-CHANGELOG
-ADR
-ADRs
+ADRs?
 Nygard
-MADR
-frontmatter
-nayafia
-worktree
-worktrees
+(?i)worktrees?
 
 # Common tech terms
-config
-configs
-hostname
+(?i)configs?
+(?i)hostname
 VMs
-denylist
-allowlist
 (?i)denylist(ing)?
 (?i)allowlist(ing)?
-justfile
-dev
-dotfile
-dotfiles
-heredoc
-keybinds
-namespaced
-repo
-repos
+(?i)justfile
+(?i)dotfiles?
+(?i)heredoc
+(?i)keybinds
+(?i)namespaced
+(?i)repos?
 (?i)toolchains?
-facto
-cgroup
-cgroups
-uid
-tmpfs
-pids
+(?i)facto
+(?i)cgroups?
+(?i)uid
+(?i)pids
 sadc
 sar
 sysstat
 forkstat
-textfile
+(?i)textfile
 node_exporter
 zjstatus
 basename
-process_exporter
 
 # Acronyms kept unexpanded. Listing them here also clears
 # Microsoft.Acronyms, which otherwise wants a "Name Of Thing (NOT)"
