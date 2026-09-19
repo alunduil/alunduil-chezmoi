@@ -86,24 +86,23 @@ A per-repo `CLAUDE.md` overrides anything here.
 
 A workflow's `name:` says when it runs — the trigger or cadence (CI,
 Daily, Weekly); a job's `name:` says what it produces, as a human
-phrase ("Check external links"). The pair reads "when / what", so it
-can't stutter. The filename matches the workflow name, kebab-cased.
+phrase ("Check external links"). The filename matches the workflow
+name, kebab-cased.
 
 - Split files only on `on:`, the one setting that can't be per-job.
   Permissions, concurrency, env, and defaults all scope per job, so
   push them down and colocate.
-- A narrower when earns its own file. A `paths:` gate is one: there
-  the subject *is* the when, so the file takes the subject's name. A
-  single-purpose workflow may do the same until a sibling colocates
-  and the cadence name takes over.
+- A narrower when earns its own file, named for it: a `paths:` gate
+  takes the gated subject's name. A single-purpose workflow may do
+  the same until a sibling colocates and the cadence name takes over.
 - Branch protection matches a job's `name` alone as the status-check
   context, so job names are unique repo-wide and legible standalone.
   Bare `build`, `test`, `check`, and `validate` collide.
 - A matrix job emits one context per cell. When one must be required,
   add a stable aggregator job and require that instead.
 - A job's `id` (its key under `jobs:`) is the kebab identifier for
-  `needs:` and reuse; its `name` is the phrase a maintainer reads in
-  the checks list. They need not match.
+  `needs:` and reuse; its `name` is the human phrase. They need not
+  match.
 
 Write a workflow's `schedule:` cron in local time and put an IANA name
 in `timezone:`. Without it the schedule runs in UTC; with it, GitHub
