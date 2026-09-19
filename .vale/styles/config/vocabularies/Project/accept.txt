@@ -45,7 +45,7 @@ Claude
 # Exempts the lowercase host from the Claude casing rule.
 claude.ai
 Anthropic
-# Microsoft.Terms reads this as the 1990s "personal digital assistant".
+# Microsoft.Terms swaps this for "personal digital assistant".
 (?i)agents?
 
 # Languages and ecosystems

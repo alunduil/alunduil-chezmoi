@@ -1,6 +1,6 @@
 # Contributing
 
-This is personal configuration, not a project looking for contributors. The README means what it says: no roadmap, no support, no promise that a change lands. Fork it under [0BSD](LICENSE) and take what's useful.
+This is personal configuration, not a project looking for contributors. No roadmap, no support, no promise that a change lands. Fork it under [0BSD](LICENSE) and take what's useful.
 
 Pull requests arrive anyway, and they get read. This page covers the repo mechanics a reviewer would otherwise have to explain to you mid-review.
 
@@ -12,7 +12,7 @@ Write it as a commit message, following the [seven rules of a great commit messa
 
 - The title is the subject line: imperative mood, 50 characters or fewer, no trailing period.
 - Wrap the body at 72 columns and spend it on why the change matters and anything surprising about how it works.
-- Write the body as prose, not as a structured document. An H1 repeating the title, `##` section headings, checkbox lists, and a trailing disclosure block all land in `git log` as scaffolding around the content you meant to write.
+- Write the body as prose, not as a structured document. An H1 repeating the title, `##` section headings, checkbox lists, and a trailing disclosure block all land in `git log` as noise.
 - Trailers don't survive. `Signed-off-by`, `Assisted-by`, and the rest sit on the branch commits that the squash throws away.
 
 When the branch already carries a good commit message, that message is usually the right description.
@@ -23,7 +23,7 @@ Open every pull request as a draft and mark it ready when you want eyes on it. R
 
 ## Show how you know it works
 
-The checks on your pull request are the evidence. Cite them rather than a transcript of commands you ran on your own machine, which nobody else can reproduce. Don't hedge about a linter you couldn't install locally either, because CI ran it for you.
+The checks on your pull request are the evidence. Cite them rather than a transcript of commands you ran on your own machine, which nobody else can reproduce. Don't hedge about a linter you couldn't install locally, because CI ran it.
 
 `just check` runs the same sensors locally when you have the host tooling installed.
 
