@@ -115,7 +115,7 @@ Default package rules trip on inline code, tables, and technical strings. Scope 
 
 ### What markdown tokenises as prose
 
-Which fix is available depends on what Vale considers prose in the first place. Two cases decide between backticks, vocabulary, and rewording:
+Which fix a finding admits — backticks, vocabulary, or rewording — depends on what Vale reads as prose:
 
 - **Link text is prose; destinations and autolinks aren't.** A bare path used as link text gets tokenised as words, and hyphens are word boundaries, so `[scripts/truenas-takeout-extract.sh](../scripts/truenas-takeout-extract.sh)` fires `Vale.Terms` on `truenas` and `Microsoft.Wordiness` on `extract`. Backticking the link text clears both. Paths need no `BlockIgnores`/`TokenIgnores` entry — the destination was never linted.
 - **YAML frontmatter is prose.** Vale lints `description:` and every other string field. Backticks are literal characters there rather than a code span, so they don't exempt a token, and neither `BlockIgnores` nor `TokenIgnores` reaches the block. Reword the field, or add the term to `accept.txt`.
@@ -124,20 +124,22 @@ Which fix is available depends on what Vale considers prose in the first place. 
 
 `Vocab = <Project>` enables two implicit rules sourced from `<StylesPath>/config/vocabularies/<Project>/`:
 
-- `accept.txt` → `Vale.Terms`. Enforces exact casing; if the file lists `Diátaxis`, then `diataxis` becomes an error.
+- `accept.txt` → `Vale.Terms`. Accepted terms; see Casing below.
 - `reject.txt` → `Vale.Avoid`. Flags banned terms.
 
-Both files: one regex per line, `#` for comments. The built-in `Vale` style must be in `BasedOnStyles` for these rules to fire.
-
-Patterns are case-sensitive, and the canonical form decides which kind a term is:
-
-- **Canonical form carries a capital → bare literal.** `TrueNAS`, `Diátaxis`, `ADRs?`. Enforcing that capital is the point.
-- **All-lowercase canonical form → `(?i)`.** Such a term meets one casing variation in real prose: its own sentence-initial capital, which is correct English. A literal `pre-commit` turns "Pre-commit hooks must pass" into an error. Fold inflections into the same pattern: `(?i)repos?`.
-- **One entry per term.** Carrying both `alunduil` and `Alunduil` makes Vale pick one canonical form and error on every use of the other.
+Both files: one regex per line, case-sensitive, `#` for comments. The built-in `Vale` style must be in `BasedOnStyles` for these rules to fire.
 
 Backticked tokens skip `Vale.Terms`, so prefer wrapping a package ID or code symbol in backticks (`magpie-root`) over whitelisting the bare token in `accept.txt`. Reserve `accept.txt` for terms that appear unbackticked in prose.
 
-A starter `accept.txt` ships next to this skill at `~/.claude/skills/vale/accept.txt` with cross-repo terms (project names, host tooling, languages). Copy into `<StylesPath>/config/vocabularies/<Project>/` on greenfield; extend per-project.
+A starter `accept.txt` ships next to this skill at `~/.claude/skills/vale/accept.txt` with cross-repo terms (project names, host tooling, languages) and the casing convention in its header. Copy into `<StylesPath>/config/vocabularies/<Project>/` on greenfield; extend per-project.
+
+### Casing
+
+`Vale.Terms` enforces whatever casing a pattern carries, so the canonical form decides which kind a term is:
+
+- **Canonical form carries a capital → bare literal.** `TrueNAS`, `Diátaxis`, `ADRs?`. Enforcing that capital is the point, and a lowercase `diataxis` becomes an error.
+- **All-lowercase canonical form → `(?i)`.** Such a term meets one casing variation in real prose: its own sentence-initial capital, which is correct English. A literal `pre-commit` turns "Pre-commit hooks must pass" into an error. Fold inflections into the same pattern: `(?i)repos?`.
+- **One entry per term.** Carrying both `alunduil` and `Alunduil` makes Vale pick one canonical form and error on every use of the other.
 
 ## Validation (pre-commit)
 

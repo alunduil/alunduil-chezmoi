@@ -1,5 +1,6 @@
 # Starter Vale.Terms list. Copy into <StylesPath>/config/vocabularies/<Project>/
-# and extend per-project.
+# and extend per-project. One regex per line; lines starting with # are
+# comments.
 #
 # A bare literal makes Vale.Terms enforce that capitalization everywhere the
 # word appears. Names whose canonical form carries a capital — TrueNAS,
@@ -12,21 +13,15 @@
 # One entry per term. Carrying both alunduil and Alunduil makes Vale pick one
 # canonical form and error on every use of the other.
 #
-# When to add a term here:
+# What belongs here:
 #   - Proper nouns: product names, people, places, organizations.
-#   - Terms that appear unbackticked in prose (rare — prefer backticks for
-#     package IDs and code symbols).
 #   - Established acronyms with no surrounding-text rewrite available
 #     (ADR, MADR).
+#   - Other terms that appear unbackticked in prose. A package ID or code
+#     symbol takes backticks instead (`magpie-root`), which skip Vale.Terms.
 #
-# When NOT to add a term here:
-#   - A package ID flagged by Vale.Terms — wrap in backticks instead
-#     (`magpie-root`). Backticked tokens skip Terms.
-#   - A rule fired on standard English the doc should comply with — rewrite
-#     to comply, not whitelist the wording. Demoting a rule so it stops
-#     firing is the wrong fix.
-#
-# One regex per line. Lines starting with # are comments.
+# A rule that fired on standard English is not a vocabulary problem: rewrite
+# the prose to comply. Demoting the rule so it stops firing is the wrong fix.
 
 # Identity
 (?i)alunduil
