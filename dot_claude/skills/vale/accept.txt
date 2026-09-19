@@ -1,6 +1,17 @@
 # Starter Vale.Terms list. Copy into <StylesPath>/config/vocabularies/<Project>/
 # and extend per-project.
 #
+# A bare literal makes Vale.Terms enforce that capitalization everywhere the
+# word appears. Names whose canonical form carries a capital — TrueNAS,
+# Diátaxis, ADR — are literals.
+#
+# An all-lowercase term meets one casing variation in real prose: its own
+# sentence-initial capital, which is correct English. Those take (?i),
+# inflections folded into one pattern: (?i)repos?.
+#
+# One entry per term. Carrying both alunduil and Alunduil makes Vale pick one
+# canonical form and error on every use of the other.
+#
 # When to add a term here:
 #   - Proper nouns: product names, people, places, organizations.
 #   - Terms that appear unbackticked in prose (rare — prefer backticks for
@@ -15,15 +26,13 @@
 #     to comply, not whitelist the wording. Demoting a rule so it stops
 #     firing is the wrong fix.
 #
-# One regex per line; case-sensitive; prefix (?i) for case-insensitive.
-# Lines starting with # are comments.
+# One regex per line. Lines starting with # are comments.
 
 # Identity
-Alunduil
-alunduil
+(?i)alunduil
 
 # Host tooling
-chezmoi
+(?i)chezmoi
 Crostini
 Zellij
 TrueNAS
@@ -31,15 +40,14 @@ Cloudflare
 Renovate
 Dependabot
 Codecov
-markdownlint
-pre-commit
+(?i)markdownlint
+(?i)pre-commit
 Diátaxis
-devcontainer
-DevContainer
+(?i)devcontainers?
 Codespaces
-ghcup
+(?i)ghcup
 Keybase
-paperkey
+(?i)paperkey
 
 # Editors and OSes
 VSCode
@@ -50,7 +58,6 @@ Linux
 Claude
 Anthropic
 Claustre
-claustre
 Copilot
 
 # Languages and ecosystems
@@ -59,30 +66,26 @@ JavaScript
 Haskell
 Erlang
 Cabal
-pnpm
-corepack
+(?i)pnpm
+(?i)corepack
 
 # Doc conventions
 README
 CHANGELOG
-ADR
-ADRs
+ADRs?
 Nygard
 MADR
-frontmatter
-nayafia
-worktree
-worktrees
+(?i)frontmatter
+(?i)nayafia
+(?i)worktrees?
 
 # Common tech terms
-config
-dev
-dotfile
-dotfiles
-heredoc
-keybinds
-namespaced
-repo
-repos
-toolchains
-facto
+(?i)configs?
+(?i)dev
+(?i)dotfiles?
+(?i)heredoc
+(?i)keybinds
+(?i)namespaced
+(?i)repos?
+(?i)toolchains?
+(?i)facto
