@@ -1,9 +1,7 @@
 #!/usr/bin/env bash
-# Installs tools whose canonical installer is bespoke -- curl scripts,
-# `gh extension install`, etc. -- and not part of the apt, npm, or cargo
-# ecosystems. `gh` extensions in particular live here, not in script 02
-# (binary tools), since they're managed by `gh` rather than downloaded
-# and sha256-verified per the script/install/ pattern.
+# Installs `gh` extensions. They live here, not in script 02 (binary
+# tools), since they're managed by `gh` rather than downloaded and
+# sha256-verified per the script/install/ pattern.
 
 set -euo pipefail
 
@@ -29,4 +27,4 @@ else
   log "gh-poi: $GH_POI_VERSION already installed"
 fi
 
-log "standalone tools complete"
+log "gh extensions complete"
