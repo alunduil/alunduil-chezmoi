@@ -3,7 +3,7 @@ name: renovate
 description: Audit, write, or revise renovate.json. Use when adding Renovate, troubleshooting unexpected (or missing) update PRs, hardening against supply-chain attacks, or evolving an existing config.
 ---
 
-A **silent stall** is Renovate's characteristic failure: a dependency that can never update presents exactly like one that is current — no PR, no error, no `[Updates: ...]` on the dashboard. The sections below name each cause where it arises.
+A **silent stall** is a dependency that can never update yet looks current: no PR, no error, no `[Updates: ...]` on the dashboard.
 
 ## Defaults
 
@@ -51,11 +51,11 @@ A **silent stall** is Renovate's characteristic failure: a dependency that can n
 ```
 
 - `minimumReleaseAge` — 3-7 days catches the common attack shape (publish → community flags → upstream yanks within a day or two).
-- A missing release timestamp is the load-bearing hazard. `minimumReleaseAgeBehaviour` defaults to `timestamp-required` (Renovate 42), so a release with no timestamp is treated as never stable, and `internalChecksFilter` defaults to `strict`, so no branch is ever cut — a silent stall on a pending `renovate/stability-days` check. Two independent causes, one fix each:
+- A release with no timestamp is a silent stall. The default `timestamp-required` treats it as never stable, and the default `internalChecksFilter: "strict"` cuts no branch while `renovate/stability-days` pends. Two causes, one fix each:
   - **Update type** — the eight types in the carve-out never carry a timestamp. `config:best-practices` pulls in `:maintainLockFilesWeekly` and both digest-pinning presets, so `lockFileMaintenance`, `digest`, and `pinDigest` are always in scope.
-  - **Datasource** — some datasources return no timestamp for any release. `hackage` returns version, changelog URL, and deprecation status only, so every cabal dependency stalls. These are ordinary major/minor/patch updates the carve-out cannot reach. `timestamp-optional` lets a timestamp-less release through with a Dependency Dashboard warning; releases that carry a timestamp still bake.
+  - **Datasource** — some datasources return no timestamp for any release; with `hackage`, every cabal dependency stalls. These are ordinary major/minor/patch updates the carve-out cannot reach. `timestamp-optional` lets a timestamp-less release through with a Dependency Dashboard warning; releases that carry a timestamp still bake.
   - Keep both. The carve-out removes the age check from the eight types, so the dashboard warning names only datasources that lack timestamps.
-- `osvVulnerabilityAlerts: true` — widens alerts beyond GitHub's advisory database to OSV. Defaults to `false`. Haskell repos are the exception: `getFixedVersionConstraint` (`lib/util/vulnerability/utils.ts`) emits `>= <fixed>` for every datasource but `maven` and `nuget`, and `pvp`'s `parseRange` requires both bounds, so the generated rule aborts every run. A `false` there is deliberate — look for a tracking issue rather than flagging drift.
+- `osvVulnerabilityAlerts: true` — widens alerts beyond GitHub's advisory database to OSV. Defaults to `false`. Haskell repos are the exception: OSV fixes arrive as an open range (`>= <fixed>`), `pvp` accepts only two-bound ranges, and the generated rule aborts every run. Treat a `false` there as deliberate and look for its tracking issue.
 - Do *not* write `internalChecksFilter: "strict"` or `vulnerabilityAlerts: { "minimumReleaseAge": "0 days" }`. Both are already the defaults (`lib/config/options/index.ts`: `internalChecksFilter` default `strict`; the `vulnerabilityAlerts` default object contains `minimumReleaseAge: null`, force-applied over the top-level bake).
 - `minimumReleaseAge: "0 days"` is identical to `null` as of Renovate 42.19.5. Prefer `null`.
 
@@ -79,8 +79,8 @@ YQ_VERSION="v4.53.2"
 ```
 
 - Annotation field order is fixed by the regex: datasource, depName, packageName, versioning, extractVersion, registryUrl. `datasource`, `versioning`, `extractVersion` and `registryUrl` are recognised capture-group names — no `*Template` fields needed. An out-of-order annotation does not match — a silent stall.
-- Set `versioning=loose` on every plain pin whose upstream is not semver. Without it the pin falls through to `semver-coerced`, whose `isStable` pads the version to three components and hands it to `semver-stable`, which parses strict semver. A four-component version (Haskell PVP, some .NET and Java tools) fails to parse, reads as unstable, and `ignoreUnstable` discards every release — a silent stall. Two-component versions escape by accident: `3.10` pads to a valid `3.10.0`.
-- `pvp` fits cabal ranges, not plain pins: its `getNewValue` returns null unless `rangeStrategy` is `widen` and the value parses as a two-bound range, so a bare pin never updates. `datasource=hackage` defaults to `pvp`, so a hackage pin needs `versioning=loose` written out.
+- Set `versioning=loose` on every plain pin whose upstream is not semver. The default, `semver-coerced`, reads a four-component version (Haskell PVP, some .NET and Java tools) as unstable, and `ignoreUnstable` drops every release — a silent stall. Two-component versions work by accident: `3.10` coerces to `3.10.0`.
+- `pvp` updates only two-bound cabal ranges under `rangeStrategy: "widen"`; a plain pin never updates. `datasource=hackage` defaults to `pvp`, so write `versioning=loose` on a hackage pin.
 - For workflow YAML (`X_VERSION: "v1"` under `env:`) extend `customManagers:githubActionsVersions` instead of writing this yourself. Hoist versions buried in `with:` inputs up to `env:` so the preset reaches them; add `extractVersion=^v(?<version>.+)$` when the consumer wants the tag without its leading `v`.
 - Upstream ships equivalents for Dockerfiles, Makefiles, `*.tfvars`, `pom.xml`, and several CI formats — check `customManagers:*` before writing a regex.
 - Keep a bespoke manager only where an annotation cannot go: a version embedded in a URL (capture `depName` and `currentValue` from the URL itself), or a snippet in user-facing docs where a `# renovate:` line would be copy-pasted by a reader.
@@ -109,7 +109,7 @@ Wire `renovate-config-validator` as a pre-commit hook so schema typos, deprecate
 Renovate opens a "Dependency Dashboard" issue. Read it before assuming a bug:
 
 - **Detected Dependencies** without `[Updates: ...]` = current or silently stalled; the dashboard cannot tell them apart.
-- **Pending Status Checks** — the bake period holding an update back. A resident older than the bake can never pass: a missing carve-out or a datasource with no timestamps.
+- **Pending Status Checks** — the bake period holding an update back. A resident older than the bake points to a missing carve-out or a datasource with no timestamps.
 - **Repository Problems** — investigate. "Base branch does not exist" usually means a stale config reference or a transient mid-run state.
 - **Config Migration Needed** — Renovate offers an automated PR for field renames (e.g. `fileMatch` → `managerFilePatterns`, `baseBranches` → `baseBranchPatterns`). Tick the checkbox or hand-migrate.
 - **Open** — pending PRs; the per-row checkboxes force a rebase/retry.
