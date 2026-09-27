@@ -9,16 +9,6 @@ set -euo pipefail
 
 log() { printf '==> %s\n' "$*" >&2; }
 
-# ------------------------------------------------------------------- rtk
-# Token-compressor for AI coding assistants -- sits between Claude Code and
-# shell commands, reducing context-window consumption by 60-90 %.
-if ! command -v rtk >/dev/null 2>&1; then
-  log "rtk: installing from https://github.com/rtk-ai/rtk"
-  curl -fsSL https://raw.githubusercontent.com/rtk-ai/rtk/refs/heads/master/install.sh | sh
-else
-  log "rtk: already installed"
-fi
-
 # --------------------------------------------------------------- gh-poi
 # Prunes squash-merged local branches by consulting GitHub PR state --
 # `git branch --merged` can't see them. `gh poi` requires `gh` (apt,

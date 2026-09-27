@@ -271,6 +271,5 @@ must hold there lives in that repo's `CLAUDE.md`, `.claude/rules/`, or
 `.claude/skills/`, written to stand alone — a skill reaching for
 `~/.claude/` or memory works here only.
 
-@RTK.md
 @techwriting.md
 @voice.md

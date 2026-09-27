@@ -97,5 +97,5 @@ The split is deliberate. [ADR 0005](../adr/0005-treat-the-checkout-as-the-only-p
 
 Two consequences for anyone editing here:
 
-- `dot_claude/CLAUDE.md` stays host-specific, because the `gh` shim, the `rtk` output-filtering proxy, and worktree paths describe machinery a cloud VM doesn't have.
+- `dot_claude/CLAUDE.md` stays host-specific, because the `gh` shim and worktree paths describe machinery a cloud VM doesn't have.
 - A skill under `dot_claude/skills/` runs on this host only. One that must also work on the web belongs in the repo that needs it, written to stand on its own rather than reaching for `~/.claude/` or memory.

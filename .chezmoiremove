@@ -18,3 +18,7 @@
 .config/tempo
 .config/grafana
 .local/bin/zellijstat
+
+# rtk, dropped as the Claude Code Bash output filter (#444).
+.claude/RTK.md
+.local/bin/rtk

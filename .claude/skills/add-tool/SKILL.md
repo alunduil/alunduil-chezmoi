@@ -17,7 +17,7 @@ to do real work?
   bootstrap surfaces where state lands. No PATH-check line — running
   the login command itself proves reachability. Auth state is
   runtime, never managed by chezmoi.
-- **No** (zellij, lazygit, act, rtk, gh-poi): list in README "PATH
+- **No** (zellij, lazygit, act, gh-poi): list in README "PATH
   check" line.
 
 ## Install mechanism
