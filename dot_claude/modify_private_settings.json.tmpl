@@ -211,15 +211,6 @@ jq --slurp '(.[0] // {}) + {
             "async": true
           }
         ]
-      },
-      {
-        "matcher": "Bash",
-        "hooks": [
-          {
-            "type": "command",
-            "command": "rtk hook claude"
-          }
-        ]
       }
     ],
     "PostToolUse": [

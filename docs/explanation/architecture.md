@@ -70,7 +70,7 @@ Age secures secrets at rest but can't itself sign commits or authenticate to SSH
 
 `dot_local/bin/executable_gh` shadows system `gh` to enforce `--draft` on `gh pr create`. The shim exists because Claude Code opens PRs through `gh`, and the project rule is "every PR opens as draft, human promotes to ready." Enforcing this in a wrapper rather than via memory keeps the rule load-bearing even when memory slips. `GH_DRAFT_GUARD=off` overrides for the rare manual case.
 
-`gh` extensions install in `.chezmoiscripts/run_before_05-*` alongside other bespoke installers, not script 02—they're managed by `gh extension`, not the `script/install/` download-and-verify pattern. Version pin lives inline (for example, `GH_POI_VERSION`).
+`gh` extensions get their own bootstrap pass rather than the `script/install/` download-and-verify pattern, because `gh extension` fetches and pins them itself.
 
 ## Two `CLAUDE.md` files
 
@@ -97,5 +97,5 @@ The split is deliberate. [ADR 0005](../adr/0005-treat-the-checkout-as-the-only-p
 
 Two consequences for anyone editing here:
 
-- `dot_claude/CLAUDE.md` stays host-specific, because the `gh` shim, the `rtk` output-filtering proxy, and worktree paths describe machinery a cloud VM doesn't have.
+- `dot_claude/CLAUDE.md` stays host-specific, because the `gh` shim and worktree paths describe machinery a cloud VM doesn't have.
 - A skill under `dot_claude/skills/` runs on this host only. One that must also work on the web belongs in the repo that needs it, written to stand on its own rather than reaching for `~/.claude/` or memory.

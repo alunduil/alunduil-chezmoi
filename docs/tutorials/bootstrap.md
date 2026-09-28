@@ -24,7 +24,7 @@ signal-desktop                             # link to phone via QR scan
 signal-cli -a +<phone> register            # SMS-verified, ~/.local/share/signal-cli/
 
 # PATH check for chezmoi-installed binaries:
-zellij --version && lazygit --version && act --version && rtk --version
+zellij --version && lazygit --version && act --version
 lychee --version                           # markdown link checker (mirrors CI)
 yq --version                               # YAML processor (mikefarah/yq)
 vale --version                             # prose linter (vale-cli/vale)

@@ -17,7 +17,7 @@ to do real work?
   bootstrap surfaces where state lands. No PATH-check line — running
   the login command itself proves reachability. Auth state is
   runtime, never managed by chezmoi.
-- **No** (zellij, lazygit, act, rtk, gh-poi): list in README "PATH
+- **No** (zellij, lazygit, act, gh-poi): list in README "PATH
   check" line.
 
 ## Install mechanism
@@ -33,7 +33,6 @@ All passes live under `.chezmoiscripts/`.
 | npm package           | `run_before_03`                           | `npm install -g`, `command -v` |
 | Cargo crate           | `run_before_09`                           | `cargo install`, `command -v`  |
 | `gh` extension        | `run_before_05`                           | `gh extension install --pin`   |
-| `curl \| sh`          | `run_before_05`                           | guard with `command -v`        |
 
 Auth and install axes are independent: `gcx` is auth-required *and*
 uses `script/install/`; `gh-poi` is fire-and-forget *and* uses
