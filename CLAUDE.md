@@ -52,10 +52,6 @@ effect on `apply` until committed and pulled into the apply clone. Use
   An unannotated pin is invisible to Renovate rather than an error, so
   `script/checks/renovate-pins` (a pre-commit hook) fails the build on
   one.
-- `gh` extensions install in script 05, not script 02 — they're
-  managed by `gh extension`, not the `script/install/`
-  download-and-verify pattern. Version pin lives inline in the script
-  (e.g. `GH_POI_VERSION`).
 - `dot_local/bin/executable_gh` shadows system `gh` to enforce `--draft`
   on `gh pr create`. PRs Claude opens go through this wrapper.
 

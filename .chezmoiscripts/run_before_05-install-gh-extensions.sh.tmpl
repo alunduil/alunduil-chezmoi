@@ -1,7 +1,6 @@
 #!/usr/bin/env bash
-# Installs `gh` extensions. They live here, not in script 02 (binary
-# tools), since they're managed by `gh` rather than downloaded and
-# sha256-verified per the script/install/ pattern.
+# `gh extension` fetches and pins these itself, so they skip script 02's
+# download-and-verify pattern.
 
 set -euo pipefail
 

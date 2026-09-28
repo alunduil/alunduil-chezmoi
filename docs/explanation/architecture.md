@@ -70,7 +70,7 @@ Age secures secrets at rest but can't itself sign commits or authenticate to SSH
 
 `dot_local/bin/executable_gh` shadows system `gh` to enforce `--draft` on `gh pr create`. The shim exists because Claude Code opens PRs through `gh`, and the project rule is "every PR opens as draft, human promotes to ready." Enforcing this in a wrapper rather than via memory keeps the rule load-bearing even when memory slips. `GH_DRAFT_GUARD=off` overrides for the rare manual case.
 
-`gh` extensions install in `.chezmoiscripts/run_before_05-install-gh-extensions.sh.tmpl`, not script 02—they're managed by `gh extension`, not the `script/install/` download-and-verify pattern. Version pin lives inline (for example, `GH_POI_VERSION`).
+`gh` extensions get their own bootstrap pass rather than the `script/install/` download-and-verify pattern, because `gh extension` fetches and pins them itself.
 
 ## Two `CLAUDE.md` files
 

@@ -1,8 +1,7 @@
 # Targets chezmoi should delete from the destination. Deleting a source file
 # only stops chezmoi managing the target; it leaves the deployed copy in place.
 
-# The local observability stack (#404), which would otherwise keep its units
-# installed and its configs on disk forever.
+# Local observability stack.
 # run_before_00-remove-observability-stack stops and disables the units first,
 # so systemd is not left holding a unit file that has been deleted underneath
 # it. That pass also clears what chezmoi never managed: the downloaded
@@ -19,6 +18,6 @@
 .config/grafana
 .local/bin/zellijstat
 
-# rtk, dropped as the Claude Code Bash output filter (#444).
+# rtk, a Claude Code Bash output filter.
 .claude/RTK.md
 .local/bin/rtk
