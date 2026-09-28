@@ -105,6 +105,41 @@ Wire `renovate-config-validator` as a pre-commit hook so schema typos, deprecate
 - The validator does not resolve remote presets, so it cannot tell you an `extends` target is missing or that a shared preset changed under you.
 - Upstream docs: <https://docs.renovatebot.com/config-validation/>.
 
+## Liveness
+
+A hosted Renovate job that dies is never retried and reports nowhere, so a repo with a valid `renovate.json` can stop getting updates unnoticed. Self-hosted Renovate reports its failures in the repo's Actions log and needs no check.
+
+Renovate edits the open Dependency Dashboard issue as updates come and go, so a dashboard left untouched means Renovate has stopped. Add this job, taken from [genshin.dungeon.studio `daily.yml`](https://github.com/dungeon-studio/genshin.dungeon.studio/blob/main/.github/workflows/daily.yml), to the repo's `daily.yml`; create that workflow if the repo has none.
+
+```yaml
+renovate-liveness:
+  name: Check Renovate liveness
+  runs-on: ubuntu-latest
+  timeout-minutes: 5
+  permissions:
+    issues: read
+  steps:
+    - uses: actions/github-script@<sha> # <version>
+      with:
+        script: |
+          const STALE_DAYS = 10;
+          const MS_PER_DAY = 86_400_000;
+          const query = `repo:${context.repo.owner}/${context.repo.repo} is:issue is:open in:title "Dependency Dashboard" author:app/renovate`;
+          const { data } = await github.rest.search.issuesAndPullRequests({ q: query });
+          const dashboard = data.items[0];
+          if (!dashboard) {
+            core.setFailed('No open Dependency Dashboard: Renovate is uninstalled or disabled on this repository. Reinstall the app or re-enable the repository.');
+            return;
+          }
+          const ageDays = (Date.now() - new Date(dashboard.updated_at)) / MS_PER_DAY;
+          if (ageDays > STALE_DAYS) {
+            core.setFailed(`Dependency Dashboard #${dashboard.number} last updated ${ageDays.toFixed(1)} days ago: Renovate runs are dying. Read the Mend job log, then trigger a run by hand.`);
+          }
+```
+
+- Set `STALE_DAYS` to about twice the longest healthy quiet spell.
+- The failed run is the alert: GitHub emails it to whoever created the workflow or last edited its cron. Passing runs are silent, so a daily check adds no noise.
+
 ## Dashboard reading
 
 Renovate opens a "Dependency Dashboard" issue. Read it before assuming a bug:
@@ -124,5 +159,6 @@ Renovate opens a "Dependency Dashboard" issue. Read it before assuming a bug:
    - Restated defaults: `internalChecksFilter`, `vulnerabilityAlerts.minimumReleaseAge`, `baseBranchPatterns`.
    - Silent-stall causes: a no-timestamp carve-out missing or narrower than the eight update types, missing `minimumReleaseAgeBehaviour: "timestamp-optional"`, a non-semver plain pin without `versioning=loose`, unannotated `*_VERSION=` pins, a literal `with:` version on an action missing from the known-actions table.
    - Structure: one manager per pin where an annotation would do, a listed action's `with:` input hoisted to `env:`, deprecated `fileMatch`/`baseBranches`, missing validator hook, missing `labels` where a workflow exempts Renovate PRs by label.
+   - Liveness: a repo on hosted Renovate with no dashboard-staleness job in a daily workflow.
 5. **Cross-check** — compare each detected dependency against its upstream latest release, each Pending Status Checks resident against its release date, and each tool's pins across workflows; diverging versions of one tool mean one pin is unmanaged. A config can pass step 4 and still hold a silent stall; only these comparisons show it.
 6. Surface findings before editing. Apply only after scope is agreed.
