@@ -27,6 +27,15 @@ parse_bin_dir() {
   }
 }
 
+# download URL DEST: fetch URL to DEST, retrying on any failure.
+# Plain --retry skips connection errors such as a reset during the TLS
+# handshake, so --retry-all-errors is required. DEST is a file because curl
+# discards a partial body before retrying only when writing to a named file.
+download() {
+  local url="$1" dest="$2"
+  curl -fsSL --retry 3 --retry-all-errors --retry-delay 1 -o "$dest" "$url"
+}
+
 # installed_version_matches BIN VERSION: succeeds when BIN is executable and
 # its `--version` output contains VERSION with any leading `v` stripped.
 # Release tags carry the `v` (v0.2.88); the binary's own --version usually
@@ -73,8 +82,8 @@ verify_gpg() {
   local file="$1" asc="$2" key_url="$3" expected_fpr="$4" gpghome="$5"
   local actual_fpr
 
-  GNUPGHOME="$gpghome" gpg --quiet --batch --import \
-    <(curl -fsSL "$key_url") 2>/dev/null
+  download "$key_url" "$gpghome/key.asc"
+  GNUPGHOME="$gpghome" gpg --quiet --batch --import "$gpghome/key.asc" 2>/dev/null
   actual_fpr="$(GNUPGHOME="$gpghome" gpg --list-keys --with-colons |
     awk -F: '$1 == "fpr" {print $10; exit}')"
   if [ "$actual_fpr" != "$expected_fpr" ]; then
