@@ -27,7 +27,7 @@ tmp="$(mktemp -d)"
 trap 'rm -rf "$tmp"' EXIT
 
 asset="kcov-${KCOV_VERSION}.tar.gz"
-curl -fsSL -o "$tmp/$asset" \
+download -o "$tmp/$asset" \
   "https://github.com/SimonKagstrom/kcov/archive/refs/tags/${KCOV_VERSION}.tar.gz"
 verify_sha256 "$tmp/$asset" "$KCOV_SHA256"
 
