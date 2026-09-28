@@ -27,13 +27,10 @@ parse_bin_dir() {
   }
 }
 
-# download URL DEST: fetch URL to DEST, retrying transient failures.
-# --retry-all-errors is the load-bearing flag: plain --retry only covers
-# timeouts and transient HTTP status (408, 429, 5xx), so a connection reset
-# mid-TLS-handshake (exit 35) fails on the first attempt without it. It also
-# retries hard failures like a 404 on a bad pin, which costs ~3s on a build
-# that fails anyway. DEST must be a file: curl truncates a partial body
-# before retrying only when writing to a named file, never to stdout.
+# download URL DEST: fetch URL to DEST, retrying on any failure.
+# Plain --retry skips connection errors such as a reset during the TLS
+# handshake, so --retry-all-errors is required. DEST is a file because curl
+# discards a partial body before retrying only when writing to a named file.
 download() {
   local url="$1" dest="$2"
   curl -fsSL --retry 3 --retry-all-errors --retry-delay 1 -o "$dest" "$url"
