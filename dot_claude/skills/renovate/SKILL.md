@@ -107,7 +107,9 @@ Wire `renovate-config-validator` as a pre-commit hook so schema typos, deprecate
 
 ## Liveness
 
-A hosted Renovate job that dies (Mend's runner killed out of memory mid-`lockFileMaintenance`, for one) is never retried and reports nowhere; `renovate.json` stays valid and the repo stops getting updates. Self-hosted Renovate needs no check: its failures land in the repo's own Actions log. The open Dependency Dashboard issue is the heartbeat: a healthy Renovate keeps editing it as updates come and go. Fail a scheduled job when it goes stale, as `renovate-liveness` in [dungeon-studio/genshin.dungeon.studio `daily.yml`](https://github.com/dungeon-studio/genshin.dungeon.studio/blob/main/.github/workflows/daily.yml) does:
+A hosted Renovate job that dies is never retried and reports nowhere, so a repo with a valid `renovate.json` can stop getting updates unnoticed. Self-hosted Renovate reports its failures in the repo's Actions log and needs no check.
+
+Renovate edits the open Dependency Dashboard issue as updates come and go, so a dashboard left untouched means Renovate has stopped. Add this job, taken from [genshin.dungeon.studio `daily.yml`](https://github.com/dungeon-studio/genshin.dungeon.studio/blob/main/.github/workflows/daily.yml), to the repo's `daily.yml`; create that workflow if the repo has none.
 
 ```yaml
 renovate-liveness:
@@ -135,9 +137,8 @@ renovate-liveness:
           }
 ```
 
-- `STALE_DAYS` — about twice the longest healthy quiet spell; 10 in the reference implementation.
-- The failing run is the alert. GitHub emails a scheduled run's failure to the user who created the workflow, or who last edited its cron. A passing run is silent, so run it daily.
-- Add it as a job in the repo's existing daily cadence workflow (`daily.yml`, workflow `name: Daily`); create that workflow if the repo has none. A per-tool file such as `renovate-watchdog.yml` names the tool, not when it runs.
+- Set `STALE_DAYS` to about twice the longest healthy quiet spell.
+- The failed run is the alert: GitHub emails it to whoever created the workflow or last edited its cron. Passing runs are silent, so a daily check adds no noise.
 
 ## Dashboard reading
 
