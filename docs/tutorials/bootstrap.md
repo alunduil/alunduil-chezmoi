@@ -38,7 +38,7 @@ rsync --version                            # file sync
 ghc --version && cabal --version           # ghcup-managed Haskell toolchain
 cargo --version && rustc --version         # rustup-managed Rust toolchain
 pnpm --version                             # pnpm package manager (npm global)
-uptimerobot --version                      # Uptime Robot CLI (npm global, token from env)
+uptimerobot --version                      # Uptime Robot CLI (npm global)
 java --version                             # Temurin 21 JDK (Firebase emulators)
 command -v cargo-cache                     # cargo registry GC helper
 golang-petname                             # repo-picker worktree namer
