@@ -105,6 +105,42 @@ Wire `renovate-config-validator` as a pre-commit hook so schema typos, deprecate
 - The validator does not resolve remote presets, so it cannot tell you an `extends` target is missing or that a shared preset changed under you.
 - Upstream docs: <https://docs.renovatebot.com/config-validation/>.
 
+## Liveness
+
+A hosted Renovate job that dies (Mend's runner killed out of memory mid-`lockFileMaintenance`, for one) is never retried and reports nowhere; `renovate.json` stays valid and the repo stops getting updates. The open Dependency Dashboard issue is the heartbeat: a healthy Renovate keeps editing it as updates come and go. Fail a scheduled job when it goes stale:
+
+```yaml
+renovate-liveness:
+  name: Check Renovate liveness
+  runs-on: ubuntu-latest
+  timeout-minutes: 5
+  permissions:
+    issues: read
+  steps:
+    - uses: actions/github-script@<sha> # <version>
+      with:
+        script: |
+          const STALE_DAYS = 10;
+          const q = `repo:${context.repo.owner}/${context.repo.repo} is:issue is:open in:title "Dependency Dashboard" author:app/renovate`;
+          const { data } = await github.rest.search.issuesAndPullRequests({ q });
+          const dashboard = data.items[0];
+          if (!dashboard) {
+            core.setFailed('No open Dependency Dashboard: Renovate is uninstalled or disabled on this repository.');
+            return;
+          }
+          const ageDays = (Date.now() - new Date(dashboard.updated_at)) / 86_400_000;
+          if (ageDays > STALE_DAYS) {
+            core.setFailed(`Dependency Dashboard #${dashboard.number} last updated ${ageDays.toFixed(1)} days ago: Renovate has stalled.`);
+          }
+```
+
+- The two failures have different remedies. No dashboard means Renovate is off: reinstall the app or re-enable the repo. A stale dashboard means runs are dying: read the Mend job log and trigger a run by hand.
+- `STALE_DAYS` — about twice the longest healthy quiet spell; 10 in the reference implementation.
+- The failing run is the alert. GitHub emails a scheduled run's failure to the user who created the workflow, or who last edited its cron. A passing run is silent, so run it daily.
+- Add it as a job in the repo's existing daily cadence workflow (`daily.yml`, workflow `name: Daily`); create that workflow if the repo has none. A per-tool file such as `renovate-watchdog.yml` names the tool, not when it runs.
+- Self-hosted Renovate needs no liveness check: its failures land in the repo's own Actions log.
+- Reference implementation: `renovate-liveness` in [dungeon-studio/genshin.dungeon.studio `daily.yml`](https://github.com/dungeon-studio/genshin.dungeon.studio/blob/main/.github/workflows/daily.yml).
+
 ## Dashboard reading
 
 Renovate opens a "Dependency Dashboard" issue. Read it before assuming a bug:
@@ -124,5 +160,6 @@ Renovate opens a "Dependency Dashboard" issue. Read it before assuming a bug:
    - Restated defaults: `internalChecksFilter`, `vulnerabilityAlerts.minimumReleaseAge`, `baseBranchPatterns`.
    - Silent-stall causes: a no-timestamp carve-out missing or narrower than the eight update types, missing `minimumReleaseAgeBehaviour: "timestamp-optional"`, a non-semver plain pin without `versioning=loose`, unannotated `*_VERSION=` pins, a literal `with:` version on an action missing from the known-actions table.
    - Structure: one manager per pin where an annotation would do, a listed action's `with:` input hoisted to `env:`, deprecated `fileMatch`/`baseBranches`, missing validator hook, missing `labels` where a workflow exempts Renovate PRs by label.
+   - Liveness: a repo on hosted Renovate with no dashboard-staleness job in a daily workflow.
 5. **Cross-check** — compare each detected dependency against its upstream latest release, each Pending Status Checks resident against its release date, and each tool's pins across workflows; diverging versions of one tool mean one pin is unmanaged. A config can pass step 4 and still hold a silent stall; only these comparisons show it.
 6. Surface findings before editing. Apply only after scope is agreed.
