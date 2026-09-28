@@ -135,9 +135,12 @@ export NVM_DIR="${XDG_CONFIG_HOME:-$HOME/.config}/nvm"
 # ~/.config/cloudflare/token (mode 0600). No-op until applied.
 [ -r "$HOME/.config/cloudflare/token" ] && export CLOUDFLARE_API_TOKEN="$(<"$HOME/.config/cloudflare/token")"
 
-# Uptime Robot API token: same pattern. Consumed by the run_onchange MCP
-# registration script and available to ad-hoc shell commands.
-[ -r "$HOME/.config/uptimerobot/token" ] && export UPTIMEROBOT_API_TOKEN="$(<"$HOME/.config/uptimerobot/token")"
+# Uptime Robot API token: same pattern, under the name the uptimerobot CLI
+# reads. UPTIMEROBOT_API_TOKEN is a deprecated alias.
+if [ -r "$HOME/.config/uptimerobot/token" ]; then
+  export UPTIMEROBOT_API_KEY="$(<"$HOME/.config/uptimerobot/token")"
+  export UPTIMEROBOT_API_TOKEN="$UPTIMEROBOT_API_KEY"
+fi
 
 # GPG: pinentry needs to know which TTY launched the request, otherwise it
 # falls back to whatever TTY started gpg-agent (often wrong inside tmux,
