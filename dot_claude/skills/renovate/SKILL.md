@@ -123,6 +123,6 @@ Renovate opens a "Dependency Dashboard" issue. Read it before assuming a bug:
 4. **Audit existing** — flag drift:
    - Restated defaults: `internalChecksFilter`, `vulnerabilityAlerts.minimumReleaseAge`, `baseBranchPatterns`.
    - Silent-stall causes: a no-timestamp carve-out missing or narrower than the eight update types, missing `minimumReleaseAgeBehaviour: "timestamp-optional"`, a non-semver plain pin without `versioning=loose`, unannotated `*_VERSION=` pins, a literal `with:` version on an action missing from the known-actions table.
-   - Structure: one manager per pin where an annotation would do, deprecated `fileMatch`/`baseBranches`, missing validator hook, missing `labels` where a workflow exempts Renovate PRs by label.
+   - Structure: one manager per pin where an annotation would do, a listed action's `with:` input hoisted to `env:`, deprecated `fileMatch`/`baseBranches`, missing validator hook, missing `labels` where a workflow exempts Renovate PRs by label.
 5. **Cross-check** — compare each detected dependency against its upstream latest release, each Pending Status Checks resident against its release date, and each tool's pins across workflows; diverging versions of one tool mean one pin is unmanaged. A config can pass step 4 and still hold a silent stall; only these comparisons show it.
 6. Surface findings before editing. Apply only after scope is agreed.
