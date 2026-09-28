@@ -27,13 +27,16 @@ parse_bin_dir() {
   }
 }
 
-# curl with retries; arguments pass through. --retry-all-errors is the
-# load-bearing flag: plain --retry only covers timeouts and transient HTTP
-# status (408, 429, 5xx), so a connection reset mid-TLS-handshake (exit 35)
-# fails on the first attempt without it. It also retries hard failures like
-# a 404 on a bad pin, which costs ~3s on a build that fails anyway.
+# download URL DEST: fetch URL to DEST, retrying transient failures.
+# --retry-all-errors is the load-bearing flag: plain --retry only covers
+# timeouts and transient HTTP status (408, 429, 5xx), so a connection reset
+# mid-TLS-handshake (exit 35) fails on the first attempt without it. It also
+# retries hard failures like a 404 on a bad pin, which costs ~3s on a build
+# that fails anyway. DEST must be a file: curl truncates a partial body
+# before retrying only when writing to a named file, never to stdout.
 download() {
-  curl -fsSL --retry 3 --retry-all-errors --retry-delay 1 "$@"
+  local url="$1" dest="$2"
+  curl -fsSL --retry 3 --retry-all-errors --retry-delay 1 -o "$dest" "$url"
 }
 
 # installed_version_matches BIN VERSION: succeeds when BIN is executable and
@@ -82,8 +85,8 @@ verify_gpg() {
   local file="$1" asc="$2" key_url="$3" expected_fpr="$4" gpghome="$5"
   local actual_fpr
 
-  GNUPGHOME="$gpghome" gpg --quiet --batch --import \
-    <(download "$key_url") 2>/dev/null
+  download "$key_url" "$gpghome/key.asc"
+  GNUPGHOME="$gpghome" gpg --quiet --batch --import "$gpghome/key.asc" 2>/dev/null
   actual_fpr="$(GNUPGHOME="$gpghome" gpg --list-keys --with-colons |
     awk -F: '$1 == "fpr" {print $10; exit}')"
   if [ "$actual_fpr" != "$expected_fpr" ]; then

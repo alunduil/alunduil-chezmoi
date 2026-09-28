@@ -57,8 +57,8 @@ install_lib() {
 
   printf '==> %s: downloading %s\n' "$name" "$version" >&2
   local asset="$tmp/$name.tar.gz"
-  download -o "$asset" \
-    "https://github.com/bats-core/$name/archive/refs/tags/$version.tar.gz"
+  download "https://github.com/bats-core/$name/archive/refs/tags/$version.tar.gz" \
+    "$asset"
   verify_sha256 "$asset" "$sha"
 
   rm -rf "$dest"
