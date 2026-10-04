@@ -29,7 +29,7 @@ check-pre-commit:
 
 # Unit tests. bats-support/bats-assert live in ~/.local/lib/bats (chezmoi
 # externals); point BATS_LIB_PATH there so bats_load_library resolves them.
-# CI sets the same var from the bats-action lib-path output.
+# CI applies the same externals and sets the same var.
 check-bats:
     BATS_LIB_PATH="${BATS_LIB_PATH:+$BATS_LIB_PATH:}$HOME/.local/lib/bats" \
       bats --recursive dot_local dot_claude script
