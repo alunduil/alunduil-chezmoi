@@ -86,7 +86,7 @@ copy of it in the asset filename, so a Renovate bump stays complete:
 ```toml
 [".local/bin/<tool>"]
     type = "archive-file"
-    url = "https://github.com/<owner>/<tool>/releases/download/{{ $v.TOOL_VERSION }}/<tool>_{{ trimPrefix "v" $v.TOOL_VERSION }}_<arch>.tar.gz"
+    url = "{{ $gh }}/<owner>/<tool>/releases/download/{{ $v.TOOL_VERSION }}/<tool>_{{ trimPrefix "v" $v.TOOL_VERSION }}_<arch>.tar.gz"
     path = "<tool>"
     executable = true
 ```
