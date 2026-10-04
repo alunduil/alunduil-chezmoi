@@ -14,9 +14,9 @@ is_installed() {
   [ "$(dpkg-query -W -f='${db:Status-Status}' "$1" 2>/dev/null || true)" = "installed" ]
 }
 
-# Registers a signed third-party apt repository unless its keyring already
-# exists, so a converged host makes no sudo call. The keyring path is the
-# guard, so renaming an existing keyring or list re-registers on every host.
+# ------------------------------------------------------------ apt repositories
+# The keyring is the convergence guard: renaming one re-registers its
+# repository on every host.
 #
 #   add_apt_repo KEYRING KEY_URL LIST ENTRY [OPTIONS]
 #
@@ -57,10 +57,10 @@ add_apt_repo adoptium-archive-keyring.gpg https://packages.adoptium.net/artifact
   adoptium.list "https://packages.adoptium.net/artifactory/deb $codename main"
 
 # -------------------------------------------------------------------- keybase
-# Outside add_apt_repo: there is no key. Keybase's apt repo is unsigned; their
-# official install guide uses `[trusted=yes]` to skip apt's signature check.
-# Transport integrity comes from HTTPS to prerelease.keybase.io. The keybase
-# service self-updates once installed, so versions track upstream regardless.
+# Keybase's apt repo is unsigned; their official install guide uses
+# `[trusted=yes]` to skip apt's signature check. Transport integrity
+# comes from HTTPS to prerelease.keybase.io. The keybase service
+# self-updates once installed, so versions track upstream regardless.
 if [ ! -f /etc/apt/sources.list.d/keybase.list ]; then
   log "keybase: adding apt repository"
   printf 'deb [trusted=yes] https://prerelease.keybase.io/deb stable main\n' |
