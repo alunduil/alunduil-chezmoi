@@ -22,9 +22,8 @@ binary installs through one `chezmoi apply`, with a working mechanism.
 
 **Few tools can't move.** `type = "file"` handles a raw binary such as
 `yq`. An unusual checksum table only complicates resolving a hash, not
-pinning a download. `bats-libs` is two archive externals. `grafana` and
-`prometheus` have since left the repo. Three installers do work an
-external can't express:
+pinning a download. `bats-libs` is two archive externals. Three
+installers do work an external can't express:
 
 - `signal-cli` verifies a GPG signature against a pinned key
   fingerprint. Externals verify hashes, not signatures.
@@ -35,7 +34,9 @@ external can't express:
 inline `checksum.sha256`, and Renovate can't bump one without touching
 the PR. A pinned hash plus automated bumps needs either a human edit
 per bump or a job that mutates Renovate pull requests. This repo rules
-out both.
+out both. Deriving the hash from `checksums.txt` at template render
+time was spiked in #516 and rejected: it slowed every `apply`, `diff`
+and `status`, and a failed fetch installed the asset unverified.
 
 The installers' verification is weaker than it looks. They fetch
 `checksums.txt` from the same release, same host and same TLS session
@@ -50,12 +51,6 @@ can't change after publication. Without it, a maintainer can replace an
 asset under the same tag. Of the tools that would migrate, `yq`,
 `alloy`, `uv`, `vale` and `trivy` publish immutable releases. `lazygit`,
 `lychee`, `just`, `act`, `gcx` and `truenas-mcp` don't.
-
-Deriving the hash from `checksums.txt` at template render time was
-spiked and rejected. It added about 350 ms per tool to every `apply`,
-`diff` and `status`, even on a converged no-op. It failed without
-network. A failed fetch rendered an empty `checksum.sha256`, which
-chezmoi treats as no checksum and downloads unverified.
 
 ## Decision
 
@@ -90,11 +85,8 @@ Revisit when any trigger fires:
   `installed_version_matches` check.
 - Adding a tool costs a few lines of TOML and an entry the existing
   Renovate regex manager matches, not a script.
-- CI needs no secrets or apply setup to get a binary.
 - Corruption detection is lost for tools without immutable releases.
-  A corrupt or replaced upload installs without complaint. Against a
-  compromised release, nothing is lost. The old check was never an
-  independent trust root.
+  A corrupt or replaced upload installs without complaint.
 - Two install models exist: externals for most tools, and scripts plus
   `lib.sh` for `signal-cli`, `zellij` and `kcov`. ADR 0003 called that
   split a cost. It's accepted here because the scripted set is three
