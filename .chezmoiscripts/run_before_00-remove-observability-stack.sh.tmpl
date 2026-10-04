@@ -13,7 +13,8 @@
 
 set -euo pipefail
 
-log() { printf '==> %s\n' "$*" >&2; }
+# shellcheck source=script/lib/bootstrap.sh
+. "{{ .chezmoi.sourceDir }}/script/lib/bootstrap.sh"
 
 remove_if_present() {
   local path="$1"

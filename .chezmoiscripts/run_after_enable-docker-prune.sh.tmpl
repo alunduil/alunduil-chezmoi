@@ -10,7 +10,8 @@
 
 set -euo pipefail
 
-log() { printf '==> %s\n' "$*" >&2; }
+# shellcheck source=script/lib/bootstrap.sh
+. "{{ .chezmoi.sourceDir }}/script/lib/bootstrap.sh"
 
 # Docker is the whole point; a host without it has nothing to prune.
 if ! command -v docker >/dev/null 2>&1; then
@@ -22,19 +23,11 @@ UNIT_SRC="{{ .chezmoi.sourceDir }}/etc/systemd/system"
 
 changed=0
 for unit in docker-prune.service docker-prune.timer; do
-  if ! cmp -s "$UNIT_SRC/$unit" "/etc/systemd/system/$unit"; then
-    log "docker-prune: installing $unit"
-    sudo install -m 0644 "$UNIT_SRC/$unit" "/etc/systemd/system/$unit"
-    changed=1
-  fi
+  install_if_changed -m 0644 "$UNIT_SRC/$unit" "/etc/systemd/system/$unit"
 done
 
 if [ "$changed" -eq 1 ]; then
   sudo systemctl daemon-reload
 fi
 
-if ! systemctl is-enabled --quiet docker-prune.timer 2>/dev/null ||
-  ! systemctl is-active --quiet docker-prune.timer 2>/dev/null; then
-  log "docker-prune: enabling timer"
-  sudo systemctl enable --now docker-prune.timer
-fi
+enable_now docker-prune.timer

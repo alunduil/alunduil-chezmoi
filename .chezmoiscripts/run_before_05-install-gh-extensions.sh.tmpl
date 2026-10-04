@@ -4,7 +4,8 @@
 
 set -euo pipefail
 
-log() { printf '==> %s\n' "$*" >&2; }
+# shellcheck source=script/lib/bootstrap.sh
+. "{{ .chezmoi.sourceDir }}/script/lib/bootstrap.sh"
 
 # --------------------------------------------------------------- gh-poi
 # Prunes squash-merged local branches by consulting GitHub PR state --
