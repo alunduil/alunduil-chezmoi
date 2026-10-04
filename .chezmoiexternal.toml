@@ -59,7 +59,7 @@
 
 [".local/bin/vale"]
     type = "archive-file"
-    url = "https://github.com/vale-cli/vale/releases/download/v3.23.0/vale_3.23.0_Linux_64-bit.tar.gz"
+    url = "https://github.com/vale-cli/vale/releases/download/v3.24.0/vale_3.24.0_Linux_64-bit.tar.gz"
     path = "vale"
     executable = true
 
