@@ -7,17 +7,15 @@ set -euo pipefail
 
 log() { printf '==> %s\n' "$*" >&2; }
 
-# No datasource can read ghcup's "recommended" channel, so both versions live
-# here. GHC publishes no GitHub releases, and its tags carry rc, alpha and
-# branch-start siblings.
-# renovate: datasource=github-tags depName=ghc/ghc extractVersion=^ghc-(?<version>[\d.]+)-release$
+# GHC and cabal tag releases before ghcup can install them, so Renovate reads
+# ghcup's own metadata (custom.ghcup in renovate.json).
+# renovate: datasource=custom.ghcup depName=ghc packageName=GHC
 GHC_VERSION="9.14.1"
-# The cabal repo also releases the Cabal library and a rolling cabal-head tag.
 # Renovate's default semver-coerced versioning truncates cabal's fourth
 # component, reading the 3.14.1.0 and 3.14.1.1 releases as one version; loose
 # compares component-wise.
-# renovate: datasource=github-releases depName=haskell/cabal versioning=loose extractVersion=^cabal-install-v(?<version>.+)$
-CABAL_VERSION="3.18.2.0"
+# renovate: datasource=custom.ghcup depName=cabal packageName=Cabal versioning=loose
+CABAL_VERSION="3.18.1.0"
 
 # ---------------------------------------------------------- ghcup + ghc + cabal
 # The installer appends to ~/.bashrc, which chezmoi overwrites on apply; the
