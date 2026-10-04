@@ -45,16 +45,15 @@ Pick the canonical installer for the ecosystem:
 | Source                | Where                                 | Pattern                        |
 | --------------------- | ------------------------------------- | ------------------------------ |
 | Debian package        | `.chezmoidata/packages.yaml`          | append to `packages.apt`       |
-| Pinned binary release | `.chezmoiexternal.toml.tmpl`          | external entry below           |
+| Pinned binary release | `.chezmoiexternal.toml`               | external entry below           |
 | npm package           | `run_before_03`                       | `npm install -g`, `command -v` |
 | Cargo crate           | `run_before_09`                       | `cargo install`, `command -v`  |
 | `gh` extension        | `run_before_05`                       | `gh extension install --pin`   |
 | PyPI package          | `run_after_install-uv-tools`          | mirror the `beets` block       |
 
 A release binary that needs more than a download (signature check,
-source build) gets a `script/install/<tool>` script and its own
-`run_before_NN` pass instead; mirror `script/install/signal-cli` and
-`run_before_02-install-signal-cli`.
+source build) gets a `script/install/<tool>` script, called from
+`run_before_02` instead; mirror `script/install/signal-cli`.
 
 Auth and install axes are independent: `gcx` is auth-required *and*
 a chezmoi external; `gh-poi` is fire-and-forget *and* uses
@@ -66,33 +65,28 @@ Annotate each `*_VERSION` pin on the line directly above it:
 
 | Source                | Annotation                                                              |
 | --------------------- | ----------------------------------------------------------------------- |
-| Pinned binary release | `# renovate: datasource=github-releases depName=<owner>/<tool>`         |
+| Script-installed tool | `# renovate: datasource=github-releases depName=<owner>/<tool>`         |
 | PyPI package          | `# renovate: datasource=pypi depName=<pkg>`, one per `--with` extra too |
+
+An external needs no annotation: its version lives in the download URL.
 
 ## External entry
 
-Add the version to `.chezmoidata/versions.yaml` under `versions`, with
-its annotation above it:
-
-```yaml
-  # renovate: datasource=github-releases depName=<owner>/<tool>
-  TOOL_VERSION: "vX.Y.Z"
-```
-
-Then add an entry to `.chezmoiexternal.toml.tmpl`, mirroring `vale` or
-`lazygit`. Build the whole address from the version, including any
-copy of it in the asset filename, so a Renovate bump stays complete:
+Add an entry to `.chezmoiexternal.toml`, mirroring `vale` or `lazygit`.
+Write the literal release URL, version included wherever the asset name
+repeats it:
 
 ```toml
 [".local/bin/<tool>"]
     type = "archive-file"
-    url = "{{ $gh }}/<owner>/<tool>/releases/download/{{ $v.TOOL_VERSION }}/<tool>_{{ trimPrefix "v" $v.TOOL_VERSION }}_<arch>.tar.gz"
+    url = "https://github.com/<owner>/<tool>/releases/download/vX.Y.Z/<tool>_X.Y.Z_<arch>.tar.gz"
     path = "<tool>"
     executable = true
 ```
 
-Use `type = "file"` for a raw binary asset. Store no checksum for a
-release asset: the pinned address fixes its bytes (ADR 0008). Only a
+Renovate's externals manager captures the version after the tag prefix
+and replaces every copy of it in the URL. Use `type = "file"` for a raw
+binary asset. Store no checksum for a release asset (ADR 0008). Only a
 GitHub source-archive tarball (`archive/refs/tags/…`) carries an inline
 `checksum.sha256`.
 

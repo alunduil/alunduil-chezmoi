@@ -1,0 +1,12 @@
+#!/usr/bin/env bash
+# Third-party binaries that stay installer scripts rather than chezmoi
+# externals; docs/adr/0008-install-pinned-binaries-as-chezmoi-externals.md
+# names them. Each script/install/* pins its own version and no-ops when that
+# version is already on disk, so a version bump and a deleted binary reconcile
+# by the same path.
+
+set -euo pipefail
+
+INSTALL_DIR="{{ .chezmoi.sourceDir }}/script/install"
+"$INSTALL_DIR/signal-cli" --bin-dir "$HOME/.local/bin"
+"$INSTALL_DIR/zellij" --bin-dir "$HOME/.local/bin"

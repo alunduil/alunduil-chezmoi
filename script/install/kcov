@@ -6,7 +6,7 @@ set -euo pipefail
 # provide.
 #
 # GitHub's auto-generated tarballs carry no checksum asset, so this sha256 is
-# pinned by hand and a version bump fails the check until it is refreshed.
+# pinned by hand and a version bump fails verify_sha256 until it is refreshed.
 # renovate: datasource=github-releases depName=SimonKagstrom/kcov
 KCOV_VERSION="v43"
 KCOV_SHA256="4cbba86af11f72de0c7514e09d59c7927ed25df7cebdad087f6d3623213b95bf"
@@ -29,12 +29,7 @@ trap 'rm -rf "$tmp"' EXIT
 asset="kcov-${KCOV_VERSION}.tar.gz"
 download "https://github.com/SimonKagstrom/kcov/archive/refs/tags/${KCOV_VERSION}.tar.gz" \
   "$tmp/$asset"
-actual="$(sha256sum "$tmp/$asset" | awk '{print $1}')"
-if [ "$actual" != "$KCOV_SHA256" ]; then
-  printf '%s: sha256 mismatch on %s -- expected %s, got %s\n' \
-    "${0##*/}" "$asset" "$KCOV_SHA256" "$actual" >&2
-  exit 1
-fi
+verify_sha256 "$tmp/$asset" "$KCOV_SHA256"
 
 tar -xzf "$tmp/$asset" -C "$tmp"
 src="$tmp/kcov-${KCOV_VERSION#v}"

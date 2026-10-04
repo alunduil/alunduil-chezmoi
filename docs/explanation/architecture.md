@@ -44,7 +44,7 @@ Bootstrap lives in `.chezmoiscripts/`: `run_*_before_*.sh.tmpl` install and conf
 
 Which manager a unit belongs in, and what it runs as, is a separate question. [ADR 0006](../adr/0006-run-units-at-least-privilege.md) carries that rule.
 
-Release binaries install as chezmoi externals declared in `.chezmoiexternal.toml.tmpl`, with their versions in `.chezmoidata/versions.yaml`. Bootstrap and CI both get them from `chezmoi apply`, so there's exactly one place to bump. An external is an ordinary target, so a deleted binary comes back on the next apply. A tool needing more than a download, such as a signature check or a source build, keeps a `script/install/*` script instead. [ADR 0008](../adr/0008-install-release-binaries-as-chezmoi-externals.md) records why. Zellij *plugins* (`zellaude`, `zjstatus`) pin their versions in the release URLs under the `plugins` block of `dot_config/zellij/config.kdl`, since the plugin registry is independent of the binary.
+Release binaries install as chezmoi externals declared in `.chezmoiexternal.toml`, each pinned by the version in its download address. Bootstrap and CI both get them from `chezmoi apply`, so there's exactly one place to bump. An external is an ordinary target, so a deleted binary comes back on the next apply. The few tools [ADR 0008](../adr/0008-install-pinned-binaries-as-chezmoi-externals.md) keeps as scripts install through `script/install/*` instead. Zellij *plugins* (`zellaude`, `zjstatus`) pin their versions in the release URLs under the `plugins` block of `dot_config/zellij/config.kdl`, since the plugin registry is independent of the binary.
 
 ## Host roles
 

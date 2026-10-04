@@ -48,15 +48,22 @@
   "customManagers": [
     {
       "customType": "regex",
-      "description": "Annotated *_VERSION pins in the install scripts, bootstrap passes, and externals versions",
-      "managerFilePatterns": [
-        "script/install/*",
-        ".chezmoiscripts/*.tmpl",
-        ".chezmoidata/versions.yaml"
-      ],
+      "description": "Annotated *_VERSION pins in the install scripts and bootstrap passes",
+      "managerFilePatterns": ["script/install/*", ".chezmoiscripts/*.tmpl"],
       "matchStrings": [
-        "# renovate: datasource=(?<datasource>[a-zA-Z0-9-._]+?) depName=(?<depName>[^\\s]+?)(?: packageName=(?<packageName>[^\\s]+?))?(?: versioning=(?<versioning>[^\\s]+?))?(?: extractVersion=(?<extractVersion>[^\\s]+?))?\\s+[A-Za-z0-9_]+?_VERSION(?:=|:\\s*)\"(?<currentValue>.+?)\""
+        "# renovate: datasource=(?<datasource>[a-zA-Z0-9-._]+?) depName=(?<depName>[^\\s]+?)(?: packageName=(?<packageName>[^\\s]+?))?(?: versioning=(?<versioning>[^\\s]+?))?(?: extractVersion=(?<extractVersion>[^\\s]+?))?\\s+[A-Za-z0-9_]+?_VERSION=\"(?<currentValue>.+?)\""
       ]
+    },
+    {
+      "customType": "regex",
+      "description": "chezmoi externals, pinned as release-asset or source-archive URLs. currentValue omits the tag prefix so the replace also bumps the copy of the version in an asset filename; the prefix rebuilds extractVersion, keeping sibling tag families such as lychee-lib-v* out",
+      "managerFilePatterns": [".chezmoiexternal.toml"],
+      "matchStrings": [
+        "https://github\\.com/(?<depName>[^/]+/[^/]+)/releases/download/(?<tagPrefix>[^/\\d]*)(?<currentValue>\\d[^/]*)/[^\"]*",
+        "https://github\\.com/(?<depName>[^/]+/[^/]+)/archive/refs/tags/(?<tagPrefix>[^/\\d]*)(?<currentValue>\\d[^/]*?)\\.tar\\.gz"
+      ],
+      "datasourceTemplate": "github-releases",
+      "extractVersionTemplate": "^{{{tagPrefix}}}(?<version>\\d.*)$"
     },
     {
       "customType": "regex",

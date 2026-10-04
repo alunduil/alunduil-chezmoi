@@ -4,6 +4,9 @@
 
 set -euo pipefail
 
+# shellcheck source=script/lib/bootstrap.sh
+. "{{ .chezmoi.sourceDir }}/script/lib/bootstrap.sh"
+
 uv="$HOME/.local/bin/uv"
 
 # pre-commit ships only as a Python package, so uv owns its install. --force
@@ -13,9 +16,9 @@ uv="$HOME/.local/bin/uv"
 # renovate: datasource=pypi depName=pre-commit
 PRE_COMMIT_VERSION="4.6.2"
 if "$uv" tool list 2>/dev/null | grep -qx "pre-commit v$PRE_COMMIT_VERSION"; then
-  printf '==> pre-commit: %s already installed via uv\n' "$PRE_COMMIT_VERSION" >&2
+  log "pre-commit: $PRE_COMMIT_VERSION already installed via uv"
 else
-  printf '==> pre-commit: installing %s via uv\n' "$PRE_COMMIT_VERSION" >&2
+  log "pre-commit: installing $PRE_COMMIT_VERSION via uv"
   "$uv" tool install --force "pre-commit==$PRE_COMMIT_VERSION"
 fi
 
@@ -35,9 +38,9 @@ MUSICBRAINZNGS_VERSION="0.7.1"
 beets_installed="beets v$BEETS_VERSION [required: ==$BEETS_VERSION] [with: pyacoustid==$PYACOUSTID_VERSION, musicbrainzngs==$MUSICBRAINZNGS_VERSION]"
 if "$uv" tool list --show-with --show-version-specifiers 2>/dev/null |
   grep -qxF "$beets_installed"; then
-  printf '==> beets: %s already installed via uv\n' "$BEETS_VERSION" >&2
+  log "beets: $BEETS_VERSION already installed via uv"
 else
-  printf '==> beets: installing %s via uv\n' "$BEETS_VERSION" >&2
+  log "beets: installing $BEETS_VERSION via uv"
   "$uv" tool install --force \
     --with "pyacoustid==$PYACOUSTID_VERSION" \
     --with "musicbrainzngs==$MUSICBRAINZNGS_VERSION" \

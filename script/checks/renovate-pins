@@ -25,7 +25,7 @@ while IFS= read -r file; do
     { prev = $0 }
     END { exit rc }
   ' "$file" || fail=1
-done < <(git ls-files 'script/install/*' '.chezmoiscripts/*.tmpl' '.chezmoidata/*.yaml' \
+done < <(git ls-files 'script/install/*' '.chezmoiscripts/*.tmpl' \
   '.github/workflows/*.yml' '.github/actions/**/*.yml')
 
 if [ "$fail" -ne 0 ]; then

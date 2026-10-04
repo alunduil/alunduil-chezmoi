@@ -44,3 +44,16 @@ installed_version_matches() {
   local bin="$1" version="$2"
   [ -x "$bin" ] && "$bin" --version 2>/dev/null | grep -qF "${version#v}"
 }
+
+# Compare sha256(FILE) against EXPECTED. Returns 1 with a diagnostic on
+# mismatch, 0 on match. Caller's set -e propagates the failure.
+verify_sha256() {
+  local file="$1" expected="$2"
+  local actual
+  actual="$(sha256sum "$file" | awk '{print $1}')"
+  if [ "$expected" != "$actual" ]; then
+    printf '%s: sha256 mismatch on %s -- expected %s, got %s\n' \
+      "${0##*/}" "${file##*/}" "$expected" "$actual" >&2
+    return 1
+  fi
+}
