@@ -1,8 +1,8 @@
 name: Daily
 
-# Offset from the hour: on-the-hour schedules queue behind platform peak load.
 on:
   schedule:
+    # On-the-hour schedules queue behind platform peak load.
     - cron: '47 6 * * *'
       timezone: Europe/London
   workflow_dispatch:
@@ -26,11 +26,10 @@ jobs:
       issues: write
       pull-requests: write
     steps:
-      # Both issue legs are disabled, not just marking: an issue already
-      # carrying the label would otherwise stay eligible for closing.
       - uses: actions/stale@4391f3da665fdf50b6810c1a66712fb9ba21aa93 # v11
         with:
           days-before-issue-stale: -1
+          # Issues already labelled stale would still close without this.
           days-before-issue-close: -1
           days-before-pr-stale: 30
           days-before-pr-close: 14
