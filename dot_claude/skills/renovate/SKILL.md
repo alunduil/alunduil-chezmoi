@@ -55,8 +55,8 @@ A **silent stall** is a dependency that can never update yet looks current: no P
   - **Update type** — the eight types in the carve-out never carry a timestamp. `config:best-practices` pulls in `:maintainLockFilesWeekly` and both digest-pinning presets, so `lockFileMaintenance`, `digest`, and `pinDigest` are always in scope.
   - **Datasource** — some datasources return no timestamp for any release; with `hackage`, every cabal dependency stalls. These are ordinary major/minor/patch updates the carve-out cannot reach. `timestamp-optional` lets a timestamp-less release through with a Dependency Dashboard warning; releases that carry a timestamp still bake.
   - Keep both. The carve-out removes the age check from the eight types, so the dashboard warning names only datasources that lack timestamps.
-- A **bake bypass** is a lock refresh that resolves past the bake. Renovate cannot hand the package manager an exact version, so a manifest range resolves to its newest release, baked or not. The artifact update fails, and the lockfile commits a version the PR title does not name. `:pinDevDependencies` pins only the depTypes `devDependencies`, `dev-dependencies`, and `dev`.
-  - **Escapes** — a Poetry group's depType is its name (`test`, `typing`); PEP 621 emits `dependency-groups`, `tool.uv.dev-dependencies`, and `tool.pdm.dev-dependencies`. Pin each non-runtime one:
+- A **bake bypass** is a lockfile refresh that resolves past the bake. Renovate cannot hand the package manager an exact version, so a manifest range resolves to its newest release, baked or not. The artifact update fails, and Renovate commits a lockfile holding a version the PR title does not name. `:pinDevDependencies` pins only the depTypes `devDependencies`, `dev-dependencies`, and `dev`.
+  - **Non-runtime** — a Poetry group's depType is its name (`test`, `typing`). PEP 621 manifests yield `dependency-groups`, `tool.uv.dev-dependencies`, and `tool.pdm.dev-dependencies`. Pin each one:
 
     ```json
     {
