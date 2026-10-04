@@ -1,9 +1,7 @@
-# Release binaries, pinned by the version in each download address. Renovate
-# bumps every copy of the version inside an address, including the one in the
-# asset filename. docs/adr/0008-install-pinned-binaries-as-chezmoi-externals.md
-# carries why no checksum is stored. Source-archive tarballs are the
-# exception: GitHub generates them on request, so their hash is pinned and
-# refreshed by hand on a bump.
+# Renovate bumps every copy of a version inside a URL, so write it out in
+# full wherever an asset name repeats it. Release assets carry no checksum
+# (docs/adr/0008-install-pinned-binaries-as-chezmoi-externals.md). GitHub
+# generates source-archive tarballs on request, so those pin a hash.
 
 [".local/bin/act"]
     type = "archive-file"
@@ -70,8 +68,6 @@
     url = "https://github.com/mikefarah/yq/releases/download/v4.54.1/yq_linux_amd64"
     executable = true
 
-# bats-support and bats-assert: the assertion helpers the *.bats suites load
-# through bats_load_library.
 [".local/lib/bats/bats-support"]
     type = "archive"
     url = "https://github.com/bats-core/bats-support/archive/refs/tags/v0.3.0.tar.gz"

@@ -56,9 +56,8 @@ repos:
   # System-installed lychee (a chezmoi external) rather than an upstream hook:
   # one version pin, and it dodges the precompiled binary's newer-GLIBC
   # requirement. --offline gates on internal/relative links only — fast and
-  # deterministic. External URLs rot
-  # from time and third parties, not the diff, so weekly.yml checks them
-  # out-of-band (#359).
+  # deterministic. External URLs rot from time and third parties, not the
+  # diff, so weekly.yml checks them out-of-band (#359).
   - repo: local
     hooks:
       - id: renovate-pins

@@ -55,7 +55,7 @@ jobs:
           # bats-action curls api.github.com; auth raises the anonymous rate limit.
           github-token: ${{ secrets.GITHUB_TOKEN }}
 
-      # The externals suite also applies gcx and uv from this checkout.
+      # externals.bats also calls chezmoi.
       - uses: ./.github/actions/setup-chezmoi
         with:
           externals: .local/lib/bats/bats-support .local/lib/bats/bats-assert

@@ -1,11 +1,10 @@
 #!/usr/bin/env bats
 bats_require_minimum_version 1.5.0
 
-# Exercises pinned externals the bootstrap invokes. The chezmoi CI check
-# excludes scripts, so the .chezmoiscripts/ passes never run there. These
-# catch a CLI rename (gcx v0.2.14 moved `skills` under `agent`) or an
-# interface change before it breaks `chezmoi apply`. Keep the arguments in
-# sync with .chezmoiscripts/run_after_install-via-externals.sh.tmpl.
+# The chezmoi CI check excludes scripts, so the bootstrap never calls these
+# externals there. This catches a CLI rename before it breaks
+# `chezmoi apply`. Keep the arguments in sync with
+# .chezmoiscripts/run_after_install-via-externals.sh.tmpl.
 
 setup() {
   REPO_ROOT="$(cd "$BATS_TEST_DIRNAME/../.." && pwd)"

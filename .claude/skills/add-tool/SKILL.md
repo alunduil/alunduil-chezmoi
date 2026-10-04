@@ -84,11 +84,10 @@ repeats it:
     executable = true
 ```
 
-Renovate's externals manager captures the version after the tag prefix
-and replaces every copy of it in the URL. Use `type = "file"` for a raw
-binary asset. Store no checksum for a release asset (ADR 0008). Only a
-GitHub source-archive tarball (`archive/refs/tags/…`) carries an inline
-`checksum.sha256`.
+Renovate bumps every copy of the version in the URL. Use
+`type = "file"` for a raw binary asset. A release asset carries no
+checksum (ADR 0008); a GitHub source-archive tarball
+(`archive/refs/tags/…`) pins `checksum.sha256`.
 
 A pass that runs the new binary is `run_after_`, since externals deploy
 during apply.

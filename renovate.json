@@ -56,7 +56,7 @@
     },
     {
       "customType": "regex",
-      "description": "chezmoi externals, pinned as release-asset or source-archive URLs. currentValue omits the tag prefix so the replace also bumps the copy of the version in an asset filename; the prefix rebuilds extractVersion, keeping sibling tag families such as lychee-lib-v* out",
+      "description": "chezmoi externals pinned in GitHub URLs. currentValue excludes the tag prefix so the global replace also bumps the version in an asset filename; tagPrefix rebuilds extractVersion to keep sibling tags (lychee-lib-v*) out",
       "managerFilePatterns": [".chezmoiexternal.toml"],
       "matchStrings": [
         "https://github\\.com/(?<depName>[^/]+/[^/]+)/releases/download/(?<tagPrefix>[^/\\d]*)(?<currentValue>\\d[^/]*)/[^\"]*",

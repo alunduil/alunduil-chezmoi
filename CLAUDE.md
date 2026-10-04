@@ -43,13 +43,12 @@ effect on `apply` until committed and pulled into the apply clone. Use
 - pre-commit shellchecks `.sh.tmpl` files unrendered, so a `{{ … }}`
   expression must sit inside quotes or a comment. That is why the package
   lists arrive via `read -ra <<<'{{ … }}'` rather than an array literal.
-- Release binaries are chezmoi externals (`.chezmoiexternal.toml`), each
-  pinned by the version inside its download URL, and reused by both
-  bootstrap and CI (`.github/actions/setup-chezmoi`). Bump in one place.
-  A URL-regex manager in `renovate.json` bumps every copy of the version
-  in a URL, the asset filename included, so no annotation is needed.
-  ADR 0008 names the tools that stay `script/install/*` scripts, each
-  pinning its own `*_VERSION`. Zellij *plugins* (`zellaude`, `zjstatus`)
+- Release binaries are chezmoi externals in `.chezmoiexternal.toml`, each
+  pinned by the version in its URL; bootstrap and CI
+  (`.github/actions/setup-chezmoi`) both apply them. Renovate bumps every
+  copy of a version in a URL, so write it out in full and leave it
+  unannotated. ADR 0008 names the tools that stay `script/install/*`
+  scripts, each pinning its own `*_VERSION`. Zellij *plugins* (`zellaude`, `zjstatus`)
   pin their version inside the release URL in the `plugins` block of
   `dot_config/zellij/config.kdl`.
 - Every `*_VERSION` pin carries a `# renovate: datasource=… depName=…`
