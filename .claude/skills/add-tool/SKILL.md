@@ -49,7 +49,7 @@ Pick the canonical installer for the ecosystem:
 | npm package           | `run_before_03`                       | `npm install -g`, `command -v` |
 | Cargo crate           | `run_before_09`                       | `cargo install`, `command -v`  |
 | `gh` extension        | `run_before_05`                       | `gh extension install --pin`   |
-| PyPI package          | `run_after_install-uv-tools`          | mirror the `beets` block       |
+| PyPI package          | `run_after_install-via-externals`     | mirror the `beets` block       |
 
 A release binary that needs more than a download (signature check,
 source build) gets a `script/install/<tool>` script, called from
