@@ -1,8 +1,8 @@
 name: Daily
 
-# On-the-hour schedules queue behind platform peak load.
 on:
   schedule:
+    # On-the-hour schedules queue behind platform peak load.
     - cron: '47 6 * * *'
       timezone: Europe/London
   workflow_dispatch:
@@ -26,11 +26,11 @@ jobs:
       issues: write
       pull-requests: write
     steps:
-      # An issue already carrying the label would otherwise stay eligible for
-      # closing.
       - uses: actions/stale@4391f3da665fdf50b6810c1a66712fb9ba21aa93 # v11
         with:
           days-before-issue-stale: -1
+          # Disabling marking alone leaves an issue already carrying the
+          # label eligible for closing.
           days-before-issue-close: -1
           days-before-pr-stale: 30
           days-before-pr-close: 14
