@@ -25,11 +25,9 @@ jobs:
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
       # The local lychee hook runs the system binary; provision it here.
-      - name: Install lychee
-        run: |
-          mkdir -p "$HOME/.local/bin"
-          script/install/lychee --bin-dir "$HOME/.local/bin"
-          echo "$HOME/.local/bin" >> "$GITHUB_PATH"
+      - uses: ./.github/actions/setup-chezmoi
+        with:
+          externals: .local/bin/lychee
       # Renovate's digest pinning stops at this line — whatever action we call
       # has to pin its own inner steps, or the chain breaks there.
       - uses: tox-dev/action-pre-commit-uv@e09b8958484dfe71f4ac3bc7afb230ba506402ec # v1.0.5
@@ -43,7 +41,7 @@ jobs:
       # codecov-action authenticates by OIDC, so there is no upload token to
       # store or rotate.
       id-token: write
-    # Versions stay aligned with script/install/bats-libs (the local path);
+    # Versions stay aligned with the bats-libs externals (the local path);
     # Renovate bumps both together. The action takes them without the tag's
     # leading `v`, hence extractVersion.
     env:
@@ -66,6 +64,9 @@ jobs:
           file-install: false
           # bats-action curls api.github.com; auth raises the anonymous rate limit.
           github-token: ${{ secrets.GITHUB_TOKEN }}
+
+      # The gcx and uv suites apply their binary from this checkout's externals.
+      - uses: ./.github/actions/setup-chezmoi
 
       # These build deps serve script/install/kcov alone and never reach a host,
       # so they stay here rather than in .chezmoidata/packages.yaml.
@@ -106,11 +107,9 @@ jobs:
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
 
-      - name: Install chezmoi
-        env:
-          # renovate: datasource=github-releases depName=twpayne/chezmoi
-          CHEZMOI_VERSION: "v2.73.0"
-        run: sh -c "$(curl -fsLS get.chezmoi.io)" -- -b /usr/local/bin -t "$CHEZMOI_VERSION"
+      # The apply round-trip fetches every external, so a release asset that
+      # moved fails here.
+      - uses: ./.github/actions/setup-chezmoi
 
       - name: Install age
         run: |
@@ -138,10 +137,9 @@ jobs:
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
 
-      - name: Install zellij
-        run: |
-          script/install/zellij --bin-dir "$HOME/.local/bin"
-          echo "$HOME/.local/bin" >> "$GITHUB_PATH"
+      - uses: ./.github/actions/setup-chezmoi
+        with:
+          externals: .local/bin/zellij
 
       - name: Check config
         run: script/checks/zellij-config
@@ -154,16 +152,9 @@ jobs:
     timeout-minutes: 10
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
-      - uses: actions/cache@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6
+      - uses: ./.github/actions/setup-chezmoi
         with:
-          path: ~/.local/bin
-          key: alloy-bin-${{ hashFiles('script/install/alloy', 'script/install/lib.sh') }}
-
-      - name: Install alloy
-        run: |
-          mkdir -p "$HOME/.local/bin"
-          script/install/alloy --bin-dir "$HOME/.local/bin"
-          echo "$HOME/.local/bin" >>"$GITHUB_PATH"
+          externals: .local/bin/alloy
 
       - name: Validate config
         run: script/checks/telemetry-config
@@ -186,11 +177,9 @@ jobs:
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
 
-      - name: Install vale
-        run: |
-          mkdir -p "$HOME/.local/bin"
-          script/install/vale --bin-dir "$HOME/.local/bin"
-          echo "$HOME/.local/bin" >> "$GITHUB_PATH"
+      - uses: ./.github/actions/setup-chezmoi
+        with:
+          externals: .local/bin/vale
 
       - uses: reviewdog/action-setup@d8a7baabd7f3e8544ee4dbde3ee41d0011c3a93f # v1.5.0
 

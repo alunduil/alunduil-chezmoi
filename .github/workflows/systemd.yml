@@ -13,7 +13,9 @@ on:
       - 'dot_local/bin/executable_git-poi-all'
       - 'dot_local/bin/executable_git-worktree-poi'
       - 'dot_local/bin/executable_dev-cache-gc'
-      - 'script/install/alloy'
+      - '.chezmoiexternal.toml.tmpl'
+      - '.chezmoidata/versions.yaml'
+      - '.github/actions/setup-chezmoi/**'
       - 'script/checks/systemd-units'
       - '.github/workflows/systemd.yml'
   pull_request:
@@ -34,10 +36,12 @@ jobs:
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
 
-      - name: Install referenced binaries
+      - uses: ./.github/actions/setup-chezmoi
+        with:
+          externals: .local/bin/alloy
+
+      - name: Install referenced scripts
         run: |
-          mkdir -p "$HOME/.local/bin"
-          script/install/alloy --bin-dir "$HOME/.local/bin"
           for s in cgroup-pids-textfile git-poi-all git-worktree-poi dev-cache-gc; do
             install -m 0755 "dot_local/bin/executable_$s" "$HOME/.local/bin/$s"
           done
