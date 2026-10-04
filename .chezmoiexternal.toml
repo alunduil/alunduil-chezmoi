@@ -41,7 +41,7 @@
 
 [".local/bin/trivy"]
     type = "archive-file"
-    url = "https://github.com/aquasecurity/trivy/releases/download/v0.74.0/trivy_0.74.0_Linux-64bit.tar.gz"
+    url = "https://github.com/aquasecurity/trivy/releases/download/v0.75.0/trivy_0.75.0_Linux-64bit.tar.gz"
     path = "trivy"
     executable = true
 
