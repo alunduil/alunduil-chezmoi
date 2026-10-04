@@ -5,7 +5,8 @@
 
 set -euo pipefail
 
-log() { printf '==> %s\n' "$*" >&2; }
+# shellcheck source=script/lib/bootstrap.sh
+. "{{ .chezmoi.sourceDir }}/script/lib/bootstrap.sh"
 
 # `dpkg -s` is not this test: it exits 0 for a package in config-files state --
 # removed with `apt remove` but its conffiles retained -- so a package gone
@@ -14,32 +15,47 @@ is_installed() {
   [ "$(dpkg-query -W -f='${db:Status-Status}' "$1" 2>/dev/null || true)" = "installed" ]
 }
 
-# ----------------------------------------------------------- hashicorp repo
-if [ ! -f /usr/share/keyrings/hashicorp-archive-keyring.gpg ]; then
-  log "hashicorp: adding apt repository"
-  curl -fsSL https://apt.releases.hashicorp.com/gpg |
-    sudo gpg --dearmor -o /usr/share/keyrings/hashicorp-archive-keyring.gpg
-  printf 'deb [signed-by=/usr/share/keyrings/hashicorp-archive-keyring.gpg] https://apt.releases.hashicorp.com %s main\n' \
-    '{{ .chezmoi.osRelease.versionCodename }}' | sudo tee /etc/apt/sources.list.d/hashicorp.list >/dev/null
-fi
+# ------------------------------------------------------------ apt repositories
+# The keyring is the convergence guard: renaming one re-registers its
+# repository on every host.
+#
+#   add_apt_repo KEYRING KEY_URL LIST ENTRY [OPTIONS]
+#
+# KEYRING and LIST are file names under /usr/share/keyrings/ and
+# /etc/apt/sources.list.d/. ENTRY is the URI, suite, and components; OPTIONS
+# are deb options besides signed-by.
+add_apt_repo() {
+  local keyring="/usr/share/keyrings/$1" key_url="$2" list="$3" entry="$4" options="${5:-}"
+  [ -f "$keyring" ] && return
+  log "${list%.list}: adding apt repository"
+  curl -fsSL "$key_url" | sudo gpg --dearmor -o "$keyring"
+  printf 'deb [%ssigned-by=%s] %s\n' "${options:+$options }" "$keyring" "$entry" |
+    sudo tee "/etc/apt/sources.list.d/$list" >/dev/null
+}
 
-# ---------------------------------------------------------------- github cli
-if [ ! -f /usr/share/keyrings/githubcli-archive-keyring.gpg ]; then
-  log "github-cli: adding apt repository"
-  curl -fsSL https://cli.github.com/packages/githubcli-archive-keyring.gpg |
-    sudo gpg --dearmor -o /usr/share/keyrings/githubcli-archive-keyring.gpg
-  printf 'deb [arch=%s signed-by=/usr/share/keyrings/githubcli-archive-keyring.gpg] https://cli.github.com/packages stable main\n' \
-    "$(dpkg --print-architecture)" | sudo tee /etc/apt/sources.list.d/github-cli.list >/dev/null
-fi
+arch=$(dpkg --print-architecture)
+codename='{{ .chezmoi.osRelease.versionCodename }}'
 
-# ------------------------------------------------------------- signal-desktop
-if [ ! -f /usr/share/keyrings/signal-desktop-keyring.gpg ]; then
-  log "signal-desktop: adding apt repository"
-  curl -fsSL https://updates.signal.org/desktop/apt/keys.asc |
-    sudo gpg --dearmor -o /usr/share/keyrings/signal-desktop-keyring.gpg
-  printf 'deb [arch=amd64 signed-by=/usr/share/keyrings/signal-desktop-keyring.gpg] https://updates.signal.org/desktop/apt xenial main\n' |
-    sudo tee /etc/apt/sources.list.d/signal-xenial.list >/dev/null
-fi
+add_apt_repo hashicorp-archive-keyring.gpg https://apt.releases.hashicorp.com/gpg \
+  hashicorp.list "https://apt.releases.hashicorp.com $codename main"
+
+add_apt_repo githubcli-archive-keyring.gpg https://cli.github.com/packages/githubcli-archive-keyring.gpg \
+  github-cli.list 'https://cli.github.com/packages stable main' "arch=$arch"
+
+# Signal publishes amd64 builds only, under the fixed suite xenial.
+add_apt_repo signal-desktop-keyring.gpg https://updates.signal.org/desktop/apt/keys.asc \
+  signal-xenial.list 'https://updates.signal.org/desktop/apt xenial main' 'arch=amd64'
+
+add_apt_repo docker-archive-keyring.gpg https://download.docker.com/linux/debian/gpg \
+  docker.list "https://download.docker.com/linux/debian $codename stable" "arch=$arch"
+
+# temurin-21-jdk backs the JVM-based Firebase emulators that genshin's
+# `pnpm dev` starts when that project is developed on the host rather than in
+# its devcontainer. Debian bookworm ships no openjdk-21 in main, security, or
+# backports, so Adoptium is where a 21 comes from; it is also what the
+# devcontainers `java:1` feature installs, keeping both paths on one runtime.
+add_apt_repo adoptium-archive-keyring.gpg https://packages.adoptium.net/artifactory/api/gpg/key/public \
+  adoptium.list "https://packages.adoptium.net/artifactory/deb $codename main"
 
 # -------------------------------------------------------------------- keybase
 # Keybase's apt repo is unsigned; their official install guide uses
@@ -64,47 +80,22 @@ if [ -e /etc/apt/sources.list.d/vscode.list ] ||
   sudo rm -f /etc/apt/sources.list.d/vscode.list /usr/share/keyrings/packages.microsoft.gpg
 fi
 
-# --------------------------------------------------------------------- docker
-if [ ! -f /usr/share/keyrings/docker-archive-keyring.gpg ]; then
-  log "docker: adding apt repository"
-  curl -fsSL https://download.docker.com/linux/debian/gpg |
-    sudo gpg --dearmor -o /usr/share/keyrings/docker-archive-keyring.gpg
-  printf 'deb [arch=%s signed-by=/usr/share/keyrings/docker-archive-keyring.gpg] https://download.docker.com/linux/debian %s stable\n' \
-    "$(dpkg --print-architecture)" '{{ .chezmoi.osRelease.versionCodename }}' |
-    sudo tee /etc/apt/sources.list.d/docker.list >/dev/null
-fi
-
 # ------------------------------------------------------------------ 1password
 # CLI only (1password-cli), not the desktop app. The debsig policy is how apt
 # verifies the package signature at install; 1Password publishes it separately
 # from the apt signing key, keyed by their fixed origin id AC2D62742012EA22.
-if [ ! -f /usr/share/keyrings/1password-archive-keyring.gpg ]; then
-  log "1password: adding apt repository"
-  curl -fsSL https://downloads.1password.com/linux/keys/1password.asc |
-    sudo gpg --dearmor -o /usr/share/keyrings/1password-archive-keyring.gpg
-  printf 'deb [arch=%s signed-by=/usr/share/keyrings/1password-archive-keyring.gpg] https://downloads.1password.com/linux/debian/%s stable main\n' \
-    "$(dpkg --print-architecture)" "$(dpkg --print-architecture)" |
-    sudo tee /etc/apt/sources.list.d/1password.list >/dev/null
+add_apt_repo 1password-archive-keyring.gpg https://downloads.1password.com/linux/keys/1password.asc \
+  1password.list "https://downloads.1password.com/linux/debian/$arch stable main" "arch=$arch"
+
+if [ ! -f /etc/debsig/policies/AC2D62742012EA22/1password.pol ] ||
+  [ ! -f /usr/share/debsig/keyrings/AC2D62742012EA22/debsig.gpg ]; then
+  log "1password: adding debsig policy"
   sudo mkdir -p /etc/debsig/policies/AC2D62742012EA22/
   curl -fsSL https://downloads.1password.com/linux/debian/debsig/1password.pol |
     sudo tee /etc/debsig/policies/AC2D62742012EA22/1password.pol >/dev/null
   sudo mkdir -p /usr/share/debsig/keyrings/AC2D62742012EA22
   curl -fsSL https://downloads.1password.com/linux/keys/1password.asc |
     sudo gpg --dearmor -o /usr/share/debsig/keyrings/AC2D62742012EA22/debsig.gpg
-fi
-
-# ------------------------------------------------------------ adoptium (java)
-# temurin-21-jdk backs the JVM-based Firebase emulators that genshin's
-# `pnpm dev` starts when that project is developed on the host rather than in
-# its devcontainer. Debian bookworm ships no openjdk-21 in main, security, or
-# backports, so Adoptium is where a 21 comes from; it is also what the
-# devcontainers `java:1` feature installs, keeping both paths on one runtime.
-if [ ! -f /usr/share/keyrings/adoptium-archive-keyring.gpg ]; then
-  log "adoptium: adding apt repository"
-  curl -fsSL https://packages.adoptium.net/artifactory/api/gpg/key/public |
-    sudo gpg --dearmor -o /usr/share/keyrings/adoptium-archive-keyring.gpg
-  printf 'deb [signed-by=/usr/share/keyrings/adoptium-archive-keyring.gpg] https://packages.adoptium.net/artifactory/deb %s main\n' \
-    '{{ .chezmoi.osRelease.versionCodename }}' | sudo tee /etc/apt/sources.list.d/adoptium.list >/dev/null
 fi
 
 # -------------------------------------------------------------------- apt pkgs
@@ -143,10 +134,6 @@ if ! command -v tailscale >/dev/null 2>&1; then
 else
   log "tailscale: already installed"
 fi
-if ! systemctl is-enabled --quiet tailscaled 2>/dev/null ||
-  ! systemctl is-active --quiet tailscaled 2>/dev/null; then
-  log "tailscale: enabling tailscaled"
-  sudo systemctl enable --now tailscaled
-fi
+enable_now tailscaled
 
 log "system packages complete"

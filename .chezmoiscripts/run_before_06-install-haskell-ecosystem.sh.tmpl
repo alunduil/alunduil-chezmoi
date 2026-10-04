@@ -5,7 +5,8 @@
 
 set -euo pipefail
 
-log() { printf '==> %s\n' "$*" >&2; }
+# shellcheck source=script/lib/bootstrap.sh
+. "{{ .chezmoi.sourceDir }}/script/lib/bootstrap.sh"
 
 # GHC and cabal tag releases before ghcup can install them, so Renovate reads
 # ghcup's own metadata (custom.ghcup in renovate.json).

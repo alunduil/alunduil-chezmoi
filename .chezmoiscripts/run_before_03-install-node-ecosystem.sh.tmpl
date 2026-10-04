@@ -5,7 +5,8 @@
 
 set -euo pipefail
 
-log() { printf '==> %s\n' "$*" >&2; }
+# shellcheck source=script/lib/bootstrap.sh
+. "{{ .chezmoi.sourceDir }}/script/lib/bootstrap.sh"
 
 # ----------------------------------------------------------------- nvm + Node
 # Mirror nvm's own install-location logic: $XDG_CONFIG_HOME/nvm if XDG is set,

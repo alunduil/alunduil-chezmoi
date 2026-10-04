@@ -22,7 +22,8 @@
 
 set -euo pipefail
 
-log() { printf '==> %s\n' "$*" >&2; }
+# shellcheck source=script/lib/bootstrap.sh
+. "{{ .chezmoi.sourceDir }}/script/lib/bootstrap.sh"
 
 token_file="$HOME/.config/uptimerobot/token"
 if [ ! -r "$token_file" ]; then
