@@ -30,7 +30,6 @@ A **silent stall** is a dependency that can never update yet looks current: no P
 - `reviewers` — without it, Renovate PRs land silent. Use `assignees` instead for a creation-time ping with no rebase notifications.
 - `pre-commit: { enabled: true }` — opt-in manager; enable unconditionally. No-op without `.pre-commit-config.yaml`; replaces pre-commit.ci where the file exists.
 - `config:best-practices` = `config:recommended` + `docker:pinDigests` + `helpers:pinGitHubActionDigests` + `:configMigration` + `:pinDevDependencies` + `abandonments:recommended` + `security:minimumReleaseAgeNpm` + `:maintainLockFilesWeekly`. It does *not* include OpenSSF scorecard; that is `security:openssf-scorecard`, which adds a badge column to PR bodies.
-- `:pinDevDependencies` pins only the depTypes `devDependencies`, `dev-dependencies`, and `dev`. Every other depType keeps its ranges: a Poetry group's depType is the group name (`test`, `typing`), and PEP 621 manifests emit `dependency-groups`, `tool.uv.dev-dependencies`, and `tool.pdm.dev-dependencies`.
 
 ## Supply-chain hardening
 
@@ -56,15 +55,18 @@ A **silent stall** is a dependency that can never update yet looks current: no P
   - **Update type** — the eight types in the carve-out never carry a timestamp. `config:best-practices` pulls in `:maintainLockFilesWeekly` and both digest-pinning presets, so `lockFileMaintenance`, `digest`, and `pinDigest` are always in scope.
   - **Datasource** — some datasources return no timestamp for any release; with `hackage`, every cabal dependency stalls. These are ordinary major/minor/patch updates the carve-out cannot reach. `timestamp-optional` lets a timestamp-less release through with a Dependency Dashboard warning; releases that carry a timestamp still bake.
   - Keep both. The carve-out removes the age check from the eight types, so the dashboard warning names only datasources that lack timestamps.
-- On a lockfile-based manager, the bake holds only for a pinned manifest. Renovate cannot hand the package manager an exact version, so the lock refresh resolves a range to its newest release, bake or not. The artifact update fails, and the committed lockfile holds an unbaked version the PR title does not name. Pin every non-runtime depType `:pinDevDependencies` misses. A published library's runtime ranges stay ranges, because downstream resolvers need them.
+- A **bake bypass** is a lock refresh that resolves past the bake. Renovate cannot hand the package manager an exact version, so a manifest range resolves to its newest release, baked or not. The artifact update fails, and the lockfile commits a version the PR title does not name. `:pinDevDependencies` pins only the depTypes `devDependencies`, `dev-dependencies`, and `dev`.
+  - **Escapes** — a Poetry group's depType is its name (`test`, `typing`); PEP 621 emits `dependency-groups`, `tool.uv.dev-dependencies`, and `tool.pdm.dev-dependencies`. Pin each non-runtime one:
 
-  ```json
-  {
-    "matchManagers": ["poetry"],
-    "matchDepTypes": ["test"],
-    "rangeStrategy": "pin"
-  }
-  ```
+    ```json
+    {
+      "matchManagers": ["poetry"],
+      "matchDepTypes": ["test"],
+      "rangeStrategy": "pin"
+    }
+    ```
+
+  - **Runtime** — a published library's runtime ranges stay ranges; downstream resolvers need them.
 
 - `osvVulnerabilityAlerts: true` — widens alerts beyond GitHub's advisory database to OSV. Defaults to `false`. Haskell repos are the exception: OSV fixes arrive as an open range (`>= <fixed>`), `pvp` accepts only two-bound ranges, and the generated rule aborts every run. Treat a `false` there as deliberate and look for its tracking issue.
 - Do *not* write `internalChecksFilter: "strict"` or `vulnerabilityAlerts: { "minimumReleaseAge": "0 days" }`. Both are already the defaults (`lib/config/options/index.ts`: `internalChecksFilter` default `strict`; the `vulnerabilityAlerts` default object contains `minimumReleaseAge: null`, force-applied over the top-level bake).
@@ -169,7 +171,7 @@ Renovate opens a "Dependency Dashboard" issue. Read it before assuming a bug:
 4. **Audit existing** — flag drift:
    - Restated defaults: `internalChecksFilter`, `vulnerabilityAlerts.minimumReleaseAge`, `baseBranchPatterns`.
    - Silent-stall causes: a no-timestamp carve-out missing or narrower than the eight update types, missing `minimumReleaseAgeBehaviour: "timestamp-optional"`, a non-semver plain pin without `versioning=loose`, unannotated `*_VERSION=` pins, a literal `with:` version on an action missing from the known-actions table.
-   - Bake bypass: a lockfile manager with manifest ranges in a non-runtime group (test, typing, docs) whose depType is outside `:pinDevDependencies`'s three and no `rangeStrategy: "pin"` rule covering it.
+   - Bake bypass: a non-runtime depType on a lockfile manager with no `rangeStrategy: "pin"` rule.
    - Structure: one manager per pin where an annotation would do, a listed action's `with:` input hoisted to `env:`, deprecated `fileMatch`/`baseBranches`, missing validator hook, missing `labels` where a workflow exempts Renovate PRs by label.
    - Liveness: a repo on hosted Renovate with no dashboard-staleness job in a daily workflow.
 5. **Cross-check** — compare each detected dependency against its upstream latest release, each Pending Status Checks resident against its release date, and each tool's pins across workflows; diverging versions of one tool mean one pin is unmanaged. A config can pass step 4 and still hold a silent stall; only these comparisons show it.
