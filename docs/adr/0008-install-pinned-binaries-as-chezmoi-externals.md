@@ -10,20 +10,17 @@ Supersedes [0003](0003-keep-bash-installers-over-chezmoi-externals.md).
 
 ADR 0003 kept `script/install/*` over `.chezmoiexternal` on two forces,
 CI reuse and checksum pinning, and listed six tools that couldn't move
-regardless. A spike during #506 and the re-decision in #516 showed
-that the first force and most of the list were wrong.
+regardless. The first force and most of the list were wrong.
 
 **CI reuse is false.** ADR 0003 said externals need a whole-tree
-`chezmoi apply` with dest-dir and age-secret setup. An apply narrowed
-with `--include=externals` doesn't: under `env -i`, with an empty
-`HOME`, no chezmoi config and no age key, it installed `yq` and created
-only a state database. That's ADR 0003's own third trigger, routing CI
-binary installs through one `chezmoi apply`, with a working mechanism.
+`chezmoi apply` with dest-dir and age-secret setup.
+`chezmoi apply --include=externals` needs neither: it runs with an
+empty `HOME`, no chezmoi config and no age key. That fires ADR 0003's
+third revisit trigger.
 
-**Few tools can't move.** `type = "file"` handles a raw binary such as
-`yq`. An unusual checksum table only complicates resolving a hash, not
-pinning a download. `bats-libs` is two archive externals. Three
-installers do work an external can't express:
+**Few tools can't move.** Externals handle a raw binary such as `yq`
+and several archives such as `bats-libs`. Three installers do work an
+external can't express:
 
 - `signal-cli` verifies a GPG signature against a pinned key
   fingerprint. Externals verify hashes, not signatures.
@@ -35,22 +32,19 @@ inline `checksum.sha256`, and Renovate can't bump one without touching
 the PR. A pinned hash plus automated bumps needs either a human edit
 per bump or a job that mutates Renovate pull requests. This repo rules
 out both. Deriving the hash from `checksums.txt` at template render
-time was spiked in #516 and rejected: it slowed every `apply`, `diff`
-and `status`, and a failed fetch installed the asset unverified.
+time slows every `apply`, `diff` and `status`, and a failed fetch
+installs the asset unverified.
 
-The installers' verification is weaker than it looks. They fetch
-`checksums.txt` from the same release, same host and same TLS session
-as the asset. That catches a corrupt or mismatched upload. It doesn't
-catch a compromised release, because an attacker who can replace the
-asset can replace the checksum file beside it. TLS already covers
-transit.
+The installers' checksum check catches a corrupt upload but not a
+compromised release. They fetch `checksums.txt` from the same release
+as the asset, so an attacker who can replace the asset can replace the
+checksum file beside it. TLS already covers transit.
 
 Upload integrity depends on the upstream repository. GitHub's immutable
 releases setting is opt-in per repository. With it on, a tag's assets
 can't change after publication. Without it, a maintainer can replace an
-asset under the same tag. Of the tools that would migrate, `yq`,
-`alloy`, `uv`, `vale` and `trivy` publish immutable releases. `lazygit`,
-`lychee`, `just`, `act`, `gcx` and `truenas-mcp` don't.
+asset under the same tag. Some tools that would migrate enable it and
+some don't.
 
 ## Decision
 
@@ -64,9 +58,8 @@ instead of calling installers directly.
 
 Keep a script only where an external can't do the job: `signal-cli`
 for its signature check, and `zellij` and `kcov` for their source
-builds. Steps after the download that aren't downloads themselves, such
-as `gcx agent skills install` and the `uv tool install` set, stay
-bootstrap passes.
+builds. Post-install steps such as `gcx agent skills install` and the
+`uv tool install` set stay bootstrap passes.
 
 Revisit when any trigger fires:
 
@@ -76,18 +69,16 @@ Revisit when any trigger fires:
 - Renovate gains a chezmoi-external manager or a release-asset hash
   datasource that bumps an inline hash inside its own PR.
 - A migrated tool's upstream moves its releases off GitHub or stops
-  resolving at a pinned address. #590 tracks this for `truenas-mcp`.
+  resolving at a pinned address.
 
 ## Consequences
 
 - Externals are chezmoi targets, so they converge natively. Deleting a
-  binary restores it on the next apply, with no shell guard or
-  `installed_version_matches` check.
-- Adding a tool costs a few lines of TOML and an entry the existing
-  Renovate regex manager matches, not a script.
-- Corruption detection is lost for tools without immutable releases.
-  A corrupt or replaced upload installs without complaint.
+  binary restores it on the next apply, with no shell guard.
+- Adding a tool costs a few lines of TOML, not a script.
+- Tools without immutable releases lose corruption detection. A corrupt
+  or replaced upload installs without complaint.
 - Two install models exist: externals for most tools, and scripts plus
-  `lib.sh` for `signal-cli`, `zellij` and `kcov`. ADR 0003 called that
-  split a cost. It's accepted here because the scripted set is three
-  tools with reasons an external can't absorb.
+  `lib.sh` for `signal-cli`, `zellij` and `kcov`. ADR 0003 counted
+  that split as a cost. Three tools an external can't serve make it an
+  acceptable one.
