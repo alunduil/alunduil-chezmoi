@@ -5,19 +5,21 @@ bats_require_minimum_version 1.5.0
 # under `agent`) before they break `chezmoi apply`. The chezmoi CI check
 # excludes scripts, so the .chezmoiscripts/ bootstrap never executes there —
 # this test fills that gap by exercising the pinned binary directly. Keep
-# args in sync with .chezmoiscripts/run_before_02-install-binary-tools.sh.tmpl.
+# args in sync with .chezmoiscripts/run_after_install-gcx-skills.sh.tmpl.
 
 setup() {
   REPO_ROOT="$(cd "$BATS_TEST_DIRNAME/../.." && pwd)"
-  BIN_DIR="$(mktemp -d)"
+  DEST="$(mktemp -d)"
+  mkdir -p "$DEST/.local/bin"
 }
 
 teardown() {
-  rm -rf "$BIN_DIR"
+  rm -rf "$DEST"
 }
 
 @test "pinned gcx accepts bootstrap skills-install invocation" {
-  "$REPO_ROOT/script/install/gcx" --bin-dir "$BIN_DIR"
-  run "$BIN_DIR/gcx" agent skills install --all --force --dry-run
+  chezmoi apply --source="$REPO_ROOT" --destination="$DEST" \
+    --include=externals "$DEST/.local/bin/gcx"
+  run "$DEST/.local/bin/gcx" agent skills install --all --force --dry-run
   [ "$status" -eq 0 ]
 }

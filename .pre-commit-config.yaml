@@ -65,7 +65,7 @@ repos:
         entry: script/checks/renovate-pins
         language: system
         pass_filenames: false
-        files: ^(script/install/|\.chezmoiscripts/.*\.tmpl$|\.github/workflows/)
+        files: ^(script/install/|\.chezmoiscripts/.*\.tmpl$|\.chezmoidata/|\.github/(workflows|actions)/)
 
       - id: bootstrap-convergence
         name: bootstrap-convergence

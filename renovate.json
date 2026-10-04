@@ -48,10 +48,14 @@
   "customManagers": [
     {
       "customType": "regex",
-      "description": "Annotated *_VERSION pins in the install scripts and bootstrap passes",
-      "managerFilePatterns": ["script/install/*", ".chezmoiscripts/*.tmpl"],
+      "description": "Annotated *_VERSION pins in the install scripts, bootstrap passes, and externals versions",
+      "managerFilePatterns": [
+        "script/install/*",
+        ".chezmoiscripts/*.tmpl",
+        ".chezmoidata/versions.yaml"
+      ],
       "matchStrings": [
-        "# renovate: datasource=(?<datasource>[a-zA-Z0-9-._]+?) depName=(?<depName>[^\\s]+?)(?: packageName=(?<packageName>[^\\s]+?))?(?: versioning=(?<versioning>[^\\s]+?))?(?: extractVersion=(?<extractVersion>[^\\s]+?))?\\s+[A-Za-z0-9_]+?_VERSION=\"(?<currentValue>.+?)\""
+        "# renovate: datasource=(?<datasource>[a-zA-Z0-9-._]+?) depName=(?<depName>[^\\s]+?)(?: packageName=(?<packageName>[^\\s]+?))?(?: versioning=(?<versioning>[^\\s]+?))?(?: extractVersion=(?<extractVersion>[^\\s]+?))?\\s+[A-Za-z0-9_]+?_VERSION(?:=|:\\s*)\"(?<currentValue>.+?)\""
       ]
     },
     {

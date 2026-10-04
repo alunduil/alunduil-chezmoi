@@ -1,78 +1,16 @@
 #!/usr/bin/env bash
-# Installs third-party binaries through script/install/*, each of which pins
-# its own version and no-ops when that version is already on disk. Those
-# guards are the convergence point: nothing here tracks what ran before, so
-# a version bump and a deleted binary reconcile by the same path.
+# Third-party binaries that chezmoi externals cannot deliver. Release binaries
+# pinned by URL are externals (.chezmoiexternal.toml.tmpl); what stays here
+# needs more than a download. Each script/install/* pins its own version and
+# no-ops when that version is already on disk, so a version bump and a deleted
+# binary reconcile by the same path.
 
 set -euo pipefail
 
 INSTALL_DIR="{{ .chezmoi.sourceDir }}/script/install"
-"$INSTALL_DIR/zellij" --bin-dir "$HOME/.local/bin"
-"$INSTALL_DIR/lazygit" --bin-dir "$HOME/.local/bin"
-"$INSTALL_DIR/act" --bin-dir "$HOME/.local/bin"
-"$INSTALL_DIR/gcx" --bin-dir "$HOME/.local/bin"
-"$INSTALL_DIR/lychee" --bin-dir "$HOME/.local/bin"
+
+# GPG-signed with no published checksum; externals verify hashes, not
+# signatures.
 "$INSTALL_DIR/signal-cli" --bin-dir "$HOME/.local/bin"
-"$INSTALL_DIR/yq" --bin-dir "$HOME/.local/bin"
-"$INSTALL_DIR/truenas-mcp" --bin-dir "$HOME/.local/bin"
-"$INSTALL_DIR/vale" --bin-dir "$HOME/.local/bin"
-"$INSTALL_DIR/trivy" --bin-dir "$HOME/.local/bin"
-"$INSTALL_DIR/just" --bin-dir "$HOME/.local/bin"
-"$INSTALL_DIR/uv" --bin-dir "$HOME/.local/bin"
-
-# pre-commit ships only as a Python package, so uv owns its install. --force
-# overwrites a pre-existing pip-installed pre-commit on the PATH; the guard
-# keys off `uv tool list` rather than `pre-commit --version`, which can't tell
-# a uv-managed install from the legacy pip one at the same version.
-# renovate: datasource=pypi depName=pre-commit
-PRE_COMMIT_VERSION="4.6.2"
-if "$HOME/.local/bin/uv" tool list 2>/dev/null | grep -qx "pre-commit v$PRE_COMMIT_VERSION"; then
-  printf '==> pre-commit: %s already installed via uv\n' "$PRE_COMMIT_VERSION" >&2
-else
-  printf '==> pre-commit: installing %s via uv\n' "$PRE_COMMIT_VERSION" >&2
-  "$HOME/.local/bin/uv" tool install --force "pre-commit==$PRE_COMMIT_VERSION"
-fi
-
-# Music-library tagger. pyacoustid and musicbrainzngs have no entry point of
-# their own, so they ride in beets' tool environment via --with rather than
-# being installed as tools; beets 2.x dropped musicbrainzngs as a dependency
-# and ships its own MusicBrainz client, so the pin here is deliberate and not
-# a restatement of beets' metadata. Its fingerprinter needs fpcalc
-# (libchromaprint-tools, script 01). The guard compares the whole requirement
-# set, not just beets' version, so bumping either --with pin reinstalls.
-# renovate: datasource=pypi depName=beets
-BEETS_VERSION="2.14.1"
-# renovate: datasource=pypi depName=pyacoustid
-PYACOUSTID_VERSION="1.3.1"
-# renovate: datasource=pypi depName=musicbrainzngs
-MUSICBRAINZNGS_VERSION="0.7.1"
-beets_installed="beets v$BEETS_VERSION [required: ==$BEETS_VERSION] [with: pyacoustid==$PYACOUSTID_VERSION, musicbrainzngs==$MUSICBRAINZNGS_VERSION]"
-if "$HOME/.local/bin/uv" tool list --show-with --show-version-specifiers 2>/dev/null |
-  grep -qxF "$beets_installed"; then
-  printf '==> beets: %s already installed via uv\n' "$BEETS_VERSION" >&2
-else
-  printf '==> beets: installing %s via uv\n' "$BEETS_VERSION" >&2
-  "$HOME/.local/bin/uv" tool install --force \
-    --with "pyacoustid==$PYACOUSTID_VERSION" \
-    --with "musicbrainzngs==$MUSICBRAINZNGS_VERSION" \
-    "beets==$BEETS_VERSION"
-fi
-
-# bats helper libraries (bats-support, bats-assert), loaded by the co-located
-# *.bats suites via bats_load_library. The `just check-bats` recipe points
-# BATS_LIB_PATH at this dir so local runs resolve them; CI uses the
-# bats-action lib-path output.
-"$INSTALL_DIR/bats-libs" --lib-dir "$HOME/.local/lib/bats"
-
-# Alloy ships host telemetry to Grafana Cloud (see
-# docs/how-to/viewing-workstation-telemetry.md). Always installed; the unit
-# stays inert until enabled per host.
-"$INSTALL_DIR/alloy" --bin-dir "$HOME/.local/bin"
-
-# gcx ships its skill bundle inside the binary; `agent skills install
-# --all` extracts it to ~/.agents/skills (the cross-harness convention
-# read by Claude Code, Cursor, Copilot). --force re-syncs gcx-managed
-# files on version bumps without touching anything outside the bundle.
-"$HOME/.local/bin/gcx" agent skills install --all --force >/dev/null
 
 mkdir -p "$HOME/.config/zellij/plugins"

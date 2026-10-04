@@ -1,0 +1,10 @@
+#!/usr/bin/env bash
+# gcx ships its skill bundle inside the binary; `agent skills install --all`
+# extracts it to ~/.agents/skills (the cross-harness convention read by Claude
+# Code, Cursor, Copilot). --force re-syncs gcx-managed files on version bumps
+# without touching anything outside the bundle. gcx is a chezmoi external, so
+# this runs after apply has written it.
+
+set -euo pipefail
+
+"$HOME/.local/bin/gcx" agent skills install --all --force >/dev/null

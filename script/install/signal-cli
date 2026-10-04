@@ -29,7 +29,7 @@ chmod 700 "$gpghome"
 trap 'rm -rf "$tmp" "$gpghome"' EXIT
 
 # Releases ship `.asc` detached signatures, no checksums file -- so
-# verify_gpg replaces the verify_sha256 step used by other installers.
+# verify_gpg checks the download instead of a sha256.
 base="https://github.com/AsamK/signal-cli/releases/download/${SIGNAL_CLI_VERSION}"
 asset="signal-cli-${SIGNAL_CLI_VERSION#v}-${ARCH}.tar.gz"
 download "$base/$asset" "$tmp/$asset"

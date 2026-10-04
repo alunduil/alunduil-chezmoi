@@ -1,5 +1,5 @@
 # shellcheck shell=bash
-# Shared helpers for script/install-* scripts. Source from the same dir.
+# Shared helpers for script/install/* scripts. Source from the same dir.
 
 # Parse --bin-dir DIR from the install script's arguments. Sets BIN_DIR.
 # Errors (return 2) on missing or unknown arguments.
@@ -43,20 +43,6 @@ download() {
 installed_version_matches() {
   local bin="$1" version="$2"
   [ -x "$bin" ] && "$bin" --version 2>/dev/null | grep -qF "${version#v}"
-}
-
-# Look up the SHA256 of ASSET in a `<hash>  <filename>` style checksums
-# file. Prints the hash on stdout. Returns 1 if no entry is found.
-expected_from_checksums() {
-  local file="$1" asset="$2"
-  local hash
-  hash="$(awk -v f="$asset" '$2 == f {print $1}' "$file")"
-  if [ -z "$hash" ]; then
-    printf '%s: no checksum entry for %s in %s\n' \
-      "${0##*/}" "$asset" "${file##*/}" >&2
-    return 1
-  fi
-  printf '%s' "$hash"
 }
 
 # Compare sha256(FILE) against EXPECTED. Returns 1 with a diagnostic on
