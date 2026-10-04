@@ -23,8 +23,8 @@ effect on `apply` until committed and pulled into the apply clone. Use
   install/config passes carry a numeric prefix that orders them
   (dependencies); `run_*_after_*` passes are order-independent and named
   by concept, not numbered.
-- Passes source `script/lib/bootstrap.sh` for `log`, `install_if_changed`,
-  and `enable_now` rather than defining their own.
+- Helpers shared across passes live in `script/lib/bootstrap.sh`, which
+  each pass sources.
 - `run_onchange_` is only for passes whose trigger is genuinely content,
   not host state: `_07` (its `claude mcp list` guard costs a network
   round-trip per server) and `run_onchange_after_register-*-mcp` (rotating

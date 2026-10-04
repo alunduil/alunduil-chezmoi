@@ -1,14 +1,14 @@
 # shellcheck shell=bash
-# Shared helpers for .chezmoiscripts/ bootstrap passes. Passes source this
-# from {{ .chezmoi.sourceDir }}, which holds the full source tree at apply
-# time even though .chezmoiignore keeps script/ out of $HOME.
+# Shared helpers for .chezmoiscripts/ bootstrap passes. None reaches sudo on
+# a converged host. Passes source this from
+# {{ .chezmoi.sourceDir }}: .chezmoiignore keeps script/ out of $HOME, but
+# the source tree is always present at apply time.
 
 log() { printf '==> %s\n' "$*" >&2; }
 
 _bootstrap_installed=0
 
-# Takes `install`'s own argument list; the difference is that an unchanged
-# DEST is left alone, so a converged host never reaches sudo.
+# Takes `install`'s arguments; leaves an unchanged DEST alone.
 install_if_changed() {
   local src="${*: -2:1}" dest="${*: -1}"
   if cmp -s "$src" "$dest"; then
@@ -19,8 +19,7 @@ install_if_changed() {
   _bootstrap_installed=1
 }
 
-# Reloads systemd only when install_if_changed placed a file since the last
-# reload, so a converged host never reaches sudo.
+# Reloads systemd if install_if_changed placed a file since the last reload.
 daemon_reload_if_installed() {
   if [ "$_bootstrap_installed" -eq 1 ]; then
     sudo systemctl daemon-reload
@@ -28,8 +27,8 @@ daemon_reload_if_installed() {
   fi
 }
 
-# enable_now UNIT...: enable and start each UNIT unless it already is both,
-# so a converged host never reaches sudo.
+# enable_now UNIT...: enable and start each UNIT not already enabled and
+# active.
 enable_now() {
   local unit
   for unit in "$@"; do

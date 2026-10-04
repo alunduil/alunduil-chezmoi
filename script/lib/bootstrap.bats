@@ -1,9 +1,7 @@
 #!/usr/bin/env bats
 bats_require_minimum_version 1.5.0
 
-# A converged host must not reach sudo: passes run on every apply, and a
-# sudo prompt there means the guard in front of it is broken. sudo is a
-# function that records its arguments, so a test can assert it never ran.
+# Passes run on every apply, so a converged host must never reach sudo.
 
 setup() {
   # shellcheck source=script/lib/bootstrap.sh
