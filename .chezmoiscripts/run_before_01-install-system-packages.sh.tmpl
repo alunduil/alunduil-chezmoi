@@ -5,7 +5,8 @@
 
 set -euo pipefail
 
-log() { printf '==> %s\n' "$*" >&2; }
+# shellcheck source=script/lib/bootstrap.sh
+. "{{ .chezmoi.sourceDir }}/script/lib/bootstrap.sh"
 
 # `dpkg -s` is not this test: it exits 0 for a package in config-files state --
 # removed with `apt remove` but its conffiles retained -- so a package gone
@@ -143,10 +144,6 @@ if ! command -v tailscale >/dev/null 2>&1; then
 else
   log "tailscale: already installed"
 fi
-if ! systemctl is-enabled --quiet tailscaled 2>/dev/null ||
-  ! systemctl is-active --quiet tailscaled 2>/dev/null; then
-  log "tailscale: enabling tailscaled"
-  sudo systemctl enable --now tailscaled
-fi
+enable_now tailscaled
 
 log "system packages complete"

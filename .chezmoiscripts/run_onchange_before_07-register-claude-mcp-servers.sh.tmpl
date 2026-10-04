@@ -18,7 +18,8 @@
 
 set -euo pipefail
 
-log() { printf '==> %s\n' "$*" >&2; }
+# shellcheck source=script/lib/bootstrap.sh
+. "{{ .chezmoi.sourceDir }}/script/lib/bootstrap.sh"
 
 # One listing for every check below: it is a network round-trip per registered
 # server, so a call per candidate costs seconds.

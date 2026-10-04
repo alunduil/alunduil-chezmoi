@@ -6,7 +6,8 @@
 
 set -euo pipefail
 
-log() { printf '==> %s\n' "$*" >&2; }
+# shellcheck source=script/lib/bootstrap.sh
+. "{{ .chezmoi.sourceDir }}/script/lib/bootstrap.sh"
 
 # ------------------------------------------------------------------- rustup
 # --no-modify-path: chezmoi overwrites ~/.bashrc on apply, and the managed
