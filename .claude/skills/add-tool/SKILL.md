@@ -33,6 +33,7 @@ All passes live under `.chezmoiscripts/`.
 | npm package           | `run_before_03`                           | `npm install -g`, `command -v` |
 | Cargo crate           | `run_before_09`                           | `cargo install`, `command -v`  |
 | `gh` extension        | `run_before_05`                           | `gh extension install --pin`   |
+| PyPI package          | `run_before_02`                           | `uv tool install` (below)      |
 
 Auth and install axes are independent: `gcx` is auth-required *and*
 uses `script/install/`; `gh-poi` is fire-and-forget *and* uses
@@ -83,8 +84,39 @@ That pass runs on every apply, so the installer's own
 `installed_version_matches` guard is what makes a bump take effect — the
 install script must no-op when the pinned version is already on disk.
 
-Add a Renovate custom-manager entry so `<TOOL>_VERSION` tracks GitHub
-releases — see the `renovate` skill for the regex-manager pattern.
+Put `# renovate: datasource=github-releases depName=<owner>/<tool>`
+directly above `TOOL_VERSION`. The regex manager in `renovate.json`
+reads every annotated `*_VERSION` pin under `script/install/` and
+`.chezmoiscripts/`, so no Renovate config change is needed.
+
+## PyPI packages
+
+Mirror the `beets` block in
+`.chezmoiscripts/run_before_02-install-binary-tools.sh.tmpl`:
+
+- `# renovate: datasource=pypi depName=<pkg>` directly above each
+  `<PKG>_VERSION` pin, including every `--with` extra.
+- Guard on `uv tool list --show-with --show-version-specifiers`,
+  matching the full requirement line with `grep -qxF`, so bumping any
+  pin in the set reinstalls. `<tool> --version` cannot tell a uv
+  install from a pip one at the same version.
+- `uv tool install --force` so it replaces any earlier install of the
+  same command on PATH.
+
+### Libraries with no console script
+
+`uv tool install` needs an executable, so a library takes one of two
+shapes:
+
+1. An installed tool imports it (plugins, optional backends): add it
+   as a pinned `--with` extra on that tool, as `beets` carries
+   `pyacoustid`.
+2. Otherwise, keep it off the host. The caller runs
+   `uv run --with <pkg>==<version> <script>` and owns the pin. No
+   bootstrap change, no README line.
+
+Install a CLI front-end that wraps the library only when its command
+is itself wanted.
 
 ## Procedure
 
@@ -93,7 +125,7 @@ releases — see the `renovate` skill for the regex-manager pattern.
 3. Update README:
    - Auth-required → add to "Interactive logins" with config-path comment
    - Fire-and-forget → add to "PATH check" line
-4. Pin via Renovate when the version lives in shell/script.
+4. Annotate every `*_VERSION` pin with its `# renovate:` comment.
 5. Run sensors before claiming done:
 
    ```bash
