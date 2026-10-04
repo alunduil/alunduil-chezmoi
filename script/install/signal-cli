@@ -28,14 +28,28 @@ gpghome="$(mktemp -d)"
 chmod 700 "$gpghome"
 trap 'rm -rf "$tmp" "$gpghome"' EXIT
 
-# Releases ship `.asc` detached signatures, no checksums file -- so
-# verify_gpg checks the download instead of a sha256.
+# Releases ship `.asc` detached signatures, no checksums file, so the
+# download is checked against the pinned signing key instead of a sha256.
 base="https://github.com/AsamK/signal-cli/releases/download/${SIGNAL_CLI_VERSION}"
 asset="signal-cli-${SIGNAL_CLI_VERSION#v}-${ARCH}.tar.gz"
 download "$base/$asset" "$tmp/$asset"
 download "$base/$asset.asc" "$tmp/$asset.asc"
 
-verify_gpg "$tmp/$asset" "$tmp/$asset.asc" "$KEY_URL" "$KEY_FPR" "$gpghome"
+# The ephemeral keyring keeps the user's ~/.gnupg untouched. Asserting the
+# imported fingerprint stops a swapped key from slipping through.
+download "$KEY_URL" "$gpghome/key.asc"
+GNUPGHOME="$gpghome" gpg --quiet --batch --import "$gpghome/key.asc" 2>/dev/null
+actual_fpr="$(GNUPGHOME="$gpghome" gpg --list-keys --with-colons |
+  awk -F: '$1 == "fpr" {print $10; exit}')"
+if [ "$actual_fpr" != "$KEY_FPR" ]; then
+  printf '%s: gpg fingerprint mismatch on %s -- expected %s, got %s\n' \
+    "${0##*/}" "$KEY_URL" "$KEY_FPR" "$actual_fpr" >&2
+  exit 1
+fi
+if ! GNUPGHOME="$gpghome" gpg --quiet --batch --verify "$tmp/$asset.asc" "$tmp/$asset" 2>/dev/null; then
+  printf '%s: gpg signature verification failed for %s\n' "${0##*/}" "$asset" >&2
+  exit 1
+fi
 
 tar -xzf "$tmp/$asset" -C "$tmp" signal-cli
 mkdir -p "$BIN_DIR"
