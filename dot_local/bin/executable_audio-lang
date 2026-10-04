@@ -1,0 +1,99 @@
+#!/usr/bin/env -S uv run --quiet --script
+# /// script
+# dependencies = ["faster-whisper==1.2.1"]
+# ///
+"""Identify the spoken language of a media file's audio track.
+
+Prints the three likeliest languages for one audio track of FILE as
+tab-separated ISO 639-1 code and probability, most likely first. Use it to
+tell an original-language track from a dub when the container carries no
+language tags.
+
+A single 30-second window misreads sparse dialogue, so detection votes
+across ten voice-activity-filtered segments of a long sample: on A Grand
+Day Out, 60 seconds read as Nynorsk at 0.18 where ten minutes read as
+Russian at 0.99.
+
+Audio is decoded by the host ffmpeg rather than faster-whisper's PyAV path,
+whose unpinned av dependency breaks decode_audio on newer releases.
+
+The model is fetched from Hugging Face on first use and cached under
+~/.cache/huggingface; it is regenerable, so it stays there.
+"""
+
+import argparse
+import subprocess
+import sys
+
+import numpy as np
+from faster_whisper import WhisperModel
+
+SAMPLE_RATE = 16000
+
+
+def parse_args(argv):
+    parser = argparse.ArgumentParser(
+        prog="audio-lang",
+        description=__doc__,
+        formatter_class=argparse.RawDescriptionHelpFormatter,
+    )
+    parser.add_argument("file", metavar="FILE")
+    parser.add_argument(
+        "-a",
+        "--audio-stream",
+        type=int,
+        default=0,
+        metavar="N",
+        help="audio track, counted among audio streams only (default: %(default)s)",
+    )
+    parser.add_argument(
+        "--start",
+        type=float,
+        default=60,
+        metavar="SECONDS",
+        help="sample start; skips cold opens and title music (default: %(default)s)",
+    )
+    parser.add_argument(
+        "--duration",
+        type=float,
+        default=600,
+        metavar="SECONDS",
+        help="sample length (default: %(default)s)",
+    )
+    parser.add_argument(
+        "--model", default="tiny", metavar="NAME", help="Whisper model size (default: %(default)s)"
+    )
+    return parser.parse_args(argv)
+
+
+def decode(path, stream, start, duration):
+    result = subprocess.run(
+        [
+            "ffmpeg", "-nostdin", "-v", "error",
+            "-ss", str(start), "-i", path, "-t", str(duration),
+            "-map", f"0:a:{stream}", "-ac", "1", "-ar", str(SAMPLE_RATE),
+            "-f", "s16le", "-",
+        ],
+        capture_output=True,
+    )
+    if result.returncode != 0:
+        sys.exit(f"Error: ffmpeg failed on {path}:\n{result.stderr.decode(errors='replace')}")
+    audio = np.frombuffer(result.stdout, np.int16).astype(np.float32) / 32768
+    if audio.size == 0:
+        sys.exit(f"Error: no audio in {path} from {start}s on stream a:{stream}")
+    return audio
+
+
+def main(argv=None):
+    args = parse_args(argv)
+    audio = decode(args.file, args.audio_stream, args.start, args.duration)
+    model = WhisperModel(args.model, device="cpu", compute_type="int8")
+    _, _, ranked = model.detect_language(
+        audio=audio, vad_filter=True, language_detection_segments=10
+    )
+    for language, probability in ranked[:3]:
+        print(f"{language}\t{probability:.2f}")
+
+
+if __name__ == "__main__":
+    main()

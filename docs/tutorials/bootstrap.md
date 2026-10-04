@@ -34,6 +34,7 @@ pre-commit --version                       # git hook runner (uv tool install)
 beet --version                             # music tagger (uv tool install)
 ffprobe -version && mediainfo --version    # media inspection (ffmpeg, mediainfo)
 exiftool -ver && fpcalc -version           # metadata reader, audio fingerprinter
+command -v audio-lang                      # spoken-language ID (uv run --script)
 rsync --version                            # file sync
 ghc --version && cabal --version           # ghcup-managed Haskell toolchain
 cargo --version && rustc --version         # rustup-managed Rust toolchain
