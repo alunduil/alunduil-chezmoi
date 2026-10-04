@@ -36,8 +36,8 @@ log "rust: $(rustc --version)"
 
 # ------------------------------------------------------------------ cargo-cache
 # Backs dev-cache-gc's `cargo-cache --autoclean`. cargo-cache ships only on
-# crates.io (no release binaries), so it can't use the script/install/
-# download-and-verify pattern; `cargo install` is the canonical path. Pin
+# crates.io (no release binaries), so it can't be a chezmoi external;
+# `cargo install` is the canonical path. Pin
 # enforced (Renovate-tracked, crate datasource): if a different version is
 # installed, --force replaces it so bumps actually take effect.
 # renovate: datasource=crate depName=cargo-cache

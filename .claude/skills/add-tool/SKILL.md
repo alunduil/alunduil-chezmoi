@@ -42,17 +42,21 @@ All passes live under `.chezmoiscripts/`.
 
 Pick the canonical installer for the ecosystem:
 
-| Source                | Pass                                      | Pattern                        |
-| --------------------- | ----------------------------------------- | ------------------------------ |
-| Debian package        | `.chezmoidata/packages.yaml`              | append to `packages.apt`       |
-| Pinned binary release | `run_before_02` + `script/install/<tool>` | template below                 |
-| npm package           | `run_before_03`                           | `npm install -g`, `command -v` |
-| Cargo crate           | `run_before_09`                           | `cargo install`, `command -v`  |
-| `gh` extension        | `run_before_05`                           | `gh extension install --pin`   |
-| PyPI package          | `run_before_02`                           | mirror the `beets` block       |
+| Source                | Where                                 | Pattern                        |
+| --------------------- | ------------------------------------- | ------------------------------ |
+| Debian package        | `.chezmoidata/packages.yaml`          | append to `packages.apt`       |
+| Pinned binary release | `.chezmoiexternal.toml.tmpl`          | external entry below           |
+| npm package           | `run_before_03`                       | `npm install -g`, `command -v` |
+| Cargo crate           | `run_before_09`                       | `cargo install`, `command -v`  |
+| `gh` extension        | `run_before_05`                       | `gh extension install --pin`   |
+| PyPI package          | `run_after_install-uv-tools`          | mirror the `beets` block       |
+
+A release binary that needs more than a download (signature check,
+source build) gets a `script/install/<tool>` script called from
+`run_before_02` instead; mirror `script/install/signal-cli`.
 
 Auth and install axes are independent: `gcx` is auth-required *and*
-uses `script/install/`; `gh-poi` is fire-and-forget *and* uses
+a chezmoi external; `gh-poi` is fire-and-forget *and* uses
 `gh extension install`.
 
 ## Pin the version
@@ -64,58 +68,43 @@ Annotate each `*_VERSION` pin on the line directly above it:
 | Pinned binary release | `# renovate: datasource=github-releases depName=<owner>/<tool>`         |
 | PyPI package          | `# renovate: datasource=pypi depName=<pkg>`, one per `--with` extra too |
 
-## `script/install/<tool>` template
+## External entry
 
-Mirror `script/install/{zellij,lazygit,act,gcx}`. Mode 0755:
+Add the version to `.chezmoidata/versions.yaml` under `versions`, with
+its annotation above it:
 
-```bash
-#!/usr/bin/env bash
-set -euo pipefail
-
-# renovate: datasource=github-releases depName=<owner>/<tool>
-TOOL_VERSION="vX.Y.Z"
-ARCH="<release-arch-string>"
-
-# shellcheck source-path=SCRIPTDIR source=lib.sh
-. "$(dirname "$0")/lib.sh"
-
-parse_bin_dir "$@"
-
-bin="$BIN_DIR/<tool>"
-if [ -x "$bin" ] && "$bin" --version 2>/dev/null | grep -qF "${TOOL_VERSION#v}"; then
-  printf '==> <tool>: %s already installed at %s\n' "$TOOL_VERSION" "$bin" >&2
-  exit 0
-fi
-
-printf '==> <tool>: downloading %s\n' "$TOOL_VERSION" >&2
-tmp="$(mktemp -d)"
-trap 'rm -rf "$tmp"' EXIT
-
-base="https://github.com/<owner>/<tool>/releases/download/${TOOL_VERSION}"
-asset="<tool>_${TOOL_VERSION#v}_${ARCH}.tar.gz"
-curl -fsSL -o "$tmp/$asset" "$base/$asset"
-curl -fsSL -o "$tmp/checksums.txt" "$base/checksums.txt"
-
-expected="$(expected_from_checksums "$tmp/checksums.txt" "$asset")"
-verify_sha256 "$tmp/$asset" "$expected"
-
-tar -xzf "$tmp/$asset" -C "$tmp" <tool>
-mkdir -p "$BIN_DIR"
-install -m 0755 "$tmp/<tool>" "$bin"
+```yaml
+  # renovate: datasource=github-releases depName=<owner>/<tool>
+  TOOL_VERSION: "vX.Y.Z"
 ```
 
-In `.chezmoiscripts/run_before_02-install-binary-tools.sh.tmpl`, add
-`"$INSTALL_DIR/<tool>" --bin-dir "$HOME/.local/bin"` to the call list.
-That pass runs on every apply, so the installer's own
-`installed_version_matches` guard is what makes a bump take effect — the
-install script must no-op when the pinned version is already on disk.
+Then add an entry to `.chezmoiexternal.toml.tmpl`, mirroring `vale` or
+`lazygit`. Build the whole address from the version, including any
+copy of it in the asset filename, so a Renovate bump stays complete:
+
+```toml
+[".local/bin/<tool>"]
+    type = "archive-file"
+    url = "https://github.com/<owner>/<tool>/releases/download/{{ $v.TOOL_VERSION }}/<tool>_{{ trimPrefix "v" $v.TOOL_VERSION }}_<arch>.tar.gz"
+    path = "<tool>"
+    executable = true
+```
+
+Use `type = "file"` for a raw binary asset. Store no checksum for a
+release asset: the pinned address fixes its bytes (ADR 0008). Only a
+GitHub source-archive tarball (`archive/refs/tags/…`) carries an inline
+`checksum.sha256`.
+
+A pass that runs the new binary is `run_after_`, since externals deploy
+during apply.
 
 ## Procedure
 
 1. For a library with no console script, settle its shape first; stop
    if it stays off the host.
 2. Identify the auth axis and install mechanism.
-3. Wire the installer into the right `.chezmoiscripts/run_*_before_NN` pass.
+3. Wire the installer into the right `.chezmoiscripts/` pass, or add
+   the external entry.
 4. Update README:
    - Auth-required → add to "Interactive logins" with config-path comment
    - Fire-and-forget → add to "PATH check" line
