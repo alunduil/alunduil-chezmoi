@@ -1,8 +1,8 @@
 # shellcheck shell=bash
 # Shared helpers for .chezmoiscripts/ bootstrap passes. None reaches sudo on
-# a converged host. Passes source this from
-# {{ .chezmoi.sourceDir }}: .chezmoiignore keeps script/ out of $HOME, but
-# the source tree is always present at apply time.
+# a converged host. Passes source this from {{ .chezmoi.sourceDir }}:
+# .chezmoiignore keeps script/ out of $HOME, but the source tree is always
+# present at apply time.
 
 log() { printf '==> %s\n' "$*" >&2; }
 
