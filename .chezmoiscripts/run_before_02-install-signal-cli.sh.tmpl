@@ -1,0 +1,9 @@
+#!/usr/bin/env bash
+# signal-cli is GPG-signed with no published checksum, and externals verify
+# hashes, not signatures, so it keeps an installer script. The script pins its
+# own version and no-ops when that version is already on disk, so a version
+# bump and a deleted binary reconcile by the same path.
+
+set -euo pipefail
+
+"{{ .chezmoi.sourceDir }}/script/install/signal-cli" --bin-dir "$HOME/.local/bin"

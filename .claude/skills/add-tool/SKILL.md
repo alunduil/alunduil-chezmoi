@@ -52,8 +52,9 @@ Pick the canonical installer for the ecosystem:
 | PyPI package          | `run_after_install-uv-tools`          | mirror the `beets` block       |
 
 A release binary that needs more than a download (signature check,
-source build) gets a `script/install/<tool>` script called from
-`run_before_02` instead; mirror `script/install/signal-cli`.
+source build) gets a `script/install/<tool>` script and its own
+`run_before_NN` pass instead; mirror `script/install/signal-cli` and
+`run_before_02-install-signal-cli`.
 
 Auth and install axes are independent: `gcx` is auth-required *and*
 a chezmoi external; `gh-poi` is fire-and-forget *and* uses
