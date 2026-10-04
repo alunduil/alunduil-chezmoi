@@ -8,6 +8,7 @@ repos:
     hooks:
       - id: shellcheck
         files: (executable_|\.sh\.tmpl$)
+        exclude: ^dot_local/bin/executable_audio-lang$
         types: [text]
 
   - repo: https://github.com/scop/pre-commit-shfmt
@@ -16,6 +17,7 @@ repos:
       - id: shfmt
         args: ['-i', '2', '-ci']
         files: (executable_|\.sh\.tmpl$)
+        exclude: ^dot_local/bin/executable_audio-lang$
         types: [text]
 
   - repo: https://github.com/pre-commit/pre-commit-hooks
