@@ -18,13 +18,13 @@ is_installed() {
 # exists, so a converged host makes no sudo call. The keyring path is the
 # guard, so renaming an existing keyring or list re-registers on every host.
 #
-#   add_apt_repo KEYRING KEY_URL LIST OPTIONS ENTRY
+#   add_apt_repo KEYRING KEY_URL LIST ENTRY [OPTIONS]
 #
 # KEYRING and LIST are file names under /usr/share/keyrings/ and
-# /etc/apt/sources.list.d/. OPTIONS are deb options besides signed-by (may be
-# empty); ENTRY is the URI, suite, and components.
+# /etc/apt/sources.list.d/. ENTRY is the URI, suite, and components; OPTIONS
+# are deb options besides signed-by.
 add_apt_repo() {
-  local keyring="/usr/share/keyrings/$1" key_url="$2" list="$3" options="$4" entry="$5"
+  local keyring="/usr/share/keyrings/$1" key_url="$2" list="$3" entry="$4" options="${5:-}"
   [ -f "$keyring" ] && return
   log "${list%.list}: adding apt repository"
   curl -fsSL "$key_url" | sudo gpg --dearmor -o "$keyring"
@@ -32,22 +32,21 @@ add_apt_repo() {
     sudo tee "/etc/apt/sources.list.d/$list" >/dev/null
 }
 
+arch=$(dpkg --print-architecture)
+codename='{{ .chezmoi.osRelease.versionCodename }}'
+
 add_apt_repo hashicorp-archive-keyring.gpg https://apt.releases.hashicorp.com/gpg \
-  hashicorp.list '' \
-  'https://apt.releases.hashicorp.com {{ .chezmoi.osRelease.versionCodename }} main'
+  hashicorp.list "https://apt.releases.hashicorp.com $codename main"
 
 add_apt_repo githubcli-archive-keyring.gpg https://cli.github.com/packages/githubcli-archive-keyring.gpg \
-  github-cli.list "arch=$(dpkg --print-architecture)" \
-  'https://cli.github.com/packages stable main'
+  github-cli.list 'https://cli.github.com/packages stable main' "arch=$arch"
 
 # Signal publishes amd64 builds only, under the fixed suite xenial.
 add_apt_repo signal-desktop-keyring.gpg https://updates.signal.org/desktop/apt/keys.asc \
-  signal-xenial.list 'arch=amd64' \
-  'https://updates.signal.org/desktop/apt xenial main'
+  signal-xenial.list 'https://updates.signal.org/desktop/apt xenial main' 'arch=amd64'
 
 add_apt_repo docker-archive-keyring.gpg https://download.docker.com/linux/debian/gpg \
-  docker.list "arch=$(dpkg --print-architecture)" \
-  'https://download.docker.com/linux/debian {{ .chezmoi.osRelease.versionCodename }} stable'
+  docker.list "https://download.docker.com/linux/debian $codename stable" "arch=$arch"
 
 # temurin-21-jdk backs the JVM-based Firebase emulators that genshin's
 # `pnpm dev` starts when that project is developed on the host rather than in
@@ -55,8 +54,7 @@ add_apt_repo docker-archive-keyring.gpg https://download.docker.com/linux/debian
 # backports, so Adoptium is where a 21 comes from; it is also what the
 # devcontainers `java:1` feature installs, keeping both paths on one runtime.
 add_apt_repo adoptium-archive-keyring.gpg https://packages.adoptium.net/artifactory/api/gpg/key/public \
-  adoptium.list '' \
-  'https://packages.adoptium.net/artifactory/deb {{ .chezmoi.osRelease.versionCodename }} main'
+  adoptium.list "https://packages.adoptium.net/artifactory/deb $codename main"
 
 # -------------------------------------------------------------------- keybase
 # Outside add_apt_repo: there is no key. Keybase's apt repo is unsigned; their
@@ -91,7 +89,7 @@ if [ ! -f /usr/share/keyrings/1password-archive-keyring.gpg ]; then
   curl -fsSL https://downloads.1password.com/linux/keys/1password.asc |
     sudo gpg --dearmor -o /usr/share/keyrings/1password-archive-keyring.gpg
   printf 'deb [arch=%s signed-by=/usr/share/keyrings/1password-archive-keyring.gpg] https://downloads.1password.com/linux/debian/%s stable main\n' \
-    "$(dpkg --print-architecture)" "$(dpkg --print-architecture)" |
+    "$arch" "$arch" |
     sudo tee /etc/apt/sources.list.d/1password.list >/dev/null
   sudo mkdir -p /etc/debsig/policies/AC2D62742012EA22/
   curl -fsSL https://downloads.1password.com/linux/debian/debsig/1password.pol |
