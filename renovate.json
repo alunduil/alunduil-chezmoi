@@ -27,8 +27,31 @@
         "replacement"
       ],
       "minimumReleaseAge": null
+    },
+    {
+      "description": "ghcup's metadata carries no cabal release dates, so the bake would stall these forever; a version reaching ghcup's curated metadata is the bake",
+      "matchDatasources": ["custom.ghcup-cabal"],
+      "minimumReleaseAge": null
     }
   ],
+  "customDatasources": {
+    "ghcup-ghc": {
+      "description": "GHC versions ghcup can install on x86_64 Debian, from the metadata ghcup itself reads",
+      "defaultRegistryUrlTemplate": "https://raw.githubusercontent.com/haskell/ghcup-metadata/master/ghcup-0.1.0.yaml",
+      "format": "yaml",
+      "transformTemplates": [
+        "{ \"releases\": [$each(ghcupDownloads.GHC.toolVersions, function($v, $k) { ($exists($v.viArch.A_64.Linux_Debian) or $exists($v.viArch.A_64.Linux_UnknownLinux)) ? { \"version\": $k, \"releaseTimestamp\": $v.viReleaseDay } })] }"
+      ]
+    },
+    "ghcup-cabal": {
+      "description": "cabal-install versions ghcup can install on x86_64 Debian, from the metadata ghcup itself reads",
+      "defaultRegistryUrlTemplate": "https://raw.githubusercontent.com/haskell/ghcup-metadata/master/ghcup-0.1.0.yaml",
+      "format": "yaml",
+      "transformTemplates": [
+        "{ \"releases\": [$each(ghcupDownloads.Cabal.toolVersions, function($v, $k) { ($exists($v.viArch.A_64.Linux_Debian) or $exists($v.viArch.A_64.Linux_UnknownLinux)) ? { \"version\": $k, \"releaseTimestamp\": $v.viReleaseDay } })] }"
+      ]
+    }
+  },
   "customManagers": [
     {
       "customType": "regex",
