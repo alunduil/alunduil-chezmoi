@@ -15,8 +15,7 @@ two shapes:
 
 1. An installed tool imports it (plugins, optional backends): add it
    as a pinned `--with` extra on that tool, as `beets` carries
-   `pyacoustid`. Continue with that tool's block under
-   [PyPI packages](#pypi-packages).
+   `pyacoustid`.
 2. Otherwise, keep it off the host. The caller runs
    `uv run --with <pkg>==<version> <script>` and owns the pin. Stop
    here: no bootstrap change, no README line.
@@ -50,7 +49,7 @@ Pick the canonical installer for the ecosystem:
 | npm package           | `run_before_03`                           | `npm install -g`, `command -v` |
 | Cargo crate           | `run_before_09`                           | `cargo install`, `command -v`  |
 | `gh` extension        | `run_before_05`                           | `gh extension install --pin`   |
-| PyPI package          | `run_before_02`                           | `uv tool install` (below)      |
+| PyPI package          | `run_before_02`                           | mirror the `beets` block       |
 
 Auth and install axes are independent: `gcx` is auth-required *and*
 uses `script/install/`; `gh-poi` is fire-and-forget *and* uses
@@ -58,10 +57,7 @@ uses `script/install/`; `gh-poi` is fire-and-forget *and* uses
 
 ## Pin the version
 
-Every `*_VERSION` pin carries a `# renovate:` comment on the line
-directly above it. The regex manager in `renovate.json` reads every
-annotated pin under `script/install/` and `.chezmoiscripts/`, so no
-Renovate config change is needed.
+Annotate each `*_VERSION` pin on the line directly above it:
 
 | Source                | Annotation                                                              |
 | --------------------- | ----------------------------------------------------------------------- |
@@ -113,18 +109,6 @@ In `.chezmoiscripts/run_before_02-install-binary-tools.sh.tmpl`, add
 That pass runs on every apply, so the installer's own
 `installed_version_matches` guard is what makes a bump take effect — the
 install script must no-op when the pinned version is already on disk.
-
-## PyPI packages
-
-Mirror the `beets` block in
-`.chezmoiscripts/run_before_02-install-binary-tools.sh.tmpl`:
-
-- Guard on `uv tool list --show-with --show-version-specifiers`,
-  matching the full requirement line with `grep -qxF`, so bumping any
-  pin in the set reinstalls. `<tool> --version` cannot tell a uv
-  install from a pip one at the same version.
-- `uv tool install --force` so it replaces any earlier install of the
-  same command on PATH.
 
 ## Procedure
 
