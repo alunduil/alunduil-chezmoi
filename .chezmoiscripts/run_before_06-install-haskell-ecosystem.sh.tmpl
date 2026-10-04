@@ -7,9 +7,8 @@ set -euo pipefail
 
 log() { printf '==> %s\n' "$*" >&2; }
 
-# The ghcup datasource (renovate.json) reads ghcup's own release metadata, so
-# Renovate proposes only versions `ghcup install` can fetch. Upstream GHC and
-# cabal tag releases before ghcup lists them.
+# GHC and cabal tag releases before ghcup can install them, so Renovate reads
+# ghcup's own metadata (custom.ghcup in renovate.json).
 # renovate: datasource=custom.ghcup depName=ghc packageName=GHC
 GHC_VERSION="9.14.1"
 # Renovate's default semver-coerced versioning truncates cabal's fourth
