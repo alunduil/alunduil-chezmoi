@@ -38,13 +38,13 @@ Bootstrap lives in `.chezmoiscripts/`: `run_*_before_*.sh.tmpl` install and conf
 - **Convergent, not once-only.** Install passes are plain `run_`: they execute on every apply and check host state before acting—a `dpkg-query` status before `apt-get install`, a pinned `--version` before a download, `cmp` before a `sudo install` into `/etc`. Drift heals, and a converged host triggers no `sudo` at all. The alternative prefixes can't do this. `run_once_` and `run_onchange_` key off the *script's* content. A package removed by `apt autoremove`, a deleted binary, or a hand-edited `/etc` file leaves that text untouched, so the pass never re-fires.
   This is a deliberate departure from [chezmoi's own package-install guide](https://www.chezmoi.io/user-guide/advanced/install-packages-declaratively/), which uses `run_onchange_` keyed on a package list. That pattern re-runs when the *list* changes, so a package the list already names but apt has since removed stays missing.
 - **`run_onchange_` where content is the only trigger.** Two cases keep it. `_07` registers Claude MCP servers: `claude mcp list` costs a network round-trip per server, and nothing removes a registration behind your back. The `run_onchange_after_register-*-mcp` passes carry rotating secrets, so they must re-register when the secret changes rather than when the host differs.
-- **`after` means it needs an applied file.** The `enable-*` passes run after because the units they enable are chezmoi targets under `dot_config/systemd/user/`, and the MCP registrations because they read a token chezmoi decrypts on apply. Nothing else earns the phase: enabling a service its own package shipped, like `tailscaled`, stays with the pass that installed it rather than splitting one concern in two.
+- **`after` means it needs an applied file.** The `enable-*` passes run after because the units they enable are chezmoi targets under `dot_config/systemd/user/`, the MCP registrations because they read a token chezmoi decrypts on apply, and `install-via-externals` because the `uv` and `gcx` it runs are externals that apply writes. Nothing else earns the phase: enabling a service its own package shipped, like `tailscaled`, stays with the pass that installed it rather than splitting one concern in two.
 - **Ordered where order is load-bearing.** The `before` passes carry a two-digit prefix because some installs depend on others: ghcup must exist before `cabal` can build. The prefix is a stable sort key, not a reservation system, so gaps are fine. The `after` passes are mutually independent, so they drop the number and name the concept. Filename is chezmoi's only ordering lever, so numbers earn their place only where a real dependency exists.
 - **One concern per script** so a failed run names its own scope. Scripts map to a product family, not an install mechanism: a tool needing both `apt` and a binary download lives in one script, not split across passes.
 
 Which manager a unit belongs in, and what it runs as, is a separate question. [ADR 0006](../adr/0006-run-units-at-least-privilege.md) carries that rule.
 
-Tool versions live in `script/install/*` (one script per tool, each pinning its own `*_VERSION`), and both bootstrap and CI reuse them, so there's exactly one place to bump. Zellij *plugins* (`zellaude`, `zjstatus`) pin their versions in the release URLs under the `plugins` block of `dot_config/zellij/config.kdl`, since the plugin registry is independent of the binary.
+Release binaries install as chezmoi externals declared in `.chezmoiexternal.toml`, each pinned by the version in its download address. Bootstrap and CI both get them from `chezmoi apply`, so there's exactly one place to bump. An external is an ordinary target, so a deleted binary comes back on the next apply. The few tools [ADR 0008](../adr/0008-install-pinned-binaries-as-chezmoi-externals.md) keeps as scripts install through `script/install/*` instead. Zellij *plugins* (`zellaude`, `zjstatus`) pin their versions in the release URLs under the `plugins` block of `dot_config/zellij/config.kdl`, since the plugin registry is independent of the binary.
 
 ## Host roles
 
@@ -70,7 +70,7 @@ Age secures secrets at rest but can't itself sign commits or authenticate to SSH
 
 `dot_local/bin/executable_gh` shadows system `gh` to enforce `--draft` on `gh pr create`. The shim exists because Claude Code opens PRs through `gh`, and the project rule is "every PR opens as draft, human promotes to ready." Enforcing this in a wrapper rather than via memory keeps the rule load-bearing even when memory slips. `GH_DRAFT_GUARD=off` overrides for the rare manual case.
 
-`gh` extensions get their own bootstrap pass rather than the `script/install/` download-and-verify pattern, because `gh extension` fetches and pins them itself.
+`gh` extensions get their own bootstrap pass rather than a chezmoi external, because `gh extension` fetches and pins them itself.
 
 ## Two `CLAUDE.md` files
 

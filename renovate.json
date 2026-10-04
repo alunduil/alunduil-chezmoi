@@ -56,6 +56,17 @@
     },
     {
       "customType": "regex",
+      "description": "chezmoi externals pinned in GitHub URLs. currentValue excludes the tag prefix so the global replace also bumps the version in an asset filename; tagPrefix rebuilds extractVersion to keep sibling tags (lychee-lib-v*) out",
+      "managerFilePatterns": [".chezmoiexternal.toml"],
+      "matchStrings": [
+        "https://github\\.com/(?<depName>[^/]+/[^/]+)/releases/download/(?<tagPrefix>[^/\\d]*)(?<currentValue>\\d[^/]*)/[^\"]*",
+        "https://github\\.com/(?<depName>[^/]+/[^/]+)/archive/refs/tags/(?<tagPrefix>[^/\\d]*)(?<currentValue>\\d[^/]*?)\\.tar\\.gz"
+      ],
+      "datasourceTemplate": "github-releases",
+      "extractVersionTemplate": "^{{{tagPrefix}}}(?<version>\\d.*)$"
+    },
+    {
+      "customType": "regex",
       "description": "Zellij plugins, pinned as release-asset URLs rather than a version assignment",
       "managerFilePatterns": ["dot_config/zellij/config.kdl"],
       "matchStrings": [

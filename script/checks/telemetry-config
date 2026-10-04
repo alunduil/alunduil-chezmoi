@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 # Validate the Alloy shipper config with Alloy's own checker. Needs alloy on
-# PATH (installed by script/install/alloy); skips cleanly when it is absent so
-# a pre-bootstrap `just check` does not fail. CI installs it, so there it
+# PATH (a chezmoi external); skips cleanly when it is absent so a
+# pre-bootstrap `just check` does not fail. CI installs it, so there it
 # actually runs.
 set -uo pipefail
 

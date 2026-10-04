@@ -1,0 +1,53 @@
+#!/usr/bin/env bash
+# uv and gcx are externals, which exist only once apply writes its targets.
+
+set -euo pipefail
+
+# shellcheck source=script/lib/bootstrap.sh
+. "{{ .chezmoi.sourceDir }}/script/lib/bootstrap.sh"
+
+uv="$HOME/.local/bin/uv"
+
+# pre-commit ships only as a Python package, so uv owns its install. --force
+# overwrites a pre-existing pip-installed pre-commit on the PATH; the guard
+# keys off `uv tool list` rather than `pre-commit --version`, which can't tell
+# a uv-managed install from the legacy pip one at the same version.
+# renovate: datasource=pypi depName=pre-commit
+PRE_COMMIT_VERSION="4.6.2"
+if "$uv" tool list 2>/dev/null | grep -qx "pre-commit v$PRE_COMMIT_VERSION"; then
+  log "pre-commit: $PRE_COMMIT_VERSION already installed via uv"
+else
+  log "pre-commit: installing $PRE_COMMIT_VERSION via uv"
+  "$uv" tool install --force "pre-commit==$PRE_COMMIT_VERSION"
+fi
+
+# Music-library tagger. pyacoustid and musicbrainzngs have no entry point of
+# their own, so they ride in beets' tool environment via --with rather than
+# being installed as tools; beets 2.x dropped musicbrainzngs as a dependency
+# and ships its own MusicBrainz client, so the pin here is deliberate and not
+# a restatement of beets' metadata. Its fingerprinter needs fpcalc
+# (libchromaprint-tools, script 01). The guard compares the whole requirement
+# set, not just beets' version, so bumping either --with pin reinstalls.
+# renovate: datasource=pypi depName=beets
+BEETS_VERSION="2.14.1"
+# renovate: datasource=pypi depName=pyacoustid
+PYACOUSTID_VERSION="1.3.1"
+# renovate: datasource=pypi depName=musicbrainzngs
+MUSICBRAINZNGS_VERSION="0.7.1"
+beets_installed="beets v$BEETS_VERSION [required: ==$BEETS_VERSION] [with: pyacoustid==$PYACOUSTID_VERSION, musicbrainzngs==$MUSICBRAINZNGS_VERSION]"
+if "$uv" tool list --show-with --show-version-specifiers 2>/dev/null |
+  grep -qxF "$beets_installed"; then
+  log "beets: $BEETS_VERSION already installed via uv"
+else
+  log "beets: installing $BEETS_VERSION via uv"
+  "$uv" tool install --force \
+    --with "pyacoustid==$PYACOUSTID_VERSION" \
+    --with "musicbrainzngs==$MUSICBRAINZNGS_VERSION" \
+    "beets==$BEETS_VERSION"
+fi
+
+# gcx ships its skill bundle inside the binary; `agent skills install --all`
+# extracts it to ~/.agents/skills (the cross-harness convention read by Claude
+# Code, Cursor, Copilot). --force re-syncs gcx-managed files on version bumps
+# without touching anything outside the bundle.
+"$HOME/.local/bin/gcx" agent skills install --all --force >/dev/null

@@ -2,7 +2,7 @@ cache = true
 max_cache_age = "14d"
 retry_wait_time = 5
 
-# No include_fragments here: the pinned binary (script/install/lychee) wants a
+# No include_fragments here: the pinned binary (a chezmoi external) wants a
 # string ("full"), while lychee-action's older bundled binary wants a bool, so no
 # shared value parses in both. The pre-commit lychee hook enables anchor checking
 # via --include-fragments instead.

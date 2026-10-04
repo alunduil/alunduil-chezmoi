@@ -25,7 +25,8 @@ while IFS= read -r file; do
     { prev = $0 }
     END { exit rc }
   ' "$file" || fail=1
-done < <(git ls-files 'script/install/*' '.chezmoiscripts/*.tmpl' '.github/workflows/*.yml')
+done < <(git ls-files 'script/install/*' '.chezmoiscripts/*.tmpl' \
+  '.github/workflows/*.yml' '.github/actions/**/*.yml')
 
 if [ "$fail" -ne 0 ]; then
   printf '%s: pins above lack a `# renovate: datasource=... depName=...` line\n' \

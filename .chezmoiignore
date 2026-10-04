@@ -25,6 +25,7 @@ script
 .chezmoiscripts/**
 .config/**
 .local/bin/**
+.local/lib/bats/**
 .gnupg/**
 .ssh/**
 .bashrc

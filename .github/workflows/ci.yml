@@ -25,11 +25,9 @@ jobs:
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
       # The local lychee hook runs the system binary; provision it here.
-      - name: Install lychee
-        run: |
-          mkdir -p "$HOME/.local/bin"
-          script/install/lychee --bin-dir "$HOME/.local/bin"
-          echo "$HOME/.local/bin" >> "$GITHUB_PATH"
+      - uses: ./.github/actions/setup-chezmoi
+        with:
+          externals: .local/bin/lychee
       # Renovate's digest pinning stops at this line — whatever action we call
       # has to pin its own inner steps, or the chain breaks there.
       - uses: tox-dev/action-pre-commit-uv@e09b8958484dfe71f4ac3bc7afb230ba506402ec # v1.0.5
@@ -43,29 +41,24 @@ jobs:
       # codecov-action authenticates by OIDC, so there is no upload token to
       # store or rotate.
       id-token: write
-    # Versions stay aligned with script/install/bats-libs (the local path);
-    # Renovate bumps both together. The action takes them without the tag's
-    # leading `v`, hence extractVersion.
-    env:
-      # renovate: datasource=github-releases depName=bats-core/bats-support extractVersion=^v(?<version>.+)$
-      BATS_SUPPORT_VERSION: "0.3.0"
-      # renovate: datasource=github-releases depName=bats-core/bats-assert extractVersion=^v(?<version>.+)$
-      BATS_ASSERT_VERSION: "2.2.4"
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
 
+      # Bats itself only: the helper libraries come from the externals below,
+      # the same pin the host loads.
       - uses: bats-core/bats-action@77d6fb60505b4d0d1d73e48bd035b55074bbfb43 # 4.0.0
-        id: setup-bats
         with:
-          # assert defaults to 2.1.0, so pin it explicitly. detik/file stay unused.
-          support-install: true
-          support-version: ${{ env.BATS_SUPPORT_VERSION }}
-          assert-install: true
-          assert-version: ${{ env.BATS_ASSERT_VERSION }}
+          support-install: false
+          assert-install: false
           detik-install: false
           file-install: false
           # bats-action curls api.github.com; auth raises the anonymous rate limit.
           github-token: ${{ secrets.GITHUB_TOKEN }}
+
+      # externals.bats also calls chezmoi.
+      - uses: ./.github/actions/setup-chezmoi
+        with:
+          externals: .local/lib/bats/bats-support .local/lib/bats/bats-assert
 
       # These build deps serve script/install/kcov alone and never reach a host,
       # so they stay here rather than in .chezmoidata/packages.yaml.
@@ -82,13 +75,10 @@ jobs:
       # uncovered despite being tested.
       - name: Test
         run: |
-          kcov --include-path=dot_local,dot_claude,script \
+          BATS_LIB_PATH="$HOME/.local/lib/bats" \
+            kcov --include-path=dot_local,dot_claude,script \
             --exclude-pattern=.bats,/fixtures/ \
             coverage bats --recursive dot_local dot_claude script
-        env:
-          # The action installs to /usr/lib/bats-* without exporting the path,
-          # so bats_load_library needs it from the action's lib-path output.
-          BATS_LIB_PATH: ${{ steps.setup-bats.outputs.lib-path }}
 
       # kcov writes to coverage/bats.<hash>/ and symlinks coverage/bats beside
       # it; the symlink is the only stable path.
@@ -106,11 +96,9 @@ jobs:
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
 
-      - name: Install chezmoi
-        env:
-          # renovate: datasource=github-releases depName=twpayne/chezmoi
-          CHEZMOI_VERSION: "v2.73.0"
-        run: sh -c "$(curl -fsLS get.chezmoi.io)" -- -b /usr/local/bin -t "$CHEZMOI_VERSION"
+      # The apply round-trip fetches every external, so a release asset that
+      # moved fails here.
+      - uses: ./.github/actions/setup-chezmoi
 
       - name: Install age
         run: |
@@ -154,16 +142,9 @@ jobs:
     timeout-minutes: 10
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
-      - uses: actions/cache@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6
+      - uses: ./.github/actions/setup-chezmoi
         with:
-          path: ~/.local/bin
-          key: alloy-bin-${{ hashFiles('script/install/alloy', 'script/install/lib.sh') }}
-
-      - name: Install alloy
-        run: |
-          mkdir -p "$HOME/.local/bin"
-          script/install/alloy --bin-dir "$HOME/.local/bin"
-          echo "$HOME/.local/bin" >>"$GITHUB_PATH"
+          externals: .local/bin/alloy
 
       - name: Validate config
         run: script/checks/telemetry-config
@@ -186,11 +167,9 @@ jobs:
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
 
-      - name: Install vale
-        run: |
-          mkdir -p "$HOME/.local/bin"
-          script/install/vale --bin-dir "$HOME/.local/bin"
-          echo "$HOME/.local/bin" >> "$GITHUB_PATH"
+      - uses: ./.github/actions/setup-chezmoi
+        with:
+          externals: .local/bin/vale
 
       - uses: reviewdog/action-setup@d8a7baabd7f3e8544ee4dbde3ee41d0011c3a93f # v1.5.0
 

@@ -53,12 +53,11 @@ repos:
     hooks:
       - id: markdownlint-cli2
 
-  # System-installed lychee (script/install/lychee, also provisioned by the
-  # bootstrap) rather than an upstream hook: one version pin, and it dodges the
-  # precompiled binary's newer-GLIBC requirement. --offline gates on
-  # internal/relative links only — fast and deterministic. External URLs rot
-  # from time and third parties, not the diff, so weekly.yml checks them
-  # out-of-band (#359).
+  # System-installed lychee (a chezmoi external) rather than an upstream hook:
+  # one version pin, and it dodges the precompiled binary's newer-GLIBC
+  # requirement. --offline gates on internal/relative links only — fast and
+  # deterministic. External URLs rot from time and third parties, not the
+  # diff, so weekly.yml checks them out-of-band (#359).
   - repo: local
     hooks:
       - id: renovate-pins
@@ -66,7 +65,7 @@ repos:
         entry: script/checks/renovate-pins
         language: system
         pass_filenames: false
-        files: ^(script/install/|\.chezmoiscripts/.*\.tmpl$|\.github/workflows/)
+        files: ^(script/install/|\.chezmoiscripts/.*\.tmpl$|\.github/(workflows|actions)/)
 
       - id: bootstrap-convergence
         name: bootstrap-convergence

@@ -31,7 +31,8 @@ effect on `apply` until committed and pulled into the apply clone. Use
   secrets must re-register on change). Everything else is plain `run_`.
   No `run_once_` — it keys off script content, so it cannot see drift.
 - `after` is for passes that consume something `chezmoi apply` deploys: a
-  user unit from `dot_config/systemd/user/`, a decrypted token. That
+  user unit from `dot_config/systemd/user/`, a decrypted token, an
+  external binary. That
   dependency is the only thing that forces the phase — everything else is
   `before`. Enabling a service the package itself shipped (tailscaled)
   forces nothing, so it stays in the pass that installed it rather than
@@ -42,10 +43,13 @@ effect on `apply` until committed and pulled into the apply clone. Use
 - pre-commit shellchecks `.sh.tmpl` files unrendered, so a `{{ … }}`
   expression must sit inside quotes or a comment. That is why the package
   lists arrive via `read -ra <<<'{{ … }}'` rather than an array literal.
-- Tool versions live in `script/install/*` (one script per tool, each
-  pinning its own `*_VERSION`) and are reused by both bootstrap and CI.
-  Bump in one place. Zellij *plugins* (`zellaude`, `zjstatus`) pin their
-  version inside the release URL in the `plugins` block of
+- Release binaries are chezmoi externals in `.chezmoiexternal.toml`, each
+  pinned by the version in its URL; bootstrap and CI
+  (`.github/actions/setup-chezmoi`) both apply them. Renovate bumps every
+  copy of a version in a URL, so write it out in full and leave it
+  unannotated. ADR 0008 names the tools that stay `script/install/*`
+  scripts, each pinning its own `*_VERSION`. Zellij *plugins* (`zellaude`, `zjstatus`)
+  pin their version inside the release URL in the `plugins` block of
   `dot_config/zellij/config.kdl`.
 - Every `*_VERSION` pin carries a `# renovate: datasource=… depName=…`
   line directly above it (order: datasource, depName, packageName,
