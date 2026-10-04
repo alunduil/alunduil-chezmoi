@@ -5,9 +5,10 @@
 
 log() { printf '==> %s\n' "$*" >&2; }
 
+_bootstrap_installed=0
+
 # Takes `install`'s own argument list; the difference is that an unchanged
-# DEST is left alone, so a converged host never reaches sudo. Sets changed=1
-# when it installs, so the caller can gate `systemctl daemon-reload` on it.
+# DEST is left alone, so a converged host never reaches sudo.
 install_if_changed() {
   local src="${*: -2:1}" dest="${*: -1}"
   if cmp -s "$src" "$dest"; then
@@ -15,8 +16,16 @@ install_if_changed() {
   fi
   log "installing $dest"
   sudo install "$@"
-  # shellcheck disable=SC2034 # read by the sourcing pass
-  changed=1
+  _bootstrap_installed=1
+}
+
+# Reloads systemd only when install_if_changed placed a file since the last
+# reload, so a converged host never reaches sudo.
+daemon_reload_if_installed() {
+  if [ "$_bootstrap_installed" -eq 1 ]; then
+    sudo systemctl daemon-reload
+    _bootstrap_installed=0
+  fi
 }
 
 # enable_now UNIT...: enable and start each UNIT unless it already is both,

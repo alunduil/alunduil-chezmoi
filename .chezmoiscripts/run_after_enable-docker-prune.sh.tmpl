@@ -21,13 +21,10 @@ fi
 
 UNIT_SRC="{{ .chezmoi.sourceDir }}/etc/systemd/system"
 
-changed=0
 for unit in docker-prune.service docker-prune.timer; do
   install_if_changed -m 0644 "$UNIT_SRC/$unit" "/etc/systemd/system/$unit"
 done
 
-if [ "$changed" -eq 1 ]; then
-  sudo systemctl daemon-reload
-fi
+daemon_reload_if_installed
 
 enable_now docker-prune.timer

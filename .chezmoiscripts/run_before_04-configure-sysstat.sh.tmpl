@@ -18,8 +18,6 @@ set -euo pipefail
 # shellcheck source=script/lib/bootstrap.sh
 . "{{ .chezmoi.sourceDir }}/script/lib/bootstrap.sh"
 
-changed=0
-
 ETC_SRC="{{ .chezmoi.sourceDir }}/etc"
 
 # ------------------------------------------------------------------- config
@@ -28,9 +26,7 @@ install_if_changed -D -m 0644 \
   "$ETC_SRC/systemd/system/sysstat-collect.timer.d/interval.conf" \
   /etc/systemd/system/sysstat-collect.timer.d/interval.conf
 
-if [ "$changed" -eq 1 ]; then
-  sudo systemctl daemon-reload
-fi
+daemon_reload_if_installed
 
 # ----------------------------------------------------------------- collection
 if ! grep -qx 'ENABLED="true"' /etc/default/sysstat 2>/dev/null; then
