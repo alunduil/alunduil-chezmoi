@@ -2,7 +2,7 @@
 
 ## Status
 
-Accepted
+Superseded by [0008](0008-install-pinned-binaries-as-chezmoi-externals.md).
 
 ## Context
 
