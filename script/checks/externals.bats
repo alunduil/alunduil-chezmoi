@@ -5,7 +5,7 @@ bats_require_minimum_version 1.5.0
 # excludes scripts, so the .chezmoiscripts/ passes never run there. These
 # catch a CLI rename (gcx v0.2.14 moved `skills` under `agent`) or an
 # interface change before it breaks `chezmoi apply`. Keep the arguments in
-# sync with the run_after_install-* pass that makes each call.
+# sync with .chezmoiscripts/run_after_install-via-externals.sh.tmpl.
 
 setup() {
   REPO_ROOT="$(cd "$BATS_TEST_DIRNAME/../.." && pwd)"
