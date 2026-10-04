@@ -2,7 +2,7 @@
 
 ## Status
 
-Accepted
+Superseded by [0008](0008-install-release-binaries-as-chezmoi-externals.md).
 
 ## Context
 
