@@ -58,6 +58,11 @@ effect on `apply` until committed and pulled into the apply clone. Use
   An unannotated pin is invisible to Renovate rather than an error, so
   `script/checks/renovate-pins` (a pre-commit hook) fails the build on
   one.
+- The repo requires every action pinned to a full-length SHA,
+  including the actions a third-party action calls. Renovate's digest
+  pinning stops at our own `uses:` line. Before adopting or bumping a
+  third-party action, read its `action.yml` at the new SHA and confirm
+  every `uses:` under `runs.steps` is a full-length SHA.
 - `dot_local/bin/executable_gh` shadows system `gh` to enforce `--draft`
   on `gh pr create`. PRs Claude opens go through this wrapper.
 
