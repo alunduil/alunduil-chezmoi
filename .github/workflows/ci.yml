@@ -28,8 +28,6 @@ jobs:
       - uses: ./.github/actions/setup-chezmoi
         with:
           externals: .local/bin/lychee
-      # Renovate's digest pinning stops at this line — whatever action we call
-      # has to pin its own inner steps, or the chain breaks there.
       - uses: tox-dev/action-pre-commit-uv@e09b8958484dfe71f4ac3bc7afb230ba506402ec # v1.0.5
 
   shell-tests:
