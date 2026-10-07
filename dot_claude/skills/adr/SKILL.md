@@ -79,17 +79,16 @@ prose exists:
 
 ## Change an existing ADR
 
-An Accepted ADR is a historical record; its text stays as written. The
-only edit is its Status, by one of two transitions:
+An Accepted ADR is a historical record. Only its Status changes, by
+one of two transitions:
 
 - `Superseded by NNNN` — a new ADR replaces the decision.
 - `Deprecated` — the decision no longer applies and nothing replaces
   it, such as dropping a technology outright.
 
-Facts entering an ADR are verified (*Decompose and verify* step 3);
-facts already in one describe the state at decision time, not current
-state. A request to make ADR N reflect how things are now becomes a
-new ADR superseding N, or a deprecation of N.
+Its facts describe the state at decision time. A request to make ADR N
+reflect current state becomes a new ADR superseding N, or a
+deprecation of N.
 
 ## Location and filename
 
