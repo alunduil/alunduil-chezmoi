@@ -23,9 +23,6 @@ compared to `installed`, a pinned `--version`, `cmp` before
 password prompt uses `run_onchange_`, keyed on the content that should
 re-fire it.
 
-[ADR 0009](../adr/0009-converge-bootstrap-passes-on-every-apply.md)
-records why.
-
 ## Phases and order
 
 | Phase | Runs | Name | Belongs here when |

@@ -38,9 +38,10 @@ edit from reaching a live apply.
 bootstrap passes that install and configure what those files expect.
 Both converge on a target state: apply offers to restore a file that
 drifted, and a pass installs a removed package again or rewrites a
-hand-edited file under `/etc`.
-[ADR 0009](../adr/0009-converge-bootstrap-passes-on-every-apply.md)
-records why passes converge rather than run once.
+hand-edited file under `/etc`. [chezmoi's package-install
+guide](https://www.chezmoi.io/user-guide/advanced/install-packages-declaratively/)
+recommends `run_onchange_`, but a trigger keyed on script content can't
+see a host that drifted. Passes here run on every apply instead.
 
 Convergence makes apply the one operation for both a fresh host and a
 drifted one. Bootstrap is the first apply, and every later apply

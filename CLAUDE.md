@@ -14,10 +14,9 @@ effect on `apply` until committed and pulled into the apply clone. Use
 
 ## Invariants
 
-- Bootstrap passes in `.chezmoiscripts/` converge on host state
-  (ADR 0009). Read `docs/reference/bootstrap-reference.md` before adding
-  a pass, a tool, or a guard, or changing a pass's prefix, phase, or
-  number.
+- Bootstrap passes in `.chezmoiscripts/` converge on host state. Read
+  `docs/reference/bootstrap-reference.md` before adding a pass, a tool,
+  or a guard, or changing a pass's prefix, phase, or number.
 - pre-commit shellchecks `.sh.tmpl` files unrendered, so a `{{ … }}`
   expression must sit inside quotes or a comment. That is why the package
   lists arrive via `read -ra <<<'{{ … }}'` rather than an array literal.
