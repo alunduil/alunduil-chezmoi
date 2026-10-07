@@ -87,10 +87,8 @@ An Accepted ADR is fixed. Its only edit is a Status transition:
 - `Deprecated` — the decision no longer applies and nothing replaces
   it, such as a dropped technology. This is the whole change.
 
-This mirrors *Decompose and verify* step 3: facts entering an ADR are
-verified against current state; facts already in one record the state
-at decision time. A fact that has since changed routes to a new ADR or
-a transition, and the original text stays as written.
+Its facts record the state at decision time. A fact that has since
+changed routes to a new ADR or a transition.
 
 ## Location and filename
 
