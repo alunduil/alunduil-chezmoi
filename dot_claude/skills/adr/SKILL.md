@@ -82,8 +82,7 @@ prose exists:
 An Accepted ADR is a historical record; its text stays as written. The
 only edit is its Status, by one of two transitions:
 
-- `Superseded by NNNN` — a new ADR replaces the decision. Write the
-  new ADR first, then point this Status at it.
+- `Superseded by NNNN` — a new ADR replaces the decision.
 - `Deprecated` — the decision no longer applies and nothing replaces
   it, such as dropping a technology outright.
 
@@ -102,10 +101,9 @@ new ADR superseding N, or a deprecation of N.
 
 ## Procedure
 
-1. Classify the request before touching an existing file: a new ADR,
-   or a Status transition on an Accepted one (*Change an existing
-   ADR*). A transition alone skips the remaining steps; a superseding
-   ADR runs them, then sets the old Status.
+1. A request to change an existing ADR goes through *Change an
+   existing ADR*. A deprecation stops after its Status edit; a
+   supersession continues as a new ADR.
 2. Decide warranted vs. not. If not, stop.
 3. Detect template and location from existing ADRs or repo `CLAUDE.md`.
 4. For a comparison ADR, run *Decompose and verify* before drafting.
@@ -115,3 +113,5 @@ new ADR superseding N, or a deprecation of N.
    before drafting full content. Apply after agreement.
 7. Default Status to `Proposed`. The team promotes it after the
    decision is actually made.
+8. When superseding, set the old ADR's Status to `Superseded by NNNN`
+   pointing at the new one.
