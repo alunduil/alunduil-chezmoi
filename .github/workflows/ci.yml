@@ -147,12 +147,10 @@ jobs:
       - name: Validate config
         run: script/checks/telemetry-config
 
-  # vale's exit code ignores non-error severities, so reviewdog supplies the
-  # gate on the lines a PR adds. Suggestions gate too: they carry the
-  # sentence-construction signal (#594). Error severity stays covered
-  # tree-wide by the pre-commit hook, including on pushes to main, where this
-  # job cannot run because filter-mode=added and github-pr-check both need PR
-  # context.
+  # vale exits non-zero only on errors, so reviewdog gates instead and fails on
+  # any finding a PR adds: suggestions carry most of the prose signal. The
+  # pre-commit hook covers errors tree-wide, including pushes to main, where
+  # this job has no PR to diff against.
   # .vale/styles/ is vendored, so no `vale sync` step.
   prose:
     name: Check prose
