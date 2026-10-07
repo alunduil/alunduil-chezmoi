@@ -77,7 +77,7 @@ the service tokens live in the repo encrypted to that key, and apply
 decrypts them on the way into `$HOME`.
 
 The GPG key also needs its own passphrase. Its paper-key backup
-([how-to/pgp-signing.md](../how-to/pgp-signing.md)) recovers it if you
+([`how-to/pgp-signing.md`](../how-to/pgp-signing.md)) recovers it if you
 lose the age key and the repo together.
 
 ## Beyond this host
