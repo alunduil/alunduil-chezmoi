@@ -1,46 +1,38 @@
 # Bootstrap reference
 
-The rules `chezmoi apply` follows on this repo: when each bootstrap pass
-runs, where each tool installs from, what each host role receives, and
-what unlocks each secret. Where a rule names a file, that file holds the
-values. For why the system has this shape, see
+Rules for what `chezmoi apply` runs, installs, and deploys on each host.
+Where a rule names a file, that file holds the values. For why the
+system has this shape, see
 [../explanation/architecture.md](../explanation/architecture.md).
 
-## Script prefixes
+## Passes
 
-Bootstrap passes live in `.chezmoiscripts/`.
+Bootstrap passes live in `.chezmoiscripts/` and source shared helpers
+from `script/lib/bootstrap.sh`. Each pass owns one product family: a
+tool that needs both `apt` and a download lives in one pass.
 
 | Prefix | Used for |
 | ------ | -------- |
-| `run_` | every pass that converges on host state |
-| `run_onchange_` | `register-claude-mcp-servers` and `register-*-mcp`, whose trigger is content |
+| `run_` | every pass with a local guard |
+| `run_onchange_` | a pass whose only guard costs a network round-trip or a password prompt, keyed on the content that should re-fire it |
 | `run_once_` | nothing: `script/checks/bootstrap-convergence` fails the build on one |
 
 A `run_` pass checks host state before acting and reaches no `sudo` when
-the host already matches. Its guard stays local: `dpkg-query` status
-compared to `installed`, a pinned `--version`, `cmp` before
-`sudo install`. A pass whose only guard costs a network round-trip or a
-password prompt uses `run_onchange_`, keyed on the content that should
-re-fire it.
+the host already matches. Local guards: `dpkg-query` status compared to
+`installed`, a pinned `--version`, `cmp` before `sudo install`.
 
 ## Phases and order
 
 | Phase | Runs | Name | Belongs here when |
 | ----- | ---- | ---- | ----------------- |
 | `before` | before chezmoi writes files | `run_*_before_NN-<concern>` | the pass needs nothing `apply` deploys |
-| `after` | after chezmoi writes files | `run_*_after_<concept>` | the pass reads a file `apply` deploys |
+| `after` | after chezmoi writes files | `run_*_after_<concept>` | the pass reads a user unit, decrypted token, or external binary that `apply` deploys |
 
 - `before` passes run in `NN` order, a sort key where one install
   depends on another. Gaps are fine.
 - `after` passes are mutually independent and carry no number.
-- An `after` pass consumes a user unit from `dot_config/systemd/user/`,
-  a decrypted token, or an external binary.
 - Enabling a service its own package shipped, such as `tailscaled`,
   stays in the `before` pass that installed it.
-- One pass per product family. A tool that needs both `apt` and a
-  download lives in one pass.
-- Shared helpers live in `script/lib/bootstrap.sh`, which every pass
-  sources.
 
 [ADR 0006](../adr/0006-run-units-at-least-privilege.md) sets which
 systemd manager a unit belongs in and what it runs as.
@@ -73,21 +65,16 @@ names the binaries that stay in `script/install/*`.
 | `workstation` | Debian/Crostini | nothing |
 | `ha-terminal` | Home Assistant SSH add-on (Alpine/musl, ephemeral `/root`) | the targets in the `ha-terminal` block of `.chezmoiignore` |
 
-Each role lists the targets it drops. To keep one target a pattern
-drops, re-include that file with `!`.
+To keep one target a role's pattern drops, re-include that file with
+`!`.
 
 ## Secrets
 
 Every secret is an age-encrypted `encrypted_*.age` source, decrypted on
-apply with the age key. The age key itself comes from a password manager
-during bootstrap.
+apply with the age key.
 
 | Secret | Source | Unlocks with | `ha-terminal` |
 | ------ | ------ | ------------ | ------------- |
 | GPG signing key | `private_dot_gnupg/`, imported by `import-pgp-from-chezmoi` | age key + GPG passphrase | ignored |
 | SSH key and config | `private_dot_ssh/` | age key | ignored |
 | Service tokens | `dot_config/<service>/encrypted_private_*.age` | age key | ignored |
-
-The paper-key backup in
-[../how-to/pgp-signing.md](../how-to/pgp-signing.md) recovers the GPG
-key without the age key.

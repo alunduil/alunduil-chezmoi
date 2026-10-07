@@ -21,7 +21,7 @@ Organised by [Diátaxis](https://diataxis.fr):
   - [Adding an encrypted secret](docs/how-to/encrypted-secret.md)
   - [PGP commit signing](docs/how-to/pgp-signing.md): includes paper-key backup and key rotation.
 - Reference
-  - [Bootstrap](docs/reference/bootstrap-reference.md)—script prefixes, phases, install sources, host roles, secrets.
+  - [Bootstrap rules](docs/reference/bootstrap-reference.md)—script prefixes, phases, install sources, host roles, secrets.
 - Explanation
   - [Architecture](docs/explanation/architecture.md)—how a change travels from an edit to a configured host.
 
