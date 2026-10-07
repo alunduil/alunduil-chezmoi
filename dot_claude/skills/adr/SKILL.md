@@ -77,6 +77,19 @@ prose exists:
 5. **Draft** — every Decision Driver cites a verified fact from step
    3. Cut any driver that can't; don't hedge it.
 
+## Committed ADRs
+
+A committed ADR is fixed. Its only edit is a Status transition:
+
+- `Superseded by NNNN` — a new ADR replaces the decision.
+- `Deprecated` — the decision no longer applies and nothing replaces
+  it, such as a dropped technology.
+
+This mirrors *Decompose and verify* step 3: facts entering an ADR are
+verified against current state; facts already in one record the state
+at decision time. A fact that has since changed routes to a new ADR or
+a transition, and the original text stays as written.
+
 ## Location and filename
 
 - Default `docs/adr/` for new repos. Match existing layout if present.
@@ -87,12 +100,18 @@ prose exists:
 
 ## Procedure
 
-1. Decide warranted vs. not. If not, stop.
-2. Detect template and location from existing ADRs or repo `CLAUDE.md`.
-3. For a comparison ADR, run *Decompose and verify* before drafting.
-4. Compute next sequence number. If first ADR, scaffold the meta-ADR
+1. A request about an existing ADR ("update ADR N to reflect X"):
+   classify it before opening the file. A changed decision is a new
+   ADR that continues from step 2; its predecessor's Status becomes
+   `Superseded by NNNN` in the same change. A dropped decision is a
+   `Deprecated` transition on the existing file, and nothing else in
+   it changes.
+2. Decide warranted vs. not. If not, stop.
+3. Detect template and location from existing ADRs or repo `CLAUDE.md`.
+4. For a comparison ADR, run *Decompose and verify* before drafting.
+5. Compute next sequence number. If first ADR, scaffold the meta-ADR
    too.
-5. Surface chosen template, location, and a one-line decision summary
+6. Surface chosen template, location, and a one-line decision summary
    before drafting full content. Apply after agreement.
-6. Default Status to `Proposed`. The team promotes it after the
+7. Default Status to `Proposed`. The team promotes it after the
    decision is actually made.
