@@ -15,17 +15,15 @@ effect on `apply` until committed and pulled into the apply clone. Use
 ## Invariants
 
 - Bootstrap passes in `.chezmoiscripts/` converge on host state
-  (ADR 0009). Before adding a pass, a tool, or a guard, or changing a
-  pass's prefix, phase, or number, read
-  `docs/reference/bootstrap-reference.md`. It holds the prefix, guard,
-  phase, ordering, and install-source rules.
+  (ADR 0009). Read `docs/reference/bootstrap-reference.md` before adding
+  a pass, a tool, or a guard, or changing a pass's prefix, phase, or
+  number.
 - pre-commit shellchecks `.sh.tmpl` files unrendered, so a `{{ … }}`
   expression must sit inside quotes or a comment. That is why the package
   lists arrive via `read -ra <<<'{{ … }}'` rather than an array literal.
 - A version pinned inside a URL (`.chezmoiexternal.toml`, the zellij
   `plugins` block) is written out in full and left unannotated: Renovate
-  bumps every copy of it. CI applies externals through
-  `.github/actions/setup-chezmoi`.
+  bumps every copy of it.
 - Every `*_VERSION` pin carries a `# renovate: datasource=… depName=…`
   line directly above it (order: datasource, depName, packageName,
   versioning, extractVersion). One generic manager in `renovate.json`

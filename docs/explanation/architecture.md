@@ -29,26 +29,23 @@ C4Container
 
 An edit doesn't reach the host until it's committed, pushed, and pulled
 into the apply clone, because `chezmoi apply` reads only the apply
-clone. The detour keeps a half-finished edit in the source clone from
-reaching a live apply. Every apply sees a coherent commit, at the cost
-of a commit and a pull before a change goes live.
+clone. The detour costs a commit and a pull, and keeps a half-finished
+edit from reaching a live apply.
 
 ## Apply converges the host
 
 `chezmoi apply` does two jobs: it writes files into `$HOME`, and it runs
 bootstrap passes that install and configure what those files expect.
-Both converge on a target state rather than replaying steps. Apply
-offers to restore a file that drifted. A pass runs on every apply,
-checks the host first, and acts only on a difference. A removed package or a
-hand-edited file under `/etc` heals on the next apply.
+Both converge on a target state: apply offers to restore a file that
+drifted, and a pass installs a removed package again or rewrites a
+hand-edited file under `/etc`.
 [ADR 0009](../adr/0009-converge-bootstrap-passes-on-every-apply.md)
 records why passes converge rather than run once.
 
 Convergence makes apply the one operation for both a fresh host and a
 drifted one. Bootstrap is the first apply, and every later apply
-repairs whatever changed since. Release
-binaries follow the same rule: they're chezmoi externals, ordinary
-targets that come back when deleted
+repairs whatever changed since. Release binaries follow the same rule:
+they're chezmoi externals, ordinary targets that come back when deleted
 ([ADR 0008](../adr/0008-install-pinned-binaries-as-chezmoi-externals.md)).
 
 ## Host roles
@@ -70,17 +67,12 @@ sources: no signing key, no SSH identity, no tokens.
 
 ## One secret to recover
 
-Long-lived secrets live in the repo as age-encrypted blobs, and apply
-decrypts them on the way into `$HOME`. The GPG signing key, the SSH key,
-and the service tokens all sit behind the same age key. A fresh host
-therefore needs exactly one secret from outside the repo, restored from
-a password manager, and bootstrap recovers the rest. With the SSH key
-among them, `chezmoi init --apply` over HTTPS ends with SSH to GitHub
-working.
+A fresh host needs one secret from outside the repo: the age key,
+restored from a password manager. The GPG signing key, the SSH key, and
+the service tokens live in the repo encrypted to that key, and apply
+decrypts them on the way into `$HOME`.
 
-Age protects secrets at rest but can't sign a commit or authenticate
-SSH, so GPG and SSH still do those jobs. The GPG key adds its own
-passphrase, and its paper-key backup
+The GPG key also needs its own passphrase. Its paper-key backup
 ([how-to/pgp-signing.md](../how-to/pgp-signing.md)) recovers it if you
 lose the age key and the repo together.
 

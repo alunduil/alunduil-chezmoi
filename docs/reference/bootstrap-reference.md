@@ -8,14 +8,13 @@ values. For why the system has this shape, see
 
 ## Script prefixes
 
-Bootstrap passes live in `.chezmoiscripts/`. The prefix sets when a pass
-runs:
+Bootstrap passes live in `.chezmoiscripts/`.
 
-| Prefix | Runs | Used for |
-| ------ | ---- | -------- |
-| `run_` | every apply | every pass that converges on host state |
-| `run_onchange_` | when the script's rendered content changes | `register-claude-mcp-servers` and `register-*-mcp`, whose trigger is content |
-| `run_once_` | never used | `script/checks/bootstrap-convergence` fails the build on one |
+| Prefix | Used for |
+| ------ | -------- |
+| `run_` | every pass that converges on host state |
+| `run_onchange_` | `register-claude-mcp-servers` and `register-*-mcp`, whose trigger is content |
+| `run_once_` | nothing: `script/checks/bootstrap-convergence` fails the build on one |
 
 A `run_` pass checks host state before acting and reaches no `sudo` when
 the host already matches. Its guard stays local: `dpkg-query` status
@@ -37,9 +36,8 @@ records why.
 - `before` passes run in `NN` order, a sort key where one install
   depends on another. Gaps are fine.
 - `after` passes are mutually independent and carry no number.
-- What an `after` pass consumes: a user unit from
-  `dot_config/systemd/user/` (`enable-*`), a decrypted token
-  (`register-*-mcp`), or an external binary (`install-via-externals`).
+- An `after` pass consumes a user unit from `dot_config/systemd/user/`,
+  a decrypted token, or an external binary.
 - Enabling a service its own package shipped, such as `tailscaled`,
   stays in the `before` pass that installed it.
 - One pass per product family. A tool that needs both `apt` and a
