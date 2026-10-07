@@ -148,8 +148,9 @@ jobs:
         run: script/checks/telemetry-config
 
   # vale's exit code ignores non-error severities, so reviewdog supplies the
-  # gate: warnings on the lines a PR adds fail the build, suggestions land as
-  # annotations (#310). Error severity stays covered tree-wide by the
+  # gate: any finding on the lines a PR adds fails the build, suggestions
+  # included, since those carry the sentence-construction signal (#594).
+  # Error severity stays covered tree-wide by the
   # pre-commit hook, including on pushes to main, where this job cannot run
   # because filter-mode=added and github-pr-check both need PR context.
   # .vale/styles/ is vendored, so no `vale sync` step.
@@ -195,4 +196,4 @@ jobs:
               code: {value: .Check},
             }' vale.json \
             | reviewdog -f=rdjsonl -name=vale \
-                -reporter=github-pr-check -filter-mode=added -fail-level=warning
+                -reporter=github-pr-check -filter-mode=added -fail-level=info
