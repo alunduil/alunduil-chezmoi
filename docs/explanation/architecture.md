@@ -1,10 +1,10 @@
 # Architecture
 
-Background and rationale for this repo's design. For step-by-step setup, see [tutorials/bootstrap.md](../tutorials/bootstrap.md). For task-shaped how-tos, see [how-to/](../how-to/).
-
-## At a glance
-
-[C4](https://c4model.com) Container view, steady state—the prose below covers bootstrap-only edges (password-manager → age key).
+How a change travels from an edit in this repo to a configured host, and
+why each stage has the shape it does. For setup, see
+[tutorials/bootstrap.md](../tutorials/bootstrap.md). For the rules each
+stage follows, see
+[reference/bootstrap-reference.md](../reference/bootstrap-reference.md).
 
 ```mermaid
 C4Container
@@ -25,77 +25,69 @@ C4Container
     Rel(apply, home, "chezmoi apply")
 ```
 
-## Source versus apply clone
+## Two clones
 
-chezmoi separates the *source clone* (this checkout) from the *apply clone* at `~/.local/share/chezmoi`. `chezmoi diff` and `chezmoi apply` read the apply clone, not the source clone, so edits here only take effect after you commit them and update the apply clone. Use `chezmoi diff --source-path .` to preview from the source clone instead.
+An edit doesn't reach the host until it's committed, pushed, and pulled
+into the apply clone, because `chezmoi apply` reads only the apply
+clone. The detour keeps a half-finished edit in the source clone from
+reaching a live apply. Every apply sees a coherent commit, at the cost
+of a commit and a pull before a change goes live.
 
-The split exists so a half-finished edit in the source clone can't corrupt a live `chezmoi apply`. The cost—commit + pull before changes go live—buys an apply that's always coherent.
+## Apply converges the host
 
-## Ordered convergent bootstrap
+`chezmoi apply` does two jobs: it writes files into `$HOME`, and it runs
+bootstrap passes that install and configure what those files expect.
+Both converge on a target state rather than replaying steps. A file
+that drifted gets rewritten. A pass runs on every apply, checks the host
+first, and acts only on a difference. A removed package or a
+hand-edited file under `/etc` heals on the next apply.
+[ADR 0009](../adr/0009-converge-bootstrap-passes-on-every-apply.md)
+records why passes converge rather than run once.
 
-Bootstrap lives in `.chezmoiscripts/`: `run_*_before_*.sh.tmpl` install and configure passes (run before chezmoi applies files) plus `run_*_after_*.sh.tmpl` service-enablement and Model Context Protocol (MCP) registration passes (run after). Each script owns one logical concern and is safe to re-run.
-
-- **Convergent, not once-only.** Install passes are plain `run_`: they execute on every apply and check host state before acting—a `dpkg-query` status before `apt-get install`, a pinned `--version` before a download, `cmp` before a `sudo install` into `/etc`. Drift heals, and a converged host triggers no `sudo` at all. The alternative prefixes can't do this. `run_once_` and `run_onchange_` key off the *script's* content. A package removed by `apt autoremove`, a deleted binary, or a hand-edited `/etc` file leaves that text untouched, so the pass never re-fires.
-  This is a deliberate departure from [chezmoi's own package-install guide](https://www.chezmoi.io/user-guide/advanced/install-packages-declaratively/), which uses `run_onchange_` keyed on a package list. That pattern re-runs when the *list* changes, so a package the list already names but apt has since removed stays missing.
-- **`run_onchange_` where content is the only trigger.** Two cases keep it. `_07` registers Claude MCP servers: `claude mcp list` costs a network round-trip per server, and nothing removes a registration behind your back. The `run_onchange_after_register-*-mcp` passes carry rotating secrets, so they must re-register when the secret changes rather than when the host differs.
-- **`after` means it needs an applied file.** The `enable-*` passes run after because the units they enable are chezmoi targets under `dot_config/systemd/user/`, the MCP registrations because they read a token chezmoi decrypts on apply, and `install-via-externals` because the `uv` and `gcx` it runs are externals that apply writes. Nothing else earns the phase: enabling a service its own package shipped, like `tailscaled`, stays with the pass that installed it rather than splitting one concern in two.
-- **Ordered where order is load-bearing.** The `before` passes carry a two-digit prefix because some installs depend on others: ghcup must exist before `cabal` can build. The prefix is a stable sort key, not a reservation system, so gaps are fine. The `after` passes are mutually independent, so they drop the number and name the concept. Filename is chezmoi's only ordering lever, so numbers earn their place only where a real dependency exists.
-- **One concern per script** so a failed run names its own scope. Scripts map to a product family, not an install mechanism: a tool needing both `apt` and a binary download lives in one script, not split across passes.
-
-Which manager a unit belongs in, and what it runs as, is a separate question. [ADR 0006](../adr/0006-run-units-at-least-privilege.md) carries that rule.
-
-Release binaries install as chezmoi externals declared in `.chezmoiexternal.toml`, each pinned by the version in its download address. Bootstrap and CI both get them from `chezmoi apply`, so there's exactly one place to bump. An external is an ordinary target, so a deleted binary comes back on the next apply. The few tools [ADR 0008](../adr/0008-install-pinned-binaries-as-chezmoi-externals.md) keeps as scripts install through `script/install/*` instead. Zellij *plugins* (`zellaude`, `zjstatus`) pin their versions in the release URLs under the `plugins` block of `dot_config/zellij/config.kdl`, since the plugin registry is independent of the binary.
+Convergence makes apply the one operation for both a fresh host and a
+drifted one. Bootstrap is the first apply, and every later apply
+repairs whatever changed since. Release
+binaries follow the same rule: they're chezmoi externals, ordinary
+targets that come back when deleted
+([ADR 0008](../adr/0008-install-pinned-binaries-as-chezmoi-externals.md)).
 
 ## Host roles
 
-One repo, more than one kind of host. The workstation is a Debian/Crostini box that wants the full toolchain. A lean host—the Home Assistant "Advanced SSH & Web Terminal" add-on (Alpine/musl, ephemeral `/root`)—wants only enough to run a Claude session. The `role` data variable is the host-class axis. It defaults to `workstation`. Each host otherwise sets it at bootstrap via `CHEZMOI_ROLE`, which the HA add-on passes through its `init_commands`.
+One repo configures more than one kind of host. The workstation wants
+the full toolchain. The Home Assistant SSH add-on, an ephemeral Alpine
+container, wants only enough to run a Claude session. The `role` value
+picks between them, and `.chezmoiignore` drops what a role doesn't get.
 
-Explicit, not detected. Detection would couple intent to incidental signals—OS id, hostname, filesystem markers—that grow brittle as profiles multiply. Setting the value where each host bootstraps scales to any number of profiles: a new role is a new value plus ignore rules, never new detection code.
+Each host states its role when it bootstraps rather than chezmoi
+guessing it. Detection would tie intent to incidental signals such as
+the OS, the hostname, or a marker file, and those grow brittle as hosts
+multiply. An explicit value scales: a new role is a new value and a
+list of exclusions, with no detection code.
 
-`role` gates sources through `.chezmoiignore`, itself a template. `workstation` drops nothing. A lean role names the workstation-only sources to exclude: the Debian/systemd bootstrap, service configs, and the age-backed signing and SSH secrets. The GPG-signing `gitconfig` goes too, since it would fail every commit on a host with no signing key. It has to be a denylist: chezmoi's un-ignore (`!`) overrides *every* ignore, so an allowlist (`*` then `!keep`) would pull the repo-wide `.bats`/`_test.py` excludes back into the applied tree. A denylist composes with those excludes instead, and a role that needs one source back re-includes that specific file with `!`.
+Exclusion also limits what a host can leak. The add-on sits on the
+network next to home automation, so it receives none of the encrypted
+sources: no signing key, no SSH identity, no tokens.
 
-The exclusions also shrink the secret blast radius. A network-exposed, ephemeral host next to home automation carries only the narrowly scoped tokens it needs, never the long-lived signing and SSH identities the workstation holds.
+## One secret to recover
 
-## Everything behind age
+Long-lived secrets live in the repo as age-encrypted blobs, and apply
+decrypts them on the way into `$HOME`. The GPG signing key, the SSH key,
+and the service tokens all sit behind the same age key. A fresh host
+therefore needs exactly one secret from outside the repo, restored from
+a password manager, and bootstrap recovers the rest. With the SSH key
+among them, `chezmoi init --apply` over HTTPS ends with SSH to GitHub
+working.
 
-The source tree stores long-lived secrets as age-encrypted blobs that unlock at `apply` time:
+Age protects secrets at rest but can't sign a commit or authenticate
+SSH, so GPG and SSH still do those jobs. The GPG key adds its own
+passphrase, and its paper-key backup
+([how-to/pgp-signing.md](../how-to/pgp-signing.md)) recovers it if you
+lose the age key and the repo together.
 
-- **age key** lives at `~/.config/chezmoi/key.txt`, and a password manager restores it on a fresh host. It's the one out-of-band secret the bootstrap needs: `chezmoi init` renders `.chezmoi.toml.tmpl` into `~/.config/chezmoi/chezmoi.toml` to point chezmoi at age and its recipient, so pasting the key is the only manual step. That recipient is a public key, not a second secret.
-- **GPG** signs commits. The secret key ships as an age-encrypted blob in `private_dot_gnupg/`. The trust chain is *age key + GPG passphrase*.
-- **SSH** keys (`~/.ssh/{id_rsa,config}`) ship the same way under `private_dot_ssh/`. The trust chain is just the age key. This is what makes `chezmoi init --apply` over HTTPS bootstrap straight into a working SSH-to-GitHub state.
+## Beyond this host
 
-Age secures secrets at rest but can't itself sign commits or authenticate to SSH. Putting GPG and SSH behind the same age-key recovery flow means a fresh host needs exactly one out-of-band secret to bootstrap the rest. The paper-key backup (see [how-to/pgp-signing.md](../how-to/pgp-signing.md)) is the independent fallback if you lose both clouds and the repo together.
-
-## `gh` shim
-
-`dot_local/bin/executable_gh` shadows system `gh` to enforce `--draft` on `gh pr create`. The shim exists because Claude Code opens PRs through `gh`, and the project rule is "every PR opens as draft, human promotes to ready." Enforcing this in a wrapper rather than via memory keeps the rule load-bearing even when memory slips. `GH_DRAFT_GUARD=off` overrides for the rare manual case.
-
-`gh` extensions get their own bootstrap pass rather than a chezmoi external, because `gh extension` fetches and pins them itself.
-
-## Two `CLAUDE.md` files
-
-Two files, two audiences:
-
-- `CLAUDE.md` (this repo's root) loads into Claude's context every relevant turn when editing the chezmoi *source*. It's optimised for tokens, not readability—terse rules, no decorative prose.
-- `dot_claude/CLAUDE.md` deploys to `~/.claude/CLAUDE.md` on apply, and Claude loads it into context for *every* project on this host. Cross-cutting defaults live there.
-
-Editing the deployed file directly would lose the change on the next `chezmoi apply`, so the source-of-truth is always the chezmoi-managed copy.
-
-## What reaches a web session
-
-The preceding sections describe one host. A Claude Code session running somewhere else—the web app, `claude --cloud`, a routine—starts from a fresh clone of a single repository. It sees what that clone contains and nothing this repo deploys.
-
-Such a session loads three things:
-
-- From the clone: `CLAUDE.md`, `.claude/rules/`, `.claude/skills/`, `.claude/agents/`, `.claude/commands/`, the hooks in `.claude/settings.json`, and `.mcp.json`.
-- Declared in the clone: plugins named in `.claude/settings.json`.
-- From the account: skills enabled on claude.ai.
-
-It doesn't load `~/.claude/CLAUDE.md`, `~/.claude/skills/`, the hooks in `~/.claude/settings.json`, or the per-project auto memory under `~/.claude/projects/*/memory/`. Auto memory is machine-local by design, with no cross-machine path in either direction.
-
-The split is deliberate. [ADR 0005](../adr/0005-treat-the-checkout-as-the-only-portable-context.md) records why the alternatives lost.
-
-Two consequences for anyone editing here:
-
-- `dot_claude/CLAUDE.md` stays host-specific, because the `gh` shim and worktree paths describe machinery a cloud VM doesn't have.
-- A skill under `dot_claude/skills/` runs on this host only. One that must also work on the web belongs in the repo that needs it, written to stand on its own rather than reaching for `~/.claude/` or memory.
+Every stage here happens on a host that runs `chezmoi apply`. A Claude
+Code session on the web or in a cloud routine starts from a fresh clone
+of one repo and receives none of it.
+[ADR 0005](../adr/0005-treat-the-checkout-as-the-only-portable-context.md)
+records what such a session loads and why the split stays.

@@ -3,7 +3,7 @@
 Chezmoi source directory. Files deploy to `$HOME` via `chezmoi apply`;
 names follow chezmoi rules (`dot_` → `.`, `executable_` → +x, `.tmpl` →
 Go template, `.chezmoiscripts/run_*_before_NN-…` → ordered convergent bootstrap).
-`docs/tutorials/bootstrap.md` has the bootstrap walkthrough; `docs/explanation/architecture.md` has the human-facing rationale.
+`docs/tutorials/bootstrap.md` has the bootstrap walkthrough; `docs/explanation/architecture.md` has the human-facing rationale; `docs/reference/bootstrap-reference.md` has the lookup tables.
 
 ## Source vs. apply path
 
