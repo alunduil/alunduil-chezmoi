@@ -40,7 +40,7 @@ Detect, don't impose:
 
 - **Title** — `# N. <imperative phrase>` (e.g. "Use PostgreSQL").
 - **Status** — `Proposed` initially; user promotes to `Accepted`.
-  Don't pre-mark `Accepted`. Later values: *Committed ADRs*.
+  Don't pre-mark `Accepted`. Later values: *Accepted ADRs*.
 - **Context** — forces in play, constraints, what made this a
   decision.
 - **Decision** — `We will <do X>`. Active voice.
@@ -77,9 +77,9 @@ prose exists:
 5. **Draft** — every Decision Driver cites a verified fact from step
    3. Cut any driver that can't; don't hedge it.
 
-## Committed ADRs
+## Accepted ADRs
 
-A committed ADR is fixed. Its only edit is a Status transition:
+An Accepted ADR is fixed. Its only edit is a Status transition:
 
 - `Superseded by NNNN` — the decision changed. Write the new ADR
   through *Procedure*; set this Status on its predecessor in the same
@@ -102,8 +102,8 @@ a transition, and the original text stays as written.
 
 ## Procedure
 
-1. A request about an existing ADR ("update ADR N to reflect X"):
-   pick its transition from *Committed ADRs* before opening the file.
+1. A request about an Accepted ADR ("update ADR N to reflect X"):
+   pick its transition from *Accepted ADRs* before opening the file.
    `Deprecated` stops here.
 2. Decide warranted vs. not. If not, stop.
 3. Detect template and location from existing ADRs or repo `CLAUDE.md`.
