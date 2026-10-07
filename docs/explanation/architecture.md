@@ -37,9 +37,9 @@ of a commit and a pull before a change goes live.
 
 `chezmoi apply` does two jobs: it writes files into `$HOME`, and it runs
 bootstrap passes that install and configure what those files expect.
-Both converge on a target state rather than replaying steps. A file
-that drifted gets rewritten. A pass runs on every apply, checks the host
-first, and acts only on a difference. A removed package or a
+Both converge on a target state rather than replaying steps. Apply
+offers to restore a file that drifted. A pass runs on every apply,
+checks the host first, and acts only on a difference. A removed package or a
 hand-edited file under `/etc` heals on the next apply.
 [ADR 0009](../adr/0009-converge-bootstrap-passes-on-every-apply.md)
 records why passes converge rather than run once.
