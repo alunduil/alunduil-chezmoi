@@ -23,10 +23,10 @@ the host already matches. Local guards: `dpkg-query` status compared to
 
 ## Phases and order
 
-| Phase | Runs | Name | Belongs here when |
-| ----- | ---- | ---- | ----------------- |
-| `before` | before chezmoi writes files | `run_*_before_NN-<concern>` | the pass needs nothing `apply` deploys |
-| `after` | after chezmoi writes files | `run_*_after_<concept>` | the pass reads a user unit, decrypted token, or external binary that `apply` deploys |
+| Phase | Name | Belongs here when |
+| ----- | ---- | ----------------- |
+| `before` | `run_*_before_NN-<concern>` | the pass needs nothing `apply` deploys |
+| `after` | `run_*_after_<concept>` | the pass reads a user unit, decrypted token, or external binary that `apply` deploys |
 
 - `before` passes run in `NN` order, a sort key where one install
   depends on another. Gaps are fine.
@@ -70,8 +70,7 @@ To keep one target a role's pattern drops, re-include that file with
 
 ## Secrets
 
-Every secret is an age-encrypted `encrypted_*.age` source, decrypted on
-apply with the age key.
+Every secret is an `encrypted_*.age` source that apply decrypts.
 
 | Secret | Source | Unlocks with | `ha-terminal` |
 | ------ | ------ | ------------ | ------------- |

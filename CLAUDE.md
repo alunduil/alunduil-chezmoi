@@ -20,8 +20,8 @@ effect on `apply` until committed and pulled into the apply clone. Use
 - pre-commit shellchecks `.sh.tmpl` files unrendered, so a `{{ … }}`
   expression must sit inside quotes or a comment. That is why the package
   lists arrive via `read -ra <<<'{{ … }}'` rather than an array literal.
-- A version pinned inside a URL (`.chezmoiexternal.toml`, the zellij
-  `plugins` block) is written out in full and left unannotated: Renovate
+- Write a version pinned inside a URL (`.chezmoiexternal.toml`, the
+  zellij `plugins` block) out in full and leave it unannotated: Renovate
   bumps every copy of it.
 - Every `*_VERSION` pin carries a `# renovate: datasource=… depName=…`
   line directly above it (order: datasource, depName, packageName,
