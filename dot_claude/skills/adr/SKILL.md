@@ -39,8 +39,8 @@ Detect, don't impose:
 ### Nygard skeleton
 
 - **Title** — `# N. <imperative phrase>` (e.g. "Use PostgreSQL").
-- **Status** — `Proposed` initially; user promotes to `Accepted`,
-  `Superseded by NNNN`, or `Deprecated`. Don't pre-mark `Accepted`.
+- **Status** — `Proposed` initially; user promotes to `Accepted`.
+  Don't pre-mark `Accepted`. Later values: *Committed ADRs*.
 - **Context** — forces in play, constraints, what made this a
   decision.
 - **Decision** — `We will <do X>`. Active voice.
@@ -81,9 +81,11 @@ prose exists:
 
 A committed ADR is fixed. Its only edit is a Status transition:
 
-- `Superseded by NNNN` — a new ADR replaces the decision.
+- `Superseded by NNNN` — the decision changed. Write the new ADR
+  through *Procedure*; set this Status on its predecessor in the same
+  change.
 - `Deprecated` — the decision no longer applies and nothing replaces
-  it, such as a dropped technology.
+  it, such as a dropped technology. This is the whole change.
 
 This mirrors *Decompose and verify* step 3: facts entering an ADR are
 verified against current state; facts already in one record the state
@@ -101,11 +103,8 @@ a transition, and the original text stays as written.
 ## Procedure
 
 1. A request about an existing ADR ("update ADR N to reflect X"):
-   classify it before opening the file. A changed decision is a new
-   ADR that continues from step 2; its predecessor's Status becomes
-   `Superseded by NNNN` in the same change. A dropped decision is a
-   `Deprecated` transition on the existing file, and nothing else in
-   it changes.
+   pick its transition from *Committed ADRs* before opening the file.
+   `Deprecated` stops here.
 2. Decide warranted vs. not. If not, stop.
 3. Detect template and location from existing ADRs or repo `CLAUDE.md`.
 4. For a comparison ADR, run *Decompose and verify* before drafting.
