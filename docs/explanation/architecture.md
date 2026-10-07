@@ -64,7 +64,7 @@ The source tree stores long-lived secrets as age-encrypted blobs that unlock at 
 - **GPG** signs commits. The secret key ships as an age-encrypted blob in `private_dot_gnupg/`. The trust chain is *age key + GPG passphrase*.
 - **SSH** keys (`~/.ssh/{id_rsa,config}`) ship the same way under `private_dot_ssh/`. The trust chain is just the age key. This is what makes `chezmoi init --apply` over HTTPS bootstrap straight into a working SSH-to-GitHub state.
 
-Age secures secrets at rest but can't itself sign commits or authenticate to SSH. Putting GPG and SSH behind the same age-key recovery flow means a fresh host needs exactly one out-of-band secret to bootstrap the rest. The paper-key backup (see [how-to/pgp-signing.md](../how-to/pgp-signing.md)) is the independent fallback if you lose both clouds and the repo together.
+Age secures secrets at rest but can't itself sign commits or authenticate to SSH. Putting GPG and SSH behind the same age-key recovery flow means a fresh host needs exactly one out-of-band secret to bootstrap the rest. The paper-key backup (see [`how-to/pgp-signing.md`](../how-to/pgp-signing.md)) is the independent fallback if you lose both clouds and the repo together.
 
 ## `gh` shim
 
