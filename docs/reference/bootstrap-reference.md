@@ -2,8 +2,8 @@
 
 The rules `chezmoi apply` follows on this repo: when each bootstrap pass
 runs, where each tool installs from, what each host role receives, and
-what unlocks each secret. The files named in each section are the only
-copies of the values. For why the system has this shape, see
+what unlocks each secret. Where a rule names a file, that file holds the
+values. For why the system has this shape, see
 [../explanation/architecture.md](../explanation/architecture.md).
 
 ## Script prefixes
@@ -14,8 +14,15 @@ runs:
 | Prefix | Runs | Used for |
 | ------ | ---- | -------- |
 | `run_` | every apply | every pass that converges on host state |
-| `run_onchange_` | when the script's rendered content changes | `_07` and `register-*-mcp`, whose trigger is content |
+| `run_onchange_` | when the script's rendered content changes | `register-claude-mcp-servers` and `register-*-mcp`, whose trigger is content |
 | `run_once_` | never used | `script/checks/bootstrap-convergence` fails the build on one |
+
+A `run_` pass checks host state before acting and reaches no `sudo` when
+the host already matches. Its guard stays local: `dpkg-query` status
+compared to `installed`, a pinned `--version`, `cmp` before
+`sudo install`. A pass whose only guard costs a network round-trip or a
+password prompt uses `run_onchange_`, keyed on the content that should
+re-fire it.
 
 [ADR 0009](../adr/0009-converge-bootstrap-passes-on-every-apply.md)
 records why.
@@ -47,13 +54,16 @@ systemd manager a unit belongs in and what it runs as.
 
 | Kind | Declared in | Installed by | Pinned by |
 | ---- | ----------- | ------------ | --------- |
-| apt packages | `.chezmoidata/packages.yaml` | pass `01`, one transaction | the apt repository |
+| apt packages | `.chezmoidata/packages.yaml` | `install-system-packages`, one transaction | the apt repository |
 | Release binaries | `.chezmoiexternal.toml` | `chezmoi apply` | the version in the download address |
-| Binaries an external can't express | `script/install/*` | pass `02` | `*_VERSION` in the script |
-| Python tools | `run_after_install-via-externals` | `uv tool install` | `*_VERSION` in the pass |
-| `gh` extensions | pass `05` | `gh extension install` | `gh extension` |
-| Node, Haskell, Rust | passes `03`, `06`, `09` | each ecosystem's own manager | `*_VERSION` in the pass |
+| Binaries an external can't express | `script/install/*` | `install-binary-tools` | `*_VERSION` in the script |
+| Python tools | `install-via-externals` | `uv tool install` | `*_VERSION` in the pass |
+| `gh` extensions | `install-gh-extensions` | `gh extension install` | `gh extension` |
+| Node, Haskell, Rust | `install-{node,haskell,rust}-ecosystem` | each ecosystem's own manager | `*_VERSION` in the pass |
 | Zellij plugins | `plugins` block of `dot_config/zellij/config.kdl` | Zellij at load | the version in the download address |
+
+Every apt package goes in the one list. Later passes configure what
+`install-system-packages` installed rather than calling apt themselves.
 
 [ADR 0008](../adr/0008-install-pinned-binaries-as-chezmoi-externals.md)
 names the binaries that stay in `script/install/*`.
@@ -63,25 +73,25 @@ names the binaries that stay in `script/install/*`.
 `chezmoi init` reads `role` from `CHEZMOI_ROLE`, defaulting to
 `workstation`. `.chezmoiignore` applies it.
 
-| Role | Host | Ignored targets |
-| ---- | ---- | --------------- |
-| `workstation` | Debian/Crostini | none |
-| `ha-terminal` | Home Assistant SSH add-on (Alpine/musl, ephemeral `/root`) | `.chezmoiscripts/**`, `.config/**`, `.local/bin/**`, `.local/lib/bats/**`, `.gnupg/**`, `.ssh/**`, `.bashrc`, `.bash_profile`, `.profile`, `.gitconfig` |
+| Role | Host | Ignores |
+| ---- | ---- | ------- |
+| `workstation` | Debian/Crostini | nothing |
+| `ha-terminal` | Home Assistant SSH add-on (Alpine/musl, ephemeral `/root`) | the targets in the `ha-terminal` block of `.chezmoiignore` |
 
 Each role lists the targets it drops. To keep one target a pattern
 drops, re-include that file with `!`.
 
 ## Secrets
 
-Every secret below is an age-encrypted `encrypted_*.age` source,
-decrypted on apply with the age key. The age key itself comes from a
-password manager during bootstrap.
+Every secret is an age-encrypted `encrypted_*.age` source, decrypted on
+apply with the age key. The age key itself comes from a password manager
+during bootstrap.
 
-| Secret | Target | Unlocks with | `ha-terminal` |
+| Secret | Source | Unlocks with | `ha-terminal` |
 | ------ | ------ | ------------ | ------------- |
-| GPG signing key | `~/.gnupg/secret-keys.asc`, imported by pass `08` | age key + GPG passphrase | ignored |
-| SSH key and config | `~/.ssh/{id_rsa,config}` | age key | ignored |
-| Service tokens | `~/.config/{cloudflare,codecov,github,grafana-cloud,truenas,uptimerobot}/` | age key | ignored |
+| GPG signing key | `private_dot_gnupg/`, imported by `import-pgp-from-chezmoi` | age key + GPG passphrase | ignored |
+| SSH key and config | `private_dot_ssh/` | age key | ignored |
+| Service tokens | `dot_config/<service>/encrypted_private_*.age` | age key | ignored |
 
 The paper-key backup in
 [../how-to/pgp-signing.md](../how-to/pgp-signing.md) recovers the GPG

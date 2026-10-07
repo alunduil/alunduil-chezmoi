@@ -14,43 +14,18 @@ effect on `apply` until committed and pulled into the apply clone. Use
 
 ## Invariants
 
-- Bootstrap scripts live in `.chezmoiscripts/` and converge: they run on
-  every apply and each checks host state before acting (`dpkg-query`
-  status, pinned `--version`, `cmp` before `sudo install`), so drift
-  heals. Guards stay local and reach no `sudo` when the host already
-  matches — one that costs a network round-trip or prompts for a password
-  belongs behind `run_onchange_` instead. `run_*_before_NN-*`
-  install/config passes carry a numeric prefix that orders them
-  (dependencies); `run_*_after_*` passes are order-independent and named
-  by concept, not numbered.
-- Helpers shared across passes live in `script/lib/bootstrap.sh`, which
-  each pass sources.
-- `run_onchange_` is only for passes whose trigger is genuinely content,
-  not host state: `_07` (its `claude mcp list` guard costs a network
-  round-trip per server) and `run_onchange_after_register-*-mcp` (rotating
-  secrets must re-register on change). Everything else is plain `run_`.
-  No `run_once_` — it keys off script content, so it cannot see drift.
-- `after` is for passes that consume something `chezmoi apply` deploys: a
-  user unit from `dot_config/systemd/user/`, a decrypted token, an
-  external binary. That
-  dependency is the only thing that forces the phase — everything else is
-  `before`. Enabling a service the package itself shipped (tailscaled)
-  forces nothing, so it stays in the pass that installed it rather than
-  splitting one concern across two.
-- Every apt package lives in `.chezmoidata/packages.yaml`, in one list, so
-  one pass makes one apt transaction. Later passes configure what it
-  installed rather than installing their own.
+- Bootstrap passes in `.chezmoiscripts/` converge on host state
+  (ADR 0009). Before adding a pass, a tool, or a guard, or changing a
+  pass's prefix, phase, or number, read
+  `docs/reference/bootstrap-reference.md`. It holds the prefix, guard,
+  phase, ordering, and install-source rules.
 - pre-commit shellchecks `.sh.tmpl` files unrendered, so a `{{ … }}`
   expression must sit inside quotes or a comment. That is why the package
   lists arrive via `read -ra <<<'{{ … }}'` rather than an array literal.
-- Release binaries are chezmoi externals in `.chezmoiexternal.toml`, each
-  pinned by the version in its URL; bootstrap and CI
-  (`.github/actions/setup-chezmoi`) both apply them. Renovate bumps every
-  copy of a version in a URL, so write it out in full and leave it
-  unannotated. ADR 0008 names the tools that stay `script/install/*`
-  scripts, each pinning its own `*_VERSION`. Zellij *plugins* (`zellaude`, `zjstatus`)
-  pin their version inside the release URL in the `plugins` block of
-  `dot_config/zellij/config.kdl`.
+- A version pinned inside a URL (`.chezmoiexternal.toml`, the zellij
+  `plugins` block) is written out in full and left unannotated: Renovate
+  bumps every copy of it. CI applies externals through
+  `.github/actions/setup-chezmoi`.
 - Every `*_VERSION` pin carries a `# renovate: datasource=… depName=…`
   line directly above it (order: datasource, depName, packageName,
   versioning, extractVersion). One generic manager in `renovate.json`
