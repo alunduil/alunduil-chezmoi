@@ -77,6 +77,21 @@ prose exists:
 5. **Draft** — every Decision Driver cites a verified fact from step
    3. Cut any driver that can't; don't hedge it.
 
+## Change an existing ADR
+
+An Accepted ADR is a historical record; its text stays as written. The
+only edit is its Status, by one of two transitions:
+
+- `Superseded by NNNN` — a new ADR replaces the decision. Write the
+  new ADR first, then point this Status at it.
+- `Deprecated` — the decision no longer applies and nothing replaces
+  it, such as dropping a technology outright.
+
+Facts entering an ADR are verified (*Decompose and verify* step 3);
+facts already in one describe the state at decision time, not current
+state. A request to make ADR N reflect how things are now becomes a
+new ADR superseding N, or a deprecation of N.
+
 ## Location and filename
 
 - Default `docs/adr/` for new repos. Match existing layout if present.
@@ -87,12 +102,16 @@ prose exists:
 
 ## Procedure
 
-1. Decide warranted vs. not. If not, stop.
-2. Detect template and location from existing ADRs or repo `CLAUDE.md`.
-3. For a comparison ADR, run *Decompose and verify* before drafting.
-4. Compute next sequence number. If first ADR, scaffold the meta-ADR
+1. Classify the request before touching an existing file: a new ADR,
+   or a Status transition on an Accepted one (*Change an existing
+   ADR*). A transition alone skips the remaining steps; a superseding
+   ADR runs them, then sets the old Status.
+2. Decide warranted vs. not. If not, stop.
+3. Detect template and location from existing ADRs or repo `CLAUDE.md`.
+4. For a comparison ADR, run *Decompose and verify* before drafting.
+5. Compute next sequence number. If first ADR, scaffold the meta-ADR
    too.
-5. Surface chosen template, location, and a one-line decision summary
+6. Surface chosen template, location, and a one-line decision summary
    before drafting full content. Apply after agreement.
-6. Default Status to `Proposed`. The team promotes it after the
+7. Default Status to `Proposed`. The team promotes it after the
    decision is actually made.
