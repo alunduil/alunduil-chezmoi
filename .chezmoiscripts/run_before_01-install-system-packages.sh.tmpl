@@ -81,9 +81,9 @@ if [ -e /etc/apt/sources.list.d/vscode.list ] ||
 fi
 
 # ------------------------------------------------------------------ 1password
-# CLI only (1password-cli), not the desktop app. The debsig policy is how apt
-# verifies the package signature at install; 1Password publishes it separately
-# from the apt signing key, keyed by their fixed origin id AC2D62742012EA22.
+# The debsig policy is how apt verifies the package signature at install;
+# 1Password publishes it separately from the apt signing key, keyed by their
+# fixed origin id AC2D62742012EA22.
 add_apt_repo 1password-archive-keyring.gpg https://downloads.1password.com/linux/keys/1password.asc \
   1password.list "https://downloads.1password.com/linux/debian/$arch stable main" "arch=$arch"
 
