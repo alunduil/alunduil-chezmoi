@@ -45,5 +45,14 @@ jobs:
             install -m 0755 "dot_local/bin/executable_$s" "$HOME/.local/bin/$s"
           done
 
+      - name: Install the 1Password desktop app
+        run: |
+          curl -fsSL https://downloads.1password.com/linux/keys/1password.asc |
+            sudo gpg --dearmor -o /usr/share/keyrings/1password-archive-keyring.gpg
+          echo 'deb [arch=amd64 signed-by=/usr/share/keyrings/1password-archive-keyring.gpg] https://downloads.1password.com/linux/debian/amd64 stable main' |
+            sudo tee /etc/apt/sources.list.d/1password.list
+          sudo apt-get update
+          sudo apt-get install -y 1password
+
       - name: Verify systemd units
         run: script/checks/systemd-units
