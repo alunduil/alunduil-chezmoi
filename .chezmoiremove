@@ -26,3 +26,9 @@
 .ssh/id_rsa
 .ssh/id_rsa.pub
 .ssh/ssh-agent
+
+# The retired GPG config and secret-key export. The keyring stays so old
+# signatures still verify.
+.gnupg/gpg.conf
+.gnupg/gpg-agent.conf
+.gnupg/secret-keys.asc

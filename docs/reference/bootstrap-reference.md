@@ -79,7 +79,6 @@ and the first bootstrap pass set it.
 
 | Secret | Source | Unlocks with | `ha-terminal` |
 | ------ | ------ | ------------ | ------------- |
-| GPG signing key | `private_dot_gnupg/private_secret-keys.asc.tmpl`, imported by `import-pgp-from-chezmoi` | 1Password + GPG passphrase | ignored |
-| SSH key | 1Password agent, limited by `dot_config/1Password/ssh/agent.toml` | 1Password | ignored |
+| SSH and commit-signing key | 1Password agent, limited by `dot_config/1Password/ssh/agent.toml` | 1Password | ignored |
 | Service tokens | `dot_config/<service>/private_*.tmpl` | 1Password | ignored |
 | Cloudflare token | `dot_config/cloudflare/encrypted_private_token.age` | age key | ignored |
