@@ -18,7 +18,8 @@ Organised by [Diátaxis](https://diataxis.fr):
 - Tutorials
   - [Bootstrap](docs/tutorials/bootstrap.md)—zero to working host.
 - How-to
-  - [Adding an encrypted secret](docs/how-to/encrypted-secret.md)
+  - [Adding a secret](docs/how-to/add-a-secret.md): stored in 1Password, including rotation.
+  - [Recovering access](docs/how-to/recover-access.md): the Emergency Kit, and rebuilding without the 1Password account.
   - [PGP commit signing](docs/how-to/pgp-signing.md): includes paper-key backup and key rotation.
 - Reference
   - [Bootstrap rules](docs/reference/bootstrap-reference.md)—script prefixes, phases, install sources, host roles, secrets.

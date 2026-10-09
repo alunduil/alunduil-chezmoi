@@ -1,0 +1,13 @@
+#!/usr/bin/env bash
+# LoadCredential= copies the Grafana Cloud token only at service start, so
+# Alloy needs a restart to send a rotated one.
+# token-hash: {{ includeTemplate "onepassword-read" .onepassword.grafana_cloud | sha256sum }}
+
+set -euo pipefail
+
+if ! systemctl --user show-environment >/dev/null 2>&1; then
+  echo "==> alloy: no user systemd session; skipping restart" >&2
+  exit 0
+fi
+
+systemctl --user try-restart alloy.service

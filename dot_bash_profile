@@ -1,12 +1,7 @@
+# The 1Password app serves SSH keys on this socket. A forwarded agent in a
+# remote session takes precedence.
 if [ -z "$SSH_AUTH_SOCK" ]; then
-   # Check for a currently running instance of the agent
-   RUNNING_AGENT="`ps -ax | grep 'ssh-agent -s' | grep -v grep | wc -l | tr -d '[:space:]'`"
-   if [ "$RUNNING_AGENT" = "0" ]; then
-        # Launch a new instance of the agent
-        ssh-agent -s &> $HOME/.ssh/ssh-agent
-   fi
-   eval `cat $HOME/.ssh/ssh-agent`
-   ssh-add $HOME/.ssh/id_rsa
+   export SSH_AUTH_SOCK="$HOME/.1password/agent.sock"
 fi
 
 # Load the POSIX-standard profile, which in turn sources ~/.bashrc for

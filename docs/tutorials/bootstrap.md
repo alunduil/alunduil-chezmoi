@@ -1,21 +1,31 @@
 # Bootstrap
 
-Zero to a fully configured host. Requires a Debian/Crostini host and the age key from a password manager.
+Zero to a fully configured host. Requires a Debian/Crostini host, a 1Password account with access to the `chezmoi` vault, and the age key from a password manager.
+
+Apply runs twice. Secrets come from the 1Password desktop app, which the first apply installs, so the first apply skips them.
 
 ```bash
 CHEZMOI_VERSION="v2.73.0"
 sh -c "$(curl -fsLS get.chezmoi.io)" -- -b "$HOME/.local/bin" -t "$CHEZMOI_VERSION"
 
+# Decrypts the Cloudflare token, the one age-encrypted secret.
 mkdir -p ~/.config/chezmoi
 $EDITOR ~/.config/chezmoi/key.txt          # paste age key contents
 chmod 600 ~/.config/chezmoi/key.txt
 
-~/.local/bin/chezmoi init --apply https://github.com/alunduil/alunduil-chezmoi.git
+# First apply: installs everything, including 1Password; skips secrets.
+CHEZMOI_NO_1PASSWORD=1 ~/.local/bin/chezmoi init --apply https://github.com/alunduil/alunduil-chezmoi.git
+```
+
+Open 1Password from the launcher and sign in. In **Settings → Developer**, turn on **Use the SSH agent** and **Integrate with 1Password CLI**. Then apply again and approve the 1Password prompt:
+
+```bash
+# Second apply: writes the secrets and starts what needs them.
+chezmoi apply
 
 # Interactive logins (per-machine, never managed):
 gh auth login                              # ~/.config/gh/
 claude                                     # ~/.claude/.credentials.json
-op account add && eval "$(op signin)"      # ~/.config/op/ (account + session)
 gcx login                                  # ~/.config/gcx/
 readwise login                             # ~/.readwise-cli.json
 sudo tailscale up                          # tailnet auth
@@ -55,6 +65,8 @@ foot --version                             # terminal, pending kitty's replaceme
 sar -V && forkstat --version               # host telemetry recorders (apt)
 systemctl is-active sysstat-collect.timer  # confirms sar is sampling
 systemctl --user is-active alloy.service   # confirms the Grafana Cloud shipper
+systemctl --user is-active 1password.service  # confirms the app owns the SSH agent
+ssh-add -l                                 # lists the SSH key from 1Password
 ```
 
-SSH to GitHub works as soon as `chezmoi init --apply` finishes. The keys deploy from age-encrypted chezmoi source, so `~/.ssh/{id_rsa,config}` land alongside the age-key paste step. The bootstrap clones over HTTPS to bridge the gap before keys exist. Swap the apply clone's remote back to SSH if preferred: `git -C ~/.local/share/chezmoi remote set-url origin git@github.com:alunduil/alunduil-chezmoi.git`.
+SSH to GitHub works once you sign in to 1Password. The bootstrap clones over HTTPS to bridge the gap before then. Swap the apply clone's remote back to SSH if preferred: `git -C ~/.local/share/chezmoi remote set-url origin git@github.com:alunduil/alunduil-chezmoi.git`.

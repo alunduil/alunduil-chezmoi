@@ -11,6 +11,8 @@ SOURCE_DIR="$(git -C "$(dirname "${BASH_SOURCE[0]}")" rev-parse --show-toplevel)
 dest="$(mktemp -d)"
 trap 'rm -rf "$dest"' EXIT
 
+# Render without 1Password: no session, no approval prompt.
+export CHEZMOI_NO_1PASSWORD=1
 chezmoi apply --source="$SOURCE_DIR" --destination="$dest" --exclude=scripts,encrypted
 
 fail=0

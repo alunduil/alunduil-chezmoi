@@ -1,6 +1,6 @@
 # Commit signing
 
-The age-encrypted secret key in `private_dot_gnupg/` deploys to `~/.gnupg/secret-keys.asc` on apply, and `.chezmoiscripts/run_before_08-import-pgp-from-chezmoi.sh.tmpl` imports it into the local keyring. New machine: `chezmoi apply` is the only step. The trust chain is age key (in `~/.config/chezmoi/key.txt`) + GPG passphrase.
+The secret key is the `GPG Key` document in the `chezmoi` 1Password vault. Apply writes it to `~/.gnupg/secret-keys.asc`, and `.chezmoiscripts/run_before_08-import-pgp-from-chezmoi.sh.tmpl` imports it into the local keyring on the next apply. The trust chain is 1Password + GPG passphrase.
 
 Upload the public key to GitHub once per account so signed commits show "Verified":
 
@@ -22,9 +22,9 @@ shred -u paperkey.txt
 
 Recovery from paper requires the public key (Keybase / GitHub / this repo) plus the paperkey output, fed back through `paperkey --pubring … --secrets paperkey.txt | gpg --import`.
 
-## Refreshing the chezmoi blob after key rotation
+## Refreshing the 1Password copy after key rotation
 
 ```bash
-gpg --armor --export-secret-keys 8F491CBC32D144341679826AE7E6572EF50D1BC5 > ~/.gnupg/secret-keys.asc
-chezmoi add --encrypt --source "$PWD" ~/.gnupg/secret-keys.asc
+gpg --armor --export-secret-keys 8F491CBC32D144341679826AE7E6572EF50D1BC5 \
+  | op document edit "GPG Key" --vault chezmoi - --file-name secret-keys.asc
 ```

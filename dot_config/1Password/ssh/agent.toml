@@ -1,0 +1,5 @@
+# Without this file the agent offers only Private-vault keys. IDs survive
+# renames.
+[[ssh-keys]]
+item = "hlvdwtvkhln6v2vgmo7djuzg44"
+vault = "b65xntybmbfo7c3i5jg4qcgfsu"

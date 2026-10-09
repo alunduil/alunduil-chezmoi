@@ -11,6 +11,7 @@ packages:
     - terraform
     - libnotify-bin
     - 1password-cli
+    - 1password
     - build-essential
     - libffi-dev
     - libgmp-dev

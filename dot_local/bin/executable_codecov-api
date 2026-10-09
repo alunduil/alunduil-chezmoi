@@ -12,7 +12,7 @@
 # -H, -d, --data-urlencode, etc.
 #
 # Auth: reads CODECOV_API_TOKEN from the environment. dot_bashrc populates
-# it from the chezmoi-encrypted file at ~/.config/codecov/token. If the
+# it from ~/.config/codecov/token, which chezmoi writes from 1Password. If the
 # variable is missing we fail loudly rather than issuing an unauthenticated
 # request that returns a confusing 401.
 

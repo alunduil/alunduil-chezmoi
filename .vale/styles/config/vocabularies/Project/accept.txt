@@ -20,6 +20,8 @@ datasource
 Crostini
 Zellij
 TrueNAS
+Codecov
+UptimeRobot
 Renovate
 pre-commit
 Diátaxis
@@ -75,6 +77,9 @@ VMs
 (?i)uid
 (?i)pids
 basename
+# An SSH or software agent; Microsoft.Terms would swap in "personal digital
+# assistant".
+(?i)agents?
 
 # Acronyms kept unexpanded. Listing them here also clears
 # Microsoft.Acronyms, which otherwise wants a "Name Of Thing (NOT)"

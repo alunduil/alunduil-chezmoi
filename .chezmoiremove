@@ -21,3 +21,8 @@
 # rtk, a Claude Code Bash output filter.
 .claude/RTK.md
 .local/bin/rtk
+
+# The retired RSA key and its ssh-agent state.
+.ssh/id_rsa
+.ssh/id_rsa.pub
+.ssh/ssh-agent
