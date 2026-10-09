@@ -5,7 +5,7 @@ token, lives in the `chezmoi` 1Password vault. Recovering a host means
 recovering 1Password first, in one of two cases: a lost device with the
 account intact, or a lost account.
 
-## Keep the Emergency Kit
+## Print the emergency kit
 
 The 1Password Emergency Kit holds the sign-in address, email, and Secret
 Key. Together with the account password, it signs in on a host with no
@@ -24,8 +24,7 @@ The second apply restores every token, the GPG key, and SSH access.
 
 ## Recover without the 1Password account
 
-When the account itself is gone, nothing in this repo can restore the
-vault. Replace each credential at its source:
+Without the account, nothing in this repo can restore the vault. Replace each credential at its source:
 
 1. Restore the GPG key from its paper backup
    ([pgp-signing.md](pgp-signing.md)).

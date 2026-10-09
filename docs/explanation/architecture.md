@@ -73,7 +73,7 @@ Exclusion also limits what a host can leak. The add-on sits on the
 network next to home automation, so it receives none of the secrets:
 no signing key, no SSH identity, no tokens.
 
-## Secrets stay in 1Password
+## Secrets live in the vault
 
 Apart from one age-encrypted Cloudflare token, the repo holds no
 secrets. It names items in the `chezmoi` 1Password vault, and apply
@@ -81,19 +81,18 @@ reads them through the 1Password desktop app on the way into `$HOME`.
 The repo is public, so a rotation leaves nothing behind in its history.
 
 Rotation is an edit in the vault followed by an apply. Scripts that
-hand a secret to something long-running, such as an MCP registration
-or the Alloy service, key on a hash of the secret's value, so the apply
-after a rotation reruns them.
+hand a secret to a long-running consumer, such as Alloy, key on a hash
+of its value. The apply after a rotation reruns them.
 
 The desktop app is the trust boundary on the host. It approves each
 process that reads a secret, so a new process gets a new prompt even
-while the app is unlocked. SSH keys never reach disk: the app's agent
+while the app stays unlocked. SSH keys never reach disk: the app's agent
 signs with them, and `agent.toml` limits it to the key in the vault.
 On Crostini nothing else would keep the app alive, so a user service
 runs it without a window.
 
-Apply fails rather than writing an empty secret when 1Password is
-locked. The one way to skip secrets is to set `CHEZMOI_NO_1PASSWORD`,
+A locked 1Password makes apply fail rather than write an empty
+secret. The one way to skip secrets is to set `CHEZMOI_NO_1PASSWORD`,
 which the checks and the first bootstrap pass do on purpose. An opt-out
 nobody sets by accident is safer than a default that degrades without
 notice.

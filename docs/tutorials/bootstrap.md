@@ -69,4 +69,4 @@ systemctl --user is-active 1password.service  # confirms the app owns the SSH ag
 ssh-add -l                                 # lists the SSH key from 1Password
 ```
 
-SSH to GitHub works once 1Password is signed in. The bootstrap clones over HTTPS to bridge the gap before then. Swap the apply clone's remote back to SSH if preferred: `git -C ~/.local/share/chezmoi remote set-url origin git@github.com:alunduil/alunduil-chezmoi.git`.
+SSH to GitHub works once you sign in to 1Password. The bootstrap clones over HTTPS to bridge the gap before then. Swap the apply clone's remote back to SSH if preferred: `git -C ~/.local/share/chezmoi remote set-url origin git@github.com:alunduil/alunduil-chezmoi.git`.
