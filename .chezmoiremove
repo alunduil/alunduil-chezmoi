@@ -26,3 +26,9 @@
 .ssh/id_rsa
 .ssh/id_rsa.pub
 .ssh/ssh-agent
+
+# GPG configuration and the armored secret-key export. Commits sign with the
+# SSH key; the local keyring stays so old signatures still verify.
+.gnupg/gpg.conf
+.gnupg/gpg-agent.conf
+.gnupg/secret-keys.asc

@@ -1,7 +1,13 @@
 [user]
 	name = Alex Brandt
 	email = alunduil@gmail.com
-	signingkey = 8F491CBC32D144341679826AE7E6572EF50D1BC5
+	signingkey = key::ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAID5n/oxN6LHG67Ua99lh0B98N0Go2h0ERGIIswEKmnr9
+[gpg]
+	format = ssh
+# Asks 1Password directly, so signing works whatever SSH_AUTH_SOCK a process
+# inherited.
+[gpg "ssh"]
+	program = /opt/1Password/op-ssh-sign
 [commit]
 	gpgsign = true
 [tag]

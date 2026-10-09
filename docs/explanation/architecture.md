@@ -18,7 +18,7 @@ C4Container
         Container(source, "Source clone", "git working tree", "Where edits happen")
         Container(apply, "Apply clone", "~/.local/share/chezmoi", "What chezmoi reads on diff/apply")
         Container(app, "1Password app", "desktop app, user service", "Approves each secret read; serves SSH keys")
-        Container(home, "Deployed files", "$HOME/{.config,.gnupg,.ssh,.local/bin,...}", "Written by chezmoi apply")
+        Container(home, "Deployed files", "$HOME/{.config,.ssh,.local/bin,...}", "Written by chezmoi apply")
     }
 
     Rel(user, source, "edits, commits")
@@ -71,7 +71,7 @@ list of exclusions, with no detection code.
 
 Exclusion also limits what a host can leak. The add-on sits on the
 network next to home automation, so it receives none of the secrets:
-no signing key, no SSH identity, no tokens.
+no SSH key, no tokens.
 
 ## Secrets live in the vault
 
@@ -86,8 +86,9 @@ of its value. The apply after a rotation reruns them.
 
 The desktop app is the trust boundary on the host. It approves each
 process that reads a secret, so a new process gets a new prompt even
-while the app stays unlocked. SSH keys never reach disk: the app's agent
-signs with them, and `agent.toml` limits it to the key in the vault.
+while the app stays unlocked. SSH keys never reach disk: the app signs
+with them, for SSH sessions and git commits alike, and `agent.toml`
+limits it to the key in the vault.
 On Crostini nothing else would keep the app alive, so a user service
 runs it without a window.
 
@@ -98,10 +99,7 @@ nobody sets by accident is safer than a default that degrades without
 notice.
 
 Recovery rests on the 1Password Emergency Kit
-([`how-to/recover-access.md`](../how-to/recover-access.md)). The GPG key
-also has its own passphrase and a paper-key backup
-([`how-to/pgp-signing.md`](../how-to/pgp-signing.md)), so it survives
-even losing the 1Password account.
+([`how-to/recover-access.md`](../how-to/recover-access.md)).
 
 ## Beyond this host
 

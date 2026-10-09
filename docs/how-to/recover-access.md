@@ -20,17 +20,17 @@ a fresh copy whenever the Secret Key or password changes.
 2. Remove the lost device from the account in 1Password, under
    **Settings → Devices** on the web.
 
-The second apply restores every token, the GPG key, and SSH access.
+The second apply restores every token, SSH access, and commit signing.
 
 ## Recover without the 1Password account
 
 Without the account, nothing in this repo can restore the vault. Replace each credential at its source:
 
-1. Restore the GPG key from its paper backup
-   ([pgp-signing.md](pgp-signing.md)).
-2. Create a new 1Password account, a vault named `chezmoi`, and an SSH
-   key item in it. Register the public key on GitHub and in the Home
-   Assistant SSH add-on.
+1. Create a new 1Password account, a vault named `chezmoi`, and an SSH
+   key item in it. Register the public key on GitHub as both an
+   authentication and a signing key, and in the Home Assistant SSH
+   add-on.
+2. Replace the `signingkey` public key in `dot_gitconfig`.
 3. Issue a new token at Codecov, GitHub, Grafana Cloud, TrueNAS, and
    UptimeRobot, and store each as an API Credential item with the token
    in its `credential` field.
