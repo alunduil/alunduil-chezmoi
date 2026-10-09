@@ -11,7 +11,7 @@
 #     1Password, this script reruns and the stale token in ~/.claude.json
 #     gets replaced. The token's template source never changes on rotation,
 #     so the hash is of the secret value itself.
-# token-hash: {{ if not (env "CHEZMOI_NO_1PASSWORD") }}{{ onepasswordRead "op://chezmoi/3cogunhk2hdoelnjlkphiantt4/credential" | sha256sum }}{{ end }}
+# token-hash: {{ includeTemplate "onepassword-read" .onepassword.uptimerobot | sha256sum }}
 
 set -euo pipefail
 

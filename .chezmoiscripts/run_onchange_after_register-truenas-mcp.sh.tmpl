@@ -11,7 +11,7 @@
 #     1Password or the URL changes, this script reruns and the stale entry
 #     in ~/.claude.json gets replaced. The key's template source never
 #     changes on rotation, so the hash is of the secret value itself.
-# key-hash: {{ if not (env "CHEZMOI_NO_1PASSWORD") }}{{ onepasswordRead "op://chezmoi/uhkscyukbbrun3vxtgkn6o6vqi/credential" | sha256sum }}{{ end }}
+# key-hash: {{ includeTemplate "onepassword-read" .onepassword.truenas | sha256sum }}
 # url-hash: {{ include "dot_config/truenas/url" | sha256sum }}
 
 set -euo pipefail

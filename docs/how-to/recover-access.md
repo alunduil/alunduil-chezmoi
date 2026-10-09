@@ -34,7 +34,5 @@ vault. Replace each credential at its source:
 3. Issue a new token at Codecov, GitHub, Grafana Cloud, TrueNAS, and
    UptimeRobot, and store each as an API Credential item with the token
    in its `credential` field.
-4. Point each template at its new item ID. The templates are the `.tmpl`
-   files under `dot_config/` and `private_dot_gnupg/`, plus the
-   `token-hash` lines in `.chezmoiscripts/`.
+4. Replace each item ID in `.chezmoidata/onepassword.yaml`.
 5. Revoke every old token at its service.

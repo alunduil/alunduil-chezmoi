@@ -1,3 +1,1 @@
-{{- if not (env "CHEZMOI_NO_1PASSWORD") -}}
-{{ onepasswordRead "op://chezmoi/lyeatzhvplwxgvqqr2weyjg7ze/credential" }}
-{{ end -}}
+{{ includeTemplate "onepassword-read" .onepassword.grafana_cloud -}}

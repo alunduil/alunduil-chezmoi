@@ -1,3 +1,1 @@
-{{- if not (env "CHEZMOI_NO_1PASSWORD") -}}
-{{ onepasswordRead "op://chezmoi/rbiuv4ql6jja5txiwzp7wwleia/credential" }}
-{{ end -}}
+{{ includeTemplate "onepassword-read" .onepassword.github -}}

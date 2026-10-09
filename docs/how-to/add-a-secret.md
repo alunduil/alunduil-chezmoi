@@ -12,8 +12,11 @@ secret into its **credential** field. Then look up the item's ID:
 op item list --vault chezmoi
 ```
 
-Templates use the ID because `op://` references reject some characters
-that titles allow, such as `:`, and because an ID survives a rename.
+Add the reference under `onepassword` in `.chezmoidata/onepassword.yaml`:
+
+```yaml
+  <service>: op://chezmoi/<item-id>/credential
+```
 
 ## Add the template
 
@@ -21,14 +24,10 @@ Name the file so chezmoi writes it with mode 600, for example
 `dot_config/<service>/private_token.tmpl`:
 
 ```text
-{{- if not (env "CHEZMOI_NO_1PASSWORD") -}}
-{{ onepasswordRead "op://chezmoi/<item-id>/credential" }}
-{{ end -}}
+{{ includeTemplate "onepassword-read" .onepassword.<service> -}}
 ```
 
-The checks set `CHEZMOI_NO_1PASSWORD`, which renders the file empty
-instead of reading 1Password. See `dot_config/codecov/` for an existing
-example.
+See `dot_config/codecov/` for an existing example.
 
 ## Rerun what consumes it on rotation
 
@@ -37,7 +36,7 @@ script on the secret's value so a rotation reruns it. Make it a
 `run_onchange_after_` script with a hash line:
 
 ```text
-# token-hash: {{ if not (env "CHEZMOI_NO_1PASSWORD") }}{{ onepasswordRead "op://chezmoi/<item-id>/credential" | sha256sum }}{{ end }}
+# token-hash: {{ includeTemplate "onepassword-read" .onepassword.<service> | sha256sum }}
 ```
 
 `.chezmoiscripts/run_onchange_after_register-uptimerobot-mcp.sh.tmpl`

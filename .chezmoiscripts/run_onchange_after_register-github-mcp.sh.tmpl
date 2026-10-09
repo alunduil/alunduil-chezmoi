@@ -13,7 +13,7 @@
 #     replaced. The token's template source never changes on rotation, so the
 #     hash is of the secret value itself.
 #
-# token-hash: {{ if not (env "CHEZMOI_NO_1PASSWORD") }}{{ onepasswordRead "op://chezmoi/rbiuv4ql6jja5txiwzp7wwleia/credential" | sha256sum }}{{ end }}
+# token-hash: {{ includeTemplate "onepassword-read" .onepassword.github | sha256sum }}
 
 set -euo pipefail
 

@@ -72,7 +72,8 @@ To keep one target a role's pattern drops, re-include that file with
 
 Every secret but the Cloudflare token lives in the `chezmoi` 1Password
 vault. Apply reads each through the 1Password desktop app, except the SSH
-key, which the app's agent serves without writing it to disk. Setting
+key, which the app's agent serves without writing it to disk.
+`.chezmoidata/onepassword.yaml` holds every vault reference. Setting
 `CHEZMOI_NO_1PASSWORD` renders every 1Password secret empty; the checks
 and the first bootstrap pass set it.
 
