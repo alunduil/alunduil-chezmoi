@@ -1,12 +1,17 @@
 # Bootstrap
 
-Zero to a fully configured host. Requires a Debian/Crostini host and a 1Password account with access to the `chezmoi` vault.
+Zero to a fully configured host. Requires a Debian/Crostini host, a 1Password account with access to the `chezmoi` vault, and the age key from a password manager.
 
 Apply runs twice. Secrets come from the 1Password desktop app, which the first apply installs, so the first apply skips them.
 
 ```bash
 CHEZMOI_VERSION="v2.73.0"
 sh -c "$(curl -fsLS get.chezmoi.io)" -- -b "$HOME/.local/bin" -t "$CHEZMOI_VERSION"
+
+# The Cloudflare token is the one secret still age-encrypted in the repo.
+mkdir -p ~/.config/chezmoi
+$EDITOR ~/.config/chezmoi/key.txt          # paste age key contents
+chmod 600 ~/.config/chezmoi/key.txt
 
 # First apply: installs everything, including 1Password; skips secrets.
 CHEZMOI_NO_1PASSWORD=1 ~/.local/bin/chezmoi init --apply https://github.com/alunduil/alunduil-chezmoi.git

@@ -31,9 +31,9 @@ vault. Replace each credential at its source:
 2. Create a new 1Password account, a vault named `chezmoi`, and an SSH
    key item in it. Register the public key on GitHub and in the Home
    Assistant SSH add-on.
-3. Issue a new token at Codecov, GitHub, Grafana Cloud, TrueNAS,
-   UptimeRobot, and Cloudflare, and store each as an API Credential item
-   with the token in its `credential` field.
+3. Issue a new token at Codecov, GitHub, Grafana Cloud, TrueNAS, and
+   UptimeRobot, and store each as an API Credential item with the token
+   in its `credential` field.
 4. Point each template at its new item ID. The templates are the `.tmpl`
    files under `dot_config/` and `private_dot_gnupg/`, plus the
    `token-hash` lines in `.chezmoiscripts/`.

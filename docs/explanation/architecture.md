@@ -75,7 +75,8 @@ no signing key, no SSH identity, no tokens.
 
 ## Secrets stay in 1Password
 
-The repo holds no secrets, encrypted or otherwise. Templates name items
+Apart from one age-encrypted Cloudflare token, the repo holds no
+secrets. Templates name items
 in the `chezmoi` 1Password vault, and apply reads them through the
 1Password desktop app on the way into `$HOME`. The repo is public, so
 this also keeps every past secret, even an encrypted one, out of its
