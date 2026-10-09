@@ -1,0 +1,11 @@
+Host homeassistant
+	HostName 192.168.68.56
+	User hassio
+	Port 22
+	IdentityFile ~/.ssh/id_rsa
+	ControlMaster auto
+	ControlPath ~/.ssh/sockets/%r@%h:%p
+	ControlPersist 10m
+
+Host *
+	IdentityAgent ~/.1password/agent.sock

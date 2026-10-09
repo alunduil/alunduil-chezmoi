@@ -75,5 +75,5 @@ Every secret is an `encrypted_*.age` source that apply decrypts.
 | Secret | Source | Unlocks with | `ha-terminal` |
 | ------ | ------ | ------------ | ------------- |
 | GPG signing key | `private_dot_gnupg/`, imported by `import-pgp-from-chezmoi` | age key + GPG passphrase | ignored |
-| SSH key and config | `private_dot_ssh/` | age key | ignored |
+| SSH key | `private_dot_ssh/` | age key | ignored |
 | Service tokens | `dot_config/<service>/encrypted_private_*.age` | age key | ignored |
