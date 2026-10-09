@@ -2,8 +2,8 @@
 # Imports the user's PGP secret key from the chezmoi-deployed armored
 # export at ~/.gnupg/secret-keys.asc. The blob itself is
 # passphrase-encrypted (gpg --export-secret-keys protects it with the
-# original key passphrase) and chezmoi decrypts it from age on apply, so
-# the trust chain is age-key + GPG-passphrase. Idempotent: no-ops if the
+# original key passphrase) and chezmoi reads it from 1Password on apply,
+# so the trust chain is 1Password + GPG-passphrase. Idempotent: no-ops if the
 # fingerprint is already present in the local keyring. Refresh the blob
 # after key rotation; see README.
 

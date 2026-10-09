@@ -9,6 +9,10 @@
 
 set -euo pipefail
 
+# Templates skip their 1Password reads under this flag, so the check needs
+# no 1Password session and raises no approval prompt.
+export CHEZMOI_NO_1PASSWORD=1
+
 SOURCE_DIR="$(git -C "$(dirname "${BASH_SOURCE[0]}")" rev-parse --show-toplevel)"
 
 fail=0
