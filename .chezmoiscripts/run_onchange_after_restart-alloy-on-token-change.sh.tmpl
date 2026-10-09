@@ -1,0 +1,15 @@
+#!/usr/bin/env bash
+# alloy.service reads the Grafana Cloud token through LoadCredential=, which
+# copies it once at service start: a rotated token lands on disk while Alloy
+# keeps sending the old one. Keyed on the token's value, so this reruns only
+# after a rotation.
+# token-hash: {{ if not (env "CHEZMOI_NO_1PASSWORD") }}{{ onepasswordRead "op://chezmoi/lyeatzhvplwxgvqqr2weyjg7ze/credential" | sha256sum }}{{ end }}
+
+set -euo pipefail
+
+if ! systemctl --user show-environment >/dev/null 2>&1; then
+  echo "==> alloy: no user systemd session; skipping restart" >&2
+  exit 0
+fi
+
+systemctl --user try-restart alloy.service

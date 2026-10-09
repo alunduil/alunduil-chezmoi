@@ -1,0 +1,3 @@
+{{- if not (env "CHEZMOI_NO_1PASSWORD") -}}
+{{ onepasswordRead "op://chezmoi/vyuwqkl46sstblpmo6dcb3kyia/credential" }}
+{{ end -}}

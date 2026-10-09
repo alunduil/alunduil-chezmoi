@@ -6,14 +6,14 @@
 # land under mcp__github__*, which pr-draft-guard.sh keys on.
 #
 # Why run_onchange_after instead of a converging run_before pass:
-#   - _after_: the chezmoi-encrypted token must be decrypted to
-#     ~/.config/github/token before we read it, which only happens after files
-#     are applied.
-#   - run_onchange (keyed on the encrypted file's hash below): when the token
-#     rotates, the source file's hash changes, this script reruns, and the
-#     stale token in ~/.claude.json gets replaced.
+#   - _after_: the token is read from 1Password into ~/.config/github/token,
+#     which only happens after files are applied.
+#   - run_onchange (keyed on the hash below): when the token rotates in
+#     1Password, this script reruns and the stale token in ~/.claude.json gets
+#     replaced. The token's template source never changes on rotation, so the
+#     hash is of the secret value itself.
 #
-# token-hash: {{ with (glob (joinPath .chezmoi.sourceDir "dot_config/github/encrypted_private_token.age")) }}{{ include "dot_config/github/encrypted_private_token.age" | sha256sum }}{{ else }}not-yet-encrypted{{ end }}
+# token-hash: {{ if not (env "CHEZMOI_NO_1PASSWORD") }}{{ onepasswordRead "op://chezmoi/rbiuv4ql6jja5txiwzp7wwleia/credential" | sha256sum }}{{ end }}
 
 set -euo pipefail
 
