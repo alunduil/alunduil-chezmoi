@@ -27,9 +27,8 @@ The second apply restores every token, SSH access, and commit signing.
 Without the account, nothing in this repo can restore the vault. Replace each credential at its source:
 
 1. Create a new 1Password account, a vault named `chezmoi`, and an SSH
-   key item in it. Register the public key on GitHub as both an
-   authentication and a signing key, and in the Home Assistant SSH
-   add-on.
+   key item in it. Register the public key in the Home Assistant SSH
+   add-on, and on GitHub as both an authentication and a signing key.
 2. Replace the `signingkey` public key in `dot_gitconfig`.
 3. Issue a new token at Codecov, GitHub, Grafana Cloud, TrueNAS, and
    UptimeRobot, and store each as an API Credential item with the token

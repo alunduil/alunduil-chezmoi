@@ -87,8 +87,8 @@ of its value. The apply after a rotation reruns them.
 The desktop app is the trust boundary on the host. It approves each
 process that reads a secret, so a new process gets a new prompt even
 while the app stays unlocked. SSH keys never reach disk: the app signs
-with them, for SSH sessions and git commits alike, and `agent.toml`
-limits it to the key in the vault.
+with them for both SSH sessions and git commits. `agent.toml` limits the
+agent to the key in the vault.
 On Crostini nothing else would keep the app alive, so a user service
 runs it without a window.
 
