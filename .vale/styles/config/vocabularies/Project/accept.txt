@@ -26,8 +26,6 @@ Renovate
 pre-commit
 Diátaxis
 ghcup
-Keybase
-paperkey
 
 # Observability stack
 Grafana
@@ -87,7 +85,6 @@ basename
 # it contains GNU, which the rule flags in turn and which cannot expand
 # at all.
 GPG
-PGP
 ANSI
 TUI
 TLS
