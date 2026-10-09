@@ -70,10 +70,14 @@ To keep one target a role's pattern drops, re-include that file with
 
 ## Secrets
 
-Every secret is an `encrypted_*.age` source that apply decrypts.
+Every secret lives in the `chezmoi` 1Password vault. Apply reads each
+through the 1Password desktop app, except the SSH key, which the app's
+agent serves without writing it to disk. Setting `CHEZMOI_NO_1PASSWORD`
+renders every secret empty; the checks and the first bootstrap pass set
+it.
 
 | Secret | Source | Unlocks with | `ha-terminal` |
 | ------ | ------ | ------------ | ------------- |
-| GPG signing key | `private_dot_gnupg/`, imported by `import-pgp-from-chezmoi` | age key + GPG passphrase | ignored |
-| SSH key | `private_dot_ssh/` | age key | ignored |
-| Service tokens | `dot_config/<service>/encrypted_private_*.age` | age key | ignored |
+| GPG signing key | `private_dot_gnupg/private_secret-keys.asc.tmpl`, imported by `import-pgp-from-chezmoi` | 1Password + GPG passphrase | ignored |
+| SSH key | 1Password agent, limited by `dot_config/1Password/ssh/agent.toml` | 1Password | ignored |
+| Service tokens | `dot_config/<service>/private_*.tmpl` | 1Password | ignored |

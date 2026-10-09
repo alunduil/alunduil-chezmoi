@@ -16,4 +16,13 @@ if ! systemctl --user show-environment >/dev/null 2>&1; then
 fi
 
 systemctl --user daemon-reload
-systemctl --user enable --now alloy.service cgroup-pids-textfile.timer
+systemctl --user enable --now cgroup-pids-textfile.timer
+
+# alloy.service loads the Grafana Cloud token as a credential and fails to
+# start without it. The first bootstrap pass skips secrets, so the next apply
+# starts Alloy instead.
+if [ -s "$HOME/.config/grafana-cloud/token" ]; then
+  systemctl --user enable --now alloy.service
+else
+  echo "==> telemetry: no Grafana Cloud token yet; leaving alloy disabled" >&2
+fi

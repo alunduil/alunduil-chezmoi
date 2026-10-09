@@ -12,17 +12,21 @@ C4Container
 
     Person(user, "User", "alunduil")
     System_Ext(github, "GitHub", "git remote")
+    System_Ext(vault, "1Password", "chezmoi vault")
 
     System_Boundary(host, "Debian/Crostini host") {
         Container(source, "Source clone", "git working tree", "Where edits happen")
         Container(apply, "Apply clone", "~/.local/share/chezmoi", "What chezmoi reads on diff/apply")
-        Container(home, "Deployed files", "$HOME/{.config,.gnupg,.ssh,.local/bin,...}", "Written by chezmoi apply, age-decrypted on the way in")
+        Container(app, "1Password app", "desktop app, user service", "Approves each secret read; serves SSH keys")
+        Container(home, "Deployed files", "$HOME/{.config,.gnupg,.ssh,.local/bin,...}", "Written by chezmoi apply")
     }
 
     Rel(user, source, "edits, commits")
     Rel(source, github, "push")
     Rel(github, apply, "pull")
     Rel(apply, home, "chezmoi apply")
+    Rel(apply, app, "reads secrets at apply")
+    Rel(app, vault, "syncs")
 ```
 
 ## Two clones
@@ -66,19 +70,40 @@ multiply. An explicit value scales: a new role is a new value and a
 list of exclusions, with no detection code.
 
 Exclusion also limits what a host can leak. The add-on sits on the
-network next to home automation, so it receives none of the encrypted
-sources: no signing key, no SSH identity, no tokens.
+network next to home automation, so it receives none of the secrets:
+no signing key, no SSH identity, no tokens.
 
-## One secret to recover
+## Secrets stay in 1Password
 
-A fresh host needs one secret from outside the repo: the age key,
-restored from a password manager. The GPG signing key, the SSH key, and
-the service tokens live in the repo encrypted to that key, and apply
-decrypts them on the way into `$HOME`.
+The repo holds no secrets, encrypted or otherwise. Templates name items
+in the `chezmoi` 1Password vault, and apply reads them through the
+1Password desktop app on the way into `$HOME`. The repo is public, so
+this also keeps every past secret, even an encrypted one, out of its
+history.
 
-The GPG key also needs its own passphrase. Its paper-key backup
-([`how-to/pgp-signing.md`](../how-to/pgp-signing.md)) recovers it if you
-lose the age key and the repo together.
+Rotation is an edit in the vault followed by an apply. Scripts that
+hand a secret to something long-running, such as an MCP registration
+or the Alloy service, key on a hash of the secret's value, so the apply
+after a rotation reruns them.
+
+The desktop app is the trust boundary on the host. It approves each
+process that reads a secret, so a new process gets a new prompt even
+while the app is unlocked. SSH keys never reach disk: the app's agent
+signs with them, and `agent.toml` limits it to the key in the vault.
+On Crostini nothing else would keep the app alive, so a user service
+runs it without a window.
+
+Apply fails rather than writing an empty secret when 1Password is
+locked. The one way to skip secrets is to set `CHEZMOI_NO_1PASSWORD`,
+which the checks and the first bootstrap pass do on purpose. An opt-out
+nobody sets by accident is safer than a default that degrades without
+notice.
+
+Recovery rests on the 1Password Emergency Kit
+([`how-to/recover-access.md`](../how-to/recover-access.md)). The GPG key
+also has its own passphrase and a paper-key backup
+([`how-to/pgp-signing.md`](../how-to/pgp-signing.md)), so it survives
+even losing the 1Password account.
 
 ## Beyond this host
 
