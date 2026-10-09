@@ -1,4 +1,4 @@
-# This file is public. Hosts that should not be go in config.d/.
+# This file is public; private hosts go in config.d/.
 Include ~/.ssh/config.d/*
 
 Host homeassistant

@@ -1,8 +1,6 @@
 #!/usr/bin/env bash
-# alloy.service reads the Grafana Cloud token through LoadCredential=, which
-# copies it once at service start: a rotated token lands on disk while Alloy
-# keeps sending the old one. Keyed on the token's value, so this reruns only
-# after a rotation.
+# LoadCredential= copies the Grafana Cloud token only at service start, so
+# Alloy needs a restart to send a rotated one.
 # token-hash: {{ includeTemplate "onepassword-read" .onepassword.grafana_cloud | sha256sum }}
 
 set -euo pipefail

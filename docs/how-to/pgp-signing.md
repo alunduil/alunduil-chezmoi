@@ -1,6 +1,6 @@
 # Commit signing
 
-The secret key is the `GPG Key` document in the `chezmoi` 1Password vault. Apply writes it to `~/.gnupg/secret-keys.asc`, and `.chezmoiscripts/run_before_08-import-pgp-from-chezmoi.sh.tmpl` imports it into the local keyring on the apply after. The trust chain is 1Password + GPG passphrase.
+The secret key is the `GPG Key` document in the `chezmoi` 1Password vault. Apply writes it to `~/.gnupg/secret-keys.asc`, and `.chezmoiscripts/run_before_08-import-pgp-from-chezmoi.sh.tmpl` imports it into the local keyring on the next apply. The trust chain is 1Password + GPG passphrase.
 
 Upload the public key to GitHub once per account so signed commits show "Verified":
 

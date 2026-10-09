@@ -1,5 +1,5 @@
-# SSH keys live in 1Password, whose app serves them on this socket. A
-# forwarded agent in a remote session already sets SSH_AUTH_SOCK and wins.
+# The 1Password app serves SSH keys on this socket. A forwarded agent in a
+# remote session takes precedence.
 if [ -z "$SSH_AUTH_SOCK" ]; then
    export SSH_AUTH_SOCK="$HOME/.1password/agent.sock"
 fi

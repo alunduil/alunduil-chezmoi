@@ -1,8 +1,9 @@
 # Recovering access
 
-Every secret this repo deploys lives in the `chezmoi` 1Password vault,
-so recovering a host means recovering 1Password first. This guide covers
-two cases: a lost device with the account intact, and a lost account.
+Every secret this repo deploys, apart from the age-encrypted Cloudflare
+token, lives in the `chezmoi` 1Password vault. Recovering a host means
+recovering 1Password first, in one of two cases: a lost device with the
+account intact, or a lost account.
 
 ## Keep the Emergency Kit
 

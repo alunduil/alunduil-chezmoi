@@ -1,7 +1,7 @@
 # Adding a secret
 
 A secret deploys from an item in the `chezmoi` 1Password vault. The repo
-holds only a template that names the item.
+holds only the item's ID.
 
 ## Store the secret in 1Password
 

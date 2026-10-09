@@ -22,8 +22,7 @@
 .claude/RTK.md
 .local/bin/rtk
 
-# The RSA key and the ssh-agent it was loaded into; the 1Password agent
-# serves SSH keys now.
+# The retired RSA key and its ssh-agent state.
 .ssh/id_rsa
 .ssh/id_rsa.pub
 .ssh/ssh-agent

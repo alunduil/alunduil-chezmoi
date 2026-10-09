@@ -4,13 +4,10 @@
 # is passed via --header and ends up baked into ~/.claude.json.
 #
 # Why run_onchange_after instead of a converging run_before pass:
-#   - _after_: the token is read from 1Password into
-#     ~/.config/uptimerobot/token, which only happens after files are
+#   - _after_: ~/.config/uptimerobot/token exists only once files are
 #     applied.
-#   - run_onchange (keyed on the hash below): when the token rotates in
-#     1Password, this script reruns and the stale token in ~/.claude.json
-#     gets replaced. The token's template source never changes on rotation,
-#     so the hash is of the secret value itself.
+#   - run_onchange, keyed on the token's value: a rotation reruns this script
+#     and replaces the stale token in ~/.claude.json.
 # token-hash: {{ includeTemplate "onepassword-read" .onepassword.uptimerobot | sha256sum }}
 
 set -euo pipefail

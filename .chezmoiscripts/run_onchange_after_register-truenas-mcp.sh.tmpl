@@ -4,13 +4,10 @@
 # passed as -e env vars, which Claude Code bakes into ~/.claude.json.
 #
 # Why run_onchange_after instead of a converging run_before pass:
-#   - _after_: the api key is read from 1Password into
-#     ~/.config/truenas/api_key, which only happens after files are
-#     applied. The url file likewise deploys this pass.
-#   - run_onchange (keyed on the hashes below): when the key rotates in
-#     1Password or the URL changes, this script reruns and the stale entry
-#     in ~/.claude.json gets replaced. The key's template source never
-#     changes on rotation, so the hash is of the secret value itself.
+#   - _after_: ~/.config/truenas/api_key and url exist only once files are
+#     applied.
+#   - run_onchange, keyed on the key's value and the URL: a rotation or a new
+#     URL reruns this script and replaces the stale entry in ~/.claude.json.
 # key-hash: {{ includeTemplate "onepassword-read" .onepassword.truenas | sha256sum }}
 # url-hash: {{ include "dot_config/truenas/url" | sha256sum }}
 

@@ -8,7 +8,7 @@ Apply runs twice. Secrets come from the 1Password desktop app, which the first a
 CHEZMOI_VERSION="v2.73.0"
 sh -c "$(curl -fsLS get.chezmoi.io)" -- -b "$HOME/.local/bin" -t "$CHEZMOI_VERSION"
 
-# The Cloudflare token is the one secret still age-encrypted in the repo.
+# Decrypts the Cloudflare token, the one age-encrypted secret.
 mkdir -p ~/.config/chezmoi
 $EDITOR ~/.config/chezmoi/key.txt          # paste age key contents
 chmod 600 ~/.config/chezmoi/key.txt
@@ -69,4 +69,4 @@ systemctl --user is-active 1password.service  # confirms the app owns the SSH ag
 ssh-add -l                                 # lists the SSH key from 1Password
 ```
 
-SSH to GitHub works once 1Password is signed in, because the SSH key never touches disk: the 1Password agent serves it. The bootstrap clones over HTTPS to bridge the gap before then. Swap the apply clone's remote back to SSH if preferred: `git -C ~/.local/share/chezmoi remote set-url origin git@github.com:alunduil/alunduil-chezmoi.git`.
+SSH to GitHub works once 1Password is signed in. The bootstrap clones over HTTPS to bridge the gap before then. Swap the apply clone's remote back to SSH if preferred: `git -C ~/.local/share/chezmoi remote set-url origin git@github.com:alunduil/alunduil-chezmoi.git`.
