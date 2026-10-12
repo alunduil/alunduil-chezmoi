@@ -8,15 +8,14 @@ calls, the systemd units, the 1Password desktop app. Out of scope:
 - Cloud and home-network internals. GitHub, Cloudflare, and the home
   network stay external entities here. `alunduil-infrastructure` carries
   their data flow diagram.
-- The `ha-terminal` role. It deploys the Claude Code configuration and a
-  `.vimrc`, and `.chezmoiignore` drops every bootstrap pass, unit, token,
-  and SSH source.
+- The `ha-terminal` role, which deploys only the Claude Code
+  configuration and a `.vimrc`.
 - Flows from command-line tools the user drives by hand on their own
   login: `gcx`, `readwise`, `keybase`, and `signal-cli`. Their credentials
   appear under [Credentials](#credentials).
 - What crosses a tailnet tunnel.
-- Installed software as a store. The diagrams show where it comes from,
-  and each process covers what it does once running.
+- Installed software as a store. The diagrams show only where it comes
+  from.
 
 Process numbers follow the level: `1.0` at Level 0, `1.1` beneath it.
 Data stores carry numbers D1 to D10, the same at every level.
@@ -292,9 +291,8 @@ flowchart TB
 
 Three control signals carry no data:
 
-- A change in a secret's value reruns the `run_onchange_after_` script
-  keyed on its hash. That re-registers an MCP server, or restarts
-  `alloy.service` so it loads a rotated Grafana Cloud token.
+- A rotated secret re-registers its MCP server, or restarts
+  `alloy.service` to load the new Grafana Cloud token.
 - systemd timers start every process under `7.0`.
 - The 1Password app's approval prompt gates each `secret reference`
   before `secret value` flows back.
@@ -355,28 +353,23 @@ flowchart LR
 are separate.
 
 `1.2` resolves each `secret reference`, an item ID from
-`.chezmoidata/onepassword.yaml`, through `op` and the desktop app. The
-first bootstrap apply sets `CHEZMOI_NO_1PASSWORD`, so every 1Password
-secret renders empty until the user signs in to the app.
+`.chezmoidata/onepassword.yaml`, through `op` and the desktop app. Until
+the user signs in to the app, every 1Password secret deploys empty.
 
 `1.2` also fetches the chezmoi externals: pinned release assets from
 GitHub, with no checksum on the asset. `1.3` adds six vendor apt
 repositories with their signing keys and pipes the Tailscale and nvm
 install scripts into a shell.
 
-`1.4` copies each bearer token and API key from D3 into D5. GitHub and
-Uptime Robot take a bearer token in a request header. TrueNAS runs as a
-local stdio binary that takes its endpoint and key as environment
-variables. It runs with certificate verification off, because the
-appliance's certificate carries no IP subject alternative name. The Cloudflare
-endpoints and Context7 register with no credential: Cloudflare obtains
-an OAuth grant through a browser on first use, and Context7 runs keyless.
+`1.4` copies the GitHub and Uptime Robot tokens and the TrueNAS API key
+from D3 into D5.
 
 ---
 
 ## Run a Claude Code session
 
-Process `3.0` is where the MCP fleet's trust boundaries separate.
+Process `3.0` calls every MCP server, each across its own trust
+boundary.
 
 ```mermaid
 flowchart TB
@@ -470,7 +463,7 @@ permission prompts. The draft guard there rejects a
 `PostToolUse` phase: it runs pre-commit on a just-written file and emits
 the session events the Zellij pane title reads.
 
-MCP servers reach `3.4` with one of four credential arrangements:
+Each MCP server authenticates `3.4` with its own credential:
 
 | Server | Credential | Held in |
 | --- | --- | --- |
@@ -478,8 +471,10 @@ MCP servers reach `3.4` with one of four credential arrangements:
 | Cloudflare `graphql`, `docs`, `dns-analytics` | OAuth grant from a browser sign-in | Claude Code, outside the chezmoi source |
 | GitHub, Uptime Robot | Bearer token | D5 |
 | TrueNAS | API key as an environment variable | D5 |
+| Context7 | None | Not applicable |
 
-Context7 takes no credential.
+TrueNAS runs with certificate verification off: the appliance's
+certificate carries no IP subject alternative name.
 
 ---
 

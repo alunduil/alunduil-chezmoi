@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
-"""Cases mutate the live diagram rather than a fixture, so a check that stops
-firing because the document outgrew its parser fails here.
+"""Cases mutate the live diagram, so a check that stops firing as the document
+outgrows its parser fails here.
 """
 
 import pathlib

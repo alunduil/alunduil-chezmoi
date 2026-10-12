@@ -15,13 +15,6 @@ belong in sequence diagrams, object structure in UML; a DFD carries
 neither. Control signals are not data: list them in prose under the
 diagram they would otherwise clutter.
 
-Every claim in a DFD holds in a world with no adversary. "No flow
-connects the token store to the signing key" is a DFD statement; "so a
-stolen token can't sign a commit" is the threat model's conclusion from
-it. Write the reachability and let the threat model draw on it — it
-needs the fact as input, and inheriting a conclusion costs it the step
-where that conclusion gets checked.
-
 ## Components
 
 Four, and only four:
@@ -91,15 +84,15 @@ Balancing:
 
 Scope:
 
-- State what is. Data at rest is plaintext or encrypted, a flow carries
-  a named credential, a process runs unattended, one entity is the only
-  inbound path — all diagram facts. Blast radius, attribution gaps, what
-  an intruder reaches, and every mitigation belong to the threat model.
-- A defect the drawing exposes links to its filed issue. The page
-  records the system as it is and takes no position on what it should
-  be.
-- Name a credential store by what it holds. Its path on disk stays out
-  of the page.
+- State what holds with no adversary: data at rest is plaintext or
+  encrypted, a flow carries a named credential, a process runs
+  unattended, one entity is the only inbound path. "No flow connects
+  the token store to the signing key" is a DFD fact; "so a stolen token
+  can't sign a commit" is the threat model's conclusion, which it
+  checks itself. Blast radius, attribution, and mitigations go there
+  too.
+- Link each defect the drawing exposes to its filed issue.
+- Name a credential store by what it holds, without its path on disk.
 
 Currency:
 
@@ -134,8 +127,8 @@ DFDs for security work, where crossing one is the finding: one
 subgraph for a boundary inside the system, such as an app that holds its
 own store and gates what it releases.
 
-A store's table under Level 0 — what it holds and whether it is
-encrypted at rest — carries what a node label can't.
+Under Level 0, tabulate each store: what it holds and whether it is
+encrypted at rest.
 
 ## Location
 

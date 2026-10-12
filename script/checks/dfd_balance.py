@@ -1,23 +1,16 @@
 #!/usr/bin/env python3
-"""Check a data flow diagram's levels against the dfd skill's rules.
+"""Check a data flow diagram against the dfd skill's rules.
 
-Python among bash siblings: the body is markdown and Mermaid parsing plus set
-algebra over flow names.
+Three classes of finding:
 
-Two classes of finding, neither visible to a linter. Balancing: a child
-diagram's boundary-crossing flows match its parent process's exactly, and
-level 0 names the same external entities as the context diagram. Drawing: a
-process with no input is a miracle, one with no output a black hole, and a
-flow between two passive elements is missing the process that transforms it.
+- Balancing: a child diagram's boundary-crossing flows match its parent
+  process's exactly, and level 0 names the context diagram's entities.
+- Drawing: a process with no input is a miracle, one with no output a black
+  hole, and a flow between two passive elements lacks its process.
+- Scope: a DFD's claims hold with no adversary, so prose that needs one draws
+  a conclusion belonging to the threat model.
 
-Levels come from the process numbering, so adding one needs no change here:
-`0` is the context, `N.0` is level 0, `N.M` decomposes `N.0`, and `N.M.K`
-decomposes `N.M`. A diagram's own processes are its deepest-numbered ones;
-shallower processes are neighbours drawn for reference.
-
-Scope is the third class. Every claim in a DFD holds with no adversary in
-the world, so vocabulary that only makes sense once there is one marks a
-conclusion the threat model should reach on its own.
+Levels come from process numbering, so a new level needs no change here.
 """
 
 import argparse
@@ -35,8 +28,8 @@ PROCESS = re.compile(r"^\s*(\w+)\(\s*(\d+(?:\.\d+)*)\s+[^)]*\)")
 STORE = re.compile(r"^\s*(\w+)\[\(([^)]+)\)\]")
 ENTITY = re.compile(r"^\s*(\w+)\[(?!\()([^\]]+)\]")
 FENCE = re.compile(r"^\s*```")
-# "threat model" itself stays legal: a DFD may say where the rest of the
-# analysis lives, it just may not do it.
+# Leaves out "threat model": a DFD may point at the threat model, not do its
+# work.
 ANALYSIS = re.compile(
     r"\b(compromis\w*|attacker\w*|adversar\w*|blast radius|mitigat\w*|exfiltrat\w*|in the clear)\b",
     re.I,
@@ -103,7 +96,7 @@ class Diagram:
                     self.boundaries[boundary].add(node)
 
     def _declare(self, line):
-        """Record the node a declaration line names, and return its id."""
+        """Record a node declaration; return its id, or None for any other line."""
         if match := PROCESS.match(line):
             self.processes[match.group(1)] = ProcessNumber(match.group(2))
         elif match := STORE.match(line):
