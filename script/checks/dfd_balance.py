@@ -24,6 +24,7 @@ import argparse
 import pathlib
 import re
 import sys
+from typing import NamedTuple
 
 DEFAULT_DOC = "docs/reference/data-flow.md"
 ROOT = "0"
@@ -75,11 +76,17 @@ class ProcessNumber(str):
         return ProcessNumber(".".join(parts[:-1]))
 
 
-class Level:
+class Flow(NamedTuple):
+    source: str
+    name: str
+    target: str
+
+
+class Diagram:
     """One Mermaid block from the document."""
 
     def __init__(self, body):
-        self.edges, self.processes, self.stores = [], {}, {}
+        self.flows, self.processes, self.stores = [], {}, {}
         self.entities, self.boundaries = {}, {}
         enclosing = []
         for line in body.splitlines():
@@ -87,49 +94,42 @@ class Level:
             if match := re.match(r"subgraph\s+(\w+)", stripped):
                 enclosing.append(match.group(1))
                 self.boundaries[match.group(1)] = set()
-                continue
-            if stripped == "end":
+            elif stripped == "end":
                 enclosing.pop()
-                continue
-            if match := EDGE.match(line):
-                self.edges.append((match.group(1), match.group(2).strip(), match.group(3)))
-                continue
-            node = None
-            if match := PROCESS.match(stripped):
-                node = match.group(1)
-                self.processes[node] = ProcessNumber(match.group(2))
-            elif match := STORE.match(stripped):
-                node = match.group(1)
-                self.stores[node] = match.group(2)
-            elif match := ENTITY.match(stripped):
-                node = match.group(1)
-                self.entities[node] = match.group(2)
-            for boundary in enclosing if node else ():
-                self.boundaries[boundary].add(node)
+            elif match := EDGE.match(line):
+                self.flows.append(Flow(match.group(1), match.group(2).strip(), match.group(3)))
+            elif node := self._declare(stripped):
+                for boundary in enclosing:
+                    self.boundaries[boundary].add(node)
 
-    def inflows(self, node):
-        return {flow for _, flow, target in self.edges if target == node}
+    def _declare(self, line):
+        """Record the node a declaration line names, and return its id."""
+        if match := PROCESS.match(line):
+            self.processes[match.group(1)] = ProcessNumber(match.group(2))
+        elif match := STORE.match(line):
+            self.stores[match.group(1)] = match.group(2)
+        elif match := ENTITY.match(line):
+            self.entities[match.group(1)] = match.group(2)
+        return match.group(1) if match else None
 
-    def outflows(self, node):
-        return {flow for source, flow, _ in self.edges if source == node}
+    def flows_into(self, nodes):
+        return {f.name for f in self.flows if f.source not in nodes and f.target in nodes}
 
-    def crossing_in(self, inside):
-        return {f for s, f, t in self.edges if s not in inside and t in inside}
-
-    def crossing_out(self, inside):
-        return {f for s, f, t in self.edges if s in inside and t not in inside}
+    def flows_out_of(self, nodes):
+        return {f.name for f in self.flows if f.source in nodes and f.target not in nodes}
 
     def depth(self):
         return max((n.depth for n in self.processes.values()), default=None)
 
-    def own(self):
-        """The processes this diagram is about, deepest-numbered first."""
+    def subjects(self):
+        """The processes this diagram is about: its deepest-numbered ones.
+        Shallower processes are neighbours drawn for reference."""
         deepest = self.depth()
         return {n: v for n, v in self.processes.items() if v.depth == deepest}
 
     def parent_number(self):
         """The process this diagram opens up, or None for the context."""
-        parents = {v.parent for v in self.own().values()}
+        parents = {v.parent for v in self.subjects().values()}
         return parents.pop() if len(parents) == 1 else None
 
     def name(self):
@@ -143,17 +143,24 @@ class Level:
         return "an unattached diagram"
 
     def system_boundary(self):
-        """Nodes inside any subgraph holding one of this diagram's processes."""
-        own = set(self.own())
+        """Nodes inside any subgraph holding one of this diagram's subjects."""
+        subjects = set(self.subjects())
         inside = set()
         for members in self.boundaries.values():
-            if members & own:
+            if members & subjects:
                 inside |= members
         return inside
 
     def outside(self):
         inside = self.system_boundary()
         return {n: lab for n, lab in self.entities.items() if n not in inside}
+
+    def interior(self, parent):
+        """The nodes inside the process this diagram opens up. A store the
+        parent diagram already draws sits outside it; one first drawn here
+        is internal."""
+        known = set(parent.stores.values())
+        return set(self.subjects()) | {n for n, lab in self.stores.items() if lab not in known}
 
 
 def compare(subject, parent, child):
@@ -163,73 +170,68 @@ def compare(subject, parent, child):
 
 
 def parse(source):
-    blocks = [Level(b) for b in BLOCK.findall(source)]
+    """The diagrams, the context, and level 0, or Malformed when the document
+    lacks the shape every check below assumes."""
+    diagrams = [Diagram(b) for b in BLOCK.findall(source)]
     # Guard the silent pass: a parser that matches nothing reports no findings,
     # which reads identically to a clean document.
-    if not blocks:
+    if not diagrams:
         raise Malformed("no mermaid blocks found")
-    contexts = [b for b in blocks if b.depth() == 0]
+    contexts = [d for d in diagrams if d.depth() == 0]
     if len(contexts) != 1:
         raise Malformed(f"expected one context diagram, found {len(contexts)}")
-    tops = [b for b in blocks if b.depth() == 1]
+    tops = [d for d in diagrams if d.depth() == 1]
     if len(tops) != 1:
         raise Malformed(f"expected one level 0 diagram, found {len(tops)}")
-    return blocks, contexts[0], tops[0]
+    if not tops[0].outside():
+        raise Malformed("level 0 has no external entities")
+    return diagrams, contexts[0], tops[0]
 
 
 def check_context(context, top):
     outside = set(top.outside().values())
-    if not outside:
-        raise Malformed("level 0 has no external entities")
     named = set(context.entities.values())
     return [f"context: level 0 has {label!r}, context does not" for label in sorted(outside - named)] + [
         f"context: has {label!r}, level 0 does not" for label in sorted(named - outside)
     ]
 
 
-def check_balance(blocks):
-    # An unresolvable parent is a finding: a comparison skipped for want of a
-    # parent reads as a balanced one.
-    owners = {}
-    for block in blocks:
-        for node, number in block.own().items():
-            owners[number] = (block, node)
+def check_balance(diagrams):
+    owners = {number: (diagram, node) for diagram in diagrams for node, number in diagram.subjects().items()}
     findings = []
-    for block in blocks:
-        if not block.processes or block.depth() == 0:
+    for diagram in diagrams:
+        if diagram.depth() in (None, 0):
             continue
-        number = block.parent_number()
+        # An unresolvable parent is a finding: a comparison skipped for want
+        # of a parent reads as a balanced one.
+        number = diagram.parent_number()
         if number is None:
-            findings.append(f"{block.name()} mixes parents")
+            findings.append(f"{diagram.name()} mixes parents")
             continue
         if number not in owners:
-            findings.append(f"{block.name()} decomposes {number}, which no diagram draws")
+            findings.append(f"{diagram.name()} decomposes {number}, which no diagram draws")
             continue
-        parent_block, parent = owners[number]
-        # A store the parent diagram already draws sits outside the process
-        # being opened up; one first drawn here is internal to it.
-        known = set(parent_block.stores.values())
-        inside = set(block.own()) | {n for n, lab in block.stores.items() if lab not in known}
-        findings += compare(f"{number} inflow", parent_block.inflows(parent), block.crossing_in(inside))
-        findings += compare(f"{number} outflow", parent_block.outflows(parent), block.crossing_out(inside))
+        parent, node = owners[number]
+        inside = diagram.interior(parent)
+        findings += compare(f"{number} inflow", parent.flows_into({node}), diagram.flows_into(inside))
+        findings += compare(f"{number} outflow", parent.flows_out_of({node}), diagram.flows_out_of(inside))
     return findings
 
 
-def check_drawing(blocks):
+def check_drawing(diagrams):
     findings = []
-    for block in blocks:
-        passive = set(block.stores) | set(block.entities)
-        for node in sorted(block.processes):
-            number = block.processes[node]
-            if not block.inflows(node):
-                findings.append(f"{block.name()}: {number} has no input (miracle)")
-            if not block.outflows(node):
-                findings.append(f"{block.name()}: {number} has no output (black hole)")
-        for source, flow, target in block.edges:
-            if source in passive and target in passive:
+    for diagram in diagrams:
+        passive = set(diagram.stores) | set(diagram.entities)
+        for node, number in sorted(diagram.processes.items()):
+            if not diagram.flows_into({node}):
+                findings.append(f"{diagram.name()}: {number} has no input (miracle)")
+            if not diagram.flows_out_of({node}):
+                findings.append(f"{diagram.name()}: {number} has no output (black hole)")
+        for flow in diagram.flows:
+            if flow.source in passive and flow.target in passive:
                 findings.append(
-                    f"{block.name()}: {flow!r} runs between two passive elements "
-                    f"({source} to {target}); a process belongs between them"
+                    f"{diagram.name()}: {flow.name!r} runs between two passive elements "
+                    f"({flow.source} to {flow.target}); a process belongs between them"
                 )
     return findings
 
@@ -253,8 +255,8 @@ def check_scope(source):
 
 def review(source):
     """Every finding in a document, or Malformed if it isn't a DFD."""
-    blocks, context, top = parse(source)
-    return check_context(context, top) + check_balance(blocks) + check_drawing(blocks) + check_scope(source)
+    diagrams, context, top = parse(source)
+    return check_context(context, top) + check_balance(diagrams) + check_drawing(diagrams) + check_scope(source)
 
 
 def main():
