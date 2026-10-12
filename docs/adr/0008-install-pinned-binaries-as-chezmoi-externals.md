@@ -2,7 +2,7 @@
 
 ## Status
 
-Accepted
+Superseded by [0009](0009-install-pinned-tools-through-mise.md).
 
 Supersedes [0003](0003-keep-bash-installers-over-chezmoi-externals.md).
 

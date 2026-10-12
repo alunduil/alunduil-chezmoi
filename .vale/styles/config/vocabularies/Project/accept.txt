@@ -26,6 +26,7 @@ Renovate
 pre-commit
 Diátaxis
 ghcup
+mise
 
 # Observability stack
 Grafana
@@ -50,6 +51,9 @@ Anthropic
 Haskell
 pnpm
 rustup
+nvm
+npm
+uv
 CLIs
 
 # Doc conventions
@@ -70,6 +74,8 @@ VMs
 (?i)namespaced
 (?i)repos?
 (?i)toolchains?
+(?i)lockfiles?
+(?i)runtimes?
 (?i)facto
 (?i)cgroups?
 (?i)uid
