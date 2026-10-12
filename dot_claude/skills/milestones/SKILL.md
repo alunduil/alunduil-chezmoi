@@ -33,21 +33,19 @@ playbook](https://www.whatmatters.com/resources/google-okr-playbook).
 
 ## Writing the objective
 
-The objective is the *what*: the state of the world at month end.
+The objective states the outcome at month end.
 
 - Fits in the title, and a rational observer can tell whether it
   landed.
 - Names a benefit to someone outside the work: the user at a host, a
   reader, a contributor. Test: could every key result score 1.0 with
   nobody better off? Then reword it around the benefit.
-- Starts from what that person needs, then checks reach. An objective
-  derived from what the repo already does is maintenance; leave it
-  out of the milestone.
+- Starts from what that person needs. Maintenance of what the repo
+  already does stays out of milestones.
 
 ## Writing key results
 
-Key results are the *how*: measurable outcomes that prove the
-objective.
+Key results are measurable outcomes that prove the objective.
 
 - Each states an outcome with its evidence: a command that passes, a
   count that hits a number, an observable state. A verb like
@@ -56,8 +54,8 @@ objective.
 - Name the effect a user sees. A release, merge, or launch counts
   only as evidence of that effect.
 - A grader scores it 0.0–1.0 at month end without asking the author.
-  Say how partial credit is counted when it isn't obvious, e.g. 9 of
-  12 repositories → 0.75.
+  Say how partial credit is counted when it isn't obvious: for
+  example, 9 of 12 repositories scores 0.75.
 - Together they are sufficient: 1.0 on all of them means the
   objective landed. Add or rework key results until that holds.
 - Two to four per objective.
@@ -74,7 +72,7 @@ Set the type at creation and keep it.
 - **Aspirational:** the end state worth reaching, even without a
   clear path yet. Expected average around 0.7, with high variance.
   Test: does it meet or exceed what its users would ask for?
-  Unscored key results carry into a later milestone.
+  Key results short of 1.0 can carry into a later milestone.
 
 Treat a milestone with no `Type:` line as committed.
 
@@ -130,7 +128,6 @@ inbox_repos() {
   done
 }
 
-# Title, repository, number, type, score; state is open or closed
 inbox_milestones() {
   inbox_repos | while read -r r; do
     gh api "repos/$r/milestones?state=$1" | jq -r --arg r "$r" '
@@ -165,9 +162,9 @@ Its `milestone` param takes the milestone *number*, not the title.
 1. Run the velocity check. If this month already holds the
    velocity limit, surface that before creating another.
 2. Draft title, objective, type, key results, and due date. Revise
-   against *Writing the objective* and *Writing key results*; a
-   five-minute first draft rarely passes. Confirm with the user
-   before creating.
+   until they pass every test in *Writing the objective* and
+   *Writing key results*, then confirm with the user before
+   creating.
 3. Assign issues that move a key result.
 4. During the month, tick a key result as soon as its check passes,
    independent of issue state.
