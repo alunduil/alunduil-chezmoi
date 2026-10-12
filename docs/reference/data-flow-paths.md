@@ -47,8 +47,7 @@ sequenceDiagram
 An authorization covers the terminal session and its sub-shells. It
 lapses after 10 minutes of inactivity in that session, and after 12
 hours regardless. The TrueNAS script also hashes the appliance's
-address. A changed Grafana Cloud token restarts `alloy.service` in
-place of a registration.
+address.
 
 ## Call a tool
 
