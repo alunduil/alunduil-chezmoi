@@ -19,7 +19,7 @@ playbook](https://www.whatmatters.com/resources/google-okr-playbook).
 - **Description:**
 
   ```markdown
-  <Objective: one or two present-tense sentences stating the outcome.>
+  <One or two present-tense sentences expanding the title's objective.>
 
   Type: committed | aspirational
 
@@ -35,7 +35,7 @@ playbook](https://www.whatmatters.com/resources/google-okr-playbook).
 
 The objective is the *what*: the state of the world at month end.
 
-- Fits on one line, and a rational observer can tell whether it
+- Fits in the title, and a rational observer can tell whether it
   landed.
 - Names a benefit to someone outside the work: the user at a host, a
   reader, a contributor. Test: could every key result score 1.0 with
@@ -64,9 +64,6 @@ objective.
 - Date a key result that lands before month end (`by 2026-11-14`).
   Every key result due on the last day means the plan isn't real
   yet.
-
-Draft, then revise. A first draft written in five minutes rarely
-passes the tests above.
 
 ## Committed or aspirational
 
@@ -123,9 +120,6 @@ The score is velocity data. Record it as measured and close on
 schedule whatever it says. When the objective still matters, carry it
 into a new milestone for next month. Closed milestones stay closed.
 
-During the month, tick a key result as soon as its check passes,
-independent of issue state.
-
 ## Operations
 
 ```bash
@@ -136,21 +130,20 @@ inbox_repos() {
   done
 }
 
-# Velocity check
-inbox_repos | while read -r r; do
-  gh api "repos/$r/milestones?state=open" \
-    --jq ".[] | \"$r\t\(.number)\t\(.title)\""
-done
+# Title, repository, number, type, score; state is open or closed
+inbox_milestones() {
+  inbox_repos | while read -r r; do
+    gh api "repos/$r/milestones?state=$1" | jq -r --arg r "$r" '
+      .[] | (.description // "") as $d
+      | [.title, $r, .number,
+         (($d | capture("Type: (?<t>[a-z]+)").t) // "committed"),
+         (($d | capture("Scored (?<s>[0-9]+(\\.[0-9]+)?)").s) // "-")]
+      | @tsv'
+  done | sort
+}
 
-# Past scores: title, repository, type, score
-inbox_repos | while read -r r; do
-  gh api "repos/$r/milestones?state=closed" | jq -r --arg r "$r" '
-    .[] | (.description // "") as $d
-    | [.title, $r,
-       (($d | capture("Type: (?<t>[a-z]+)").t) // "committed"),
-       (($d | capture("Scored (?<s>[0-9]+(\\.[0-9]+)?)").s) // "-")]
-    | @tsv'
-done | sort
+inbox_milestones open    # velocity check
+inbox_milestones closed  # past scores
 
 gh api repos/:owner/:repo/milestones \
   -f title='2026-11: <objective>' \
@@ -171,8 +164,11 @@ Its `milestone` param takes the milestone *number*, not the title.
 
 1. Run the velocity check. If this month already holds the
    velocity limit, surface that before creating another.
-2. Draft title, objective, type, key results, and due date. Check
-   them against *Writing the objective* and *Writing key results*,
-   then confirm with the user before creating.
+2. Draft title, objective, type, key results, and due date. Revise
+   against *Writing the objective* and *Writing key results*; a
+   five-minute first draft rarely passes. Confirm with the user
+   before creating.
 3. Assign issues that move a key result.
-4. At month end, follow *Closing at month end*.
+4. During the month, tick a key result as soon as its check passes,
+   independent of issue state.
+5. At month end, follow *Closing at month end*.
