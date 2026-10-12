@@ -67,8 +67,8 @@ freeform body.
 
 - Pick existing labels. Don't invent inline — if nothing fits, skip
   or raise the label question separately.
-- Milestone: assign if one fits the outcome (convergence test —
-  closing the issue advances the milestone's description). Unset
+- Milestone: assign if closing the issue moves one of the
+  milestone's key results (its "As measured by" checklist). Unset
   otherwise. Never use milestones as labels.
 - Creating a new milestone → `milestones` skill.
 - Relating to other issues/PRs → `issue-links` skill, after submit.
