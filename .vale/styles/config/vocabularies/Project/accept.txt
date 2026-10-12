@@ -17,7 +17,9 @@ kitty
 chezmoi
 Tailscale
 tailnet
-Adoptium
+Keybase
+nvm
+Readwise
 lazygit
 datasource
 Crostini
@@ -81,6 +83,9 @@ basename
 # An SSH or software agent; Microsoft.Terms would swap in "personal digital
 # assistant".
 (?i)agents?
+(?i)plaintext
+(?i)unencrypted
+(?i)keyless
 
 # Acronyms kept unexpanded. Listing them here also clears
 # Microsoft.Acronyms, which otherwise wants a "Name Of Thing (NOT)"
@@ -92,3 +97,4 @@ ANSI
 TUI
 TLS
 TOML
+OAuth

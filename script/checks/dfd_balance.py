@@ -5,14 +5,15 @@ Python among bash siblings: the body is markdown and Mermaid parsing plus set
 algebra over flow names.
 
 Two classes of finding, neither visible to a linter. Balancing: a child
-diagram's boundary-crossing flows match its parent process's exactly, and the
-context level, which names systems rather than flows, matches level 0's
-external entities. Drawing: a process with no input is a miracle, one with no
-output a black hole, and a flow between two passive elements is missing the
-process that transforms it.
+diagram's boundary-crossing flows match its parent process's exactly, and
+level 0 names the same external entities as the context diagram. Drawing: a
+process with no input is a miracle, one with no output a black hole, and a
+flow between two passive elements is missing the process that transforms it.
 
 Levels come from the process numbering, so adding one needs no change here:
-`N.0` is level 0, `N.M` decomposes `N.0`.
+`0` is the context, `N.0` is level 0, `N.M` decomposes `N.0`, and `N.M.K`
+decomposes `N.M`. A diagram's own processes are its deepest-numbered ones;
+shallower processes are neighbours drawn for reference.
 
 Scope is the third class. Every claim in a DFD holds with no adversary in
 the world, so vocabulary that only makes sense once there is one marks a
@@ -25,17 +26,14 @@ import re
 import sys
 
 DEFAULT_DOC = "docs/reference/data-flow.md"
-TOP = ".0"
+ROOT = "0"
 
 BLOCK = re.compile(r"```mermaid\n(.*?)```", re.S)
 EDGE = re.compile(r"^\s*(\w+)\s*-->\|([^|]+)\|\s*(\w+)\s*$")
-PROCESS = re.compile(r"^\s*(\w+)\(\s*(\d+(?:\.\d+)+)\s+[^)]*\)")
-STORE = re.compile(r"^\s*(\w+)\[\(")
+PROCESS = re.compile(r"^\s*(\w+)\(\s*(\d+(?:\.\d+)*)\s+[^)]*\)")
+STORE = re.compile(r"^\s*(\w+)\[\(([^)]+)\)\]")
 ENTITY = re.compile(r"^\s*(\w+)\[(?!\()([^\]]+)\]")
-NAMED = re.compile(r"^- \*\*([^*]+)\*\*", re.M)
-CONTEXT = re.compile(r"## Context\n(.*?)\n## ", re.S)
 FENCE = re.compile(r"^\s*```")
-LOCAL_PATH = re.compile(r"`(~[^`]*|[^`]*/[^`]*)`")
 # "threat model" itself stays legal: a DFD may say where the rest of the
 # analysis lives, it just may not do it.
 ANALYSIS = re.compile(
@@ -48,21 +46,38 @@ class Malformed(Exception):
     """The document isn't shaped like a DFD, so no finding can be trusted."""
 
 
+def depth(number):
+    """0 for the context process, 1 for `N.0`, and one more per part below."""
+    if number == ROOT:
+        return 0
+    parts = number.split(".")
+    return 1 if len(parts) == 2 and parts[1] == "0" else len(parts)
+
+
+def parent_of(number):
+    parts = number.split(".")
+    if len(parts) == 2 and parts[1] == "0":
+        return ROOT
+    if len(parts) == 2:
+        return f"{parts[0]}.0"
+    return ".".join(parts[:-1])
+
+
 class Level:
     """One Mermaid block from the document."""
 
     def __init__(self, body):
-        self.edges, self.processes, self.stores = [], {}, set()
+        self.edges, self.processes, self.stores = [], {}, {}
         self.entities, self.boundaries = {}, {}
-        current = None
+        enclosing = []
         for line in body.splitlines():
             stripped = line.strip()
             if match := re.match(r"subgraph\s+(\w+)", stripped):
-                current = match.group(1)
-                self.boundaries[current] = set()
+                enclosing.append(match.group(1))
+                self.boundaries[match.group(1)] = set()
                 continue
             if stripped == "end":
-                current = None
+                enclosing.pop()
                 continue
             if match := EDGE.match(line):
                 self.edges.append((match.group(1), match.group(2).strip(), match.group(3)))
@@ -73,12 +88,12 @@ class Level:
                 self.processes[node] = match.group(2)
             elif match := STORE.match(stripped):
                 node = match.group(1)
-                self.stores.add(node)
+                self.stores[node] = match.group(2)
             elif match := ENTITY.match(stripped):
                 node = match.group(1)
                 self.entities[node] = match.group(2)
-            if node and current:
-                self.boundaries[current].add(node)
+            for boundary in enclosing if node else ():
+                self.boundaries[boundary].add(node)
 
     def inflows(self, node):
         return {flow for _, flow, target in self.edges if target == node}
@@ -92,41 +107,41 @@ class Level:
     def crossing_out(self, inside):
         return {f for s, f, t in self.edges if s in inside and t not in inside}
 
-    def children(self):
-        """Processes decomposing a parent."""
-        return {n: v for n, v in self.processes.items() if not v.endswith(TOP)}
+    def depth(self):
+        return max((depth(n) for n in self.processes.values()), default=None)
 
-    def is_top(self):
-        return bool(self.processes) and not self.children()
+    def own(self):
+        """The processes this diagram is about, deepest-numbered first."""
+        deepest = self.depth()
+        return {n: v for n, v in self.processes.items() if depth(v) == deepest}
 
     def parent_number(self):
-        """The level 0 process this diagram opens up."""
-        parents = {v.split(".")[0] + TOP for v in self.children().values()}
+        """The process this diagram opens up, or None for the context."""
+        parents = {parent_of(v) for v in self.own().values() if v != ROOT}
         return parents.pop() if len(parents) == 1 else None
 
     def name(self):
         """How a finding refers to this diagram."""
-        if self.is_top():
+        if self.depth() == 0:
+            return "context"
+        if self.depth() == 1:
             return "level 0"
         if parent := self.parent_number():
             return f"the {parent} decomposition"
         return "an unattached diagram"
 
     def system_boundary(self):
-        """The subgraph holding the processes — everything else is outside."""
+        """Nodes inside any subgraph holding one of this diagram's processes."""
+        own = set(self.own())
+        inside = set()
         for members in self.boundaries.values():
-            if members & set(self.processes):
-                return members
-        return set()
+            if members & own:
+                inside |= members
+        return inside
 
     def outside(self):
         inside = self.system_boundary()
         return {n: lab for n, lab in self.entities.items() if n not in inside}
-
-
-def describes(node, label, name):
-    """Whether a context entry names this level 0 entity."""
-    return node.lower() in name.replace(" ", "") or label.lower() == name
 
 
 def compare(subject, parent, child):
@@ -141,62 +156,57 @@ def parse(source):
     # which reads identically to a clean document.
     if not blocks:
         raise Malformed("no mermaid blocks found")
-    tops = [b for b in blocks if b.is_top()]
+    contexts = [b for b in blocks if b.depth() == 0]
+    if len(contexts) != 1:
+        raise Malformed(f"expected one context diagram, found {len(contexts)}")
+    tops = [b for b in blocks if b.depth() == 1]
     if len(tops) != 1:
         raise Malformed(f"expected one level 0 diagram, found {len(tops)}")
-    return blocks, tops[0]
+    return blocks, contexts[0], tops[0]
 
 
-def context_systems(source):
-    section = CONTEXT.search(source)
-    if not section:
-        raise Malformed("no '## Context' section found")
-    named = {m.lower().rstrip(".") for m in NAMED.findall(section.group(1))}
-    if not named:
-        raise Malformed("context section names no systems")
-    return named
-
-
-def check_context(top, named):
-    outside = top.outside()
+def check_context(context, top):
+    outside = set(top.outside().values())
     if not outside:
         raise Malformed("level 0 has no external entities")
-    findings = []
-    for node, label in sorted(outside.items()):
-        if not any(describes(node, label, n) for n in named):
-            findings.append(f"context: level 0 has {label!r}, context describes no such system")
-    for name in sorted(named):
-        if not any(describes(n, lab, name) for n, lab in outside.items()):
-            findings.append(f"context: describes {name!r}, level 0 has no such entity")
-    return findings
+    named = set(context.entities.values())
+    return [f"context: level 0 has {label!r}, context does not" for label in sorted(outside - named)] + [
+        f"context: has {label!r}, level 0 does not" for label in sorted(named - outside)
+    ]
 
 
-def check_balance(blocks, top):
-    # A parent is a level 0 process by definition, so an unresolvable one is a
-    # finding: a comparison skipped for want of a parent reads as a balanced one.
-    parents = {number: node for node, number in top.processes.items()}
+def check_balance(blocks):
+    # An unresolvable parent is a finding: a comparison skipped for want of a
+    # parent reads as a balanced one.
+    owners = {}
+    for block in blocks:
+        for node, number in block.own().items():
+            owners[number] = (block, node)
     findings = []
     for block in blocks:
-        if block.is_top() or not block.children():
+        if not block.processes or block.depth() == 0:
             continue
         number = block.parent_number()
         if number is None:
             findings.append(f"{block.name()} mixes parents")
             continue
-        parent = parents.get(number)
-        if parent is None:
-            findings.append(f"{block.name()} decomposes {number}, which level 0 does not have")
+        if number not in owners:
+            findings.append(f"{block.name()} decomposes {number}, which no diagram draws")
             continue
-        kids = set(block.children())
-        findings += compare(f"{number} inflow", top.inflows(parent), block.crossing_in(kids))
-        findings += compare(f"{number} outflow", top.outflows(parent), block.crossing_out(kids))
+        parent_block, parent = owners[number]
+        # A store the parent diagram already draws sits outside the process
+        # being opened up; one first drawn here is internal to it.
+        known = set(parent_block.stores.values())
+        inside = set(block.own()) | {n for n, lab in block.stores.items() if lab not in known}
+        findings += compare(f"{number} inflow", parent_block.inflows(parent), block.crossing_in(inside))
+        findings += compare(f"{number} outflow", parent_block.outflows(parent), block.crossing_out(inside))
     return findings
 
 
 def check_drawing(blocks):
     findings = []
     for block in blocks:
-        passive = block.stores | set(block.entities)
+        passive = set(block.stores) | set(block.entities)
         for node in sorted(block.processes):
             number = block.processes[node]
             if not block.inflows(node):
@@ -213,16 +223,7 @@ def check_drawing(blocks):
 
 
 def check_scope(source):
-    # A context entry naming a local path has drifted into level 0: the level
-    # describes what sits outside, and storage is inside.
     findings = []
-    section = CONTEXT.search(source)
-    if section:
-        for path in LOCAL_PATH.findall(section.group(1)):
-            findings.append(
-                f"context: {path!r} is a local path; the context level describes "
-                f"what is outside, and storage belongs to level 0"
-            )
     fenced = False
     for number, line in enumerate(source.splitlines(), 1):
         if FENCE.match(line):
@@ -240,14 +241,8 @@ def check_scope(source):
 
 def review(source):
     """Every finding in a document, or Malformed if it isn't a DFD."""
-    blocks, top = parse(source)
-    named = context_systems(source)
-    return (
-        check_context(top, named)
-        + check_balance(blocks, top)
-        + check_drawing(blocks)
-        + check_scope(source)
-    )
+    blocks, context, top = parse(source)
+    return check_context(context, top) + check_balance(blocks) + check_drawing(blocks) + check_scope(source)
 
 
 def main():

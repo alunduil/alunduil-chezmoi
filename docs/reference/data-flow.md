@@ -1,256 +1,406 @@
 # Data flow
 
-Every credential on a chezmoi-managed workstation, what reaches it, and which trust boundary it crosses. Elements name real software, hosts, and files: the Model Context Protocol (MCP) servers a Claude Code session calls, the systemd timers, the tokens on disk.
+Where each credential on a `workstation` host lives, which processes move
+it, and which trust boundary each flow crosses. Elements name the real
+software: the Model Context Protocol (MCP) servers a Claude Code session
+calls, the systemd units, the 1Password desktop app. Out of scope:
 
-Cloud and home-network internals live in `alunduil-infrastructure`. GitHub, Cloudflare, and the home network stay external entities here, and everything that follows from these flows belongs to the threat model. Notation comes from the `dfd` skill under `dot_claude/skills/dfd/`. `CLAUDE.md` carries the rule that keeps this current.
+- Cloud and home-network internals. GitHub, Cloudflare, and the home
+  network stay external entities here. `alunduil-infrastructure` carries
+  their data flow diagram.
+- The `ha-terminal` role. It deploys the Claude Code configuration and a
+  `.vimrc`, and `.chezmoiignore` drops every bootstrap pass, unit, token,
+  and SSH source.
+- Flows from command-line tools the user drives by hand on their own
+  login: `gcx`, `readwise`, `keybase`, and `signal-cli`. Their credentials
+  appear under [Credentials](#credentials).
+- What crosses a tailnet tunnel.
+- Installed software as a store. The diagrams show where it comes from,
+  and each process covers what it does once running.
+
+Process numbers follow the level: `1.0` at Level 0, `1.1` beneath it.
+Data stores carry numbers D1 to D10, the same at every level.
+
+---
 
 ## Context
 
-Eleven parties sit outside the workstation, and the host wants something different from each.
+Thirteen external entities exchange data with the workstation.
 
-- **User.** The trust root, outside every boundary. Supplies the age identity, the commit-signing passphrase, and all eight interactive logins, so every credential the host holds traces back to a person at a keyboard.
-- **Anthropic.** Runs the model each session turn goes through, and fronts the claude.ai connectors, so Notion pages and Readwise highlights arrive across the same boundary. Prompts, file contents, and tool results leave the host here, the least structured outflow it has.
-- **GitHub.** Origin of the chezmoi source itself and of every repository worked on here. Takes signed commits over SSH and answers issue and pull request queries over the Copilot server, which is why three processes cross this boundary holding three different credentials.
-- **Cloudflare.** Read-only inspection of zones this host doesn't own: name-resolution analytics, GraphQL analytics, and product documentation, each a separate Cloudflare-hosted server. Terraform in `alunduil-infrastructure` owns the records themselves.
-- **Context7.** Library and framework documentation current enough to correct a model whose training data lags the release. The one party reached with no credential.
-- **Uptime Robot.** Whether the services it watches are still answering, and the incident history for when they weren't.
-- **Codecov.** Flaky-test signal, failure history, and per-pull-request coverage, queried over the API because the web interface sits behind a login wall.
-- **Grafana Cloud.** Keeps the telemetry that has to outlive the incident it records: node and per-process metrics, the journal, and the Zellij server log. The shipper retains no local copy, because a collector inside the user slice goes dark exactly when that slice exhausts its process pool.
-- **TrueNAS appliance.** The home storage appliance: pools and snapshots, the apps it runs, and the alerts it raises. The only exchange terminating inside the home network.
-- **Debian archives and release hosts.** Where executable code comes from: seven vendor apt repositories, pinned release binaries, and two installers piped into a shell.
-- **tailnet peers.** A private network joining this host to the user's other machines, and the only path in that the host didn't open.
+```mermaid
+flowchart LR
+  user[User]
+  onepassword[1Password]
+  github[GitHub]
+  anthropic[Anthropic]
+  cloudflare[Cloudflare MCP endpoints]
+  context7[Context7]
+  uptimerobot[Uptime Robot]
+  codecov[Codecov]
+  grafana[Grafana Cloud]
+  truenas[TrueNAS appliance]
+  homeassistant[Home Assistant]
+  upstream[Package archives and installer hosts]
+  tailnet[Tailnet peers]
 
-## The workstation and its stores
+  system(0 Workstation)
 
-Nothing inside the workstation boundary is privilege-separated. A bootstrap pass and a model-driven session run as the same user, over the same stores.
+  user -->|age identity| system
+  user -->|account password| system
+  user -->|prompt| system
+  user -->|shell command| system
+  user -->|login credential| system
+  system -->|session output| user
+  system -->|status line| user
+  system -->|command output| user
+
+  onepassword -->|vault item| system
+  system -->|authenticated vault sync| onepassword
+
+  github -->|chezmoi source| system
+  github -->|release binary| system
+  github -->|repository data| system
+  system -->|authenticated repository query| github
+  system -->|signed commit and pull request| github
+
+  anthropic -->|completion and tool call| system
+  anthropic -->|connector document| system
+  system -->|prompt, file content, and tool result| anthropic
+  system -->|connector query| anthropic
+
+  cloudflare -->|zone, DNS analytics, and documentation| system
+  system -->|zone and documentation query| cloudflare
+  context7 -->|library documentation| system
+  system -->|library documentation query| context7
+  uptimerobot -->|monitor and incident data| system
+  system -->|authenticated monitor query| uptimerobot
+  codecov -->|coverage and test result data| system
+  system -->|authenticated coverage query| codecov
+  system -->|authenticated host metrics and logs| grafana
+
+  truenas -->|pool, app, and alert data| system
+  system -->|authenticated storage query| truenas
+  homeassistant -->|remote output| system
+  system -->|remote command| homeassistant
+
+  upstream -->|package and installer script| system
+  upstream -->|package| system
+  system -->|package request| upstream
+
+  tailnet -->|inbound peer connection| system
+  system -->|outbound peer connection| tailnet
+```
+
+---
+
+## Level 0
+
+The workstation runs eight processes over ten data stores. Every flow to
+an external entity crosses one of these trust boundaries:
+
+- The workstation, a Crostini VM. Its processes share one user account,
+  so a bootstrap pass and a model-driven session reach the same stores.
+- The 1Password desktop app, inside the workstation. It holds the vault
+  cache and the SSH key, and prompts the user before releasing a secret
+  to the `op` command-line tool.
+- 1Password, Anthropic, GitHub, and Cloudflare, one boundary each.
+- Context7, Uptime Robot, Codecov, and Grafana Cloud, each a separate
+  third-party service.
+- The home network: the TrueNAS appliance and Home Assistant.
+- Package archives and installer hosts: six vendor apt repositories and
+  the Tailscale and nvm install scripts.
+- Peers on the tailnet, the only path into the host that the host didn't open.
 
 ```mermaid
 flowchart TB
   user[User]
 
-  subgraph ws["Workstation: Crostini VM"]
-    p1(1.0 Apply the chezmoi source)
-    p2(2.0 Register MCP servers)
-    p3(3.0 Run a Claude Code session)
-    p4(4.0 Run developer tooling)
-    p5(5.0 Ship host telemetry)
-    p6(6.0 Authenticate interactively)
-    p7(7.0 Run scheduled maintenance)
-    p8(8.0 Serve the tailnet)
+  subgraph ws[Workstation: Crostini VM, one user account]
+    apply(1.0 Apply the chezmoi source)
+    session(3.0 Run a Claude Code session)
+    tooling(4.0 Run developer tooling)
+    ship(5.0 Ship host telemetry)
+    login(6.0 Authenticate interactively)
+    maintain(7.0 Run scheduled maintenance)
+    serveTailnet(8.0 Serve the tailnet)
 
-    s1[(Apply clone)]
-    s2[(age identity)]
-    s3[(Service tokens)]
-    s8[(Signing and transport identities)]
-    s4[(MCP registry)]
-    s5[(Claude configuration)]
-    s6[(Session record)]
-    s7[(Host telemetry)]
-    s9[(Interactive login credentials)]
-    s10[(Working tree)]
+    clone[(D1 Apply clone)]
+    ageKey[(D2 age identity)]
+    tokens[(D3 Service tokens)]
+    registry[(D5 MCP registry)]
+    claudeConfig[(D6 Claude configuration)]
+    record[(D7 Session record)]
+    hostTelemetry[(D8 Host telemetry)]
+    logins[(D9 Login credentials)]
+    worktree[(D10 Working tree)]
+
+    subgraph opapp[1Password desktop app: unlocked by the user]
+      broker(2.0 Serve 1Password secrets)
+      vault[(D4 Vault cache)]
+    end
+  end
+
+  subgraph op[1Password]
+    onepassword[1Password]
   end
 
   subgraph gh[GitHub]
-    github[GitHub API and git remote]
+    github[GitHub]
   end
 
   subgraph anth[Anthropic]
-    anthropic[Claude API and claude.ai connectors]
+    anthropic[Anthropic]
   end
 
   subgraph cf[Cloudflare]
     cloudflare[Cloudflare MCP endpoints]
   end
 
-  subgraph tp[Third-party SaaS]
+  subgraph c7[Context7]
     context7[Context7]
+  end
+
+  subgraph ur[Uptime Robot]
     uptimerobot[Uptime Robot]
+  end
+
+  subgraph cc[Codecov]
     codecov[Codecov]
+  end
+
+  subgraph gc[Grafana Cloud]
     grafana[Grafana Cloud]
   end
 
   subgraph home[Home network]
     truenas[TrueNAS appliance]
+    homeassistant[Home Assistant]
   end
 
-  subgraph dist[Distribution and release hosts]
-    upstream[Debian archives and release hosts]
+  subgraph dist[Package archives and installer hosts]
+    upstream[Package archives and installer hosts]
   end
 
   subgraph tn[Tailnet]
     tailnet[Tailnet peers]
   end
 
-  user -->|age identity| p1
-  user -->|prompt| p3
-  user -->|shell command| p4
-  user -->|GPG passphrase| p4
-  user -->|login credential| p6
-  p6 -->|session credential| s9
-  p3 -->|session output| user
-  p3 -->|status line| user
-  p4 -->|command output| user
+  user -->|age identity| apply
+  github -->|chezmoi source| apply
+  github -->|release binary| apply
+  apply -->|chezmoi source| clone
+  clone -->|source template and encrypted blob| apply
+  apply -->|age identity| ageKey
+  ageKey -->|age identity| apply
+  apply -->|secret reference| broker
+  apply -->|agent key list| broker
+  broker -->|secret value| apply
+  apply -->|service token| tokens
+  tokens -->|service token| apply
+  apply -->|MCP endpoint and credential| registry
+  apply -->|Claude configuration| claudeConfig
+  apply -->|package request| upstream
+  upstream -->|package and installer script| apply
 
-  github -->|chezmoi source| p1
-  p1 -->|chezmoi source| s1
-  s1 -->|source template and encrypted blob| p1
-  p1 -->|age identity| s2
-  s2 -->|age identity| p1
-  p1 -->|deployed file and service token| s3
-  p1 -->|SSH key and encrypted GPG key| s8
-  p1 -->|Claude configuration| s5
-  s8 -->|passphrase-protected GPG key| p1
-  p1 -->|imported GPG key| s8
-  p1 -->|rendered registration script| p2
-  p1 -->|package and release request| upstream
-  upstream -->|package and release binary| p1
+  user -->|account password| broker
+  onepassword -->|vault item| broker
+  broker -->|authenticated vault sync| onepassword
+  broker -->|vault item| vault
+  vault -->|vault item| broker
+  tooling -->|signing request| broker
+  broker -->|SSH signature| tooling
 
-  s3 -->|plaintext token| p2
-  p2 -->|MCP endpoint and credential| s4
+  user -->|prompt| session
+  session -->|session output| user
+  session -->|status line| user
+  registry -->|MCP endpoint and credential| session
+  claudeConfig -->|Claude configuration| session
+  record -->|transcript and memory| session
+  session -->|transcript and memory| record
+  logins -->|Anthropic session credential| session
+  worktree -->|file content| session
+  session -->|edited file| worktree
+  session -->|shell command| tooling
+  tooling -->|command output| session
+  session -->|zellij log and process metric| hostTelemetry
+  anthropic -->|completion and tool call| session
+  anthropic -->|connector document| session
+  session -->|prompt, file content, and tool result| anthropic
+  session -->|connector query| anthropic
+  github -->|repository data| session
+  session -->|authenticated repository query| github
+  cloudflare -->|zone, DNS analytics, and documentation| session
+  session -->|zone and documentation query| cloudflare
+  context7 -->|library documentation| session
+  session -->|library documentation query| context7
+  uptimerobot -->|monitor and incident data| session
+  session -->|authenticated monitor query| uptimerobot
+  truenas -->|pool, app, and alert data| session
+  session -->|authenticated storage query| truenas
 
-  s4 -->|MCP endpoint and credential| p3
-  s5 -->|Claude configuration| p3
-  s6 -->|transcript and memory| p3
-  s9 -->|Anthropic session credential| p3
-  s10 -->|file content| p3
-  p3 -->|edited file| s10
-  p3 -->|transcript and memory| s6
-  p3 -->|shell command| p4
-  p4 -->|command output| p3
-  p3 -->|zellij log and process metric| s7
+  user -->|shell command| tooling
+  tooling -->|command output| user
+  tokens -->|Codecov API token| tooling
+  tokens -->|Uptime Robot API token| tooling
+  tokens -->|Cloudflare API token| tooling
+  logins -->|gh OAuth token| tooling
+  worktree -->|file content| tooling
+  tooling -->|checked-out file| worktree
+  github -->|repository data| tooling
+  tooling -->|authenticated repository query| github
+  tooling -->|signed commit and pull request| github
+  codecov -->|coverage and test result data| tooling
+  tooling -->|authenticated coverage query| codecov
+  uptimerobot -->|monitor and incident data| tooling
+  tooling -->|authenticated monitor query| uptimerobot
+  homeassistant -->|remote output| tooling
+  tooling -->|remote command| homeassistant
 
-  anthropic -->|completion and tool call| p3
-  anthropic -->|connector document| p3
-  p3 -->|prompt, file content, and tool result| anthropic
-  p3 -->|connector query| anthropic
-  cloudflare -->|zone, DNS analytics, and documentation| p3
-  p3 -->|zone and documentation query| cloudflare
-  context7 -->|library documentation| p3
-  p3 -->|library documentation query| context7
-  uptimerobot -->|monitor and incident data| p3
-  p3 -->|authenticated monitor query| uptimerobot
-  truenas -->|pool, app, and alert data| p3
-  p3 -->|authenticated storage query| truenas
-  github -->|repository data| p3
-  p3 -->|authenticated repository query| github
+  tokens -->|Grafana Cloud token| ship
+  hostTelemetry -->|journal entry, zellij log, and process metric| ship
+  ship -->|authenticated host metrics and logs| grafana
 
-  s3 -->|Codecov API token| p4
-  s3 -->|Cloudflare API token| p4
-  s8 -->|SSH key and GPG key| p4
-  s9 -->|gh OAuth token| p4
-  s10 -->|file content| p4
-  p4 -->|checked-out file| s10
-  github -->|repository data| p4
-  p4 -->|authenticated repository query| github
-  p4 -->|signed commit and pull request| github
-  codecov -->|coverage and test result data| p4
-  p4 -->|authenticated coverage query| codecov
+  user -->|login credential| login
+  login -->|login credential| logins
 
-  s3 -->|Grafana Cloud token| p5
-  s7 -->|journal entry, zellij log, and process metric| p5
-  p5 -->|authenticated host metrics and logs| grafana
+  logins -->|gh OAuth token| maintain
+  worktree -->|file content| maintain
+  github -->|repository data| maintain
+  maintain -->|authenticated repository query| github
+  maintain -->|pruned branch| worktree
+  upstream -->|package| maintain
+  maintain -->|package request| upstream
+  maintain -->|process metric| hostTelemetry
 
-  s9 -->|gh OAuth token| p7
-  s10 -->|file content| p7
-  github -->|repository data| p7
-  p7 -->|authenticated repository query| github
-  p7 -->|pruned branch| s10
-  p7 -->|package and release request| upstream
-  upstream -->|package and release binary| p7
-  p7 -->|process metric| s7
-
-  s9 -->|node key| p8
-  tailnet -->|inbound peer connection| p8
-  p8 -->|outbound peer connection| tailnet
+  logins -->|node key| serveTailnet
+  tailnet -->|inbound peer connection| serveTailnet
+  serveTailnet -->|outbound peer connection| tailnet
 ```
 
-Three stores hold unencrypted credentials. The source tree holds none of them, carrying only the age-encrypted blob. *Service tokens* and *Signing and transport identities* are chezmoi targets, written on apply with the encryption stripped off. Their reach differs: the tokens fan out to three processes and, through the registry, into a file that holds them unencrypted, while a single process reads the identities.
+| Store | Holds | At rest |
+| --- | --- | --- |
+| D1 Apply clone | The chezmoi source at `~/.local/share/chezmoi`, cloned from GitHub | Plaintext, apart from the age-encrypted Cloudflare token |
+| D2 age identity | The key that decrypts the Cloudflare token | Unencrypted, mode 600 |
+| D3 Service tokens | Five tokens from 1Password and the Cloudflare token | Unencrypted, mode 600 |
+| D4 Vault cache | The 1Password vault, including the SSH key | Encrypted by 1Password |
+| D5 MCP registry | Claude Code's user-scope MCP configuration, which Claude Code rewrites | Unencrypted, with the GitHub and Uptime Robot bearer tokens and the TrueNAS API key |
+| D6 Claude configuration | Settings, hooks, skills, and the status line under `~/.claude/` | Plaintext |
+| D7 Session record | Transcripts and per-project memory | Plaintext, local to the host |
+| D8 Host telemetry | The journal, the Zellij server log, and process metrics | Plaintext |
+| D9 Login credentials | What each interactive login writes | Per tool |
+| D10 Working tree | Every repository checked out under `$HOME` | Plaintext |
 
-*MCP registry* is `~/.claude.json`, which Claude Code owns and rewrites, so chezmoi can't manage it and registration runs from a bootstrap pass instead. Bearer tokens and stdio environment variables land there unencrypted, and a rotated token has to re-register rather than merely re-deploy.
+Three control signals carry no data:
 
-*Session record* covers transcripts and the per-project auto memory under `~/.claude/projects/`. It's machine-local with no cross-machine path in either direction, so it never crosses a boundary except as prompt content the model already sees.
+- A change in a secret's value reruns the `run_onchange_after_` script
+  keyed on its hash. That re-registers an MCP server, or restarts
+  `alloy.service` so it loads a rotated Grafana Cloud token.
+- systemd timers start every process under `7.0`.
+- The 1Password app's approval prompt gates each `secret reference`
+  before `secret value` flows back.
 
-These diagrams describe the `workstation` role. The lean `ha-terminal` role deploys the Claude session config and a `.vimrc`, and nothing beneath them. `.chezmoiignore` drops the bootstrap scripts, the whole of `~/.config`, `~/.local/bin`, the shell profile, and the signing and transport sources. That host holds none of the credentials in either table, and sits inside the home network rather than reaching into it.
+---
 
-## Applying the source
+## Apply the chezmoi source
 
-Process `1.0` is where the single out-of-band secret turns into every other one.
+Process `1.0` turns the out-of-band secrets, the age identity and the
+1Password unlock, into every deployed token.
 
 ```mermaid
 flowchart LR
   user[User]
   github[GitHub]
-  upstream[Debian archives and release hosts]
+  upstream[Package archives and installer hosts]
 
   subgraph ws[Workstation]
-    p11(1.1 Initialise the host)
-    p12(1.2 Render templates and decrypt secrets)
-    p13(1.3 Run bootstrap passes)
-    p2(2.0 Register MCP servers)
+    init(1.1 Initialise the host)
+    target(1.2 Build the target state)
+    bootstrap(1.3 Run bootstrap passes)
+    register(1.4 Register MCP servers)
+    broker(2.0 Serve 1Password secrets)
 
-    s1[(Apply clone)]
-    s2[(age identity)]
-    s3[(Service tokens)]
-    s8[(Signing and transport identities)]
-    s4[(MCP registry)]
-    s5[(Claude configuration)]
+    clone[(D1 Apply clone)]
+    ageKey[(D2 age identity)]
+    tokens[(D3 Service tokens)]
+    registry[(D5 MCP registry)]
+    claudeConfig[(D6 Claude configuration)]
   end
 
-  user -->|age identity| p11
-  github -->|chezmoi source| p11
-  p11 -->|age identity| s2
-  p11 -->|chezmoi source| s1
+  user -->|age identity| init
+  github -->|chezmoi source| init
+  init -->|age identity| ageKey
+  init -->|chezmoi source| clone
 
-  s1 -->|source template and encrypted blob| p12
-  s2 -->|age identity| p12
-  p12 -->|deployed file and service token| s3
-  p12 -->|SSH key and encrypted GPG key| s8
-  p12 -->|Claude configuration| s5
-  p12 -->|rendered registration script| p2
-  p12 -->|rendered bootstrap script| p13
-  s3 -->|plaintext token| p2
-  p2 -->|MCP endpoint and credential| s4
+  clone -->|source template and encrypted blob| target
+  ageKey -->|age identity| target
+  github -->|release binary| target
+  target -->|secret reference| broker
+  target -->|agent key list| broker
+  broker -->|secret value| target
+  target -->|service token| tokens
+  target -->|Claude configuration| claudeConfig
+  target -->|rendered bootstrap script| bootstrap
+  target -->|rendered registration script| register
 
-  s8 -->|passphrase-protected GPG key| p13
-  p13 -->|imported GPG key| s8
-  p13 -->|package and release request| upstream
-  upstream -->|package and release binary| p13
+  bootstrap -->|package request| upstream
+  upstream -->|package and installer script| bootstrap
+
+  tokens -->|service token| register
+  register -->|MCP endpoint and credential| registry
 ```
 
-`1.2` reads the apply clone at `~/.local/share/chezmoi`, never a developer's working tree, which is why `chezmoi source` always originates at GitHub. [Architecture](architecture.md) covers why the two clones are separate.
+`1.2` reads the apply clone, never a developer's working tree, so
+`chezmoi source` always originates at GitHub.
+[Architecture](../explanation/architecture.md) covers why the two clones
+are separate.
 
-The GNU Privacy Guard (GPG) key crosses `1.3` still encrypted, because the armored blob carries its own passphrase independently of age. Signing therefore needs age identity *and* GPG passphrase. SSH needs only the age identity, and that asymmetry lets `chezmoi init --apply` reach GitHub unattended on a fresh host.
+`1.2` resolves each `secret reference`, an item ID from
+`.chezmoidata/onepassword.yaml`, through `op` and the desktop app. The
+first bootstrap apply sets `CHEZMOI_NO_1PASSWORD`, so every 1Password
+secret renders empty until the user signs in to the app.
 
-`1.3` is also where executable code enters, from more sources than any other process. The bootstrap adds apt repositories and signing keys for HashiCorp, GitHub CLI, Signal, Keybase, Docker, 1Password, and Adoptium. It downloads VS Code and the pinned binaries under `script/install/`, and pipes two vendor installers, chezmoi's and Tailscale's, into a shell. The pinned downloads check a sha256 published in the same release as the artifact it covers.
+`1.2` also fetches the chezmoi externals: pinned release assets from
+GitHub, with no checksum on the asset. `1.3` adds six vendor apt
+repositories with their signing keys and pipes the Tailscale and nvm
+install scripts into a shell.
 
-## The session and its server fleet
+`1.4` copies each bearer token and API key from D3 into D5. GitHub and
+Uptime Robot take a bearer token in a request header. TrueNAS runs as a
+local stdio binary that takes its endpoint and key as environment
+variables. It runs with certificate verification off, because the
+appliance's certificate carries no IP subject alternative name. The Cloudflare
+endpoints and Context7 register with no credential: Cloudflare obtains
+an OAuth grant through a browser on first use, and Context7 runs keyless.
 
-This is the level where the fleet's trust boundaries separate.
+---
+
+## Run a Claude Code session
+
+Process `3.0` is where the MCP fleet's trust boundaries separate.
 
 ```mermaid
 flowchart TB
   user[User]
 
   subgraph ws[Workstation]
-    p31(3.1 Exchange turns with the model)
-    p32(3.2 Gate the tool call)
-    p33(3.3 Annotate the tool result)
-    p34(3.4 Call an MCP server)
-    p35(3.5 Render the status line)
-    p36(3.6 Edit a working tree file)
-    p4(4.0 Run developer tooling)
+    turns(3.1 Exchange turns with the model)
+    gate(3.2 Gate the tool call)
+    annotate(3.3 Annotate the tool result)
+    callMcp(3.4 Call an MCP server)
+    statusLine(3.5 Render the status line)
+    edit(3.6 Edit a working tree file)
+    tooling(4.0 Run developer tooling)
 
-    s4[(MCP registry)]
-    s5[(Claude configuration)]
-    s6[(Session record)]
-    s7[(Host telemetry)]
-    s9[(Interactive login credentials)]
-    s10[(Working tree)]
+    registry[(D5 MCP registry)]
+    claudeConfig[(D6 Claude configuration)]
+    record[(D7 Session record)]
+    hostTelemetry[(D8 Host telemetry)]
+    logins[(D9 Login credentials)]
+    worktree[(D10 Working tree)]
   end
 
   subgraph anth[Anthropic]
-    api[Claude API]
-    connectors["claude.ai connectors: Notion, Readwise"]
+    anthropic[Claude API and claude.ai connectors]
   end
 
   subgraph gh[GitHub]
@@ -258,11 +408,14 @@ flowchart TB
   end
 
   subgraph cf[Cloudflare]
-    cloudflare["graphql, docs, dns-analytics"]
+    cloudflare[Cloudflare MCP endpoints]
   end
 
-  subgraph tp[Third-party remote]
+  subgraph c7[Context7]
     context7[Context7]
+  end
+
+  subgraph ur[Uptime Robot]
     uptimerobot[Uptime Robot]
   end
 
@@ -270,160 +423,169 @@ flowchart TB
     truenas[TrueNAS appliance]
   end
 
-  user -->|prompt| p31
-  s5 -->|Claude configuration| p31
-  s6 -->|transcript and memory| p31
-  s9 -->|Anthropic session credential| p31
-  p31 -->|transcript and memory| s6
-  p31 -->|session output| user
-  p31 -->|zellij log and process metric| s7
-  p31 -->|session usage| p35
-  p35 -->|status line| user
+  user -->|prompt| turns
+  claudeConfig -->|Claude configuration| turns
+  record -->|transcript and memory| turns
+  logins -->|Anthropic session credential| turns
+  turns -->|transcript and memory| record
+  turns -->|session output| user
+  turns -->|zellij log and process metric| hostTelemetry
+  turns -->|session usage| statusLine
+  statusLine -->|status line| user
 
-  api -->|completion and tool call| p31
-  p31 -->|prompt, file content, and tool result| api
+  anthropic -->|completion and tool call| turns
+  turns -->|prompt, file content, and tool result| anthropic
 
-  p31 -->|proposed tool call| p32
-  p32 -->|shell command| p4
-  p32 -->|approved tool call| p34
-  p32 -->|approved file edit| p36
-  p34 -->|tool result| p33
+  turns -->|proposed tool call| gate
+  gate -->|shell command| tooling
+  gate -->|approved tool call| callMcp
+  gate -->|approved file edit| edit
+  callMcp -->|tool result| annotate
 
-  s10 -->|file content| p36
-  p36 -->|edited file| s10
-  p36 -->|tool result| p33
+  worktree -->|file content| edit
+  edit -->|edited file| worktree
+  edit -->|tool result| annotate
 
-  p4 -->|command output| p33
-  p33 -->|annotated tool result| p31
+  tooling -->|command output| annotate
+  annotate -->|annotated tool result| turns
 
-  s4 -->|MCP endpoint and credential| p34
-  p34 -->|connector query| connectors
-  connectors -->|connector document| p34
-  p34 -->|authenticated repository query| github
-  github -->|repository data| p34
-  p34 -->|zone and documentation query| cloudflare
-  cloudflare -->|zone, DNS analytics, and documentation| p34
-  p34 -->|library documentation query| context7
-  context7 -->|library documentation| p34
-  p34 -->|authenticated monitor query| uptimerobot
-  uptimerobot -->|monitor and incident data| p34
-  p34 -->|authenticated storage query| truenas
-  truenas -->|pool, app, and alert data| p34
+  registry -->|MCP endpoint and credential| callMcp
+  callMcp -->|connector query| anthropic
+  anthropic -->|connector document| callMcp
+  callMcp -->|authenticated repository query| github
+  github -->|repository data| callMcp
+  callMcp -->|zone and documentation query| cloudflare
+  cloudflare -->|zone, DNS analytics, and documentation| callMcp
+  callMcp -->|library documentation query| context7
+  context7 -->|library documentation| callMcp
+  callMcp -->|authenticated monitor query| uptimerobot
+  uptimerobot -->|monitor and incident data| callMcp
+  callMcp -->|authenticated storage query| truenas
+  truenas -->|pool, app, and alert data| callMcp
 ```
 
-Processes `3.2` and `3.3` sit between a model-proposed action and the host, layered over Claude Code's permission prompts rather than replacing them. They hold different powers at different moments. `3.2` is the `PreToolUse` phase, and the only one that can stop anything. The pull-request guard rejects a `create_pull_request` call missing `draft: true`, and the `rtk` hook rewrites a Bash command to run through a filtering proxy. `3.3` is the `PostToolUse` phase and can only add: lint on a just-written file, and the session events the Zellij pane title reads.
+`3.2` is the `PreToolUse` hook phase, layered over Claude Code's
+permission prompts. The draft guard there rejects a
+`create_pull_request` call without `draft: true`. `3.3` is the
+`PostToolUse` phase: it runs pre-commit on a just-written file and emits
+the session events the Zellij pane title reads.
 
-The rewrite in `3.2` is why the `command output` arriving at `3.3` is already trimmed—`4.0` ran the proxy, not the bare command. What `3.1` finally reads is a summary of what the host said, not the host's own answer.
+MCP servers reach `3.4` with one of four credential arrangements:
 
-Four kinds of credential relationship show up across the fleet:
+| Server | Credential | Held in |
+| --- | --- | --- |
+| Notion and Readwise, through claude.ai connectors | OAuth grant on the Anthropic account | Anthropic |
+| Cloudflare `graphql`, `docs`, `dns-analytics` | OAuth grant from a browser sign-in | Claude Code, outside the chezmoi source |
+| GitHub, Uptime Robot | Bearer token | D5 |
+| TrueNAS | API key as an environment variable | D5 |
 
-- **No local credential.** The claude.ai connectors authenticate by an OAuth grant held on the Anthropic account. This host holds no credential for either.
-- **OAuth held by Claude Code.** The Cloudflare endpoints are Cloudflare-hosted and obtain their grant through a browser on first use. The grant lives outside the chezmoi source, so rotating it happens outside apply.
-- **Bearer token in the registry.** GitHub and Uptime Robot pass a token via `--header`, which Claude Code stores unencrypted in `~/.claude.json`. GitHub takes this route because its OAuth endpoint wants a pre-registered client that Claude Code's dynamic registration doesn't satisfy.
-- **Environment variable to a local process.** TrueNAS runs as a stdio binary on this host with its endpoint and API key passed as `-e` variables, also persisted into `~/.claude.json`. It's the only flow terminating inside the home network, and it runs with certificate verification turned off because the appliance's certificate carries no IP subject alternative name.
+Context7 takes no credential.
 
-Context7 sits outside all four, running keyless. Anonymous use is rate-limited and a key would raise the ceiling, but no limit pressure has appeared.
+---
 
-## Running developer tooling
+## Run developer tooling
 
-Process `4.0` is the catch-all both the user and the session shell into, and the one place a credential lives in an environment variable rather than a file.
+Process `4.0` is the shell both the user and the session run commands
+in, and the one place a credential lives in an environment variable.
 
 ```mermaid
 flowchart LR
   user[User]
 
   subgraph ws[Workstation]
-    p41(4.1 Run the interactive shell)
-    p42(4.2 Run git and gh)
-    p43(4.3 Query Codecov)
-    p3(3.0 Run a Claude Code session)
+    shell(4.1 Run the interactive shell)
+    git(4.2 Run git, gh, and ssh)
+    serviceCli(4.3 Run a service command-line tool)
+    session(3.0 Run a Claude Code session)
+    broker(2.0 Serve 1Password secrets)
 
-    s3[(Service tokens)]
-    s8[(Signing and transport identities)]
-    s9[(Interactive login credentials)]
-    s10[(Working tree)]
+    tokens[(D3 Service tokens)]
+    logins[(D9 Login credentials)]
+    worktree[(D10 Working tree)]
   end
 
   subgraph gh[GitHub]
-    github[GitHub API and git remote]
+    github[GitHub]
   end
 
-  subgraph tp[Third-party SaaS]
+  subgraph home[Home network]
+    homeassistant[Home Assistant]
+  end
+
+  subgraph cc[Codecov]
     codecov[Codecov]
   end
 
-  user -->|shell command| p41
-  p3 -->|shell command| p41
-  s3 -->|Codecov API token| p41
-  s3 -->|Cloudflare API token| p41
-  p41 -->|command output| user
-  p41 -->|command output| p3
-  p41 -->|dispatched command| p42
-  p41 -->|dispatched command| p43
-  p41 -->|Codecov API token| p43
-  p42 -->|command output| p41
-  p43 -->|command output| p41
+  subgraph ur[Uptime Robot]
+    uptimerobot[Uptime Robot]
+  end
 
-  user -->|GPG passphrase| p42
-  s8 -->|SSH key and GPG key| p42
-  s9 -->|gh OAuth token| p42
-  s10 -->|file content| p42
-  p42 -->|checked-out file| s10
-  github -->|repository data| p42
-  p42 -->|authenticated repository query| github
-  p42 -->|signed commit and pull request| github
+  user -->|shell command| shell
+  session -->|shell command| shell
+  tokens -->|Codecov API token| shell
+  tokens -->|Uptime Robot API token| shell
+  tokens -->|Cloudflare API token| shell
+  shell -->|command output| user
+  shell -->|command output| session
+  shell -->|dispatched command| git
+  shell -->|dispatched command and API token| serviceCli
+  git -->|command output| shell
+  serviceCli -->|command output| shell
 
-  codecov -->|coverage and test result data| p43
-  p43 -->|authenticated coverage query| codecov
+  git -->|signing request| broker
+  broker -->|SSH signature| git
+  logins -->|gh OAuth token| git
+  worktree -->|file content| git
+  git -->|checked-out file| worktree
+  github -->|repository data| git
+  git -->|authenticated repository query| github
+  git -->|signed commit and pull request| github
+  homeassistant -->|remote output| git
+  git -->|remote command| homeassistant
+
+  codecov -->|coverage and test result data| serviceCli
+  serviceCli -->|authenticated coverage query| codecov
+  uptimerobot -->|monitor and incident data| serviceCli
+  serviceCli -->|authenticated monitor query| uptimerobot
 ```
 
-`4.1` is `dot_bashrc` exporting the decrypted tokens, which every child shell then inherits whether it needs them or not. Only `4.2` reads the signing and transport identities, and no path leads from the MCP registry to the GPG key.
+`4.1` is `dot_bashrc` exporting three tokens from D3, which every child
+process inherits. `4.3` is `codecov-api` and the `uptimerobot` command-line
+tool, each reading its token from the environment.
 
-The Cloudflare API token enters `4.1` and leaves through no drawn flow: a grey hole, an input the outputs can't account for. Either a flow is missing because someone reaches Cloudflare interactively, or nothing consumes the token at all. Ad-hoc shell use leaves no trace in the source tree, so the diagram settles only the narrower claim: nothing this repo manages reads it.
+`4.2` signs commits and authenticates SSH through the 1Password agent.
+The SSH key stays in D4: `signing request` carries the data to sign, and
+`SSH signature` carries back only the signature. `agent.toml` limits the
+agent to the keys `1.2` lists.
 
-## Logins, timers, and the inbound path
+The Cloudflare API token enters `4.1` and leaves through no drawn flow.
+Nothing this repository manages reads it.
 
-Three Level 0 processes carry credentials without a person at the keyboard, or accept traffic the host didn't initiate.
+---
 
-`6.0` is the one that must be interactive. Eight tools authenticate once per machine—`gh`, `claude`, `op`, `gcx`, `readwise`, `tailscale`, `keybase`, and `signal-cli`—and each writes a credential the chezmoi source never sees. Two of them then authenticate flows drawn elsewhere on these diagrams, which is why `s9` feeds both `3.0` and `4.0`.
+## Credentials
 
-`7.0` is the systemd timer set, and it runs with nobody present. `git-poi-all` and `git-worktree-poi` walk every GitHub clone under `$HOME` weekly, calling the GitHub API with the `gh` OAuth token. `unattended-upgrades` installs security updates from every apt source the bootstrap configured. The rest—`docker-prune`, `dev-cache-gc`, `cgroup-pids-textfile`—stay local. The journal is the only record that any of them ran.
+Every credential on the host, by where it comes from.
 
-`8.0` is `tailscaled`, the only path into the host that the host didn't open. The bootstrap installs and enables it, though joining a tailnet stays a manual `tailscale up`. A tunnel carries whatever a peer sends, so its contents stay outside this diagram and the threat model owns the rest.
+| Credential | Source | Held in | Read by | Reaches |
+| --- | --- | --- | --- | --- |
+| 1Password account password and Secret Key | The user | Not stored | `2.0` | 1Password |
+| age identity | The user, at bootstrap | D2 | `1.2` | none |
+| SSH key | 1Password | D4 | `2.0`, for `4.2` | GitHub, Home Assistant |
+| GitHub token | 1Password | D3, D5 | `1.4`, `3.4` | GitHub |
+| TrueNAS API key | 1Password | D3, D5 | `1.4`, `3.4` | Home network |
+| Uptime Robot token | 1Password | D3, D5 | `1.4`, `3.4`, `4.3` | Uptime Robot |
+| Codecov token | 1Password | D3 | `4.3` | Codecov |
+| Grafana Cloud token | 1Password | D3 | `5.0` | Grafana Cloud |
+| Cloudflare token | age-encrypted in D1 | D3 | `4.1` | none drawn |
+| Claude Code session | `claude` login | D9 | `3.1` | Anthropic |
+| `gh` OAuth token | `gh auth login` | D9 | `4.2`, `7.0` | GitHub |
+| Tailscale node key | `tailscale up` | D9 | `8.0` | Peers on the tailnet |
+| Grafana Cloud login | `gcx login` | D9 | `gcx` | Grafana Cloud |
+| Readwise token | `readwise login` | D9 | `readwise` | Readwise |
+| Keybase device keys | `keybase login` | D9 | `keybase` | Keybase |
+| Signal registration | `signal-cli register`, Signal Desktop link | D9 | `signal-cli`, Signal Desktop | Signal |
 
-## Deployed secrets
-
-Every credential the source tree carries, and what reaches what once it's decrypted. Eight more arrive through interactive logins, listed after this one.
-
-| Secret | Deployed to | Read by | Boundary it crosses |
-| --- | --- | --- | --- |
-| age identity | `~/.config/chezmoi/key.txt` | chezmoi apply | none—never leaves the host |
-| GPG secret key | `~/.gnupg/secret-keys.asc` | GPG import pass, commit signing | none directly, though signatures reach GitHub |
-| SSH key and config | `~/.ssh/` | git over SSH | GitHub |
-| GitHub token | `~/.config/github/token` | `github` MCP registration, then `~/.claude.json` | GitHub |
-| TrueNAS API key | `~/.config/truenas/api_key` | `truenas` MCP registration, then `~/.claude.json` | home network |
-| Uptime Robot token | `~/.config/uptimerobot/token` | `uptimerobot` MCP registration, `UPTIMEROBOT_API_TOKEN` in the shell | Uptime Robot |
-| Codecov token | `~/.config/codecov/token` | `CODECOV_API_TOKEN`, consumed by `codecov-api` | Codecov |
-| Grafana Cloud token | `~/.config/grafana-cloud/token` | `alloy.service` via `LoadCredential` | Grafana Cloud |
-| Cloudflare token | `~/.config/cloudflare/token` | `CLOUDFLARE_API_TOKEN` in the shell | none drawn |
-
-Cloudflare crosses no boundary because its three MCP servers authenticate by OAuth rather than by this token, which is what makes `4.1` a grey hole.
-
-### Credentials the source tree never sees
-
-None of these is chezmoi-managed, none rotates on apply, and a fresh host re-establishes each by hand.
-
-| Credential | Stored at | Authenticates |
-| --- | --- | --- |
-| Claude Code session | `~/.claude/.credentials.json` | `3.1` to the Anthropic API |
-| `gh` OAuth token | `~/.config/gh/` | `4.2` interactively, `7.0` weekly, both to GitHub |
-| Tailscale node key | `tailscaled` state | `8.0` to the tailnet |
-| 1Password session | `~/.config/op/` | the `op` CLI |
-| Grafana Cloud login | `~/.config/gcx/` | the `gcx` CLI |
-| Readwise token | `~/.readwise-cli.json` | the `readwise` CLI |
-| Keybase device keys | `~/.config/keybase/` | Keybase and its filesystem |
-| signal-cli registration | `~/.local/share/signal-cli/` | Signal |
-
-Two of these reach further than any chezmoi-managed secret. The `gh` OAuth token is the only credential on the host spent with no person present, since `7.0` uses the same token an interactive `gh` does. The Claude Code session credential gates every MCP flow in `3.0`: the tokens in `~/.claude.json` authenticate to vendors, while this one authenticates to the model that decides which vendor to call.
-
-The GitHub token and the SSH key both reach GitHub, through different processes and different grants. The SSH key authenticates git transport, and its own registration scopes it. The token authenticates the MCP server and carries whatever fine-grained permissions it received at issue time. `~/.claude.json` holds the token. The key stays in `~/.ssh/`.
+Nothing re-establishes the D9 credentials on apply. A new host repeats
+each login by hand. `7.0` spends the `gh` OAuth token with no person
+present.
