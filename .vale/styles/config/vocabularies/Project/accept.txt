@@ -85,7 +85,6 @@ basename
 (?i)agents?
 (?i)plaintext
 (?i)unencrypted
-(?i)keyless
 
 # Acronyms kept unexpanded. Listing them here also clears
 # Microsoft.Acronyms, which otherwise wants a "Name Of Thing (NOT)"
