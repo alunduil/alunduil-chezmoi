@@ -27,7 +27,6 @@ pre-commit
 Diátaxis
 ghcup
 mise
-musl
 
 # Observability stack
 Grafana
@@ -77,7 +76,6 @@ VMs
 (?i)toolchains?
 (?i)lockfiles?
 (?i)runtimes?
-(?i)keyrings?
 (?i)facto
 (?i)cgroups?
 (?i)uid
