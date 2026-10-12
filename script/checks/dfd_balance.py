@@ -46,21 +46,33 @@ class Malformed(Exception):
     """The document isn't shaped like a DFD, so no finding can be trusted."""
 
 
-def depth(number):
-    """0 for the context process, 1 for `N.0`, and one more per part below."""
-    if number == ROOT:
-        return 0
-    parts = number.split(".")
-    return 1 if len(parts) == 2 and parts[1] == "0" else len(parts)
+class ProcessNumber(str):
+    """`0` is the context, `N.0` level 0, `N.M` decomposes `N.0`, and so on."""
 
+    def _parts(self):
+        return self.split(".")
 
-def parent_of(number):
-    parts = number.split(".")
-    if len(parts) == 2 and parts[1] == "0":
-        return ROOT
-    if len(parts) == 2:
-        return f"{parts[0]}.0"
-    return ".".join(parts[:-1])
+    def _is_level_zero(self):
+        parts = self._parts()
+        return len(parts) == 2 and parts[1] == "0"
+
+    @property
+    def depth(self):
+        if self == ROOT:
+            return 0
+        return 1 if self._is_level_zero() else len(self._parts())
+
+    @property
+    def parent(self):
+        """The process this one decomposes, or None for the context."""
+        if self == ROOT:
+            return None
+        if self._is_level_zero():
+            return ProcessNumber(ROOT)
+        parts = self._parts()
+        if len(parts) == 2:
+            return ProcessNumber(f"{parts[0]}.0")
+        return ProcessNumber(".".join(parts[:-1]))
 
 
 class Level:
@@ -85,7 +97,7 @@ class Level:
             node = None
             if match := PROCESS.match(stripped):
                 node = match.group(1)
-                self.processes[node] = match.group(2)
+                self.processes[node] = ProcessNumber(match.group(2))
             elif match := STORE.match(stripped):
                 node = match.group(1)
                 self.stores[node] = match.group(2)
@@ -108,16 +120,16 @@ class Level:
         return {f for s, f, t in self.edges if s in inside and t not in inside}
 
     def depth(self):
-        return max((depth(n) for n in self.processes.values()), default=None)
+        return max((n.depth for n in self.processes.values()), default=None)
 
     def own(self):
         """The processes this diagram is about, deepest-numbered first."""
         deepest = self.depth()
-        return {n: v for n, v in self.processes.items() if depth(v) == deepest}
+        return {n: v for n, v in self.processes.items() if v.depth == deepest}
 
     def parent_number(self):
         """The process this diagram opens up, or None for the context."""
-        parents = {parent_of(v) for v in self.own().values() if v != ROOT}
+        parents = {v.parent for v in self.own().values()}
         return parents.pop() if len(parents) == 1 else None
 
     def name(self):
