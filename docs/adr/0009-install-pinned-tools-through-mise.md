@@ -14,12 +14,16 @@ can't bump one without an edit to its own pull request. Both 0003 and
 0008 turned on that force: checksums and automated bumps couldn't
 coexist.
 
-[mise](https://mise.jdx.dev) records a checksum per tool and platform in
-`mise.lock` and fails the install on a mismatch. Renovate's mise manager
-updates that lockfile in the version-bump pull request by running
-`mise lock <tool>` itself, the same lockfile step it runs for npm or uv.
-A spike in containers and a scratch repository confirmed the parts this
-decision rests on:
+Externals also can't manage language runtimes or the CLIs installed
+through them. Today nvm, rustup and ghcup each bring their own pinning
+and Renovate wiring.
+
+[mise](https://mise.jdx.dev) manages both kinds of tool. It records a
+checksum per tool and platform in `mise.lock` and fails the install on a
+mismatch. Renovate's mise manager updates that lockfile in the
+version-bump pull request by running `mise lock <tool>` itself, the same
+lockfile step it runs for npm or uv. A spike in containers and a scratch
+repository confirmed the parts this decision rests on:
 
 - **Renovate finds the config at its chezmoi source path.** The default
   pattern `**/{,.}mise/config{,.*}.toml` matches
@@ -56,14 +60,9 @@ The three installers 0008 kept fare differently under mise:
   pin a key for a `github:` tool, and the aqua registry has no
   `signal-cli` entry.
 
-mise also manages language runtimes and the CLIs installed through
-them, which externals can't. Today nvm, rustup and ghcup each bring
-their own pinning and Renovate wiring.
-
 The `ha-terminal` role ignores `.config/**`, `.local/bin/**` and every
 bootstrap pass, so it installs no pinned tools today. mise publishes musl
-builds that run on its Alpine base, but the role has nothing for them to
-install.
+builds that run on its Alpine base.
 
 ## Decision
 
@@ -94,15 +93,11 @@ Revisit when any trigger fires:
 ## Consequences
 
 - Every migrated tool regains corruption detection: a replaced or
-  corrupt upload fails the install, whether its upstream enables
-  immutable releases.
-- Renovate bumps stay hands-off, now with a lockfile diff a reviewer can
-  read.
+  corrupt upload fails the install, even when its upstream doesn't
+  enable immutable releases.
 - One installer serves release binaries, runtimes and their CLIs, in
   place of externals plus nvm, rustup and per-tool wiring.
 - mise becomes a bootstrap dependency. It can't install itself, so its
   own install needs a pinned, verified download.
 - Tools live under `~/.local/share/mise/installs/`, not `~/.local/bin/`,
   so shells and services reach them through mise activation or shims.
-- Two install models remain: mise for most tools, and scripts plus
-  `lib.sh` for `signal-cli` and `kcov`.
