@@ -81,7 +81,7 @@ repos:
         entry: script/checks/dfd_balance.py
         language: system
         pass_filenames: false
-        files: ^(docs/explanation/data-flow\.md|script/checks/dfd_balance\.py)$
+        files: ^(docs/reference/data-flow\.md|script/checks/dfd_balance\.py)$
 
       - id: lychee
         name: lychee
