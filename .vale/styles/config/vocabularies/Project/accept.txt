@@ -15,6 +15,9 @@ alunduil
 foot
 kitty
 chezmoi
+Tailscale
+tailnet
+Adoptium
 lazygit
 datasource
 Crostini

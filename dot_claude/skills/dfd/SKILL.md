@@ -1,6 +1,6 @@
 ---
 name: dfd
-description: Audit, write, or revise a data flow diagram (DFD). Use when asked to draw or model how data moves through a system, when standing up a DFD with trust boundaries for threat modeling or security review, or when checking an existing DFD for drawing and balancing errors. Pins Mermaid `flowchart` as the output notation and the correctness rules a DFD must satisfy.
+description: Audit, write, or revise a data flow diagram (DFD). Use when asked to draw or model how data moves through a system, when standing up a DFD with trust boundaries for threat modeling or security review, or when checking an existing DFD for drawing and balancing errors. Pins the output notation for each level and the correctness rules a DFD must satisfy.
 ---
 
 # DFD
@@ -13,6 +13,13 @@ References:
 A DFD shows where data moves and what transforms it. Sequencing belongs
 in a flowchart, object structure in UML; a DFD carries neither. Control
 signals are not data — leave them out.
+
+Every claim in a DFD holds in a world with no adversary. "No flow
+connects the token store to the signing key" is a DFD statement; "so a
+stolen token can't sign a commit" is the threat model's conclusion from
+it. Write the reachability and let the threat model draw on it — it
+needs the fact as input, and inheriting a conclusion costs it the step
+where that conclusion gets checked.
 
 ## Components
 
@@ -33,9 +40,15 @@ take verb phrases, flows take the name of the data itself
 
 Each level decomposes one process from the level above.
 
-- **Context** — the whole system as a single process numbered `0`,
-  surrounded by every external entity it exchanges data with. No data
-  stores; internal storage is inside the system.
+- **Context** — a list. One entry per external entity the system
+  exchanges data with, saying what the system uses it for, what data
+  it exchanges, and how the exchange authenticates. Where a credential
+  then sits, and which local process holds it, are Level 0's. Every
+  flow touches process `0` by
+  construction, so purpose is what this level carries; flow names
+  belong to Level 0, where they balance against a decomposition. Name
+  the same entities Level 0 names. No data stores; internal storage is
+  inside the system.
 - **Level 0** — process `0` opened up into its major processes,
   numbered `1.0`, `2.0`, `3.0`. Data stores appear here first.
 - **Level 1 onward** — one process from the level above opened up,
@@ -65,11 +78,20 @@ Drawing:
 
 Balancing:
 
+- Level 0 names the same external entities the context list names.
+  Flow sets balance from Level 0 down.
 - A child diagram's inflows and outflows match its parent process's
   exactly — same set, same names.
 - Only boundary-crossing flows balance; flows internal to the
   decomposition are new at the child level.
 - Renaming a flow at one level renames it at every level it appears.
+
+Scope:
+
+- State what is. Data at rest is plaintext or encrypted, a flow carries
+  a named credential, a process runs unattended, one entity is the only
+  inbound path — all diagram facts. Blast radius, attribution gaps, what
+  an intruder reaches, and every mitigation belong to the threat model.
 
 Currency:
 
@@ -78,6 +100,7 @@ Currency:
 
 ## Output
 
+A context level is prose (see *Levels*). Every level below it is a
 Mermaid `flowchart`, fenced inline in the markdown document. Renders on
 GitHub with no export step and no tool to install. Classic node shapes
 only — the `A@{ shape: ... }` extended syntax needs a Mermaid version
@@ -115,7 +138,8 @@ Draw:
 
 1. Fix the system boundary — what is inside, which external entities
    exchange data with it, and, for security work, which trust
-   boundaries the data crosses. Draw the context diagram.
+   boundaries the data crosses. List those entities and what the
+   system uses each for.
 2. List what each process consumes and produces before drawing its
    flows. A process whose two lists you can't complete is the wrong
    process, or sits on the wrong side of the boundary.
@@ -126,4 +150,5 @@ Draw:
 Check:
 
 1. Walk *Rules* against the result, drawing rules first.
-2. Balance each child diagram against its parent's flow set.
+2. Balance each child diagram against its parent's flow set, and
+   Level 0's entities against the context list.

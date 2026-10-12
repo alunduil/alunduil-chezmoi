@@ -22,6 +22,7 @@ Organised by [Diátaxis](https://diataxis.fr):
   - [Recovering access](docs/how-to/recover-access.md): the Emergency Kit, and rebuilding without the 1Password account.
 - Reference
   - [Bootstrap rules](docs/reference/bootstrap-reference.md)—script prefixes, phases, install sources, host roles, secrets.
+  - [Data flow](docs/reference/data-flow.md)—trust boundaries, credential paths, and every Model Context Protocol server the host talks to. Cloud and home-network flows have their own data flow diagram in the `alunduil-infrastructure` repo.
 - Explanation
   - [Architecture](docs/explanation/architecture.md)—how a change travels from an edit to a configured host.
 
