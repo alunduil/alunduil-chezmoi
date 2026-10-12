@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 # Registers TrueNAS Research Labs' official MCP with Claude Code. Local
-# stdio binary (truenas-mcp, a chezmoi external) plus URL and API key
+# stdio binary (truenas-mcp, a mise tool) plus URL and API key
 # passed as -e env vars, which Claude Code bakes into ~/.claude.json.
 #
 # Why run_onchange_after instead of a converging run_before pass:
@@ -18,7 +18,9 @@ set -euo pipefail
 
 url_file="$HOME/.config/truenas/url"
 key_file="$HOME/.config/truenas/api_key"
-bin="$HOME/.local/bin/truenas-mcp"
+# Resolves to the shim, whose path stays the same across version bumps, so
+# ~/.claude.json does too.
+bin="$(command -v truenas-mcp || true)"
 
 if [ ! -s "$url_file" ]; then
   log "truenas-mcp: url missing or empty at $url_file, skipping"
@@ -28,8 +30,8 @@ if [ ! -r "$key_file" ]; then
   log "truenas-mcp: api key not deployed at $key_file, skipping"
   exit 0
 fi
-if [ ! -x "$bin" ]; then
-  log "truenas-mcp: binary missing at $bin, skipping"
+if [ -z "$bin" ]; then
+  log "truenas-mcp: not on PATH, skipping"
   exit 0
 fi
 

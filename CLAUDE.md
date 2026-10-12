@@ -20,9 +20,15 @@ effect on `apply` until committed and pulled into the apply clone. Use
 - pre-commit shellchecks `.sh.tmpl` files unrendered, so a `{{ … }}`
   expression must sit inside quotes or a comment. That is why the package
   lists arrive via `read -ra <<<'{{ … }}'` rather than an array literal.
-- Write a version pinned inside a URL (`.chezmoiexternal.toml`, the
-  zellij `plugins` block) out in full and leave it unannotated: Renovate
-  bumps every copy of it.
+- Pinned tools live in `dot_config/mise/config.toml`. After editing it,
+  regenerate the lockfile with
+  `MISE_GLOBAL_CONFIG_FILE="$PWD/dot_config/mise/config.toml" mise lock --global`
+  and commit `mise.lock` with the npm sidecars under
+  `dot_config/mise/.mise/locks/`. chezmoi skips that dot-directory, so
+  `symlink_dot_mise.tmpl` points `~/.config/mise/.mise` at it in the
+  source tree.
+- Write a version pinned inside a URL (the zellij `plugins` block) out
+  in full and leave it unannotated: Renovate bumps every copy of it.
 - Every `*_VERSION` pin carries a `# renovate: datasource=… depName=…`
   line directly above it (order: datasource, depName, packageName,
   versioning, extractVersion). One generic manager in `renovate.json`

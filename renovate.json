@@ -56,30 +56,11 @@
     },
     {
       "customType": "regex",
-      "description": "chezmoi externals pinned in GitHub URLs. currentValue excludes the tag prefix so the global replace also bumps the version in an asset filename; tagPrefix rebuilds extractVersion to keep sibling tags (lychee-lib-v*) out",
-      "managerFilePatterns": [".chezmoiexternal.toml"],
-      "matchStrings": [
-        "https://github\\.com/(?<depName>[^/]+/[^/]+)/releases/download/(?<tagPrefix>[^/\\d]*)(?<currentValue>\\d[^/]*)/[^\"]*",
-        "https://github\\.com/(?<depName>[^/]+/[^/]+)/archive/refs/tags/(?<tagPrefix>[^/\\d]*)(?<currentValue>\\d[^/]*?)\\.tar\\.gz"
-      ],
-      "datasourceTemplate": "github-releases",
-      "extractVersionTemplate": "^{{{tagPrefix}}}(?<version>\\d.*)$"
-    },
-    {
-      "customType": "regex",
       "description": "Zellij plugins, pinned as release-asset URLs rather than a version assignment",
       "managerFilePatterns": ["dot_config/zellij/config.kdl"],
       "matchStrings": [
         "https://github\\.com/(?<depName>[^/]+/[^/]+)/releases/download/(?<currentValue>v[\\d.]+)/"
       ],
-      "datasourceTemplate": "github-releases"
-    },
-    {
-      "customType": "regex",
-      "description": "chezmoi pin in the bootstrap tutorial; annotating it would leak Renovate syntax into a copy-pasted snippet",
-      "managerFilePatterns": ["docs/tutorials/bootstrap.md"],
-      "matchStrings": ["CHEZMOI_VERSION=\"(?<currentValue>v[\\d.]+)\""],
-      "depNameTemplate": "twpayne/chezmoi",
       "datasourceTemplate": "github-releases"
     }
   ]
