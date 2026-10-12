@@ -1,7 +1,7 @@
 # Paths
 
 The order of three paths across the [data flow](data-flow.md#level-0),
-and what a failure does at each step. In the sequence diagrams, an `alt`
+and the branches each can take. In the sequence diagrams, an `alt`
 box runs exactly one of its bracketed branches, and an `opt` box runs
 only when its condition holds.
 
@@ -46,8 +46,9 @@ sequenceDiagram
 
 An authorization covers the terminal session and its sub-shells. It
 lapses after 10 minutes of inactivity in that session, and after 12
-hours regardless. The TrueNAS script also hashes the appliance's
-address.
+hours regardless.
+
+The TrueNAS script also hashes the appliance's address.
 
 ## Call a tool
 
@@ -118,5 +119,5 @@ sequenceDiagram
 ```
 
 An authorization covers the application and its child processes, for
-that key, until 1Password locks or quits. The private key never leaves D4.
-The app keeps an unencrypted copy of the public key on disk.
+that key, until 1Password locks or quits. The private key never leaves
+D4. The app keeps an unencrypted copy of the public key on disk.

@@ -27,7 +27,7 @@ session calls. Out of scope:
 
 Each credential's source, holder, and reach is in
 [Credentials](data-flow-credentials.md). The order of a secret read, a
-tool call, and a signature, and what a failure does to each, is in
+tool call, and a signature, and the branches each can take, is in
 [Paths](data-flow-paths.md). [Architecture](../explanation/architecture.md)
 explains why the host has this shape.
 
@@ -160,7 +160,8 @@ trust boundaries:
     their own installers add.
   - The npm registry and crates.io.
   - The Tailscale, ghcup, and rustup install scripts, piped into a
-    shell, the toolchains they fetch, and the VS Code package.
+    shell, and the toolchains they fetch.
+  - The VS Code package.
 - Web hosts a session fetches with WebFetch.
 - The Tailscale coordination server.
 - Peers on the tailnet, the only path into the host that the host
