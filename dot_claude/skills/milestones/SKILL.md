@@ -1,104 +1,112 @@
 ---
 name: milestones
-description: Create, name, scope, assign, and close GitHub milestones. Use when adding a milestone, deciding whether work belongs in one, or naming the next one. One axis per project (release / date / theme); never as labels.
+description: Create, scope, assign, score, and close GitHub milestones as monthly OKRs — one objective per milestone, key results as an "As measured by" checklist in the description. Use when adding a milestone, deciding whether work belongs in one, planning next month, or closing one at month end. Never as labels.
 ---
 
 # Milestones
 
-A milestone is a *finite, scoped* group of issues converging on a
-shipping or closing event. If it doesn't converge, it's a label.
+A milestone is one objective for one calendar month. Its issues are
+the work; its key results say whether the objective landed.
 
-## Pick one axis per project
+## Shape
 
-- **Release-anchored** — name = the version it targets: `v1.0.0`,
-  `v1.1.0` (semver), or `1.0.0.0` (PVP). Best when the project ships
-  releases. Pre-stable work collapses to one placeholder — `v0.1.0`
-  (semver) or `0.0.1.0` (PVP) — since those names already mean "not
-  yet production-ready"; don't fan out across pre-1.0 versions.
-- **Date-anchored** — name = the calendar window: `2026-Q2`,
-  `2026-05`, `Sprint 23`. Best when work is time-bounded.
-- **Theme-anchored** — name = the outcome: `Auth overhaul`,
-  `Public beta`. Best for project phases not pegged to a release or
-  window.
+- **Title:** `YYYY-MM: <objective>` — e.g. `2026-11: Secrets resolve
+  from 1Password on every host`. The month prefix sorts and filters;
+  the objective reads in issue sidebars.
+- **Due date:** last day of the month.
+- **Description:**
 
-Don't mix axes within one project — `v1.1.0` and `2026-Q2` and
-`Auth overhaul` together leaves contributors guessing where to file.
-Pick one and inherit it for the next milestone.
+  ```markdown
+  <Objective: one or two present-tense sentences stating the outcome.>
 
-## Description: outcome, not inventory
+  As measured by:
 
-The description states the user-visible outcome the milestone
-delivers — present-tense, the way you'd phrase an OKR objective.
-Issues are the actions; the milestone is what those actions add up to.
+  - [ ] <key result>
+  - [ ] <key result>
 
-- Outcome-shaped: "Auth flows can be configured without code
-  changes." "Cold-start latency under 200ms on the free tier."
-- Not outcome-shaped: "Refactor auth middleware." (That's a task —
-  file as an issue.) "All v1.1 work." (Restates the title — adds
-  nothing.) A list of issue links. (Readers can see those.)
-- Optional: a short *non-goals* line to bound scope.
+  Non-goals: <optional, one line bounding scope>
+  ```
 
-The description is the contract the convergence test runs against —
-"does closing this issue advance *this outcome*?"
+Each key result is a check anyone can run at month end: a command
+that passes, a count that hits a number, an observable state. Two or
+three per objective. Tick one by editing the description when its
+check passes, independent of issue state.
 
-## When *not* to use a milestone
+## Velocity
+
+The monthly limit counts objectives across every repository on the
+Inbox project board, since they share one person's capacity.
+
+- Start at one objective per month in total.
+- Size each month from the last few months' scores. Add an objective
+  only after a month whose key results all landed.
+- A repository with no objective this month has no milestone.
+
+## Assigning issues
+
+An issue belongs in a milestone when closing it moves at least one
+key result. Leave it unassigned otherwise.
+
+Other groupings use other tools:
 
 - Categorical tag (area, type, priority) → label.
-- Ongoing planning surface across many issues → Project board.
-- Ad-hoc "see also" between two issues → plain `#N` mention or the
-  `issue-links` skill.
+- Ongoing planning across many issues → the Inbox project board.
+- "See also" between two issues → `#N` mention or the `issue-links`
+  skill.
 
-## Due dates
+## Closing at month end
 
-- Release- / date-anchored: set the due date to the release date or
-  window end. Slipping the date is fine; missing data is worse than
-  imprecise data — the rollup needs a horizon.
-- Theme-anchored: skip unless there's a real deadline.
+1. Tick every key result whose check passes now.
+2. Append a score line to the description: `Scored N/M key results.`
+3. Move open issues to next month's milestone or unset them.
+4. Close the milestone.
 
-## Closing
-
-A milestone closes when both:
-
-1. Every issue inside is closed, AND
-2. The convergent event happened (release cut, window ended, theme
-   shipped).
-
-If the event didn't happen yet, leave it open even with an empty
-issue list — it's still expecting work. If issues remain when the
-event hits, move spillover to the next milestone (or unset) before
-closing; don't close with open issues — it falsifies the rollup.
-
-Closed milestones are immutable history. Don't reopen to slot in
-late work; create the next milestone.
+The score is velocity data. Record it as measured and close on
+schedule whatever it says. When the objective still matters, carry it
+into a new milestone for next month. Closed milestones stay closed.
 
 ## Operations
 
 ```bash
-# List — closed ones show which axis is in use
-gh api 'repos/:owner/:repo/milestones?state=all' \
-  --jq '.[] | "\(.number)\t\(.title)\t\(.state)"'
+inbox_repos() {
+  for o in alunduil dungeon-studio qua-world; do
+    gh api --paginate "users/$o/repos?per_page=100&type=owner" \
+      --jq '.[] | select(.archived|not) | select(.has_issues) | .full_name'
+  done
+}
 
-# Create
+# Velocity check
+inbox_repos | while read -r r; do
+  gh api "repos/$r/milestones?state=open" \
+    --jq ".[] | \"$r\t\(.number)\t\(.title)\""
+done
+
+# Past scores
+inbox_repos | while read -r r; do
+  gh api "repos/$r/milestones?state=closed" \
+    --jq ".[] | \"\(.title)\t$r\t\(((.description // \"\") | capture(\"Scored (?<s>[0-9]+/[0-9]+)\").s) // \"-\")\""
+done | sort
+
 gh api repos/:owner/:repo/milestones \
-  -f title='v1.1.0' \
-  -f due_on='2026-06-01T00:00:00Z' \
-  -f description='...'
+  -f title='2026-11: <objective>' \
+  -f due_on='2026-11-30T23:59:59Z' \
+  -f description="$(cat description.md)"
 
-# Close
+# Tick or score
+gh api -X PATCH repos/:owner/:repo/milestones/<num> \
+  -f description="$(cat description.md)"
+
 gh api -X PATCH repos/:owner/:repo/milestones/<num> -f state=closed
 ```
 
 Assign with `mcp__github__issue_write` (`method: create` or `update`).
-Its `milestone` param takes the milestone *number* from the listing
-above, not the title.
+Its `milestone` param takes the milestone *number*, not the title.
 
 ## Procedure
 
-1. Read existing milestones; identify the project's axis. If none is
-   set and a milestone is being created, surface the choice (release
-   / date / theme); don't silently pick.
-2. New milestone: name in the axis; outcome-shaped description; due
-   date if release- or date-anchored.
-3. "Does this issue belong here?" — convergence test: will closing
-   it advance the description's outcome? If not, leave it unassigned.
-4. Closing: confirm the event happened and spillover is moved.
+1. Run the velocity check. If this month already holds the
+   velocity limit, surface that before creating another.
+2. Draft title, objective, key results, and due date; confirm with
+   the user before creating.
+3. Assign issues that move a key result.
+4. At month end, follow *Closing at month end*.

@@ -18,13 +18,10 @@ Unlinked work takes `mcp__github__search_pull_requests`, one call per field — 
 
 Ask for `fields: [number, title, state, pull_request]`. `state` reads `closed` on a merged PR, so `pull_request.merged_at` is what separates merged (scope already covered) from abandoned.
 
-Two lookups have no MCP equivalent:
+Develop-flow branches have no MCP equivalent:
 
 ```bash
-gh issue develop <N> --list   # develop-flow branches
-
-# Milestone gate: the issue's milestone vs the current (lowest-version open) one
-gh api repos/:owner/:repo/milestones --jq '.[].title' | sort -V | head -1
+gh issue develop <N> --list
 ```
 
 For recent commits in the area:
@@ -50,7 +47,7 @@ Any one fires a go/no-go before writing code:
 - The issue assumes tooling/files that have since been replaced or removed.
 - The motivating dependency resolved differently (e.g. "waiting on upstream X" — X shipped via a different mechanism).
 - A maintainer comment narrows or vetoes the original scope and the body wasn't updated.
-- The issue is parked on a *later* milestone (not the current, lowest-version open one). Deferred work — don't pull it forward. No milestone or the current milestone is fine to work.
+- The issue's milestone title (`YYYY-MM: <objective>`) names a month after the current one. Deferred work — don't pull it forward. No milestone, or this month's or an earlier month's, is fine to work.
 - Repro fails on the default branch.
 - The issue lacks enough detail to start without guessing.
 
