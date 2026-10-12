@@ -2,7 +2,7 @@
 
 Zero to a fully configured host. Requires a Debian/Crostini host, a 1Password account with access to the `chezmoi` vault, and the age key from a password manager.
 
-mise installs every pinned tool, chezmoi included, at the versions and checksums in the repo's `mise.lock`. Debian's `extrepo` package carries the key that signs mise's apt repository, so mise comes first.
+mise installs every pinned tool, chezmoi included, at the versions and checksums in the repo's `mise.lock`, so it comes first. Debian's `extrepo` package carries the key that signs mise's apt repository.
 
 Apply runs twice. Secrets come from the 1Password desktop app, which the first apply installs, so the first apply skips them.
 

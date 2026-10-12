@@ -74,7 +74,7 @@ A mise tool needs no annotation: Renovate's mise manager reads
 ## mise entry
 
 Add the tool under `[tools]` in `dot_config/mise/config.toml`, at an
-exact version, keeping the keys sorted. Use the short name when
+exact version, sorted by tool name. Use the short name when
 `mise registry <tool>` lists one; otherwise use
 `"github:<owner>/<repo>"`. Then lock it:
 

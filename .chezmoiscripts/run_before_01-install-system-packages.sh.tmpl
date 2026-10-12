@@ -99,10 +99,9 @@ if [ ! -f /etc/debsig/policies/AC2D62742012EA22/1password.pol ] ||
 fi
 
 # ----------------------------------------------------------------------- mise
-# extrepo ships in Debian and carries the key that signs its repository index,
-# so mise's signing key arrives through Debian's chain of trust rather than a
-# first fetch. The bootstrap tutorial runs these same steps before chezmoi
-# exists; this keeps the repository converged afterwards.
+# extrepo ships in Debian with the key that signs its repository index, so
+# mise's apt key arrives through Debian's chain of trust. The tutorial runs
+# these steps before chezmoi exists; this block keeps them converged.
 if [ ! -f /etc/apt/sources.list.d/extrepo_mise.sources ]; then
   if ! is_installed extrepo; then
     sudo apt-get update

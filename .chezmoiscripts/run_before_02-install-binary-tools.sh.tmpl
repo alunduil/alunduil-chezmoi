@@ -1,15 +1,15 @@
 #!/usr/bin/env bash
-# Pinned tools install through mise at the versions and checksums in
-# dot_config/mise/mise.lock (docs/adr/0009-install-pinned-tools-through-mise.md).
-# `mise install` is a no-op when every locked version is on disk, so a version
-# bump and a deleted tool reconcile by the same path.
+# See docs/adr/0009-install-pinned-tools-through-mise.md. `mise install`
+# skips every locked version already on disk, so a bump and a deleted tool
+# reconcile the same way.
 #
-# Apply hasn't deployed ~/.config/mise yet on a fresh host, so this reads the
-# config from the source tree, beside the lockfile's npm sidecars.
+# A fresh host has no ~/.config/mise before apply, so mise reads the config
+# from the source tree, beside the lockfile's npm sidecars.
 
 set -euo pipefail
 
 MISE_GLOBAL_CONFIG_FILE="{{ .chezmoi.sourceDir }}/dot_config/mise/config.toml" mise install
 
-# mise can't yet check signal-cli's GPG signature against a pinned key (#910).
+# signal-cli publishes GPG signatures, which mise can't check against a pinned
+# key.
 "{{ .chezmoi.sourceDir }}/script/install/signal-cli" --bin-dir "$HOME/.local/bin"

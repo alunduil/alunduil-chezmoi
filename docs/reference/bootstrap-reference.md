@@ -44,7 +44,7 @@ systemd manager a unit belongs in and what it runs as.
 | apt packages | `.chezmoidata/packages.yaml` | `install-system-packages`, one transaction | the apt repository |
 | mise | `.chezmoidata/packages.yaml` | `install-system-packages`, from mise's apt repo | the apt repository |
 | Release binaries | `dot_config/mise/config.toml` | `install-binary-tools`, through `mise install` | `dot_config/mise/mise.lock` |
-| Binaries mise can't verify yet | `script/install/*` | `install-binary-tools` | `*_VERSION` in the script |
+| Binaries mise can't verify | `script/install/*` | `install-binary-tools` | `*_VERSION` in the script |
 | Python tools | `install-via-mise-tools` | `uv tool install` | `*_VERSION` in the pass |
 | `gh` extensions | `install-gh-extensions` | `gh extension install` | `gh extension` |
 | Node, Haskell, Rust | `install-{node,haskell,rust}-ecosystem` | each ecosystem's own manager | `*_VERSION` in the pass |

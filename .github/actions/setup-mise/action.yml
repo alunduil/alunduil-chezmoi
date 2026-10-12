@@ -9,8 +9,8 @@ inputs:
 runs:
   using: composite
   steps:
-    # The same file chezmoi deploys to ~/.config/mise, read in place so the
-    # lockfile and its npm sidecars beside it resolve too.
+    # The config chezmoi deploys, read in place so mise.lock and its npm
+    # sidecars resolve beside it.
     - name: Point mise at the checkout's config
       shell: bash
       run: echo "MISE_GLOBAL_CONFIG_FILE=$GITHUB_WORKSPACE/dot_config/mise/config.toml" >>"$GITHUB_ENV"

@@ -26,9 +26,8 @@ if [ -d "$HOME/.local/bin" ] ; then
     PATH="$HOME/.local/bin:$PATH"
 fi
 
-# Pinned tools from dot_config/mise/config.toml. Shims rather than
-# `mise activate` so systemd units and non-interactive shells find the same
-# binaries.
+# mise's shims, not `mise activate`, so scripts and systemd units reach the
+# same binaries as a shell.
 if [ -d "$HOME/.local/share/mise/shims" ] ; then
     PATH="$HOME/.local/share/mise/shims:$PATH"
 fi
