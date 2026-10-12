@@ -19,6 +19,7 @@ Tailscale
 tailnet
 Keybase
 nvm
+npm
 Readwise
 lazygit
 datasource
