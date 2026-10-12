@@ -27,7 +27,7 @@ jobs:
       # The local lychee hook runs the system binary; provision it here.
       - uses: ./.github/actions/setup-mise
         with:
-          tools: lychee
+          tools: github:lycheeverse/lychee
       - uses: tox-dev/action-pre-commit-uv@e09b8958484dfe71f4ac3bc7afb230ba506402ec # v1.0.5
 
   shell-tests:

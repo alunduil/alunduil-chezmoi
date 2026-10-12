@@ -44,6 +44,20 @@ checksum = "sha256:93f708b5582546c8fc9564ab5912e5c49a545be12247833c2b0b80e304c10
 url = "https://github.com/grafana/gcx/releases/download/v1.3.1/gcx_1.3.1_linux_amd64.tar.gz"
 url_api = "https://api.github.com/repos/grafana/gcx/releases/assets/581517875"
 
+[[tools."github:lycheeverse/lychee"]]
+version = "0.24.2"
+backend = "github:lycheeverse/lychee"
+specifiers = ["0.24.2"]
+
+[tools."github:lycheeverse/lychee".options]
+matching = "musl"
+version_prefix = "lychee-v"
+
+[tools."github:lycheeverse/lychee"."platforms.linux-x64"]
+checksum = "sha256:73657a111819a30c47c08352896796f23d64e4eb2b3ed39b6d32149241566fc5"
+url = "https://github.com/lycheeverse/lychee/releases/download/lychee-v0.24.2/lychee-x86_64-unknown-linux-musl.tar.gz"
+url_api = "https://api.github.com/repos/lycheeverse/lychee/releases/assets/409959271"
+
 [[tools."github:truenas/truenas-mcp"]]
 version = "0.0.6"
 backend = "github:truenas/truenas-mcp"
@@ -73,16 +87,6 @@ specifiers = ["0.66.0"]
 checksum = "sha256:5b45541155d20bd32bf2cc5ab5b7e3d91c2eebf0fb1242281350edc27d59d2b7"
 url = "https://github.com/jesseduffield/lazygit/releases/download/v0.66.0/lazygit_0.66.0_linux_x86_64.tar.gz"
 url_api = "https://api.github.com/repos/jesseduffield/lazygit/releases/assets/613198391"
-
-[[tools.lychee]]
-version = "0.24.2"
-backend = "aqua:lycheeverse/lychee"
-specifiers = ["0.24.2"]
-
-[tools.lychee."platforms.linux-x64"]
-checksum = "sha256:1f4e0ef7f6554a6ed33dd7ac144fb2e1bbed98598e7af973042fc5cd43951c9a"
-url = "https://github.com/lycheeverse/lychee/releases/download/lychee-v0.24.2/lychee-x86_64-unknown-linux-gnu.tar.gz"
-url_api = "https://api.github.com/repos/lycheeverse/lychee/releases/assets/409959156"
 
 [[tools."npm:bats-assert"]]
 version = "2.2.4"
