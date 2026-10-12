@@ -27,11 +27,11 @@ check:
 check-pre-commit:
     pre-commit run --all-files
 
-# Unit tests. bats-support/bats-assert live in ~/.local/lib/bats (chezmoi
-# externals); point BATS_LIB_PATH there so bats_load_library resolves them.
-# CI applies the same externals and sets the same var.
+# Unit tests. bats-support/bats-assert are mise npm tools; point
+# BATS_LIB_PATH at their node_modules so bats_load_library resolves them. CI
+# installs the same tools and sets the same var.
 check-bats:
-    BATS_LIB_PATH="${BATS_LIB_PATH:+$BATS_LIB_PATH:}$HOME/.local/lib/bats" \
+    BATS_LIB_PATH="${BATS_LIB_PATH:+$BATS_LIB_PATH:}$(mise where npm:bats-support)/node_modules:$(mise where npm:bats-assert)/node_modules" \
       bats --recursive dot_local dot_claude script
 
 # Zellij KDL validation (needs zellij on PATH).

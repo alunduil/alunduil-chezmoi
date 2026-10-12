@@ -1,12 +1,15 @@
 #!/usr/bin/env bash
-# Third-party binaries that stay installer scripts rather than chezmoi
-# externals; docs/adr/0008-install-pinned-binaries-as-chezmoi-externals.md
-# names them. Each script/install/* pins its own version and no-ops when that
-# version is already on disk, so a version bump and a deleted binary reconcile
-# by the same path.
+# Pinned tools install through mise at the versions and checksums in
+# dot_config/mise/mise.lock (docs/adr/0009-install-pinned-tools-through-mise.md).
+# `mise install` is a no-op when every locked version is on disk, so a version
+# bump and a deleted tool reconcile by the same path.
+#
+# Apply hasn't deployed ~/.config/mise yet on a fresh host, so this reads the
+# config from the source tree, beside the lockfile's npm sidecars.
 
 set -euo pipefail
 
-INSTALL_DIR="{{ .chezmoi.sourceDir }}/script/install"
-"$INSTALL_DIR/signal-cli" --bin-dir "$HOME/.local/bin"
-"$INSTALL_DIR/zellij" --bin-dir "$HOME/.local/bin"
+MISE_GLOBAL_CONFIG_FILE="{{ .chezmoi.sourceDir }}/dot_config/mise/config.toml" mise install
+
+# mise can't yet check signal-cli's GPG signature against a pinned key (#910).
+"{{ .chezmoi.sourceDir }}/script/install/signal-cli" --bin-dir "$HOME/.local/bin"

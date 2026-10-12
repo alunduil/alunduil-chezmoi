@@ -1,12 +1,14 @@
 #!/usr/bin/env bash
-# uv and gcx are externals, which exist only once apply writes its targets.
+# uv and gcx come from mise, whose shims resolve versions through the
+# ~/.config/mise config that exists only once apply writes its targets.
 
 set -euo pipefail
 
 # shellcheck source=script/lib/bootstrap.sh
 . "{{ .chezmoi.sourceDir }}/script/lib/bootstrap.sh"
 
-uv="$HOME/.local/bin/uv"
+shims="$HOME/.local/share/mise/shims"
+uv="$shims/uv"
 
 # pre-commit ships only as a Python package, so uv owns its install. --force
 # overwrites a pre-existing pip-installed pre-commit on the PATH; the guard
@@ -50,4 +52,4 @@ fi
 # extracts it to ~/.agents/skills (the cross-harness convention read by Claude
 # Code, Cursor, Copilot). --force re-syncs gcx-managed files on version bumps
 # without touching anything outside the bundle.
-"$HOME/.local/bin/gcx" agent skills install --all --force >/dev/null
+"$shims/gcx" agent skills install --all --force >/dev/null

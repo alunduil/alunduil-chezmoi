@@ -32,3 +32,19 @@
 .gnupg/gpg.conf
 .gnupg/gpg-agent.conf
 .gnupg/secret-keys.asc
+
+# Pinned tools that mise now installs under ~/.local/share/mise. A stale copy
+# would leave two versions on PATH.
+.local/bin/act
+.local/bin/alloy
+.local/bin/gcx
+.local/bin/just
+.local/bin/lazygit
+.local/bin/lychee
+.local/bin/trivy
+.local/bin/truenas-mcp
+.local/bin/uv
+.local/bin/vale
+.local/bin/yq
+.local/bin/zellij
+.local/lib/bats

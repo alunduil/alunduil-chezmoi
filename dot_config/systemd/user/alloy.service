@@ -13,7 +13,7 @@ Environment=ZELLIJ_DIAG=%h/.local/state/zellij-diag
 Environment=ZELLIJ_LOG=/tmp/zellij-%U/zellij-log/zellij.log
 # Must match cgroup-pids-textfile.service.
 Environment=NODE_TEXTFILE_DIR=%h/.local/state/node-textfile
-ExecStart=%h/.local/bin/alloy run %h/.config/alloy/config.alloy \
+ExecStart=%h/.local/share/mise/shims/alloy run %h/.config/alloy/config.alloy \
   --storage.path=%h/.local/state/alloy \
   --server.http.listen-addr=127.0.0.1:12345
 # Alloy buffers to its WAL and retries remote_write on its own, so a restart
