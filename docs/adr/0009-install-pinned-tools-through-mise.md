@@ -21,17 +21,35 @@ tools.
 
 The options:
 
-- Keep externals without checksums, as 0008 does.
-- Pin hashes in externals and update them by hand on every bump.
-- Return to a script per tool that checks the upstream checksum file, as
-  ADR 0003 did. Each tool costs a script, and runtimes stay with their
-  own managers.
-- Install through mise, which records a checksum per tool and platform
-  in `mise.lock` and fails the install on a mismatch. Renovate's mise
-  manager updates the lockfile inside its own bump, as it does for npm
-  or uv. mise also manages runtimes and their CLIs. A local Renovate run
-  confirmed the lockfile update at chezmoi's source path. The hosted
-  Renovate app hasn't yet run it in a real pull request.
+- **Externals without checksums**, as 0008 does. Bumps stay automatic,
+  but nothing detects a bad upload.
+- **Externals with pinned hashes.** Every bump needs a hash edit in
+  Renovate's pull request, which this repository rules out.
+- **A script per tool** that checks the release's checksum file, as ADR
+  0003 did. Bumps stay automatic, but the checksum file ships beside the
+  asset, so a replaced release passes. Each tool costs a script, and
+  runtimes keep their own managers.
+- **mise.** It records a checksum per tool and platform in `mise.lock`
+  and fails the install on a mismatch. Renovate's mise manager rewrites
+  the lockfile in its own bump, as it does for npm or uv, so bumps stay
+  automatic. The lock pins the hash seen at bump time, so a later
+  replacement fails. mise also manages runtimes and their CLIs.
+
+Only mise gives both verified downloads and automated bumps, and it
+covers runtimes too.
+
+A spike checked mise against this repository's layout:
+
+- Renovate's default mise file patterns match
+  `dot_config/mise/config.toml` and pair it with the `mise.lock` beside
+  it, with no change to Renovate's configuration.
+- Renovate's lockfile commands, run at that path after a version edit,
+  rewrite the version and every platform checksum.
+- Deployed to `~/.config/mise/`, `mise install --locked` installs from
+  the lockfile without rewriting it, so chezmoi sees no drift. A wrong
+  checksum fails the install.
+- The hosted Renovate app hasn't yet run the lockfile update in a real
+  pull request.
 
 ## Decision
 
@@ -54,6 +72,7 @@ pull request.
   own install needs a pinned, verified download.
 - Tools install under `~/.local/share/mise/`, so shells and services
   need mise activation or shims on `PATH`.
-- Some tools need work before they fit. `kcov` publishes no release
-  binaries, and `signal-cli` verifies a GPG signature against a pinned
-  key, which mise can't express.
+- Some tools need work before they fit. `kcov` has published no release
+  binaries since v43. `signal-cli` verifies a GPG signature against a
+  pinned key, and mise checks GPG signatures only for its own Node and
+  Swift installs.
