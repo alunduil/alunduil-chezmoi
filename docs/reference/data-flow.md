@@ -1,9 +1,10 @@
 # Data flow
 
 Which processes move data on a `workstation` host, which stores they
-read and write, and which trust boundary each flow crosses. Elements name the real
-software: the Model Context Protocol (MCP) servers a Claude Code session
-calls, the systemd units, the 1Password desktop app. Out of scope:
+read and write, and which trust boundary each flow crosses. Elements
+name the real software: the Model Context Protocol (MCP) servers a
+Claude Code session calls, the systemd units, the 1Password desktop
+app. Out of scope:
 
 - Cloud and home-network internals. GitHub, Cloudflare, and the home
   network stay external entities here. `alunduil-infrastructure` carries
@@ -96,8 +97,8 @@ flowchart LR
 
 ## Level 0
 
-The workstation runs eight processes over ten data stores. Every flow to
-an external entity crosses one of these trust boundaries:
+The workstation runs eight processes over ten data stores, across these
+trust boundaries:
 
 - The workstation, a Crostini VM. Its processes share one user account,
   so a bootstrap pass and a model-driven session reach the same stores.
@@ -110,7 +111,8 @@ an external entity crosses one of these trust boundaries:
 - The home network: the TrueNAS appliance and Home Assistant.
 - Package archives and installer hosts: six vendor apt repositories and
   the Tailscale and nvm install scripts.
-- Peers on the tailnet, the only path into the host that the host didn't open.
+- Peers on the tailnet, the only path into the host that the host
+  didn't open.
 
 ```mermaid
 flowchart TB
@@ -284,7 +286,7 @@ flowchart TB
 | D2 age identity | The key that decrypts the Cloudflare token | Unencrypted, mode 600 |
 | D3 Service tokens | Five tokens from 1Password and the Cloudflare token | Unencrypted, mode 600 |
 | D4 Vault cache | The 1Password vault, including the SSH key | Encrypted by 1Password |
-| D5 MCP registry | Claude Code's user-scope MCP configuration, which Claude Code rewrites | Unencrypted, with the GitHub and Uptime Robot bearer tokens and the TrueNAS API key |
+| D5 MCP registry | Claude Code's user-scope MCP configuration | Unencrypted, with the GitHub and Uptime Robot bearer tokens and the TrueNAS API key |
 | D6 Claude configuration | Settings, hooks, skills, and the status line under `~/.claude/` | Plaintext |
 | D7 Session record | Transcripts and per-project memory | Plaintext, local to the host |
 | D8 Host telemetry | The journal, the Zellij server log, and process metrics | Plaintext |

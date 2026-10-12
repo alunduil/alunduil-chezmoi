@@ -107,4 +107,4 @@ sequenceDiagram
   end
 ```
 
-The SSH key never leaves D4. Only the signature crosses to `4.0`.
+Only the signature leaves D4, never the SSH key.

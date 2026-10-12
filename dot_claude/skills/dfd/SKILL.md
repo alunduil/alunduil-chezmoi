@@ -12,8 +12,7 @@ References:
 
 A DFD shows where data moves and what transforms it. Order and failure
 belong in sequence diagrams, object structure in UML; a DFD carries
-neither. Control signals are not data: list them in prose under the
-diagram they would otherwise clutter.
+neither. Control signals are not data: list them under the diagram.
 
 ## Components
 
