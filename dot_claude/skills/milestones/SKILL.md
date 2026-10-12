@@ -30,7 +30,8 @@ the work; its key results say whether the objective landed.
 Each key result is a check anyone can run at month end: a command
 that passes, a count that hits a number, an observable state. A key
 result names an end state; the issues carry the tasks. Two or three
-per objective.
+per objective. Tick one by editing the description when its check
+passes, independent of issue state.
 
 ## Velocity
 
@@ -48,11 +49,12 @@ together. The monthly limit counts objectives across all of them.
 An issue belongs in a milestone when closing it moves at least one
 key result. Leave it unassigned otherwise.
 
-## Ticking key results
+Other groupings use other tools:
 
-Tick a key result by editing the description when its check passes,
-independent of issue state. The milestone page renders the checklist
-read-only.
+- Categorical tag (area, type, priority) → label.
+- Ongoing planning across many issues → the Inbox project board.
+- "See also" between two issues → `#N` mention or the `issue-links`
+  skill.
 
 ## Closing at month end
 
@@ -68,18 +70,25 @@ into a new milestone for next month. Closed milestones stay closed.
 ## Operations
 
 ```bash
-# Open milestones across every repository: the velocity check
-for o in alunduil dungeon-studio qua-world; do
-  gh api --paginate "users/$o/repos?per_page=100&type=owner" \
-    --jq '.[] | select(.archived|not) | select(.has_issues) | .full_name'
-done | while read -r r; do
+# Every active repository on the Inbox board
+repos() {
+  for o in alunduil dungeon-studio qua-world; do
+    gh api --paginate "users/$o/repos?per_page=100&type=owner" \
+      --jq '.[] | select(.archived|not) | select(.has_issues) | .full_name'
+  done
+}
+
+# Open milestones: the velocity check
+repos | while read -r r; do
   gh api "repos/$r/milestones?state=open" \
     --jq ".[] | \"$r\t\(.number)\t\(.title)\""
 done
 
 # Past scores for planning
-gh api 'repos/:owner/:repo/milestones?state=closed' \
-  --jq '.[] | "\(.title)\t\((.description // "") | capture("Scored (?<s>[0-9]+/[0-9]+)").s // "-")"'
+repos | while read -r r; do
+  gh api "repos/$r/milestones?state=closed" \
+    --jq ".[] | \"\(.title)\t$r\t\(((.description // \"\") | capture(\"Scored (?<s>[0-9]+/[0-9]+)\").s) // \"-\")\""
+done | sort
 
 # Create
 gh api repos/:owner/:repo/milestones \
@@ -105,4 +114,4 @@ Its `milestone` param takes the milestone *number*, not the title.
 2. Draft title, objective, key results, and due date; confirm with
    the user before creating.
 3. Assign issues that move a key result.
-4. At month end: tick, score, move spillover, close.
+4. At month end, follow *Closing at month end*.
