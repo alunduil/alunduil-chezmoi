@@ -26,7 +26,7 @@ the host already matches. Local guards: `dpkg-query` status compared to
 | Phase | Name | Belongs here when |
 | ----- | ---- | ----------------- |
 | `before` | `run_*_before_NN-<concern>` | the pass needs nothing `apply` deploys |
-| `after` | `run_*_after_<concept>` | the pass reads a user unit, decrypted token, or external binary that `apply` deploys |
+| `after` | `run_*_after_<concept>` | the pass reads a user unit, decrypted token, or the mise config that `apply` deploys |
 
 - `before` passes run in `NN` order, a sort key where one install
   depends on another. Gaps are fine.
@@ -42,9 +42,10 @@ systemd manager a unit belongs in and what it runs as.
 | Kind | Declared in | Installed by | Pinned by |
 | ---- | ----------- | ------------ | --------- |
 | apt packages | `.chezmoidata/packages.yaml` | `install-system-packages`, one transaction | the apt repository |
-| Release binaries | `.chezmoiexternal.toml` | `chezmoi apply` | the version in the download address |
-| Binaries an external can't express | `script/install/*` | `install-binary-tools` | `*_VERSION` in the script |
-| Python tools | `install-via-externals` | `uv tool install` | `*_VERSION` in the pass |
+| mise | `.chezmoidata/packages.yaml` | `install-system-packages`, from mise's apt repo | the apt repository |
+| Release binaries | `dot_config/mise/config.toml` | `install-binary-tools`, through `mise install` | `dot_config/mise/mise.lock` |
+| Binaries mise can't verify yet | `script/install/*` | `install-binary-tools` | `*_VERSION` in the script |
+| Python tools | `install-via-mise-tools` | `uv tool install` | `*_VERSION` in the pass |
 | `gh` extensions | `install-gh-extensions` | `gh extension install` | `gh extension` |
 | Node, Haskell, Rust | `install-{node,haskell,rust}-ecosystem` | each ecosystem's own manager | `*_VERSION` in the pass |
 | Zellij plugins | `plugins` block of `dot_config/zellij/config.kdl` | Zellij at load | the version in the download address |
@@ -52,8 +53,10 @@ systemd manager a unit belongs in and what it runs as.
 Every apt package goes in the one list. Later passes configure what
 `install-system-packages` installed rather than calling apt themselves.
 
-[ADR 0008](../adr/0008-install-pinned-binaries-as-chezmoi-externals.md)
-names the binaries that stay in `script/install/*`.
+[ADR 0009](../adr/0009-install-pinned-tools-through-mise.md) names the
+binaries that stay in `script/install/*`. Callers reach mise tools through
+the shims in `~/.local/share/mise/shims`, which keep one path across
+version bumps.
 
 ## Host roles
 
