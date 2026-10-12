@@ -9,11 +9,8 @@ Supersedes [0008](0008-install-pinned-binaries-as-chezmoi-externals.md).
 ## Context
 
 Pinned tools need a verified download and automated version bumps.
-chezmoi externals verify only an inline hash, which Renovate can't
-update without an edit to its own pull request, and this repository
-doesn't edit Renovate's pull requests. ADR 0008 kept the bumps and
-dropped the checksums, so a corrupt or replaced upload installs without
-complaint unless its upstream enables immutable releases.
+This repository doesn't edit Renovate's pull requests, so a bump can't
+carry a hand edit.
 
 Language runtimes and the CLIs installed through them sit outside
 externals entirely. nvm, rustup and ghcup each pin and update their own
@@ -22,9 +19,10 @@ tools.
 The options:
 
 - **Externals without checksums**, as 0008 does. Bumps stay automatic,
-  but nothing detects a bad upload.
-- **Externals with pinned hashes.** Every bump needs a hash edit in
-  Renovate's pull request, which this repository rules out.
+  but a corrupt or replaced upload installs without complaint unless its
+  upstream enables immutable releases.
+- **Externals with pinned hashes.** chezmoi verifies only an inline
+  hash, so every bump needs a hash edit in Renovate's pull request.
 - **A script per tool** that checks the release's checksum file, as ADR
   0003 did. Bumps stay automatic, but the checksum file ships beside the
   asset, so a replaced release passes. Each tool costs a script, and
