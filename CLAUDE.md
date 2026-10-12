@@ -37,12 +37,11 @@ effect on `apply` until committed and pulled into the apply clone. Use
   every `uses:` under `runs.steps` is a full-length SHA.
 - `dot_local/bin/executable_gh` shadows system `gh` to enforce `--draft`
   on `gh pr create`. PRs Claude opens go through this wrapper.
-- `docs/reference/data-flow.md` carries the data flow diagram for the
-  workstation and the MCP fleet. Update it in the same change that adds,
-  removes, or reshapes an element it shows — an MCP server, a secret,
-  a hook's job, a telemetry sink. `script/checks/dfd_balance.py`
-  gates the levels against each other; the `dfd` skill carries the rules
-  it enforces.
+- `docs/reference/data-flow.md` and its companions
+  `data-flow-credentials.md` and `data-flow-paths.md` record the
+  workstation's data flow. Update them in the same change that adds,
+  removes, or reshapes an element they show — an MCP server, a secret,
+  a hook's job, a telemetry sink. The `dfd` skill carries the rules.
 
 ## Pull request descriptions
 
@@ -71,7 +70,6 @@ pre-commit run --all-files     # shellcheck, shfmt, check-json
 bats --recursive dot_local dot_claude script  # unit tests
 script/checks/zellij-config    # zellij KDL validation (needs zellij)
 script/checks/chezmoi-apply    # apply round-trip (needs chezmoi + age)
-script/checks/dfd_balance.py   # data flow diagram levels balance
 ```
 
 ## Two CLAUDE.md files

@@ -132,19 +132,26 @@ encrypted at rest.
 
 ## Location
 
-A DFD describes a system as it is, so it is a Diátaxis reference: the
-page is `docs/reference/data-flow.md`, and the `diataxis` skill owns the
-surrounding prose. Keep every level of one system's DFD in one file,
-each level under its own heading and separated by a rule, so balancing
-is checkable in a single read.
+A DFD of the system as it stands is a Diátaxis reference, at
+`docs/reference/data-flow.md`. A DFD arguing for a design sits beside
+its argument, in an explanation or a decision record. The `diataxis`
+skill owns the mode test and the surrounding prose.
 
-The page opens with one sentence of scope, then an out-of-scope list,
-then links to its companions. Companions sit beside it as
-`data-flow-<topic>.md` and link back to the level they extend:
+Keep every level of one system's DFD in one file, each level under its
+own heading and separated by a rule, so balancing is checkable in a
+single read. The page opens with one sentence of scope, then an
+out-of-scope list, then links to its companions.
 
-- Order and failure along a path — one sequence diagram per path.
+Answer each further question on its own reference page beside it,
+`data-flow-<topic>.md`, linking back to the level it extends:
+
+- Order and failure along a path: one sequence diagram per path.
+- Lookups across the diagram, such as each credential's source, holder,
+  and reach: a table.
 - The representation data takes at each hop, and every rule applied in
   more than one layer.
+
+Reasons stay out of all of them; link the explanation that carries them.
 
 ## Procedure
 
@@ -166,4 +173,3 @@ Check:
 1. Walk *Rules* against the result, drawing rules first.
 2. Balance each child diagram against its parent's flow set, and
    Level 0 against the context diagram.
-3. Run the repository's DFD checker, if it has one.
