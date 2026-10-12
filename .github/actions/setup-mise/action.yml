@@ -1,0 +1,21 @@
+name: Set up mise tools
+description: >-
+  Install the named tools from the mise config chezmoi deploys, at the
+  versions and checksums in its mise.lock, with their shims on PATH.
+inputs:
+  tools:
+    description: Space-separated tool names from dot_config/mise/config.toml.
+    required: true
+runs:
+  using: composite
+  steps:
+    # The same file chezmoi deploys to ~/.config/mise, read in place so the
+    # lockfile and its npm sidecars beside it resolve too.
+    - name: Point mise at the checkout's config
+      shell: bash
+      run: echo "MISE_GLOBAL_CONFIG_FILE=$GITHUB_WORKSPACE/dot_config/mise/config.toml" >>"$GITHUB_ENV"
+
+    - uses: jdx/mise-action@2d8d4cafcbd33be2ea37d2b6f5ad595363d1f1ca # v5.1.1
+      with:
+        install_args: ${{ inputs.tools }}
+        cache_key: mise-{{platform}}-{{install_args_hash}}-${{ hashFiles('dot_config/mise/mise.lock', 'dot_config/mise/.mise/**') }}
