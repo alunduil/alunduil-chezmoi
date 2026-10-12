@@ -1,14 +1,11 @@
 #!/usr/bin/env bash
-# uv and gcx come from mise, whose shims resolve versions through the
-# ~/.config/mise config that exists only once apply writes its targets.
+# uv and gcx are mise tools, whose shims resolve through the ~/.config/mise
+# that exists only once apply writes its targets.
 
 set -euo pipefail
 
 # shellcheck source=script/lib/bootstrap.sh
 . "{{ .chezmoi.sourceDir }}/script/lib/bootstrap.sh"
-
-shims="$HOME/.local/share/mise/shims"
-uv="$shims/uv"
 
 # pre-commit ships only as a Python package, so uv owns its install. --force
 # overwrites a pre-existing pip-installed pre-commit on the PATH; the guard
@@ -16,11 +13,11 @@ uv="$shims/uv"
 # a uv-managed install from the legacy pip one at the same version.
 # renovate: datasource=pypi depName=pre-commit
 PRE_COMMIT_VERSION="4.6.2"
-if "$uv" tool list 2>/dev/null | grep -qx "pre-commit v$PRE_COMMIT_VERSION"; then
+if uv tool list 2>/dev/null | grep -qx "pre-commit v$PRE_COMMIT_VERSION"; then
   log "pre-commit: $PRE_COMMIT_VERSION already installed via uv"
 else
   log "pre-commit: installing $PRE_COMMIT_VERSION via uv"
-  "$uv" tool install --force "pre-commit==$PRE_COMMIT_VERSION"
+  uv tool install --force "pre-commit==$PRE_COMMIT_VERSION"
 fi
 
 # Music-library tagger. pyacoustid and musicbrainzngs have no entry point of
@@ -37,12 +34,12 @@ PYACOUSTID_VERSION="1.3.1"
 # renovate: datasource=pypi depName=musicbrainzngs
 MUSICBRAINZNGS_VERSION="0.7.1"
 beets_installed="beets v$BEETS_VERSION [required: ==$BEETS_VERSION] [with: pyacoustid==$PYACOUSTID_VERSION, musicbrainzngs==$MUSICBRAINZNGS_VERSION]"
-if "$uv" tool list --show-with --show-version-specifiers 2>/dev/null |
+if uv tool list --show-with --show-version-specifiers 2>/dev/null |
   grep -qxF "$beets_installed"; then
   log "beets: $BEETS_VERSION already installed via uv"
 else
   log "beets: installing $BEETS_VERSION via uv"
-  "$uv" tool install --force \
+  uv tool install --force \
     --with "pyacoustid==$PYACOUSTID_VERSION" \
     --with "musicbrainzngs==$MUSICBRAINZNGS_VERSION" \
     "beets==$BEETS_VERSION"
@@ -52,4 +49,4 @@ fi
 # extracts it to ~/.agents/skills (the cross-harness convention read by Claude
 # Code, Cursor, Copilot). --force re-syncs gcx-managed files on version bumps
 # without touching anything outside the bundle.
-"$shims/gcx" agent skills install --all --force >/dev/null
+gcx agent skills install --all --force >/dev/null

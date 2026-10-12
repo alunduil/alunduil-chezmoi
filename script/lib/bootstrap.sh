@@ -6,6 +6,10 @@
 
 log() { printf '==> %s\n' "$*" >&2; }
 
+# Passes call mise tools by name. A shim keeps one path across version bumps
+# and resolves through ~/.config/mise, so only after-phase passes can run one.
+PATH="$HOME/.local/share/mise/shims:$PATH"
+
 _bootstrap_installed=0
 
 # Takes `install`'s arguments; leaves an unchanged DEST alone.
