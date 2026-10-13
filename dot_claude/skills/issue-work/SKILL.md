@@ -7,7 +7,7 @@ description: Pick up an existing GitHub issue in the checked-out repo — implem
 
 ## Inspect
 
-`mcp__github__issue_read` (`method: get`) returns `closed_by_pull_requests`: the PRs declaring `Closes #N`, fork PRs included, each resolved to `OPEN`/`CLOSED`/`MERGED`. An open one is a takeover candidate. `references` holds at most five, so a `total_count` above that means the list is partial. The same call carries the body, milestone, and labels.
+`mcp__github__issue_read` (`method: get`) returns `closed_by_pull_requests`: the PRs declaring `Closes #N`, fork PRs included, each resolved to `OPEN`/`CLOSED`/`MERGED`. An open one is a takeover candidate. `references` holds at most five, so a `total_count` above that means the list is partial. The same call carries the body and labels.
 
 Comments need a second call, `method: get_comments`.
 
@@ -47,7 +47,6 @@ Any one fires a go/no-go before writing code:
 - The issue assumes tooling/files that have since been replaced or removed.
 - The motivating dependency resolved differently (e.g. "waiting on upstream X" — X shipped via a different mechanism).
 - A maintainer comment narrows or vetoes the original scope and the body wasn't updated.
-- The issue's milestone title (`YYYY-MM: <objective>`) names a month after the current one. Deferred work — don't pull it forward. No milestone, or this month's or an earlier month's, is fine to work.
 - Repro fails on the default branch.
 - The issue lacks enough detail to start without guessing.
 
