@@ -92,6 +92,13 @@ checksum (ADR 0008); a GitHub source-archive tarball
 A pass that runs the new binary is `run_after_`, since externals deploy
 during apply.
 
+## Shell completion
+
+When the tool prints a bash completion script, add
+`dot_local/share/bash-completion/completions/<command>` holding one
+line that evals it, mirroring `just`. bash-completion sources the file
+on the first Tab, so the script always matches the installed version.
+
 ## Procedure
 
 1. For a library with no console script, settle its shape first; stop
@@ -103,7 +110,9 @@ during apply.
    - Auth-required → add to "Interactive logins" with config-path comment
    - Fire-and-forget → add to "PATH check" line
 5. Annotate every pin per [Pin the version](#pin-the-version).
-6. Run sensors before claiming done:
+6. Add a [Shell completion](#shell-completion) file if the tool
+   generates one.
+7. Run sensors before claiming done:
 
    ```bash
    pre-commit run --all-files
