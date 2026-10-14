@@ -1,0 +1,1 @@
+eval "$(ghcup --bash-completion-script ghcup)"

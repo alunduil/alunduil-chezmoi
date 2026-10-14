@@ -1,0 +1,1 @@
+eval "$(lazygit completion bash)"
