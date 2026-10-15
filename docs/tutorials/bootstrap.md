@@ -5,7 +5,7 @@ Zero to a fully configured host. Requires a Debian/Crostini host, a 1Password ac
 Apply runs twice. Secrets come from the 1Password desktop app, which the first apply installs, so the first apply skips them.
 
 ```bash
-CHEZMOI_VERSION="v2.73.0"
+CHEZMOI_VERSION="v2.73.1"
 sh -c "$(curl -fsLS get.chezmoi.io)" -- -b "$HOME/.local/bin" -t "$CHEZMOI_VERSION"
 
 # Decrypts the Cloudflare token, the one age-encrypted secret.
