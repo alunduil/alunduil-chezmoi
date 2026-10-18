@@ -16,7 +16,7 @@ setup() {
 
   # Stand-ins: the agent holds a key while $AGENT_KEY exists, op fails when
   # $OP_FAIL is set, and op leaves a background child running, as op daemon
-  # does, when $OP_DAEMON_PID is set.
+  # does, when $OP_DAEMON is set.
   STUB_DIR="$TMPROOT/stubs"
   mkdir -p "$STUB_DIR"
   cat >"$STUB_DIR/ssh-add" <<'STUB'
@@ -30,7 +30,7 @@ STUB
 #!/usr/bin/env bash
 printf '%s\n' "$*" >>"$OP_LOG"
 [ -z "$OP_FAIL" ] || exit 1
-if [ -n "$OP_DAEMON_PID" ]; then
+if [ -n "$OP_DAEMON" ]; then
   sleep 60 </dev/null >/dev/null 2>&1 3>&- &
   printf '%s\n' "$!" >"$OP_DAEMON_PID"
 fi
@@ -42,13 +42,14 @@ STUB
   export AGENT_LIFETIME="$TMPROOT/agent-lifetime"
   export OP_LOG="$TMPROOT/op.log"
   export OP_FAIL=""
-  export OP_DAEMON_PID=""
+  export OP_DAEMON=""
+  export OP_DAEMON_PID="$TMPROOT/op-daemon.pid"
   export PATH="$STUB_DIR:/usr/bin:/bin"
 }
 
 teardown() {
-  if [ -s "$TMPROOT/op-daemon.pid" ]; then
-    kill "$(cat "$TMPROOT/op-daemon.pid")" 2>/dev/null || true
+  if [ -s "$OP_DAEMON_PID" ]; then
+    kill "$(cat "$OP_DAEMON_PID")" 2>/dev/null || true
   fi
   rm -rf "$TMPROOT"
 }
@@ -68,8 +69,8 @@ teardown() {
   [ "$(cat "$AGENT_LIFETIME")" = "8h" ]
 }
 
-@test "reloads after expiry while the daemon 1Password started still runs" {
-  OP_DAEMON_PID="$TMPROOT/op-daemon.pid" run "$SSH_LOAD"
+@test "a daemon left by 1Password does not block the next load" {
+  OP_DAEMON=1 run "$SSH_LOAD"
   [ "$status" -eq 0 ]
   rm "$AGENT_KEY"
   run timeout 5 "$SSH_LOAD"
