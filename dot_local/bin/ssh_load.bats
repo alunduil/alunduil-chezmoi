@@ -14,9 +14,10 @@ setup() {
     "$REPO_ROOT/dot_local/bin/executable_ssh-load.tmpl" >"$SSH_LOAD"
   chmod +x "$SSH_LOAD"
 
-  # Stand-ins: the agent holds a key while $AGENT_KEY exists, op fails when
-  # $OP_FAIL is set, and op leaves a background child running, as op daemon
-  # does, when $OP_DAEMON is set.
+  # Stand-ins:
+  # - The agent holds a key while $AGENT_KEY exists.
+  # - op fails when $OP_FAIL is set.
+  # - op leaves a child running, as op daemon does, when $OP_DAEMON is set.
   STUB_DIR="$TMPROOT/stubs"
   mkdir -p "$STUB_DIR"
   cat >"$STUB_DIR/ssh-add" <<'STUB'
