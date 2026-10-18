@@ -67,7 +67,7 @@ systemctl is-active sysstat-collect.timer  # confirms sar is sampling
 systemctl --user is-active alloy.service   # confirms the Grafana Cloud shipper
 systemctl --user is-active 1password.service  # confirms the 1Password app is running
 systemctl --user is-active ssh-agent.service  # confirms the SSH agent is running
-ssh-add -l                                 # lists the SSH key from 1Password
+ssh-load && ssh-add -l                     # loads and lists the SSH key from 1Password
 ```
 
 SSH to GitHub works once you sign in to 1Password. The bootstrap clones over HTTPS to bridge the gap before then. Swap the apply clone's remote back to SSH if preferred: `git -C ~/.local/share/chezmoi remote set-url origin git@github.com:alunduil/alunduil-chezmoi.git`.

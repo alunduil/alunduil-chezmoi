@@ -1,9 +1,5 @@
-# Asks for the SSH key at login rather than partway through a command. A
-# forwarded agent in a remote session takes precedence.
-if [ -z "$SSH_AUTH_SOCK" ]; then
-   export SSH_AUTH_SOCK="$XDG_RUNTIME_DIR/ssh-agent.socket"
-   "$HOME/.local/bin/ssh-load"
-fi
+# The agent ssh-load fills, unless a remote session forwards one.
+export SSH_AUTH_SOCK="${SSH_AUTH_SOCK:-$XDG_RUNTIME_DIR/ssh-agent.socket}"
 
 # Load the POSIX-standard profile, which in turn sources ~/.bashrc for
 # interactive shells. Without this, bash would read ~/.bash_profile on login
