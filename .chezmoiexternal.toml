@@ -23,7 +23,7 @@
 
 [".local/bin/just"]
     type = "archive-file"
-    url = "https://github.com/casey/just/releases/download/1.58.0/just-1.58.0-x86_64-unknown-linux-musl.tar.gz"
+    url = "https://github.com/casey/just/releases/download/1.59.0/just-1.59.0-x86_64-unknown-linux-musl.tar.gz"
     path = "just"
     executable = true
 
