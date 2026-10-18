@@ -17,7 +17,7 @@ chmod 600 ~/.config/chezmoi/key.txt
 CHEZMOI_NO_1PASSWORD=1 ~/.local/bin/chezmoi init --apply https://github.com/alunduil/alunduil-chezmoi.git
 ```
 
-Open 1Password from the launcher and sign in. In **Settings → Developer**, turn on **Use the SSH agent** and **Integrate with 1Password CLI**. Then apply again and approve the 1Password prompt:
+Open 1Password from the launcher and sign in. In **Settings → Developer**, turn on **Integrate with 1Password CLI**. Then apply again and approve the 1Password prompt:
 
 ```bash
 # Second apply: writes the secrets and starts what needs them.
@@ -65,7 +65,8 @@ foot --version                             # terminal, pending kitty's replaceme
 sar -V && forkstat --version               # host telemetry recorders (apt)
 systemctl is-active sysstat-collect.timer  # confirms sar is sampling
 systemctl --user is-active alloy.service   # confirms the Grafana Cloud shipper
-systemctl --user is-active 1password.service  # confirms the app owns the SSH agent
+systemctl --user is-active 1password.service  # confirms the 1Password app is running
+systemctl --user is-active ssh-agent.service  # confirms the SSH agent is running
 ssh-add -l                                 # lists the SSH key from 1Password
 ```
 

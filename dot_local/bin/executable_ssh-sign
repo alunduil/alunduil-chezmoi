@@ -1,0 +1,13 @@
+#!/usr/bin/env bash
+# git's gpg.ssh.program. Only signing loads the key: verifying needs none, so
+# `git log --show-signature` never raises a dialog.
+
+set -euo pipefail
+
+export SSH_AUTH_SOCK="${XDG_RUNTIME_DIR:?}/ssh-agent.socket"
+
+if [ "${1:-}" = "-Y" ] && [ "${2:-}" = "sign" ]; then
+  "$HOME/.local/bin/ssh-load"
+fi
+
+exec ssh-keygen "$@"

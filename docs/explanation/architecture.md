@@ -17,7 +17,7 @@ C4Container
     System_Boundary(host, "Debian/Crostini host") {
         Container(source, "Source clone", "git working tree", "Where edits happen")
         Container(apply, "Apply clone", "~/.local/share/chezmoi", "What chezmoi reads on diff/apply")
-        Container(app, "1Password app", "desktop app, user service", "Approves each secret read; serves SSH keys")
+        Container(app, "1Password app", "desktop app, user service", "Approves each secret read")
         Container(home, "Deployed files", "$HOME/{.config,.ssh,.local/bin,...}", "Written by chezmoi apply")
     }
 
@@ -86,9 +86,11 @@ of its value. The apply after a rotation reruns them.
 
 The desktop app is the trust boundary on the host. It approves each
 process that reads a secret, so a new process gets a new prompt even
-while the app stays unlocked. SSH keys never reach disk: the app signs
-with them for both SSH sessions and git commits. `agent.toml` limits the
-agent to the key in the vault.
+while the app stays unlocked. The SSH key is the exception: approval
+per application would prompt in every shell and Claude session. Instead,
+`ssh-load` reads it into an OpenSSH agent for eight hours, and an expired
+key raises one dialog on its next use. The key never reaches disk, but
+while loaded any process running as the user can use it.
 On Crostini nothing else would keep the app alive, so a user service
 runs it without a window.
 
