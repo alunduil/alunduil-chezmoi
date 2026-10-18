@@ -1,6 +1,4 @@
-# Points ssh-add and other agent clients at the agent ssh-load fills. ssh and
-# git signing load the key on first use, so login never waits on 1Password. A
-# forwarded agent in a remote session takes precedence.
+# The agent ssh-load fills, unless a remote session forwards one.
 export SSH_AUTH_SOCK="${SSH_AUTH_SOCK:-$XDG_RUNTIME_DIR/ssh-agent.socket}"
 
 # Load the POSIX-standard profile, which in turn sources ~/.bashrc for

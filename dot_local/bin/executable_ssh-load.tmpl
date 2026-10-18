@@ -17,8 +17,8 @@ flock 9
 loaded && exit 0
 
 # The op daemon that op may start outlives this script, so it must not
-# inherit the lock. Reading before ssh-add lets op's own error stand alone
-# when 1Password isn't running.
+# inherit the lock. Reading into a variable keeps a failed read from reaching
+# ssh-add.
 key="$(op read '{{ .onepassword.ssh_key }}' 9>&-)"
 
 # Eight hours covers a working day.
