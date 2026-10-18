@@ -86,8 +86,9 @@ of its value. The apply after a rotation reruns them.
 
 The desktop app is the trust boundary on the host. It approves each
 process that reads a secret, so a new process gets a new prompt even
-while the app stays unlocked. The SSH key is the exception. Approving it
-per process prompted on every new shell and every Claude session.
+while the app stays unlocked. The SSH key is the exception. The app's
+agent approves it per application until the app locks, which prompted
+again across shells and Claude sessions.
 Instead, `ssh-load` reads it once into an OpenSSH agent for eight hours,
 and SSH sessions and git commits use it without asking. An expired key raises
 one dialog on its next use. The key never reaches disk, but while loaded
