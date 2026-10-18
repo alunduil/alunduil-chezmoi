@@ -79,7 +79,8 @@ teardown() {
   [ "$(cat "$AGENT_KEY")" = "FAKE KEY" ]
 }
 
-@test "fails when 1Password refuses the read" {
+@test "fails without calling ssh-add when 1Password refuses the read" {
   OP_FAIL=1 run "$SSH_LOAD"
   [ "$status" -ne 0 ]
+  [ ! -e "$AGENT_LIFETIME" ]
 }
