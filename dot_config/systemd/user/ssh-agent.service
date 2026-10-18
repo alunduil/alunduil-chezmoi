@@ -1,5 +1,5 @@
 [Unit]
-Description=OpenSSH agent holding the key ssh-load reads from 1Password
+Description=OpenSSH agent for the key from 1Password
 Documentation=man:ssh-agent(1)
 
 [Service]

@@ -1,5 +1,4 @@
-# ssh-agent.service holds the key ssh-load reads from 1Password; loading it
-# here asks once per login rather than at the first ssh or commit. A
+# Asks for the SSH key at login rather than partway through a command. A
 # forwarded agent in a remote session takes precedence.
 if [ -z "$SSH_AUTH_SOCK" ]; then
    export SSH_AUTH_SOCK="$XDG_RUNTIME_DIR/ssh-agent.socket"

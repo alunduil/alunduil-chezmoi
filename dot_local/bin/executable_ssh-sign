@@ -1,7 +1,6 @@
 #!/usr/bin/env bash
-# git's gpg.ssh.program: ssh-keygen against the local agent, loading the key
-# first when signing. Verifying needs no key, so `git log --show-signature`
-# never raises a dialog.
+# git's gpg.ssh.program. Only signing loads the key: verifying needs none, so
+# `git log --show-signature` never raises a dialog.
 
 set -euo pipefail
 

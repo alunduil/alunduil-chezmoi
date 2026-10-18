@@ -65,8 +65,8 @@ foot --version                             # terminal, pending kitty's replaceme
 sar -V && forkstat --version               # host telemetry recorders (apt)
 systemctl is-active sysstat-collect.timer  # confirms sar is sampling
 systemctl --user is-active alloy.service   # confirms the Grafana Cloud shipper
-systemctl --user is-active 1password.service  # confirms the app runs headless
-systemctl --user is-active ssh-agent.service  # confirms the SSH agent
+systemctl --user is-active 1password.service  # confirms the 1Password app is running
+systemctl --user is-active ssh-agent.service  # confirms the SSH agent is running
 ssh-add -l                                 # lists the SSH key from 1Password
 ```
 
