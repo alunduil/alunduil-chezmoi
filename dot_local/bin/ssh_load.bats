@@ -14,8 +14,10 @@ setup() {
     "$REPO_ROOT/dot_local/bin/executable_ssh-load.tmpl" >"$SSH_LOAD"
   chmod +x "$SSH_LOAD"
 
-  # Stand-ins: the agent holds a key while $AGENT_KEY exists, and op fails
-  # when $OP_FAIL is set.
+  # Stand-ins:
+  # - The agent holds a key while $AGENT_KEY exists.
+  # - op fails when $OP_FAIL is set.
+  # - op leaves a child running, as op daemon does, when $OP_DAEMON is set.
   STUB_DIR="$TMPROOT/stubs"
   mkdir -p "$STUB_DIR"
   cat >"$STUB_DIR/ssh-add" <<'STUB'
@@ -29,6 +31,10 @@ STUB
 #!/usr/bin/env bash
 printf '%s\n' "$*" >>"$OP_LOG"
 [ -z "$OP_FAIL" ] || exit 1
+if [ -n "$OP_DAEMON" ]; then
+  sleep 60 </dev/null >/dev/null 2>&1 3>&- &
+  printf '%s\n' "$!" >"$OP_DAEMON_PID"
+fi
 printf 'FAKE KEY\n'
 STUB
   chmod +x "$STUB_DIR/ssh-add" "$STUB_DIR/op"
@@ -37,10 +43,17 @@ STUB
   export AGENT_LIFETIME="$TMPROOT/agent-lifetime"
   export OP_LOG="$TMPROOT/op.log"
   export OP_FAIL=""
+  export OP_DAEMON=""
+  export OP_DAEMON_PID="$TMPROOT/op-daemon.pid"
   export PATH="$STUB_DIR:/usr/bin:/bin"
 }
 
-teardown() { rm -rf "$TMPROOT"; }
+teardown() {
+  if [ -s "$OP_DAEMON_PID" ]; then
+    kill "$(cat "$OP_DAEMON_PID")" 2>/dev/null || true
+  fi
+  rm -rf "$TMPROOT"
+}
 
 @test "leaves 1Password alone when the agent holds a key" {
   : >"$AGENT_KEY"
@@ -55,6 +68,15 @@ teardown() { rm -rf "$TMPROOT"; }
   [ "$(cat "$OP_LOG")" = "read op://vault/item/private key" ]
   [ "$(cat "$AGENT_KEY")" = "FAKE KEY" ]
   [ "$(cat "$AGENT_LIFETIME")" = "8h" ]
+}
+
+@test "a daemon left by 1Password does not block the next load" {
+  OP_DAEMON=1 run "$SSH_LOAD"
+  [ "$status" -eq 0 ]
+  rm "$AGENT_KEY"
+  run timeout 5 "$SSH_LOAD"
+  [ "$status" -eq 0 ]
+  [ "$(cat "$AGENT_KEY")" = "FAKE KEY" ]
 }
 
 @test "fails when 1Password refuses the read" {
