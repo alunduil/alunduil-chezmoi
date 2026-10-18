@@ -16,5 +16,6 @@ exec 9>"$XDG_RUNTIME_DIR/ssh-load.lock"
 flock 9
 loaded && exit 0
 
-# Eight hours covers a working day.
-op read '{{ .onepassword.ssh_key }}' | ssh-add -t 8h -
+# Eight hours covers a working day. op may start a long-lived op daemon,
+# which would inherit the lock and block every later caller.
+op read '{{ .onepassword.ssh_key }}' 9>&- | ssh-add -t 8h -
