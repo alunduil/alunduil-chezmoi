@@ -4,10 +4,10 @@
 	signingkey = key::ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAID5n/oxN6LHG67Ua99lh0B98N0Go2h0ERGIIswEKmnr9
 [gpg]
 	format = ssh
-# Asks 1Password directly, so signing works whatever SSH_AUTH_SOCK a process
-# inherited.
+# Signs through the local agent whatever SSH_AUTH_SOCK a process inherited,
+# loading the key from 1Password when it has expired.
 [gpg "ssh"]
-	program = /opt/1Password/op-ssh-sign
+	program = ssh-sign
 [commit]
 	gpgsign = true
 [tag]

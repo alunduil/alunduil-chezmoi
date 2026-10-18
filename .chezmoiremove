@@ -22,6 +22,9 @@
 .claude/RTK.md
 .local/bin/rtk
 
+# The 1Password SSH agent's key filter; ssh-load reads the key instead.
+.config/1Password/ssh/agent.toml
+
 # The retired RSA key and its ssh-agent state.
 .ssh/id_rsa
 .ssh/id_rsa.pub
