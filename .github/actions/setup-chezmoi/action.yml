@@ -14,7 +14,7 @@ runs:
       shell: bash
       env:
         # renovate: datasource=github-releases depName=twpayne/chezmoi
-        CHEZMOI_VERSION: "v2.73.1"
+        CHEZMOI_VERSION: "v2.73.2"
       run: sh -c "$(curl -fsLS get.chezmoi.io)" -- -b /usr/local/bin -t "$CHEZMOI_VERSION"
 
     # chezmoi reuses a cached download whatever its state db says, so this
