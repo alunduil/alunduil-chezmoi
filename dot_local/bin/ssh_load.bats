@@ -58,14 +58,12 @@ STUB
   export PATH="$STUB_DIR:/usr/bin:/bin"
 }
 
-# Runs ssh-load with a controlling terminal, as ssh passes one through
-# `Match exec` when a person runs it.
+# Runs a command with a controlling terminal, as a person's ssh has.
 in_terminal() {
   script -qec "$*" /dev/null </dev/null
 }
 
-# Runs ssh-load in a new session with no controlling terminal, as status bars
-# and timers do.
+# Runs a command with no controlling terminal, as status bars and timers have.
 without_terminal() {
   setsid -w "$@" </dev/null
 }

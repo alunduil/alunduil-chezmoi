@@ -13,9 +13,9 @@ loaded() { ssh-add -l >/dev/null 2>&1; }
 # terminal on stdin.
 has_terminal() { { : </dev/tty; } 2>/dev/null; }
 
-# Prints the key. Callers such as gh discard stderr, so the journal is the
-# only record of why a read failed. The op daemon that op may start outlives
-# this script, so it must not inherit the lock.
+# Prints the key. Each read goes to the journal because callers such as gh
+# discard stderr. op may start an op daemon that outlives this script, so op
+# must not inherit the lock.
 read_key() {
   local start=$SECONDS status=0 err
   err_file="$(mktemp)"
@@ -32,9 +32,8 @@ read_key() {
 
 loaded && exit 0
 
-# Only someone at a terminal answers the 1Password dialog. Background callers,
-# such as status bars running `ssh -G` every second, fail here rather than
-# queueing on the lock in front of them.
+# Only someone at a terminal can answer the 1Password dialog. Background
+# callers exit before the lock so they never queue ahead of that person.
 if ! has_terminal; then
   echo "ssh-load: SSH key not loaded; run ssh-load from a terminal" >&2
   exit 1

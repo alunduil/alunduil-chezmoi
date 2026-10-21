@@ -89,9 +89,9 @@ process that reads a secret, so a new process gets a new prompt even
 while the app stays unlocked. The SSH key is the exception: approval
 per application would prompt in every shell and Claude session. Instead,
 `ssh-load` reads it into an OpenSSH agent for eight hours, and an expired
-key raises one dialog on its next use from a terminal. Uses with no
-terminal, such as status bars and timers, fail until then rather than
-queue for a dialog nobody is watching. The key never reaches disk, but
+key raises one dialog on its next use from a terminal. Uses without a
+terminal, such as status bars and timers, fail until then, since nobody
+is there to answer the dialog. The key never reaches disk, but
 while loaded any process running as the user can use it.
 On Crostini nothing else would keep the app alive, so a user service
 runs it without a window.
