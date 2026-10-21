@@ -11,15 +11,39 @@ loaded() { ssh-add -l >/dev/null 2>&1; }
 
 loaded && exit 0
 
+# Only someone at a terminal answers the 1Password dialog. Background callers,
+# such as status bars running `ssh -G` every second, fail here rather than
+# queueing on the lock in front of them. `Match exec` passes the caller's
+# controlling terminal through but never a terminal on stdin.
+if ! { : </dev/tty; } 2>/dev/null; then
+  echo "ssh-load: SSH key not loaded; run ssh-load from a terminal" >&2
+  exit 1
+fi
+
 # Parallel callers queue for one dialog rather than raising one each.
 exec 9>"$XDG_RUNTIME_DIR/ssh-load.lock"
 flock 9
 loaded && exit 0
 
+err_file="$(mktemp)"
+trap 'rm -f "$err_file"' EXIT
+
 # The op daemon that op may start outlives this script, so it must not
 # inherit the lock. Reading into a variable keeps a failed read from reaching
 # ssh-add.
-key="$(op read '{{ .onepassword.ssh_key }}' 9>&-)"
+start=$SECONDS
+status=0
+key="$(op read '{{ .onepassword.ssh_key }}' 2>"$err_file" 9>&-)" || status=$?
+err="$(tr '\n' ' ' <"$err_file")"
+
+# Callers such as gh discard stderr, so the journal is the only record of why
+# a read failed.
+logger -t ssh-load "op read exited $status after $((SECONDS - start))s for $(ps -o args= -p "$PPID")${err:+: $err}"
+
+if [ "$status" -ne 0 ]; then
+  cat "$err_file" >&2
+  exit "$status"
+fi
 
 # Eight hours covers a working day.
 printf '%s\n' "$key" | ssh-add -t 8h -
