@@ -53,7 +53,7 @@
 
 [".local/bin/uv"]
     type = "archive-file"
-    url = "https://github.com/astral-sh/uv/releases/download/0.13.1/uv-x86_64-unknown-linux-musl.tar.gz"
+    url = "https://github.com/astral-sh/uv/releases/download/0.13.2/uv-x86_64-unknown-linux-musl.tar.gz"
     path = "uv-x86_64-unknown-linux-musl/uv"
     executable = true
 
