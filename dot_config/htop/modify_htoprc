@@ -1,10 +1,8 @@
 #!/usr/bin/env bash
-# Manage ~/.config/htop/htoprc without fighting htop, which rewrites the
-# whole file whenever a setting changes in its UI. chezmoi passes the live
-# copy on stdin; this overwrites only the keys below, in place, and leaves
-# every other line for htop to own. Keys htop omits are appended, so a
-# fresh host gets just these and htop fills in its defaults, including the
-# CPU-count-dependent meter layout.
+# htop rewrites htoprc whenever a setting changes in its UI, so this owns
+# only the keys that differ from htop's defaults and leaves the rest to
+# htop. htop defaults any key a partial file omits, which keeps the meter
+# layout it picks by CPU count.
 set -euo pipefail
 
 awk -F= '
