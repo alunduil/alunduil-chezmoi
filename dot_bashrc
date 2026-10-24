@@ -119,6 +119,14 @@ if ! shopt -oq posix; then
     . /etc/bash_completion
   fi
 fi
+
+# fzf's key bindings: Debian ships them as an example file. fd, unlike
+# fzf's find fallback, skips .gitignore'd paths.
+export FZF_DEFAULT_COMMAND='fd --type f --hidden --exclude .git'
+export FZF_CTRL_T_COMMAND="$FZF_DEFAULT_COMMAND"
+export FZF_ALT_C_COMMAND='fd --type d --hidden --exclude .git'
+[ -f /usr/share/doc/fzf/examples/key-bindings.bash ] && . /usr/share/doc/fzf/examples/key-bindings.bash
+
 export DOCKER_BUILDKIT=0
 
 # nvm (Node Version Manager): load if installed, no-op otherwise.
