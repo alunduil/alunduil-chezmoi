@@ -127,8 +127,6 @@ export FZF_CTRL_T_COMMAND="$FZF_DEFAULT_COMMAND"
 export FZF_ALT_C_COMMAND='fd --type d --hidden --exclude .git'
 [ -f /usr/share/doc/fzf/examples/key-bindings.bash ] && . /usr/share/doc/fzf/examples/key-bindings.bash
 
-export DOCKER_BUILDKIT=0
-
 # nvm (Node Version Manager): load if installed, no-op otherwise.
 # Follows nvm's own XDG default: $XDG_CONFIG_HOME/nvm, or ~/.nvm without XDG.
 export NVM_DIR="${XDG_CONFIG_HOME:-$HOME/.config}/nvm"
