@@ -1,6 +1,7 @@
 packages:
   apt:
     - gh
+    - git-lfs
     - zsh
     - ripgrep
     - fd-find
