@@ -15,8 +15,8 @@ HISTCONTROL=ignoreboth
 # append to the history file, don't overwrite it
 shopt -s histappend
 
-# Write each command to the history file as it runs rather than on exit, so
-# concurrent panes don't lose history to each other or to truncation.
+# Save each command at the next prompt, so new shells see what still-open
+# shells ran.
 case ";$PROMPT_COMMAND;" in
     *";history -a;"*) ;;
     *) PROMPT_COMMAND="history -a${PROMPT_COMMAND:+;$PROMPT_COMMAND}" ;;
