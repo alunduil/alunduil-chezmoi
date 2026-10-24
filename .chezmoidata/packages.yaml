@@ -1,8 +1,6 @@
 packages:
   apt:
     - gh
-    # dot_gitconfig marks the lfs filter required, so checkouts of LFS
-    # repositories fail without it.
     - git-lfs
     - zsh
     - ripgrep

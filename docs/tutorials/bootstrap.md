@@ -45,7 +45,7 @@ beet --version                             # music tagger (uv tool install)
 ffprobe -version && mediainfo --version    # media inspection (ffmpeg, mediainfo)
 exiftool -ver && fpcalc -version           # metadata reader, audio fingerprinter
 rsync --version                            # file sync
-git lfs version                            # large-file filter (dot_gitconfig)
+git lfs version                            # Git Large File Storage
 ghc --version && cabal --version           # ghcup-managed Haskell toolchain
 cargo --version && rustc --version         # rustup-managed Rust toolchain
 pnpm --version                             # pnpm package manager (npm global)
