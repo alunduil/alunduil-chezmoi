@@ -23,7 +23,7 @@ jobs:
   # rather than blocking the line. Never fails the run (fail: false).
   external-links:
     name: Check external links
-    runs-on: ubuntu-24.04
+    runs-on: ubuntu-26.04
     timeout-minutes: 10
     permissions:
       contents: read
