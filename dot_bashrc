@@ -112,9 +112,8 @@ if ! shopt -oq posix; then
   fi
 fi
 
-# fzf: Ctrl-R (history), Ctrl-T (files), Alt-C (cd). Debian's fzf predates
-# `fzf --bash`, so the bindings come from the packaged example. fd honours
-# .gitignore, which fzf's find fallback does not.
+# fzf's key bindings: Debian ships them as an example file. fd, unlike
+# fzf's find fallback, skips .gitignore'd paths.
 export FZF_DEFAULT_COMMAND='fd --type f --hidden --exclude .git'
 export FZF_CTRL_T_COMMAND="$FZF_DEFAULT_COMMAND"
 export FZF_ALT_C_COMMAND='fd --type d --hidden --exclude .git'
