@@ -1,0 +1,22 @@
+# Colors name ANSI slots, never hex, so lazygit draws from the terminal's
+# Tempus Night palette (see kitty.conf) and inherits its 7:1 guarantee.
+# Every override below replaces a default that pairs two coloured slots or
+# computes its own RGB. A slot on black (the terminal background) and black
+# on a slot share one contrast ratio, which is what makes reverse safe.
+
+gui:
+  theme:
+    selectedLineBgColor:
+      - reverse
+    inactiveViewSelectedLineBgColor:
+      - underline
+    cherryPickedCommitFgColor:
+      - black
+    cherryPickedCommitBgColor:
+      - cyan
+    markedBaseCommitFgColor:
+      - black
+    markedBaseCommitBgColor:
+      - yellow
+    authorColors:
+      "*": cyan
