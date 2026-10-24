@@ -7,29 +7,21 @@
 # CPU-count-dependent meter layout.
 set -euo pipefail
 
-awk '
-BEGIN {
-  n = split("color_scheme=6 shadow_other_users=1 highlight_base_name=1 " \
-    "detailed_cpu_time=1 show_cpu_frequency=1 show_cpu_temperature=1 " \
-    "screen_tabs=0", owned, " ")
-  for (i = 1; i <= n; i++) {
-    split(owned[i], kv, "=")
-    order[i] = kv[1]
-    value[kv[1]] = kv[2]
-  }
-}
-{
-  key = substr($0, 1, index($0, "=") - 1)
-  if (key in value) {
-    print key "=" value[key]
-    seen[key] = 1
-  } else {
-    print
-  }
-}
+awk -F= '
+NR == FNR { keys[++n] = $1; value[$1] = $2; next }
+$1 in value { print $1 "=" value[$1]; written[$1] = 1; next }
+{ print }
 END {
   for (i = 1; i <= n; i++)
-    if (!(order[i] in seen))
-      print order[i] "=" value[order[i]]
+    if (!(keys[i] in written))
+      print keys[i] "=" value[keys[i]]
 }
-'
+' /dev/fd/3 - 3<<'OWNED'
+color_scheme=6
+shadow_other_users=1
+highlight_base_name=1
+detailed_cpu_time=1
+show_cpu_frequency=1
+show_cpu_temperature=1
+screen_tabs=0
+OWNED
