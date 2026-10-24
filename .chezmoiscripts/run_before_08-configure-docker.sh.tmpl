@@ -1,0 +1,39 @@
+#!/usr/bin/env bash
+# chezmoi deploys only under $HOME, so daemon.json and the docker-prune units
+# live in etc/ and install with sudo. ADR 0006 explains why the prune is a root
+# system unit. A hand-edit to these files under /etc reverts on the next apply.
+
+set -euo pipefail
+
+# shellcheck source=script/lib/bootstrap.sh
+. "{{ .chezmoi.sourceDir }}/script/lib/bootstrap.sh"
+
+if ! command -v docker >/dev/null 2>&1; then
+  log "docker: absent; skipping"
+  exit 0
+fi
+
+ETC_SRC="{{ .chezmoi.sourceDir }}/etc"
+
+# ------------------------------------------------------------------- daemon
+# The `local` log driver rotates each container's log. json-file, the default,
+# grows until the prune removes the container.
+#
+# dockerd reads daemon.json only at start. try-restart applies it to a running
+# daemon without starting a stopped one.
+DAEMON_JSON=/etc/docker/daemon.json
+
+if ! cmp -s "$ETC_SRC/docker/daemon.json" "$DAEMON_JSON"; then
+  log "installing $DAEMON_JSON"
+  sudo install -D -m 0644 "$ETC_SRC/docker/daemon.json" "$DAEMON_JSON"
+  sudo systemctl try-restart docker.service
+fi
+
+# -------------------------------------------------------------------- prune
+for unit in docker-prune.service docker-prune.timer; do
+  install_if_changed -m 0644 "$ETC_SRC/systemd/system/$unit" "/etc/systemd/system/$unit"
+done
+
+daemon_reload_if_installed
+
+enable_now docker-prune.timer
