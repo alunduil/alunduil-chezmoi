@@ -17,7 +17,7 @@
 
 [".local/bin/gcx"]
     type = "archive-file"
-    url = "https://github.com/grafana/gcx/releases/download/v1.3.1/gcx_1.3.1_linux_amd64.tar.gz"
+    url = "https://github.com/grafana/gcx/releases/download/v1.7.1/gcx_1.7.1_linux_amd64.tar.gz"
     path = "gcx"
     executable = true
 
