@@ -64,6 +64,7 @@ claude mcp list                            # confirms registered MCP servers
 kitty --version                            # terminal (apt)
 foot --version                             # terminal, pending kitty's replacement (apt)
 sar -V && forkstat --version               # host telemetry recorders (apt)
+htop --version                             # process viewer (apt)
 systemctl is-active sysstat-collect.timer  # confirms sar is sampling
 systemctl --user is-active alloy.service   # confirms the Grafana Cloud shipper
 systemctl --user is-active 1password.service  # confirms the 1Password app is running
