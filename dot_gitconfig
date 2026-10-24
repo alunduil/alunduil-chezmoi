@@ -19,3 +19,20 @@
 	smudge = git-lfs smudge -- %f
 	process = git-lfs filter-process
 	required = true
+[push]
+	autoSetupRemote = true
+[fetch]
+	prune = true
+[pull]
+	ff = only
+[merge]
+	conflictStyle = zdiff3
+[diff]
+	algorithm = histogram
+[rerere]
+	enabled = true
+[rebase]
+	autoStash = true
+	updateRefs = true
+[branch]
+	sort = -committerdate
