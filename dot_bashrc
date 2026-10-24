@@ -16,8 +16,16 @@ HISTCONTROL=ignoreboth
 shopt -s histappend
 
 # for setting history length see HISTSIZE and HISTFILESIZE in bash(1)
-HISTSIZE=1000
-HISTFILESIZE=2000
+HISTSIZE=100000
+HISTFILESIZE=100000
+HISTTIMEFORMAT='%F %T '
+
+# Write each command to the history file as it runs rather than on exit, so
+# concurrent panes don't lose history to each other or to truncation.
+case ";$PROMPT_COMMAND;" in
+    *";history -a;"*) ;;
+    *) PROMPT_COMMAND="history -a${PROMPT_COMMAND:+;$PROMPT_COMMAND}" ;;
+esac
 
 # check the window size after each command and, if necessary,
 # update the values of LINES and COLUMNS.
