@@ -119,7 +119,6 @@ if ! shopt -oq posix; then
     . /etc/bash_completion
   fi
 fi
-export DOCKER_BUILDKIT=0
 
 # nvm (Node Version Manager): load if installed, no-op otherwise.
 # Follows nvm's own XDG default: $XDG_CONFIG_HOME/nvm, or ~/.nvm without XDG.
