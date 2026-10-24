@@ -9,6 +9,8 @@ repos:
       - id: shellcheck
         args: ['-x']
         files: (executable_|\.sh(\.tmpl)?$)
+        # Python behind a `uv run --script` shebang, which identify can't type.
+        exclude: ^dot_local/bin/executable_truenas-api$
         types: [text]
 
   - repo: https://github.com/scop/pre-commit-shfmt
@@ -17,6 +19,7 @@ repos:
       - id: shfmt
         args: ['-i', '2', '-ci']
         files: (executable_|\.sh(\.tmpl)?$)
+        exclude: ^dot_local/bin/executable_truenas-api$
         types: [text]
 
   - repo: https://github.com/pre-commit/pre-commit-hooks
