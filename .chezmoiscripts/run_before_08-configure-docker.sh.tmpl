@@ -5,10 +5,6 @@
 # $HOME, not /etc, so daemon.json and the units live in etc/ and are copied in
 # with sudo (same shape as the unattended-upgrades config). See #312.
 #
-# The `local` log driver rotates each container's log, which json-file, the
-# default, leaves uncapped until the prune removes the container. Running
-# containers keep the driver they started with.
-#
 # Each file is compared against its deployed copy, so an edit here and a
 # hand-edit under /etc both reconcile.
 
@@ -26,11 +22,17 @@ fi
 ETC_SRC="{{ .chezmoi.sourceDir }}/etc"
 
 # ------------------------------------------------------------------- daemon
+# The `local` log driver rotates each container's log, which json-file, the
+# default, leaves uncapped until the prune removes the container. Running
+# containers keep the driver they started with.
+#
 # dockerd reads daemon.json only at start. try-restart leaves a stopped daemon
 # stopped; it picks the file up when it next starts.
-if ! cmp -s "$ETC_SRC/docker/daemon.json" /etc/docker/daemon.json; then
-  log "installing /etc/docker/daemon.json"
-  sudo install -D -m 0644 "$ETC_SRC/docker/daemon.json" /etc/docker/daemon.json
+DAEMON_JSON=/etc/docker/daemon.json
+
+if ! cmp -s "$ETC_SRC/docker/daemon.json" "$DAEMON_JSON"; then
+  log "installing $DAEMON_JSON"
+  sudo install -D -m 0644 "$ETC_SRC/docker/daemon.json" "$DAEMON_JSON"
   sudo systemctl try-restart docker.service
 fi
 
