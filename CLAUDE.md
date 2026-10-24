@@ -37,6 +37,11 @@ effect on `apply` until committed and pulled into the apply clone. Use
   every `uses:` under `runs.steps` is a full-length SHA.
 - `dot_local/bin/executable_gh` shadows system `gh` to enforce `--draft`
   on `gh pr create`. PRs Claude opens go through this wrapper.
+- `docs/reference/data-flow.md` and its companions
+  `data-flow-credentials.md` and `data-flow-paths.md` record the
+  workstation's data flow. Update them in the same change that adds,
+  removes, or reshapes an element they show — an MCP server, a secret,
+  a hook's job, a telemetry sink. The `dfd` skill carries the rules.
 
 ## Pull request descriptions
 
