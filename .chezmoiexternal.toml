@@ -11,7 +11,7 @@
 
 [".local/bin/alloy"]
     type = "archive-file"
-    url = "https://github.com/grafana/alloy/releases/download/v1.21.0/alloy-linux-amd64.zip"
+    url = "https://github.com/grafana/alloy/releases/download/v1.21.1/alloy-linux-amd64.zip"
     path = "alloy-linux-amd64"
     executable = true
 
