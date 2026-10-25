@@ -42,7 +42,7 @@ jobs:
       - name: Install referenced scripts
         run: |
           for s in cgroup-pids-textfile git-poi-all git-worktree-poi dev-cache-gc; do
-            install -m 0755 "dot_local/bin/executable_$s" "$HOME/.local/bin/$s"
+            install -D -m 0755 "dot_local/bin/executable_$s" "$HOME/.local/bin/$s"
           done
 
       - name: Install the 1Password desktop app
