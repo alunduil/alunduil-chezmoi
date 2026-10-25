@@ -22,7 +22,7 @@ check:
     #!/usr/bin/env bash
     set -uo pipefail
     rc=0
-    for c in check-pre-commit check-bats check-zellij check-chezmoi check-chezmoi-templates check-settings-permissions check-telemetry check-systemd check-bootstrap-convergence; do
+    for c in check-pre-commit check-bats check-zellij check-chezmoi check-chezmoi-templates check-settings-permissions check-telemetry check-systemd check-bootstrap-convergence check-pinned-tools; do
       just "$c" || rc=1
     done
     exit "$rc"
@@ -63,6 +63,10 @@ check-telemetry:
 # absent).
 check-systemd:
     script/checks/systemd-units
+
+# Every pinned tool runs and reports its pinned version (needs mise).
+check-pinned-tools:
+    script/checks/pinned-tools
 
 # Bootstrap passes stay convergent (no run_once_, no `dpkg -s` presence guard).
 check-bootstrap-convergence:
