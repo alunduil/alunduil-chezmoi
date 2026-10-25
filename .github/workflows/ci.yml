@@ -24,7 +24,7 @@ jobs:
     timeout-minutes: 10
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
-      # The local lychee hook runs the system binary; provision it here.
+      # The local lychee hook runs lychee from PATH; provision it here.
       - uses: ./.github/actions/setup-mise
         with:
           tools: github:lycheeverse/lychee
