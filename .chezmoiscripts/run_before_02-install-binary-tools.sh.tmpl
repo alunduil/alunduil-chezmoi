@@ -9,7 +9,3 @@
 set -euo pipefail
 
 MISE_GLOBAL_CONFIG_FILE="{{ .chezmoi.sourceDir }}/dot_config/mise/config.toml" mise install
-
-# signal-cli publishes GPG signatures, which mise can't check against a pinned
-# key.
-"{{ .chezmoi.sourceDir }}/script/install/signal-cli" --bin-dir "$HOME/.local/bin"
