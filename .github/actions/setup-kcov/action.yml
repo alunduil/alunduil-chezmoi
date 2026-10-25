@@ -1,13 +1,10 @@
 name: Set up kcov
-description: >-
-  Put kcov on PATH, restoring the build from the Actions cache and compiling
-  it from the pinned source tarball only on a miss.
+description: Put kcov on PATH, compiling it only on a cache miss.
 runs:
   using: composite
   steps:
-    # The build links against the runner image's system libraries, so the
-    # image is part of the key alongside the install script that pins the
-    # version. ImageOS is a runner variable outside the env context.
+    # The build links against the runner image's libraries, so the image is
+    # in the key. ImageOS is absent from the env context, hence a shell step.
     - id: kcov
       shell: bash
       run: |
@@ -20,8 +17,7 @@ runs:
         path: ${{ steps.kcov.outputs.dir }}
         key: kcov-${{ steps.kcov.outputs.image }}-${{ runner.arch }}-${{ hashFiles('script/install/kcov') }}
 
-    # These build deps serve script/install/kcov alone and never reach a host,
-    # so they stay here rather than in .chezmoidata/packages.yaml.
+    # Hosts never build kcov, so these stay out of .chezmoidata/packages.yaml.
     - name: Build kcov
       if: steps.cache.outputs.cache-hit != 'true'
       shell: bash
@@ -39,4 +35,5 @@ runs:
         KCOV_DIR: ${{ steps.kcov.outputs.dir }}
       run: |
         echo "$KCOV_DIR" >>"$GITHUB_PATH"
+        # Fails fast when the image lacks a library the cached build needs.
         "$KCOV_DIR/kcov" --version
