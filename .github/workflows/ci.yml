@@ -145,8 +145,6 @@ jobs:
       - name: Validate config
         run: script/checks/telemetry-config
 
-  # Installs the whole pinned set the way the host does, so a bump that ships
-  # a binary nothing else here executes still gets run before it merges.
   pinned-tools:
     name: Run pinned tools
     runs-on: ubuntu-24.04

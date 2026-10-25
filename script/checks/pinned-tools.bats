@@ -21,12 +21,11 @@ setup() {
   done
   printf '%s\n' "${TOOLS[@]}" >"$WORK/pins"
 
-  # Stands in for mise: pins come from $WORK/pins, all at 1.2.3 unless the
-  # line carries its own `tool<TAB>version`.
+  # Stands in for mise: every tool in $WORK/pins is pinned at 1.2.3.
   cat >"$WORK/stub/mise" <<EOF
 #!/usr/bin/env bash
 case "\$1" in
-  ls) jq -Rn '[inputs | split("\t") | {(.[0]): [{requested_version: (.[1] // "1.2.3")}]}] | add' "$WORK/pins" ;;
+  ls) jq -Rn '[inputs | {(.): [{requested_version: "1.2.3"}]}] | add' "$WORK/pins" ;;
   which) [ -x "$WORK/tools/\$2" ] && echo "$WORK/tools/\$2" || { echo "\$2 is not a mise bin" >&2; exit 1; } ;;
   where) printf '%s\n' "$WORK/npm" ;;
 esac
