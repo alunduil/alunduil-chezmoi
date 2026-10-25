@@ -61,12 +61,9 @@ a mise tool; `gh-poi` is fire-and-forget *and* uses
 
 ## Pin the version
 
-Annotate each `*_VERSION` pin on the line directly above it:
-
-| Source                | Annotation                                                              |
-| --------------------- | ----------------------------------------------------------------------- |
-| Script-installed tool | `# renovate: datasource=github-releases depName=<owner>/<tool>`         |
-| PyPI package          | `# renovate: datasource=pypi depName=<pkg>`, one per `--with` extra too |
+Annotate each PyPI `*_VERSION` pin on the line directly above it with
+`# renovate: datasource=pypi depName=<pkg>`, one per `--with` extra
+too.
 
 A mise tool needs no annotation: Renovate's mise manager reads
 `config.toml` and updates `mise.lock` in the same PR.

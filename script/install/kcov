@@ -6,18 +6,21 @@ set -euo pipefail
 # provide.
 #
 # GitHub's auto-generated tarballs carry no checksum asset, so this sha256 is
-# pinned by hand and a version bump fails verify_sha256 until it is refreshed.
+# pinned by hand and a version bump fails the sha256 check until it is
+# refreshed.
 # renovate: datasource=github-releases depName=SimonKagstrom/kcov
 KCOV_VERSION="v43"
 KCOV_SHA256="4cbba86af11f72de0c7514e09d59c7927ed25df7cebdad087f6d3623213b95bf"
 
-# shellcheck source-path=SCRIPTDIR source=lib.sh
-. "$(dirname "$0")/lib.sh"
-
-parse_bin_dir "$@"
+if [ $# -ne 2 ] || [ "$1" != --bin-dir ]; then
+  echo "usage: ${0##*/} --bin-dir DIR" >&2
+  exit 2
+fi
+BIN_DIR="$2"
 
 bin="$BIN_DIR/kcov"
-if installed_version_matches "$bin" "$KCOV_VERSION"; then
+# The release tag carries a leading `v` that `kcov --version` omits.
+if [ -x "$bin" ] && "$bin" --version 2>/dev/null | grep -qF "${KCOV_VERSION#v}"; then
   printf '==> kcov: %s already installed at %s\n' "$KCOV_VERSION" "$bin" >&2
   exit 0
 fi
@@ -27,9 +30,12 @@ tmp="$(mktemp -d)"
 trap 'rm -rf "$tmp"' EXIT
 
 asset="kcov-${KCOV_VERSION}.tar.gz"
-download "https://github.com/SimonKagstrom/kcov/archive/refs/tags/${KCOV_VERSION}.tar.gz" \
-  "$tmp/$asset"
-verify_sha256 "$tmp/$asset" "$KCOV_SHA256"
+# Plain --retry skips connection errors such as a reset during the TLS
+# handshake, so --retry-all-errors is required. The output is a named file
+# because curl discards a partial body before retrying only then.
+curl -fsSL --retry 3 --retry-all-errors --retry-delay 1 -o "$tmp/$asset" \
+  "https://github.com/SimonKagstrom/kcov/archive/refs/tags/${KCOV_VERSION}.tar.gz"
+echo "$KCOV_SHA256  $tmp/$asset" | sha256sum --check --quiet
 
 tar -xzf "$tmp/$asset" -C "$tmp"
 src="$tmp/kcov-${KCOV_VERSION#v}"
