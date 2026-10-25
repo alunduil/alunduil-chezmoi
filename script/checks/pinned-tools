@@ -26,6 +26,7 @@ declare -A VERSION_COMMANDS=(
   [lazygit]='lazygit --version'
   [npm:bats-assert]='npm_lib_version bats-assert'
   [npm:bats-support]='npm_lib_version bats-support'
+  [release-plz]='release-plz --version'
   [trivy]='trivy --version'
   [uv]='uv --version'
   [vale]='vale --version'

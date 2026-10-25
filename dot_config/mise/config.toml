@@ -13,6 +13,7 @@ lazygit = "0.66.0"
 "github:lycheeverse/lychee" = { version = "0.24.2", version_prefix = "lychee-v", matching = "musl" }
 "npm:bats-assert" = "2.2.4"
 "npm:bats-support" = "0.3.0"
+release-plz = "0.3.174"
 trivy = "0.76.1"
 "github:truenas/truenas-mcp" = "0.0.6"
 uv = "0.13.4"
