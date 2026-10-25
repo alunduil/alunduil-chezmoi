@@ -19,7 +19,6 @@ fi
 BIN_DIR="$2"
 
 bin="$BIN_DIR/kcov"
-# The release tag carries a leading `v` that `kcov --version` omits.
 if [ -x "$bin" ] && "$bin" --version 2>/dev/null | grep -qF "${KCOV_VERSION#v}"; then
   printf '==> kcov: %s already installed at %s\n' "$KCOV_VERSION" "$bin" >&2
   exit 0
@@ -30,9 +29,9 @@ tmp="$(mktemp -d)"
 trap 'rm -rf "$tmp"' EXIT
 
 asset="kcov-${KCOV_VERSION}.tar.gz"
-# Plain --retry skips connection errors such as a reset during the TLS
-# handshake, so --retry-all-errors is required. The output is a named file
-# because curl discards a partial body before retrying only then.
+# --retry-all-errors also retries connection errors such as a TLS handshake
+# reset, which plain --retry skips. Writing to a file with -o lets curl
+# discard a partial body before retrying.
 curl -fsSL --retry 3 --retry-all-errors --retry-delay 1 -o "$tmp/$asset" \
   "https://github.com/SimonKagstrom/kcov/archive/refs/tags/${KCOV_VERSION}.tar.gz"
 echo "$KCOV_SHA256  $tmp/$asset" | sha256sum --check --quiet

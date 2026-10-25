@@ -52,9 +52,8 @@ systemd manager a unit belongs in and what it runs as.
 Every apt package goes in the one list. Later passes configure what
 `install-system-packages` installed rather than calling apt themselves.
 
-Callers reach mise tools through
-the shims in `~/.local/share/mise/shims`, which keep one path across
-version bumps.
+Callers reach mise tools through the shims in
+`~/.local/share/mise/shims`, which keep one path across version bumps.
 
 ## Host roles
 
