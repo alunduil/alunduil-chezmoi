@@ -1,12 +1,11 @@
 {
   "$schema": "https://docs.renovatebot.com/renovate-schema.json",
-  "extends": ["github>alunduil/renovate-config"],
+  "extends": [
+    "github>alunduil/renovate-config",
+    ":automergePatch",
+    ":automergeDigest"
+  ],
   "packageRules": [
-    {
-      "description": "Merge on green CI the update types that don't change an interface",
-      "matchUpdateTypes": ["patch", "digest", "pin", "pinDigest"],
-      "automerge": true
-    },
     {
       "description": "Merge on green CI a minor from 1.0 up; a 0.x minor can break",
       "matchUpdateTypes": ["minor"],
