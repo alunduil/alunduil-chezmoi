@@ -1,14 +1,6 @@
 {
   "$schema": "https://docs.renovatebot.com/renovate-schema.json",
   "extends": ["github>alunduil/renovate-config"],
-  "packageRules": [
-    {
-      "description": "ghcup's metadata has no cabal release dates, so these could never satisfy the bake; ghcup's curation replaces it",
-      "matchDatasources": ["custom.ghcup"],
-      "matchPackageNames": ["Cabal"],
-      "minimumReleaseAge": null
-    }
-  ],
   "customDatasources": {
     "ghcup": {
       "description": "Releases from the metadata ghcup itself reads; packageName is the tool's key under ghcupDownloads",
