@@ -53,7 +53,7 @@ repos:
     hooks:
       - id: markdownlint-cli2
 
-  # System-installed lychee (a chezmoi external) rather than an upstream hook:
+  # System-installed lychee (a mise tool) rather than an upstream hook:
   # one version pin, and it dodges the precompiled binary's newer-GLIBC
   # requirement. --offline gates on internal/relative links only — fast and
   # deterministic. External URLs rot from time and third parties, not the
