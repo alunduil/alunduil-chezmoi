@@ -57,15 +57,7 @@ jobs:
         with:
           tools: npm:bats-support npm:bats-assert
 
-      # These build deps serve script/install/kcov alone and never reach a host,
-      # so they stay here rather than in .chezmoidata/packages.yaml.
-      - name: Install kcov
-        run: |
-          sudo apt-get update -qq
-          sudo apt-get install -y -qq cmake ninja-build binutils-dev \
-            libcurl4-openssl-dev zlib1g-dev libdw-dev libiberty-dev libssl-dev
-          script/install/kcov --bin-dir "$HOME/.local/bin"
-          echo "$HOME/.local/bin" >> "$GITHUB_PATH"
+      - uses: ./.github/actions/setup-kcov
 
       # kcov only traces scripts run from the checkout, so tests that copy their
       # subject to a temp path first (gh_wrapper, pr_draft_guard) report as

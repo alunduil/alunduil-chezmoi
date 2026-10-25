@@ -1,0 +1,39 @@
+name: Set up kcov
+description: Put kcov on PATH, compiling it only on a cache miss.
+runs:
+  using: composite
+  steps:
+    # The build links against the runner image's libraries, so the image is
+    # in the key. ImageOS is absent from the env context, hence a shell step.
+    - id: kcov
+      shell: bash
+      run: |
+        echo "image=$ImageOS" >>"$GITHUB_OUTPUT"
+        echo "dir=$HOME/.local/kcov" >>"$GITHUB_OUTPUT"
+
+    - id: cache
+      uses: actions/cache@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6
+      with:
+        path: ${{ steps.kcov.outputs.dir }}
+        key: kcov-${{ steps.kcov.outputs.image }}-${{ runner.arch }}-${{ hashFiles('script/install/kcov') }}
+
+    # Hosts never build kcov, so these stay out of .chezmoidata/packages.yaml.
+    - name: Build kcov
+      if: steps.cache.outputs.cache-hit != 'true'
+      shell: bash
+      env:
+        KCOV_DIR: ${{ steps.kcov.outputs.dir }}
+      run: |
+        sudo apt-get update -qq
+        sudo apt-get install -y -qq cmake ninja-build binutils-dev \
+          libcurl4-openssl-dev zlib1g-dev libdw-dev libiberty-dev libssl-dev
+        script/install/kcov --bin-dir "$KCOV_DIR"
+
+    - name: Put kcov on PATH
+      shell: bash
+      env:
+        KCOV_DIR: ${{ steps.kcov.outputs.dir }}
+      run: |
+        echo "$KCOV_DIR" >>"$GITHUB_PATH"
+        # Fails fast when the image lacks a library the cached build needs.
+        "$KCOV_DIR/kcov" --version
