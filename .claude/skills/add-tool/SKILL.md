@@ -86,8 +86,8 @@ Commit `config.toml`, `mise.lock`, and any new sidecar under
 `dot_config/mise/.mise/locks/`.
 
 A pass that runs the new tool is `run_after_`, since shims resolve
-through the `~/.config/mise` that apply deploys. Call it by name:
-`script/lib/bootstrap.sh` puts the shims on `PATH`.
+through the `~/.config/mise` that apply deploys. Call
+`use_mise_shims` from `script/lib/bootstrap.sh`, then the tool by name.
 
 ## Shell completion
 

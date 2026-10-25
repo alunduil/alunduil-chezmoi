@@ -15,6 +15,7 @@ set -euo pipefail
 
 # shellcheck source=script/lib/bootstrap.sh
 . "{{ .chezmoi.sourceDir }}/script/lib/bootstrap.sh"
+use_mise_shims
 
 url_file="$HOME/.config/truenas/url"
 key_file="$HOME/.config/truenas/api_key"
