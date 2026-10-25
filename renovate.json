@@ -7,12 +7,12 @@
   ],
   "packageRules": [
     {
-      "description": "Hold for review any update the versioning scheme marks as possibly breaking, such as any 0.x release under semver",
+      "description": "Semver lets a 0.x release break in a minor or a patch, and :automergeMinor merges both",
       "matchJsonata": ["isBreaking = true"],
       "automerge": false
     },
     {
-      "description": "No check runs what these pins install, so a green PR proves only that the file still parses",
+      "description": "No check runs what these pins install, so green CI shows only that the file parses",
       "matchFileNames": [
         ".chezmoiscripts/**",
         "script/install/signal-cli",
