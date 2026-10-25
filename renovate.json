@@ -2,15 +2,14 @@
   "$schema": "https://docs.renovatebot.com/renovate-schema.json",
   "extends": [
     "github>alunduil/renovate-config",
-    ":automergePatch",
+    ":automergeMinor",
     ":automergeDigest"
   ],
   "packageRules": [
     {
-      "description": "Merge on green CI a minor from 1.0 up; a 0.x minor can break",
-      "matchUpdateTypes": ["minor"],
-      "matchCurrentVersion": "!/^v?0\\./",
-      "automerge": true
+      "description": "Hold for review any update the versioning scheme marks as possibly breaking, such as any 0.x release under semver",
+      "matchJsonata": ["isBreaking = true"],
+      "automerge": false
     },
     {
       "description": "No check runs what these pins install, so a green PR proves only that the file still parses",
