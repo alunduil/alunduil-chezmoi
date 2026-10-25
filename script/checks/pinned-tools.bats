@@ -1,11 +1,14 @@
 #!/usr/bin/env bats
 bats_require_minimum_version 1.5.0
 
-BINARIES=(act alloy chezmoi fourmolu gcx hlint just lazygit lychee ormolu trivy truenas-mcp
-  uv vale yq zellij)
-TOOLS=(act chezmoi github:fourmolu/fourmolu github:grafana/alloy github:grafana/gcx
-  github:lycheeverse/lychee github:truenas/truenas-mcp hlint just lazygit npm:bats-assert
-  npm:bats-support ormolu trivy uv vale yq zellij)
+# Read in a subshell so the script's shell options stay out of bats.
+mapfile -t TOOLS < <(bash -c 'source "$1"; printf "%s\n" "${!VERSION_COMMANDS[@]}"' _ "$BATS_TEST_DIRNAME/pinned-tools")
+mapfile -t BINARIES < <(bash -c '
+  source "$1"
+  for cmd in "${VERSION_COMMANDS[@]}"; do
+    read -r bin _ <<<"$cmd"
+    declare -F "$bin" >/dev/null || printf "%s\n" "$bin"
+  done' _ "$BATS_TEST_DIRNAME/pinned-tools")
 
 setup() {
   bats_load_library bats-support
@@ -16,9 +19,10 @@ setup() {
   for bin in "${BINARIES[@]}"; do
     fake_tool "$bin" "$bin version v1.2.3"
   done
-  for lib in bats-assert bats-support; do
-    mkdir -p "$WORK/npm/node_modules/$lib"
-    printf '{"version": "1.2.3"}\n' >"$WORK/npm/node_modules/$lib/package.json"
+  for tool in "${TOOLS[@]}"; do
+    [[ "$tool" == npm:* ]] || continue
+    mkdir -p "$WORK/npm/node_modules/${tool#npm:}"
+    printf '{"version": "1.2.3"}\n' >"$WORK/npm/node_modules/${tool#npm:}/package.json"
   done
   printf '%s\n' "${TOOLS[@]}" >"$WORK/pins"
 
