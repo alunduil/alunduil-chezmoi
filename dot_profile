@@ -26,8 +26,8 @@ if [ -d "$HOME/.local/bin" ] ; then
     PATH="$HOME/.local/bin:$PATH"
 fi
 
-# mise's shims, not `mise activate`, so scripts and systemd units reach the
-# same binaries as a shell.
+# Shims keep one path per tool across version bumps, so scripts and systemd
+# units call the same binaries as a shell without `mise activate`.
 if [ -d "$HOME/.local/share/mise/shims" ] ; then
     PATH="$HOME/.local/share/mise/shims:$PATH"
 fi

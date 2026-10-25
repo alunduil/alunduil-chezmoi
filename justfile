@@ -31,8 +31,7 @@ check:
 check-pre-commit:
     pre-commit run --all-files
 
-# Unit tests. bats_load_library finds bats-support and bats-assert in their
-# mise npm installs; CI sets the same path.
+# Unit tests. CI builds the same BATS_LIB_PATH.
 check-bats:
     #!/usr/bin/env bash
     set -euo pipefail

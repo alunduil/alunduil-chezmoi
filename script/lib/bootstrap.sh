@@ -6,8 +6,8 @@
 
 log() { printf '==> %s\n' "$*" >&2; }
 
-# Puts mise's shims on PATH. They resolve through the deployed
-# ~/.config/mise, so only after-phase passes can call this.
+# Shims resolve through the deployed ~/.config/mise, so only after-phase
+# passes can call this.
 use_mise_shims() { PATH="$HOME/.local/share/mise/shims:$PATH"; }
 
 _bootstrap_installed=0
