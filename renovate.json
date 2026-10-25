@@ -1,6 +1,30 @@
 {
   "$schema": "https://docs.renovatebot.com/renovate-schema.json",
   "extends": ["github>alunduil/renovate-config"],
+  "packageRules": [
+    {
+      "description": "Merge on green CI the update types that don't change an interface",
+      "matchUpdateTypes": ["patch", "digest", "pin", "pinDigest"],
+      "automerge": true
+    },
+    {
+      "description": "Merge on green CI a minor from 1.0 up; a 0.x minor can break",
+      "matchUpdateTypes": ["minor"],
+      "matchCurrentVersion": "!/^v?0\\./",
+      "automerge": true
+    },
+    {
+      "description": "No check runs what these pins install, so a green PR proves only that the file still parses",
+      "matchFileNames": [
+        ".chezmoiscripts/**",
+        "script/install/signal-cli",
+        "dot_config/zellij/config.kdl",
+        ".github/workflows/daily.yml",
+        ".github/workflows/weekly.yml"
+      ],
+      "automerge": false
+    }
+  ],
   "customDatasources": {
     "ghcup": {
       "description": "Releases from the metadata ghcup itself reads; packageName is the tool's key under ghcupDownloads",
