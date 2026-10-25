@@ -1,31 +1,37 @@
 #!/usr/bin/env bats
 bats_require_minimum_version 1.5.0
 
+# Read in a subshell so the script's shell options stay out of bats.
+mapfile -t TOOLS < <(bash -c 'source "$1"; printf "%s\n" "${!VERSION_COMMANDS[@]}"' _ "$BATS_TEST_DIRNAME/pinned-tools")
+mapfile -t BINARIES < <(bash -c '
+  source "$1"
+  for cmd in "${VERSION_COMMANDS[@]}"; do
+    read -r bin _ <<<"$cmd"
+    declare -F "$bin" >/dev/null || printf "%s\n" "$bin"
+  done' _ "$BATS_TEST_DIRNAME/pinned-tools")
+
 setup() {
   bats_load_library bats-support
   bats_load_library bats-assert
 
   WORK="$(mktemp -d)"
-  mkdir -p "$WORK/stub" "$WORK/tools" "$WORK/missing"
-  fake_tool default 'version v1.2.3'
-  for lib in bats-assert bats-support; do
-    mkdir -p "$WORK/npm/node_modules/$lib"
-    printf '{"version": "1.2.3"}\n' >"$WORK/npm/node_modules/$lib/package.json"
+  mkdir -p "$WORK/stub" "$WORK/tools"
+  for bin in "${BINARIES[@]}"; do
+    fake_tool "$bin" "$bin version v1.2.3"
   done
-  # Pins mirror VERSION_COMMANDS, so the fixture passes by construction.
-  sed -n 's/^  \[\([^]]*\)\]=.*/\1/p' "$BATS_TEST_DIRNAME/pinned-tools" >"$WORK/pins"
+  for tool in "${TOOLS[@]}"; do
+    [[ "$tool" == npm:* ]] || continue
+    mkdir -p "$WORK/npm/node_modules/${tool#npm:}"
+    printf '{"version": "1.2.3"}\n' >"$WORK/npm/node_modules/${tool#npm:}/package.json"
+  done
+  printf '%s\n' "${TOOLS[@]}" >"$WORK/pins"
 
-  # Stands in for mise: every pin is at 1.2.3, and every binary reports it
-  # unless overridden in $WORK/tools or hidden under $WORK/missing.
+  # Stands in for mise: every tool in $WORK/pins is pinned at 1.2.3.
   cat >"$WORK/stub/mise" <<EOF
 #!/usr/bin/env bash
 case "\$1" in
   ls) jq -Rn '[inputs | {(.): [{requested_version: "1.2.3"}]}] | add' "$WORK/pins" ;;
-  which)
-    if [ -e "$WORK/missing/\$2" ]; then echo "\$2 is not a mise bin" >&2; exit 1
-    elif [ -e "$WORK/tools/\$2" ]; then echo "$WORK/tools/\$2"
-    else echo "$WORK/tools/default"
-    fi ;;
+  which) [ -x "$WORK/tools/\$2" ] && echo "$WORK/tools/\$2" || { echo "\$2 is not a mise bin" >&2; exit 1; } ;;
   where) printf '%s\n' "$WORK/npm" ;;
 esac
 EOF
@@ -65,7 +71,7 @@ fake_tool() {
 }
 
 @test "a missing binary fails" {
-  touch "$WORK/missing/lazygit"
+  rm "$WORK/tools/lazygit"
   run "$BATS_TEST_DIRNAME/pinned-tools"
   assert_failure
   assert_output --partial 'FAIL: lazygit: lazygit is not a mise bin'

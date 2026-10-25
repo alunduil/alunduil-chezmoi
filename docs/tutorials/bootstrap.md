@@ -39,7 +39,6 @@ readwise login                             # ~/.readwise-cli.json
 sudo tailscale up                          # tailnet auth
 keybase login                              # ~/.config/keybase/ (devices, KBFS)
 signal-desktop                             # link to phone via QR scan
-signal-cli -a +<phone> register            # SMS-verified, ~/.local/share/signal-cli/
 
 # PATH check for installed binaries:
 zellij --version && lazygit --version && act --version

@@ -6,13 +6,16 @@ lockfile_platforms = ["linux-x64"]
 act = "0.2.89"
 "github:grafana/alloy" = "1.21.1"
 chezmoi = "2.73.3"
+"github:fourmolu/fourmolu" = "0.21.0.0"
 "github:grafana/gcx" = "1.3.1"
+hlint = "3.10"
 just = "1.59.0"
 lazygit = "0.66.0"
 # The glibc build needs a newer glibc than Debian bookworm ships.
 "github:lycheeverse/lychee" = { version = "0.24.2", version_prefix = "lychee-v", matching = "musl" }
 "npm:bats-assert" = "2.2.4"
 "npm:bats-support" = "0.3.0"
+ormolu = "0.9.0.0"
 release-plz = "0.3.174"
 trivy = "0.76.1"
 "github:truenas/truenas-mcp" = "0.0.6"

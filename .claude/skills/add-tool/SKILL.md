@@ -51,9 +51,8 @@ Pick the canonical installer for the ecosystem:
 | `gh` extension        | `run_before_05`                       | `gh extension install --pin`   |
 | PyPI package          | `run_after_install-via-mise-tools`    | mirror the `beets` block       |
 
-A release binary that needs more than a download (signature check,
-source build) gets a `script/install/<tool>` script, called from
-`run_before_02` instead; mirror `script/install/signal-cli`.
+Raise a release binary that mise can't verify against its publisher,
+such as one signed only with GPG, with the user before adding it.
 
 Auth and install axes are independent: `gcx` is auth-required *and*
 a mise tool; `gh-poi` is fire-and-forget *and* uses
@@ -61,12 +60,8 @@ a mise tool; `gh-poi` is fire-and-forget *and* uses
 
 ## Pin the version
 
-Annotate each `*_VERSION` pin on the line directly above it:
-
-| Source                | Annotation                                                              |
-| --------------------- | ----------------------------------------------------------------------- |
-| Script-installed tool | `# renovate: datasource=github-releases depName=<owner>/<tool>`         |
-| PyPI package          | `# renovate: datasource=pypi depName=<pkg>`, one per `--with` extra too |
+Annotate each PyPI `*_VERSION` pin, `--with` extras included, with
+`# renovate: datasource=pypi depName=<pkg>` on the line above it.
 
 A mise tool needs no annotation: Renovate's mise manager reads
 `config.toml` and updates `mise.lock` in the same PR.
