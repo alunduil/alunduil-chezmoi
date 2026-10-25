@@ -14,8 +14,8 @@ A **silent stall** is a dependency that can never update yet looks current: no P
 }
 ```
 
-- The preset's `default.json` carries the shared spine: the `extends` list, `timezone`, `reviewers`, `labels`, `pre-commit`, and the Supply-chain hardening block. Change it there, not per repo. Renovate's onboarding PR extends it automatically. A repo's `renovate.json` holds only repo-specific config beside `extends`.
-- Omit `baseBranchPatterns`. It is auto-detected, and hard-coding it is the one field that differs per repo (`main` vs `master`) — the thing that would block sharing.
+- Change shared policy in the preset's `default.json`. A repo's `renovate.json` adds only its own config beside `extends`. Renovate's onboarding PR writes the `extends` line for a new repo.
+- Omit `baseBranchPatterns`. Renovate detects it, and it differs per repo (`main` vs `master`).
 - Omit `schedule` unless a repo wants batching. With a bake period the PR is already delayed, and Renovate's default `prHourlyLimit` of 2 rate-limits the rest.
 - `packageRules` and `customManagers` are `mergeable: true`, so preset arrays concatenate with a repo's own rather than replacing them. `labels` and `reviewers` are not mergeable — setting them in a repo replaces the inherited value. `addLabels` merges and appends; `labels` in a shared preset is dropped wholesale by the first repo setting its own.
 - `labels` — default `[]`, so Renovate labels nothing without this. A stale sweep exempting Renovate PRs by label depends on it: closing a Renovate PR tells Renovate the version is unwanted and it will not re-offer it. `vulnerabilityAlerts` takes no `labels`.
