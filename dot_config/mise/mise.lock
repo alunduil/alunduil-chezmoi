@@ -23,6 +23,16 @@ url = "https://github.com/twpayne/chezmoi/releases/download/v2.73.3/chezmoi_2.73
 url_api = "https://api.github.com/repos/twpayne/chezmoi/releases/assets/659666434"
 provenance = "cosign"
 
+[[tools."github:fourmolu/fourmolu"]]
+version = "0.21.0.0"
+backend = "github:fourmolu/fourmolu"
+specifiers = ["0.21.0.0"]
+
+[tools."github:fourmolu/fourmolu"."platforms.linux-x64"]
+checksum = "sha256:aadf6931653df7b96f52014cf8eb4285a3e8778cd0b531499fc3ee013e1e00c7"
+url = "https://github.com/fourmolu/fourmolu/releases/download/v0.21.0.0/fourmolu-0.21.0.0-linux-x86_64.zip"
+url_api = "https://api.github.com/repos/fourmolu/fourmolu/releases/assets/606689202"
+
 [[tools."github:grafana/alloy"]]
 version = "1.21.1"
 backend = "github:grafana/alloy"
@@ -68,6 +78,16 @@ checksum = "sha256:920a1042763f2ed31937c5cf3072fbd2defdd863dbfb3e1078aeed0275f5f
 url = "https://github.com/truenas/truenas-mcp/releases/download/v0.0.6/truenas-mcp-linux-amd64.tar.gz"
 url_api = "https://api.github.com/repos/truenas/truenas-mcp/releases/assets/486467024"
 
+[[tools.hlint]]
+version = "3.10"
+backend = "github:ndmitchell/hlint"
+specifiers = ["3.10"]
+
+[tools.hlint."platforms.linux-x64"]
+checksum = "sha256:ccabc8802a58154699a3583b8dddc5ea2e6d65753a62c45c0e80088ebb16b42b"
+url = "https://github.com/ndmitchell/hlint/releases/download/v3.10/hlint-3.10-x86_64-linux.tar.gz"
+url_api = "https://api.github.com/repos/ndmitchell/hlint/releases/assets/225694248"
+
 [[tools.just]]
 version = "1.59.0"
 backend = "aqua:casey/just"
@@ -99,6 +119,16 @@ version = "0.3.0"
 aube = { path = ".mise/locks/npm-bats-support/0.3.0", digest = "sha256:98e7cba8558aefd26ad71d43b3002dd7b398f5fc19d83c78a359f07e5b80bb12" }
 backend = "npm:bats-support"
 specifiers = ["0.3.0"]
+
+[[tools.ormolu]]
+version = "0.9.0.0"
+backend = "github:tweag/ormolu"
+specifiers = ["0.9.0.0"]
+
+[tools.ormolu."platforms.linux-x64"]
+checksum = "sha256:367eb4969986504cf171f71f91e24ea5d7d9d97c41701e8e6eef9b642fd0d201"
+url = "https://github.com/tweag/ormolu/releases/download/0.9.0.0/ormolu-x86_64-linux.zip"
+url_api = "https://api.github.com/repos/tweag/ormolu/releases/assets/602990813"
 
 [[tools.trivy]]
 version = "0.76.1"
