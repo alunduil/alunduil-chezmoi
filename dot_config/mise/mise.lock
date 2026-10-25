@@ -13,25 +13,25 @@ url = "https://github.com/nektos/act/releases/download/v0.2.89/act_Linux_x86_64.
 url_api = "https://api.github.com/repos/nektos/act/releases/assets/434891246"
 
 [[tools.chezmoi]]
-version = "2.73.0"
+version = "2.73.3"
 backend = "aqua:twpayne/chezmoi"
-specifiers = ["2.73.0"]
+specifiers = ["2.73.3"]
 
 [tools.chezmoi."platforms.linux-x64"]
-checksum = "sha256:b597729b687af4488a848240134cb633de8ca0f04e0d26d48f400ee2ac338ffa"
-url = "https://github.com/twpayne/chezmoi/releases/download/v2.73.0/chezmoi_2.73.0_linux-glibc_amd64.tar.gz"
-url_api = "https://api.github.com/repos/twpayne/chezmoi/releases/assets/596270983"
+checksum = "sha256:6e5827598cbfc02d132b04f95b5ea10efb5b79230e2a4a0e52df4af144a8ee9f"
+url = "https://github.com/twpayne/chezmoi/releases/download/v2.73.3/chezmoi_2.73.3_linux-glibc_amd64.tar.gz"
+url_api = "https://api.github.com/repos/twpayne/chezmoi/releases/assets/659666434"
 provenance = "cosign"
 
 [[tools."github:grafana/alloy"]]
-version = "1.20.1"
+version = "1.21.1"
 backend = "github:grafana/alloy"
-specifiers = ["1.20.1"]
+specifiers = ["1.21.1"]
 
 [tools."github:grafana/alloy"."platforms.linux-x64"]
-checksum = "sha256:451fe650e8277d22d69cb8db50bba809f581fe78decba7fce4027ef185457be9"
-url = "https://github.com/grafana/alloy/releases/download/v1.20.1/alloy-linux-amd64.zip"
-url_api = "https://api.github.com/repos/grafana/alloy/releases/assets/595993373"
+checksum = "sha256:83e7ad1663a1271af2f507ad1af53cdb0a0fbb19a1b661895bcc426af68f2774"
+url = "https://github.com/grafana/alloy/releases/download/v1.21.1/alloy-linux-amd64.zip"
+url_api = "https://api.github.com/repos/grafana/alloy/releases/assets/663739894"
 provenance = "github-attestations"
 
 [[tools."github:grafana/gcx"]]
@@ -69,14 +69,14 @@ url = "https://github.com/truenas/truenas-mcp/releases/download/v0.0.6/truenas-m
 url_api = "https://api.github.com/repos/truenas/truenas-mcp/releases/assets/486467024"
 
 [[tools.just]]
-version = "1.58.0"
+version = "1.59.0"
 backend = "aqua:casey/just"
-specifiers = ["1.58.0"]
+specifiers = ["1.59.0"]
 
 [tools.just."platforms.linux-x64"]
-checksum = "sha256:4a5cc2f53e6f0f8c59092a6cc38291eb729d46a7dd95d3ae582008881b84931d"
-url = "https://github.com/casey/just/releases/download/1.58.0/just-1.58.0-x86_64-unknown-linux-musl.tar.gz"
-url_api = "https://api.github.com/repos/casey/just/releases/assets/500509978"
+checksum = "sha256:409044617b6f06517c1035e55ca38c8c856ff8b650e41bc2aa1ef82d5903a23e"
+url = "https://github.com/casey/just/releases/download/1.59.0/just-1.59.0-x86_64-unknown-linux-musl.tar.gz"
+url_api = "https://api.github.com/repos/casey/just/releases/assets/642949555"
 
 [[tools.lazygit]]
 version = "0.66.0"
@@ -101,25 +101,25 @@ backend = "npm:bats-support"
 specifiers = ["0.3.0"]
 
 [[tools.trivy]]
-version = "0.75.0"
+version = "0.76.1"
 backend = "aqua:aquasecurity/trivy"
-specifiers = ["0.75.0"]
+specifiers = ["0.76.1"]
 
 [tools.trivy."platforms.linux-x64"]
-checksum = "sha256:c6e65abddb348e25f10549df887045629cf28cc72453cd1c63acb717316b3f3f"
-url = "https://github.com/aquasecurity/trivy/releases/download/v0.75.0/trivy_0.75.0_Linux-64bit.tar.gz"
-url_api = "https://api.github.com/repos/aquasecurity/trivy/releases/assets/603335432"
+checksum = "sha256:c7cbe3137fb8a48a17574bede3dd6beb16742d1e9772929940fc90082c39d9c0"
+url = "https://github.com/aquasecurity/trivy/releases/download/v0.76.1/trivy_0.76.1_Linux-64bit.tar.gz"
+url_api = "https://api.github.com/repos/aquasecurity/trivy/releases/assets/662254617"
 provenance = "cosign"
 
 [[tools.uv]]
-version = "0.12.24"
+version = "0.13.4"
 backend = "aqua:astral-sh/uv"
-specifiers = ["0.12.24"]
+specifiers = ["0.13.4"]
 
 [tools.uv."platforms.linux-x64"]
-checksum = "sha256:b4dfaef47d491a7296981f8374a4595f55dbf84e8937c8ecd2983574d8bb3da6"
-url = "https://github.com/astral-sh/uv/releases/download/0.12.24/uv-x86_64-unknown-linux-gnu.tar.gz"
-url_api = "https://api.github.com/repos/astral-sh/uv/releases/assets/622873043"
+checksum = "sha256:2b428396f12572d4429cf210ca234dd599a33b3af0958a4d5ed569d63e3f344f"
+url = "https://github.com/astral-sh/uv/releases/download/0.13.4/uv-x86_64-unknown-linux-gnu.tar.gz"
+url_api = "https://api.github.com/repos/astral-sh/uv/releases/assets/659693663"
 provenance = "github-attestations"
 
 [[tools.vale]]
