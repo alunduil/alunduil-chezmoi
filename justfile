@@ -30,7 +30,10 @@ check-pre-commit:
 # Unit tests. bats_load_library finds bats-support and bats-assert in their
 # mise npm installs; CI sets the same path.
 check-bats:
-    BATS_LIB_PATH="${BATS_LIB_PATH:+$BATS_LIB_PATH:}$(mise where npm:bats-support)/node_modules:$(mise where npm:bats-assert)/node_modules" \
+    #!/usr/bin/env bash
+    set -euo pipefail
+    mise_libs="$(mise where npm:bats-support)/node_modules:$(mise where npm:bats-assert)/node_modules"
+    BATS_LIB_PATH="${BATS_LIB_PATH:+$BATS_LIB_PATH:}$mise_libs" \
       bats --recursive dot_local dot_claude script
 
 # Zellij KDL validation (needs zellij on PATH).
