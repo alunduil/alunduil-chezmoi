@@ -40,6 +40,7 @@
 # puts a second version on PATH.
 .local/bin/act
 .local/bin/alloy
+.local/bin/chezmoi
 .local/bin/gcx
 .local/bin/just
 .local/bin/lazygit
