@@ -1,33 +1,7 @@
 {
   "$schema": "https://docs.renovatebot.com/renovate-schema.json",
-  "extends": [
-    "config:best-practices",
-    "security:openssf-scorecard",
-    "customManagers:githubActionsVersions"
-  ],
-  "timezone": "Europe/London",
-  "reviewers": ["alunduil"],
-  "labels": ["dependencies"],
-  "pre-commit": {
-    "enabled": true
-  },
-  "minimumReleaseAge": "3 days",
-  "osvVulnerabilityAlerts": true,
+  "extends": ["github>alunduil/renovate-config"],
   "packageRules": [
-    {
-      "description": "Update types with no release timestamp can never satisfy the bake, and internalChecksFilter defaults to strict, so without this they stall on a pending renovate/stability-days check forever",
-      "matchUpdateTypes": [
-        "pin",
-        "pinDigest",
-        "digest",
-        "lockFileMaintenance",
-        "lockfileUpdate",
-        "rollback",
-        "bump",
-        "replacement"
-      ],
-      "minimumReleaseAge": null
-    },
     {
       "description": "ghcup's metadata has no cabal release dates, so these could never satisfy the bake; ghcup's curation replaces it",
       "matchDatasources": ["custom.ghcup"],

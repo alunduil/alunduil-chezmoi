@@ -10,19 +10,11 @@ A **silent stall** is a dependency that can never update yet looks current: no P
 ```json
 {
   "$schema": "https://docs.renovatebot.com/renovate-schema.json",
-  "extends": [
-    "config:best-practices",
-    "security:openssf-scorecard",
-    "customManagers:githubActionsVersions"
-  ],
-  "timezone": "Europe/London",
-  "reviewers": ["alunduil"],
-  "labels": ["dependencies"],
-  "pre-commit": { "enabled": true }
+  "extends": ["github>alunduil/renovate-config"]
 }
 ```
 
-- This block is identical in every repo and is a standing candidate for a shared preset (`github>alunduil/renovate-config`, a `default.json`); Renovate also checks `<owner>/renovate-config` when onboarding a new repo. Until that repo exists, keep the block inline and change it everywhere at once.
+- The preset's `default.json` carries the shared spine: the `extends` list, `timezone`, `reviewers`, `labels`, `pre-commit`, and the Supply-chain hardening block. Change it there, not per repo. Renovate's onboarding PR extends it automatically. A repo's `renovate.json` holds only repo-specific config beside `extends`.
 - Omit `baseBranchPatterns`. It is auto-detected, and hard-coding it is the one field that differs per repo (`main` vs `master`) — the thing that would block sharing.
 - Omit `schedule` unless a repo wants batching. With a bake period the PR is already delayed, and Renovate's default `prHourlyLimit` of 2 rate-limits the rest.
 - `packageRules` and `customManagers` are `mergeable: true`, so preset arrays concatenate with a repo's own rather than replacing them. `labels` and `reviewers` are not mergeable — setting them in a repo replaces the inherited value. `addLabels` merges and appends; `labels` in a shared preset is dropped wholesale by the first repo setting its own.
@@ -167,7 +159,7 @@ Renovate opens a "Dependency Dashboard" issue. Read it before assuming a bug:
 
 1. Confirm any field name, default, or preset body you plan to rely on against the source, not memory: defaults in `lib/config/options/index.ts`, preset bodies in `lib/config/presets/internal/*.preset.ts`. Docs summaries and prior commits drift — several fields once worth writing are now defaults.
 2. Read `renovate.json` if present, and any preset it extends.
-3. **Greenfield** — write the Defaults and Supply-chain hardening blocks. Add `customManagers` only for pins the annotation convention cannot reach. Add the `renovate-config-validator` pre-commit hook (see Validation).
+3. **Greenfield** — write the Defaults block. Add `customManagers` only for pins the annotation convention cannot reach. Add the `renovate-config-validator` pre-commit hook (see Validation).
 4. **Audit existing** — flag drift:
    - Restated defaults: `internalChecksFilter`, `vulnerabilityAlerts.minimumReleaseAge`, `baseBranchPatterns`.
    - Silent-stall causes: a no-timestamp carve-out missing or narrower than the eight update types, missing `minimumReleaseAgeBehaviour: "timestamp-optional"`, a non-semver plain pin without `versioning=loose`, unannotated `*_VERSION=` pins, a literal `with:` version on an action missing from the known-actions table.
