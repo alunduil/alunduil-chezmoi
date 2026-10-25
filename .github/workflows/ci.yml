@@ -145,6 +145,19 @@ jobs:
       - name: Validate config
         run: script/checks/telemetry-config
 
+  # Installs the whole pinned set the way the host does, so a bump that ships
+  # a binary nothing else here executes still gets run before it merges.
+  pinned-tools:
+    name: Run pinned tools
+    runs-on: ubuntu-24.04
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
+      - uses: ./.github/actions/setup-mise
+
+      - name: Check versions
+        run: script/checks/pinned-tools
+
   # vale exits non-zero only on errors, so reviewdog gates instead and fails on
   # any finding a PR adds: suggestions carry most of the prose signal. The
   # pre-commit hook covers errors tree-wide, including pushes to main, where

@@ -4,8 +4,11 @@ description: >-
   versions and checksums in its mise.lock, with their shims on PATH.
 inputs:
   tools:
-    description: Space-separated tool names from dot_config/mise/config.toml.
-    required: true
+    description: >-
+      Space-separated tool names from dot_config/mise/config.toml; empty
+      installs every tool.
+    required: false
+    default: ''
 runs:
   using: composite
   steps:

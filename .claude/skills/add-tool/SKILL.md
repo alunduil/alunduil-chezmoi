@@ -78,6 +78,10 @@ exact version, sorted by tool name. Use the short name when
 `mise registry <tool>` lists one; otherwise use
 `"github:<owner>/<repo>"`. Then lock it with `just lock-tools`.
 
+Add the tool's version command to `VERSION_COMMANDS` in
+`script/checks/pinned-tools`, keyed by its `config.toml` name. The
+command's output must contain the pinned version.
+
 Commit `config.toml`, `mise.lock`, and any new sidecar under
 `dot_config/mise/.mise/locks/`.
 
@@ -111,4 +115,5 @@ on the first Tab, so the script always matches the installed version.
    pre-commit run --all-files
    bats --recursive dot_local dot_claude script
    script/checks/chezmoi-apply
+   script/checks/pinned-tools
    ```

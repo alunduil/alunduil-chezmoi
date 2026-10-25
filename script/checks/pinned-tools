@@ -1,0 +1,83 @@
+#!/usr/bin/env bash
+# Run every tool pinned in the mise config and fail unless it reports its
+# pinned version. A download check proves the release asset exists; only
+# executing it catches a wrong architecture, a libc mismatch, a binary moved
+# inside the archive, or a build that reports a different version.
+#
+# Every pinned tool needs an entry in VERSION_COMMANDS. Without one the check
+# fails rather than skipping, so a new pin can't land unexercised.
+set -uo pipefail
+
+ROOT="$(git -C "$(dirname "${BASH_SOURCE[0]}")" rev-parse --show-toplevel)"
+export MISE_GLOBAL_CONFIG_FILE="${MISE_GLOBAL_CONFIG_FILE:-$ROOT/dot_config/mise/config.toml}"
+
+# The bats helpers are libraries with nothing to execute; their package.json
+# is the closest thing to a version command.
+npm_lib_version() {
+  jq -r .version "$(mise where "npm:$1")/node_modules/$1/package.json"
+}
+
+declare -A VERSION_COMMANDS=(
+  [act]='act --version'
+  [chezmoi]='chezmoi --version'
+  [github:grafana/alloy]='alloy --version'
+  [github:grafana/gcx]='gcx --version'
+  [github:lycheeverse/lychee]='lychee --version'
+  [github:truenas/truenas-mcp]='truenas-mcp --version'
+  [just]='just --version'
+  [lazygit]='lazygit --version'
+  [npm:bats-assert]='npm_lib_version bats-assert'
+  [npm:bats-support]='npm_lib_version bats-support'
+  [trivy]='trivy --version'
+  [uv]='uv --version'
+  [vale]='vale --version'
+  [yq]='yq --version'
+  [zellij]='zellij --version'
+)
+
+if ! pins="$(mise ls --current --json | jq -r 'to_entries[] | "\(.key)\t\(.value[0].requested_version)"')"; then
+  printf 'FAIL: could not list mise pins\n' >&2
+  exit 1
+fi
+
+fail=0
+declare -A pinned=()
+while IFS=$'\t' read -r tool version; do
+  pinned[$tool]=1
+  cmd="${VERSION_COMMANDS[$tool]:-}"
+  if [ -z "$cmd" ]; then
+    printf 'FAIL: %s has no entry in VERSION_COMMANDS\n' "$tool" >&2
+    fail=1
+    continue
+  fi
+  read -ra argv <<<"$cmd"
+  # Resolve inside the mise install, so a same-named binary elsewhere on PATH
+  # can't stand in for one missing from the pinned release.
+  if ! declare -F "${argv[0]}" >/dev/null && ! argv[0]="$(mise which "${argv[0]}" 2>&1)"; then
+    printf 'FAIL: %s: %s\n' "$tool" "${argv[0]}" >&2
+    fail=1
+    continue
+  fi
+  if ! output="$("${argv[@]}" 2>&1)"; then
+    printf 'FAIL: %s: `%s` exited non-zero:\n%s\n' "$tool" "$cmd" "$output" >&2
+    fail=1
+    continue
+  fi
+  # A bare substring test would accept 1.3.1 from a build reporting 1.3.10.
+  pattern="(^|[^0-9.])${version//./\\.}([^0-9.]|\\.?$)"
+  if ! grep -Eq "$pattern" <<<"$output"; then
+    printf 'FAIL: %s: `%s` does not report %s:\n%s\n' "$tool" "$cmd" "$version" "$output" >&2
+    fail=1
+    continue
+  fi
+  printf 'OK: %s %s\n' "$tool" "$version"
+done <<<"$pins"
+
+for tool in "${!VERSION_COMMANDS[@]}"; do
+  if [ -z "${pinned[$tool]:-}" ]; then
+    printf 'FAIL: VERSION_COMMANDS lists %s, which is not pinned\n' "$tool" >&2
+    fail=1
+  fi
+done
+
+exit "$fail"
