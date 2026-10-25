@@ -8,6 +8,10 @@
 default:
     @just --list
 
+# Regenerate dot_config/mise/mise.lock after editing config.toml.
+lock-tools:
+    MISE_GLOBAL_CONFIG_FILE="{{ justfile_directory() }}/dot_config/mise/config.toml" mise lock --global
+
 # Claude's primary use is a post-change sanity sweep, so this reports
 # every sensor's result in one run rather than stopping at the first
 # failure — full signal lets it batch fixes instead of finding them

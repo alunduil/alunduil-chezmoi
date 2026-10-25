@@ -76,11 +76,7 @@ A mise tool needs no annotation: Renovate's mise manager reads
 Add the tool under `[tools]` in `dot_config/mise/config.toml`, at an
 exact version, sorted by tool name. Use the short name when
 `mise registry <tool>` lists one; otherwise use
-`"github:<owner>/<repo>"`. Then lock it:
-
-```bash
-MISE_GLOBAL_CONFIG_FILE="$PWD/dot_config/mise/config.toml" mise lock --global
-```
+`"github:<owner>/<repo>"`. Then lock it with `just lock-tools`.
 
 Commit `config.toml`, `mise.lock`, and any new sidecar under
 `dot_config/mise/.mise/locks/`.
