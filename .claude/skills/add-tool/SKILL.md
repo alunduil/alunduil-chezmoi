@@ -51,9 +51,9 @@ Pick the canonical installer for the ecosystem:
 | `gh` extension        | `run_before_05`                       | `gh extension install --pin`   |
 | PyPI package          | `run_after_install-via-mise-tools`    | mirror the `beets` block       |
 
-A release binary that needs more than a download (signature check,
-source build) gets a `script/install/<tool>` script, called from
-`run_before_02` instead; mirror `script/install/signal-cli`.
+A release binary whose publisher check mise can't perform, such as a
+GPG signature against a pinned key, has no settled install path. Stop
+and raise it with the user before adding the tool.
 
 Auth and install axes are independent: `gcx` is auth-required *and*
 a mise tool; `gh-poi` is fire-and-forget *and* uses
