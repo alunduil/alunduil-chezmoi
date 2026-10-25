@@ -12,11 +12,11 @@ setup() {
     mkdir -p "$WORK/npm/node_modules/$lib"
     printf '{"version": "1.2.3"}\n' >"$WORK/npm/node_modules/$lib/package.json"
   done
-  # Pin exactly the tools the check has version commands for.
+  # Pins mirror VERSION_COMMANDS, so the fixture passes by construction.
   sed -n 's/^  \[\([^]]*\)\]=.*/\1/p' "$BATS_TEST_DIRNAME/pinned-tools" >"$WORK/pins"
 
-  # Stands in for mise: every tool in $WORK/pins is pinned at 1.2.3, and
-  # every binary not overridden in $WORK/tools reports that version.
+  # Stands in for mise: every pin is at 1.2.3, and every binary reports it
+  # unless overridden in $WORK/tools or hidden under $WORK/missing.
   cat >"$WORK/stub/mise" <<EOF
 #!/usr/bin/env bash
 case "\$1" in
