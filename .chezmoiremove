@@ -35,3 +35,20 @@
 .gnupg/gpg.conf
 .gnupg/gpg-agent.conf
 .gnupg/secret-keys.asc
+
+# Release binaries mise installs under ~/.local/share/mise. A copy left here
+# puts a second version on PATH.
+.local/bin/act
+.local/bin/alloy
+.local/bin/chezmoi
+.local/bin/gcx
+.local/bin/just
+.local/bin/lazygit
+.local/bin/lychee
+.local/bin/trivy
+.local/bin/truenas-mcp
+.local/bin/uv
+.local/bin/vale
+.local/bin/yq
+.local/bin/zellij
+.local/lib/bats

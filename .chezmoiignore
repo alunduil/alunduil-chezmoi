@@ -25,7 +25,6 @@ script
 .chezmoiscripts/**
 .config/**
 .local/bin/**
-.local/lib/bats/**
 .local/share/bash-completion/**
 .ssh/**
 .bashrc

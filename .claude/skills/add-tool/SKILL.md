@@ -45,18 +45,18 @@ Pick the canonical installer for the ecosystem:
 | Source                | Where                                 | Pattern                        |
 | --------------------- | ------------------------------------- | ------------------------------ |
 | Debian package        | `.chezmoidata/packages.yaml`          | append to `packages.apt`       |
-| Pinned binary release | `.chezmoiexternal.toml`               | external entry below           |
+| Pinned binary release | `dot_config/mise/config.toml`         | mise entry below               |
 | npm package           | `run_before_03`                       | `npm install -g`, `command -v` |
 | Cargo crate           | `run_before_09`                       | `cargo install`, `command -v`  |
 | `gh` extension        | `run_before_05`                       | `gh extension install --pin`   |
-| PyPI package          | `run_after_install-via-externals`     | mirror the `beets` block       |
+| PyPI package          | `run_after_install-via-mise-tools`    | mirror the `beets` block       |
 
 A release binary that needs more than a download (signature check,
 source build) gets a `script/install/<tool>` script, called from
 `run_before_02` instead; mirror `script/install/signal-cli`.
 
 Auth and install axes are independent: `gcx` is auth-required *and*
-a chezmoi external; `gh-poi` is fire-and-forget *and* uses
+a mise tool; `gh-poi` is fire-and-forget *and* uses
 `gh extension install`.
 
 ## Pin the version
@@ -68,29 +68,22 @@ Annotate each `*_VERSION` pin on the line directly above it:
 | Script-installed tool | `# renovate: datasource=github-releases depName=<owner>/<tool>`         |
 | PyPI package          | `# renovate: datasource=pypi depName=<pkg>`, one per `--with` extra too |
 
-An external needs no annotation: its version lives in the download URL.
+A mise tool needs no annotation: Renovate's mise manager reads
+`config.toml` and updates `mise.lock` in the same PR.
 
-## External entry
+## mise entry
 
-Add an entry to `.chezmoiexternal.toml`, mirroring `vale` or `lazygit`.
-Write the literal release URL, version included wherever the asset name
-repeats it:
+Add the tool under `[tools]` in `dot_config/mise/config.toml`, at an
+exact version, sorted by tool name. Use the short name when
+`mise registry <tool>` lists one; otherwise use
+`"github:<owner>/<repo>"`. Then lock it with `just lock-tools`.
 
-```toml
-[".local/bin/<tool>"]
-    type = "archive-file"
-    url = "https://github.com/<owner>/<tool>/releases/download/vX.Y.Z/<tool>_X.Y.Z_<arch>.tar.gz"
-    path = "<tool>"
-    executable = true
-```
+Commit `config.toml`, `mise.lock`, and any new sidecar under
+`dot_config/mise/.mise/locks/`.
 
-Renovate bumps every copy of the version in the URL. Use
-`type = "file"` for a raw binary asset. A release asset carries no
-checksum (ADR 0008); a GitHub source-archive tarball
-(`archive/refs/tags/…`) pins `checksum.sha256`.
-
-A pass that runs the new binary is `run_after_`, since externals deploy
-during apply.
+A pass that runs the new tool is `run_after_`, since shims resolve
+through the `~/.config/mise` that apply deploys. Call
+`use_mise_shims` from `script/lib/bootstrap.sh`, then the tool by name.
 
 ## Shell completion
 
@@ -105,7 +98,7 @@ on the first Tab, so the script always matches the installed version.
    if it stays off the host.
 2. Identify the auth axis and install mechanism.
 3. Wire the installer into the right `.chezmoiscripts/` pass, or add
-   the external entry.
+   the mise entry.
 4. Update README:
    - Auth-required → add to "Interactive logins" with config-path comment
    - Fire-and-forget → add to "PATH check" line

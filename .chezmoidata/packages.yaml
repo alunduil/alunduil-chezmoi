@@ -64,4 +64,6 @@ packages:
     # On-demand fork ancestry during a repro; the kernel carries
     # CONFIG_CONNECTOR and CONFIG_PROC_EVENTS, which forkstat needs.
     - forkstat
+    # Installs every pinned user tool from dot_config/mise/mise.lock.
+    - mise
     - htop

@@ -13,8 +13,8 @@ on:
       - 'dot_local/bin/executable_git-poi-all'
       - 'dot_local/bin/executable_git-worktree-poi'
       - 'dot_local/bin/executable_dev-cache-gc'
-      - '.chezmoiexternal.toml'
-      - '.github/actions/setup-chezmoi/**'
+      - 'dot_config/mise/**'
+      - '.github/actions/setup-mise/**'
       - 'script/checks/systemd-units'
       - '.github/workflows/systemd.yml'
   pull_request:
@@ -35,14 +35,14 @@ jobs:
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
 
-      - uses: ./.github/actions/setup-chezmoi
+      - uses: ./.github/actions/setup-mise
         with:
-          externals: .local/bin/alloy
+          tools: github:grafana/alloy
 
       - name: Install referenced scripts
         run: |
           for s in cgroup-pids-textfile git-poi-all git-worktree-poi dev-cache-gc; do
-            install -m 0755 "dot_local/bin/executable_$s" "$HOME/.local/bin/$s"
+            install -D -m 0755 "dot_local/bin/executable_$s" "$HOME/.local/bin/$s"
           done
 
       - name: Install the 1Password desktop app

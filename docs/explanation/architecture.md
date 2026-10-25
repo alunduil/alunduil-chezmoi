@@ -52,9 +52,10 @@ fires when only the host changed.
 
 Convergence makes apply the one operation for both a fresh host and a
 drifted one. Bootstrap is the first apply, and every later apply
-repairs whatever changed since. Release binaries follow the same rule:
-they're chezmoi externals, ordinary targets that come back when deleted
-([ADR 0008](../adr/0008-install-pinned-binaries-as-chezmoi-externals.md)).
+repairs whatever changed since. Pinned tools follow the same rule: a
+pass runs `mise install` on every apply, so a deleted or bumped tool
+comes back at the version and checksum in `mise.lock`
+([ADR 0009](../adr/0009-install-pinned-tools-through-mise.md)).
 
 ## Host roles
 

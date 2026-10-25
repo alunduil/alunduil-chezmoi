@@ -8,6 +8,10 @@
 default:
     @just --list
 
+# Regenerate dot_config/mise/mise.lock after editing config.toml.
+lock-tools:
+    MISE_GLOBAL_CONFIG_FILE="{{ justfile_directory() }}/dot_config/mise/config.toml" mise lock --global
+
 # Claude's primary use is a post-change sanity sweep, so this reports
 # every sensor's result in one run rather than stopping at the first
 # failure — full signal lets it batch fixes instead of finding them
@@ -27,11 +31,12 @@ check:
 check-pre-commit:
     pre-commit run --all-files
 
-# Unit tests. bats-support/bats-assert live in ~/.local/lib/bats (chezmoi
-# externals); point BATS_LIB_PATH there so bats_load_library resolves them.
-# CI applies the same externals and sets the same var.
+# Unit tests. CI builds the same BATS_LIB_PATH.
 check-bats:
-    BATS_LIB_PATH="${BATS_LIB_PATH:+$BATS_LIB_PATH:}$HOME/.local/lib/bats" \
+    #!/usr/bin/env bash
+    set -euo pipefail
+    mise_libs="$(mise where npm:bats-support)/node_modules:$(mise where npm:bats-assert)/node_modules"
+    BATS_LIB_PATH="${BATS_LIB_PATH:+$BATS_LIB_PATH:}$mise_libs" \
       bats --recursive dot_local dot_claude script
 
 # Zellij KDL validation (needs zellij on PATH).
