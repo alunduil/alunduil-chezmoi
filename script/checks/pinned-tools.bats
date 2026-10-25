@@ -1,33 +1,31 @@
 #!/usr/bin/env bats
 bats_require_minimum_version 1.5.0
 
-BINARIES=(act alloy chezmoi gcx just lazygit lychee release-plz trivy truenas-mcp uv vale yq
-  zellij)
-TOOLS=(act chezmoi github:grafana/alloy github:grafana/gcx github:lycheeverse/lychee
-  github:truenas/truenas-mcp just lazygit npm:bats-assert npm:bats-support release-plz
-  trivy uv vale yq zellij)
-
 setup() {
   bats_load_library bats-support
   bats_load_library bats-assert
 
   WORK="$(mktemp -d)"
-  mkdir -p "$WORK/stub" "$WORK/tools"
-  for bin in "${BINARIES[@]}"; do
-    fake_tool "$bin" "$bin version v1.2.3"
-  done
+  mkdir -p "$WORK/stub" "$WORK/tools" "$WORK/missing"
+  fake_tool default 'version v1.2.3'
   for lib in bats-assert bats-support; do
     mkdir -p "$WORK/npm/node_modules/$lib"
     printf '{"version": "1.2.3"}\n' >"$WORK/npm/node_modules/$lib/package.json"
   done
-  printf '%s\n' "${TOOLS[@]}" >"$WORK/pins"
+  # Pin exactly the tools the check has version commands for.
+  sed -n 's/^  \[\([^]]*\)\]=.*/\1/p' "$BATS_TEST_DIRNAME/pinned-tools" >"$WORK/pins"
 
-  # Stands in for mise: every tool in $WORK/pins is pinned at 1.2.3.
+  # Stands in for mise: every tool in $WORK/pins is pinned at 1.2.3, and
+  # every binary not overridden in $WORK/tools reports that version.
   cat >"$WORK/stub/mise" <<EOF
 #!/usr/bin/env bash
 case "\$1" in
   ls) jq -Rn '[inputs | {(.): [{requested_version: "1.2.3"}]}] | add' "$WORK/pins" ;;
-  which) [ -x "$WORK/tools/\$2" ] && echo "$WORK/tools/\$2" || { echo "\$2 is not a mise bin" >&2; exit 1; } ;;
+  which)
+    if [ -e "$WORK/missing/\$2" ]; then echo "\$2 is not a mise bin" >&2; exit 1
+    elif [ -e "$WORK/tools/\$2" ]; then echo "$WORK/tools/\$2"
+    else echo "$WORK/tools/default"
+    fi ;;
   where) printf '%s\n' "$WORK/npm" ;;
 esac
 EOF
@@ -67,7 +65,7 @@ fake_tool() {
 }
 
 @test "a missing binary fails" {
-  rm "$WORK/tools/lazygit"
+  touch "$WORK/missing/lazygit"
   run "$BATS_TEST_DIRNAME/pinned-tools"
   assert_failure
   assert_output --partial 'FAIL: lazygit: lazygit is not a mise bin'
