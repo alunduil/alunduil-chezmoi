@@ -1,10 +1,11 @@
 #!/usr/bin/env bats
 bats_require_minimum_version 1.5.0
 
-BINARIES=(act alloy chezmoi gcx just lazygit lychee trivy truenas-mcp uv vale yq zellij)
-TOOLS=(act chezmoi github:grafana/alloy github:grafana/gcx github:lycheeverse/lychee
-  github:truenas/truenas-mcp just lazygit npm:bats-assert npm:bats-support trivy uv
-  vale yq zellij)
+BINARIES=(act alloy chezmoi fourmolu gcx hlint just lazygit lychee ormolu trivy truenas-mcp
+  uv vale yq zellij)
+TOOLS=(act chezmoi github:fourmolu/fourmolu github:grafana/alloy github:grafana/gcx
+  github:lycheeverse/lychee github:truenas/truenas-mcp hlint just lazygit npm:bats-assert
+  npm:bats-support ormolu trivy uv vale yq zellij)
 
 setup() {
   bats_load_library bats-support
