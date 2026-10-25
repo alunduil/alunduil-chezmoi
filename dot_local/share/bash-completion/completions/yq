@@ -1,0 +1,1 @@
+eval "$(yq completion bash)"

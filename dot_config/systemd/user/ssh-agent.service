@@ -1,0 +1,11 @@
+[Unit]
+Description=OpenSSH agent for the key from 1Password
+Documentation=man:ssh-agent(1)
+
+[Service]
+# Replaces Debian's unit of the same name, which starts only under an X
+# session.
+ExecStart=/usr/bin/ssh-agent -D -a %t/ssh-agent.socket
+
+[Install]
+WantedBy=default.target

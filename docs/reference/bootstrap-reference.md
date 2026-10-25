@@ -75,13 +75,14 @@ To keep one target a role's pattern drops, re-include that file with
 
 Every secret but the Cloudflare token lives in the `chezmoi` 1Password
 vault. Apply reads each through the 1Password desktop app, except the SSH
-key, which the app's agent serves without writing it to disk.
+key, which `ssh-load` reads into the OpenSSH agent for eight hours without
+writing it to disk.
 `.chezmoidata/onepassword.yaml` holds every vault reference. Setting
 `CHEZMOI_NO_1PASSWORD` renders every 1Password secret empty. The checks
 and the first bootstrap pass set it.
 
 | Secret | Source | Unlocks with | `ha-terminal` |
 | ------ | ------ | ------------ | ------------- |
-| SSH and commit-signing key | 1Password agent, limited by `dot_config/1Password/ssh/agent.toml` | 1Password | ignored |
+| SSH and commit-signing key | `ssh-load` into `ssh-agent.service` | 1Password | ignored |
 | Service tokens | `dot_config/<service>/private_*.tmpl` | 1Password | ignored |
 | Cloudflare token | `dot_config/cloudflare/encrypted_private_token.age` | age key | ignored |

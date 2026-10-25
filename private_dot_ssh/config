@@ -9,5 +9,9 @@ Host homeassistant
 	ControlPath ~/.ssh/sockets/%r@%h:%p
 	ControlPersist 10m
 
+# Reloads an expired key before each connection. The block sets nothing; only
+# the side effect matters.
+Match exec "~/.local/bin/ssh-load"
+
 Host *
-	IdentityAgent ~/.1password/agent.sock
+	IdentityAgent ${XDG_RUNTIME_DIR}/ssh-agent.socket

@@ -15,9 +15,17 @@ HISTCONTROL=ignoreboth
 # append to the history file, don't overwrite it
 shopt -s histappend
 
+# Save each command at the next prompt, so new shells see what still-open
+# shells ran.
+case ";$PROMPT_COMMAND;" in
+    *";history -a;"*) ;;
+    *) PROMPT_COMMAND="history -a${PROMPT_COMMAND:+;$PROMPT_COMMAND}" ;;
+esac
+
 # for setting history length see HISTSIZE and HISTFILESIZE in bash(1)
-HISTSIZE=1000
-HISTFILESIZE=2000
+HISTSIZE=100000
+HISTFILESIZE=$HISTSIZE
+HISTTIMEFORMAT='%F %T '
 
 # check the window size after each command and, if necessary,
 # update the values of LINES and COLUMNS.
@@ -111,7 +119,13 @@ if ! shopt -oq posix; then
     . /etc/bash_completion
   fi
 fi
-export DOCKER_BUILDKIT=0
+
+# fzf's key bindings: Debian ships them as an example file. fd, unlike
+# fzf's find fallback, skips .gitignore'd paths.
+export FZF_DEFAULT_COMMAND='fd --type f --hidden --exclude .git'
+export FZF_CTRL_T_COMMAND="$FZF_DEFAULT_COMMAND"
+export FZF_ALT_C_COMMAND='fd --type d --hidden --exclude .git'
+[ -f /usr/share/doc/fzf/examples/key-bindings.bash ] && . /usr/share/doc/fzf/examples/key-bindings.bash
 
 # nvm (Node Version Manager): load if installed, no-op otherwise.
 # Follows nvm's own XDG default: $XDG_CONFIG_HOME/nvm, or ~/.nvm without XDG.

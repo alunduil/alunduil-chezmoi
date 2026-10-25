@@ -1,0 +1,51 @@
+#!/usr/bin/env bash
+# Loads the SSH key from 1Password into the OpenSSH agent unless it holds one.
+# Callers run it before each use, so an expired key costs one approval dialog
+# rather than a failed command.
+
+set -euo pipefail
+
+export SSH_AUTH_SOCK="${XDG_RUNTIME_DIR:?}/ssh-agent.socket"
+
+loaded() { ssh-add -l >/dev/null 2>&1; }
+
+# `Match exec` passes the caller's controlling terminal through but never a
+# terminal on stdin.
+has_terminal() { { : </dev/tty; } 2>/dev/null; }
+
+# Prints the key. Each read goes to the journal because callers such as gh
+# discard stderr. op may start an op daemon that outlives this script, so op
+# must not inherit the lock.
+read_key() {
+  local start=$SECONDS status=0 err
+  err_file="$(mktemp)"
+  trap 'rm -f "$err_file"' EXIT
+
+  op read '{{ .onepassword.ssh_key }}' 2>"$err_file" 9>&- || status=$?
+
+  err="$(tr '\n' ' ' <"$err_file")"
+  logger -t ssh-load "op read exited $status after $((SECONDS - start))s for $(ps -o args= -p "$PPID")${err:+: $err}"
+
+  [ "$status" -eq 0 ] || cat "$err_file" >&2
+  return "$status"
+}
+
+loaded && exit 0
+
+# Only someone at a terminal can answer the 1Password dialog. Background
+# callers exit before the lock so they never queue ahead of that person.
+if ! has_terminal; then
+  echo "ssh-load: SSH key not loaded; run ssh-load from a terminal" >&2
+  exit 1
+fi
+
+# Parallel callers queue for one dialog rather than raising one each.
+exec 9>"$XDG_RUNTIME_DIR/ssh-load.lock"
+flock 9
+loaded && exit 0
+
+# Reading into a variable keeps a failed read from reaching ssh-add.
+key="$(read_key)"
+
+# Eight hours covers a working day.
+printf '%s\n' "$key" | ssh-add -t 8h -

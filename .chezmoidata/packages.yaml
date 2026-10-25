@@ -1,6 +1,7 @@
 packages:
   apt:
     - gh
+    - git-lfs
     - zsh
     - ripgrep
     - fd-find
@@ -65,3 +66,4 @@ packages:
     - forkstat
     # Installs every pinned user tool from dot_config/mise/mise.lock.
     - mise
+    - htop

@@ -25,7 +25,7 @@ CHEZMOI_NO_1PASSWORD=1 \
   mise exec chezmoi -- chezmoi init --apply
 ```
 
-Open 1Password from the launcher and sign in. In **Settings → Developer**, turn on **Use the SSH agent** and **Integrate with 1Password CLI**. Open a new terminal, whose login shell puts mise's shims on `PATH`. Then apply again and approve the 1Password prompt:
+Open 1Password from the launcher and sign in. In **Settings → Developer**, turn on **Integrate with 1Password CLI**. Open a new terminal, whose login shell puts mise's shims on `PATH`. Then apply again and approve the 1Password prompt:
 
 ```bash
 # Second apply: writes the secrets and starts what needs them.
@@ -53,6 +53,7 @@ beet --version                             # music tagger (uv tool install)
 ffprobe -version && mediainfo --version    # media inspection (ffmpeg, mediainfo)
 exiftool -ver && fpcalc -version           # metadata reader, audio fingerprinter
 rsync --version                            # file sync
+git lfs version                            # Git Large File Storage
 ghc --version && cabal --version           # ghcup-managed Haskell toolchain
 cargo --version && rustc --version         # rustup-managed Rust toolchain
 pnpm --version                             # pnpm package manager (npm global)
@@ -71,10 +72,12 @@ claude mcp list                            # confirms registered MCP servers
 kitty --version                            # terminal (apt)
 foot --version                             # terminal, pending kitty's replacement (apt)
 sar -V && forkstat --version               # host telemetry recorders (apt)
+htop --version                             # process viewer (apt)
 systemctl is-active sysstat-collect.timer  # confirms sar is sampling
 systemctl --user is-active alloy.service   # confirms the Grafana Cloud shipper
-systemctl --user is-active 1password.service  # confirms the app owns the SSH agent
-ssh-add -l                                 # lists the SSH key from 1Password
+systemctl --user is-active 1password.service  # confirms the 1Password app is running
+systemctl --user is-active ssh-agent.service  # confirms the SSH agent is running
+ssh-load && ssh-add -l                     # loads and lists the SSH key from 1Password
 ```
 
 SSH to GitHub works once you sign in to 1Password. The bootstrap clones over HTTPS to bridge the gap before then. Swap the apply clone's remote back to SSH if preferred: `git -C ~/.local/share/chezmoi remote set-url origin git@github.com:alunduil/alunduil-chezmoi.git`.

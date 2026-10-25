@@ -11,7 +11,7 @@ set -euo pipefail
 # keys off `uv tool list` rather than `pre-commit --version`, which can't tell
 # a uv-managed install from the legacy pip one at the same version.
 # renovate: datasource=pypi depName=pre-commit
-PRE_COMMIT_VERSION="4.6.2"
+PRE_COMMIT_VERSION="4.7.0"
 if uv tool list 2>/dev/null | grep -qx "pre-commit v$PRE_COMMIT_VERSION"; then
   log "pre-commit: $PRE_COMMIT_VERSION already installed via uv"
 else
