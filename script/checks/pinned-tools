@@ -29,6 +29,7 @@ declare -A VERSION_COMMANDS=(
   [npm:bats-assert]='npm_lib_version bats-assert'
   [npm:bats-support]='npm_lib_version bats-support'
   [ormolu]='ormolu --version'
+  [release-plz]='release-plz --version'
   [trivy]='trivy --version'
   [uv]='uv --version'
   [vale]='vale --version'
