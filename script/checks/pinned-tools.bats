@@ -19,6 +19,8 @@ setup() {
   for bin in "${BINARIES[@]}"; do
     fake_tool "$bin" "$bin version v1.2.3"
   done
+  # gh_poi_version reads the module version Go embeds in the binary.
+  fake_tool gh-poi "$(printf 'mod\tgithub.com/seachicken/gh-poi\tv1.2.3')"
   for tool in "${TOOLS[@]}"; do
     [[ "$tool" == npm:* ]] || continue
     mkdir -p "$WORK/npm/node_modules/${tool#npm:}"
@@ -53,6 +55,7 @@ fake_tool() {
   assert_success
   assert_output --partial 'OK: lazygit 1.2.3'
   assert_output --partial 'OK: npm:bats-support 1.2.3'
+  assert_output --partial 'OK: github:seachicken/gh-poi 1.2.3'
 }
 
 @test "a pin with no version command fails" {

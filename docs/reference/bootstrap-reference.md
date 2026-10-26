@@ -53,7 +53,7 @@ Every apt package goes in the one list. Later passes configure what
 
 Callers reach mise tools through the shims in
 `~/.local/share/mise/shims`, which keep one path across version bumps.
-gh finds extensions in its own data directory rather than on `PATH`, so
+`gh` finds extensions in its own data directory rather than on `PATH`, so
 `~/.local/share/gh/extensions/gh-poi/gh-poi` links to the gh-poi shim.
 
 ## Host roles

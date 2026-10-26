@@ -15,6 +15,14 @@ npm_lib_version() {
   jq -r .version "$(mise where "npm:$1")/node_modules/$1/package.json"
 }
 
+# gh-poi has no version flag; Go embeds its module version in the binary.
+gh_poi_version() {
+  local bin
+  bin="$(mise which gh-poi)" || return 1
+  "$bin" --help >/dev/null &&
+    grep -m1 -aoE 'mod[[:space:]]+github\.com/seachicken/gh-poi[[:space:]]+v[0-9.]+' "$bin"
+}
+
 declare -A VERSION_COMMANDS=(
   [act]='act --version'
   [chezmoi]='chezmoi --version'
@@ -22,6 +30,7 @@ declare -A VERSION_COMMANDS=(
   [github:grafana/alloy]='alloy --version'
   [github:grafana/gcx]='gcx --version'
   [github:lycheeverse/lychee]='lychee --version'
+  [github:seachicken/gh-poi]='gh_poi_version'
   [github:truenas/truenas-mcp]='truenas-mcp --version'
   [hlint]='hlint --version'
   [just]='just --version'
