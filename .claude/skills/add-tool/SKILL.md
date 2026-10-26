@@ -48,15 +48,17 @@ Pick the canonical installer for the ecosystem:
 | Pinned binary release | `dot_config/mise/config.toml`         | mise entry below               |
 | npm package           | `run_before_03`                       | `npm install -g`, `command -v` |
 | Cargo crate           | `run_before_09`                       | `cargo install`, `command -v`  |
-| `gh` extension        | `run_before_05`                       | `gh extension install --pin`   |
 | PyPI package          | `run_after_install-via-mise-tools`    | mirror the `beets` block       |
 
 Raise a release binary that mise can't verify against its publisher,
 such as one signed only with GPG, with the user before adding it.
 
 Auth and install axes are independent: `gcx` is auth-required *and*
-a mise tool; `gh-poi` is fire-and-forget *and* uses
-`gh extension install`.
+a mise tool.
+
+A `gh` extension is a mise tool plus a chezmoi symlink at
+`~/.local/share/gh/extensions/gh-<name>/gh-<name>` pointing at its shim,
+as `gh-poi` does.
 
 ## Pin the version
 

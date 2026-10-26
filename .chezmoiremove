@@ -52,3 +52,7 @@
 .local/bin/yq
 .local/bin/zellij
 .local/lib/bats
+
+# gh-poi resolves through its mise shim. A manifest left beside the link makes
+# gh treat it as a pinned binary extension.
+.local/share/gh/extensions/gh-poi/manifest.yml

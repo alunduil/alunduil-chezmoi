@@ -45,7 +45,6 @@ systemd manager a unit belongs in and what it runs as.
 | mise | `.chezmoidata/packages.yaml` | `install-system-packages`, from mise's apt repo | the apt repository |
 | Release binaries | `dot_config/mise/config.toml` | `install-binary-tools`, through `mise install` | `dot_config/mise/mise.lock` |
 | Python tools | `install-via-mise-tools` | `uv tool install` | `*_VERSION` in the pass |
-| `gh` extensions | `install-gh-extensions` | `gh extension install` | `gh extension` |
 | Node, Haskell, Rust | `install-{node,haskell,rust}-ecosystem` | each ecosystem's own manager | `*_VERSION` in the pass |
 | Zellij plugins | `plugins` block of `dot_config/zellij/config.kdl` | Zellij at load | the version in the download address |
 
@@ -54,6 +53,8 @@ Every apt package goes in the one list. Later passes configure what
 
 Callers reach mise tools through the shims in
 `~/.local/share/mise/shims`, which keep one path across version bumps.
+gh finds extensions in its own data directory rather than on `PATH`, so
+`~/.local/share/gh/extensions/gh-poi/gh-poi` links to the gh-poi shim.
 
 ## Host roles
 

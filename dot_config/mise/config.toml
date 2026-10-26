@@ -8,6 +8,8 @@ act = "0.2.89"
 chezmoi = "2.73.3"
 "github:fourmolu/fourmolu" = "0.21.0.0"
 "github:grafana/gcx" = "1.3.1"
+# The release asset is a bare binary named for its platform.
+"github:seachicken/gh-poi" = { version = "0.18.5", bin = "gh-poi" }
 hlint = "3.10"
 just = "1.59.0"
 lazygit = "0.66.0"
