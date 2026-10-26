@@ -15,8 +15,8 @@ npm_lib_version() {
   jq -r .version "$(mise where "npm:$1")/node_modules/$1/package.json"
 }
 
-# For a Go binary with no version flag: run its --help, then read the module
-# version Go embeds in the binary.
+# A Go binary without a version flag still carries its module version in its
+# build info. --help proves it runs.
 go_module_version() {
   local bin
   bin="$(mise which "$1")" || return 1

@@ -19,7 +19,8 @@ setup() {
   for bin in "${BINARIES[@]}"; do
     fake_tool "$bin" "$bin version v1.2.3"
   done
-  # go_module_version reads the module version Go embeds in the binary.
+  # go_module_version reads the binary itself, so this fake carries Go's
+  # module line.
   fake_tool gh-poi "$(printf 'mod\tgithub.com/seachicken/gh-poi\tv1.2.3')"
   for tool in "${TOOLS[@]}"; do
     [[ "$tool" == npm:* ]] || continue

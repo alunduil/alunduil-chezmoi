@@ -56,9 +56,9 @@ such as one signed only with GPG, with the user before adding it.
 Auth and install axes are independent: `gcx` is auth-required *and*
 a mise tool.
 
-A `gh` extension is a mise tool plus a chezmoi symlink at
-`~/.local/share/gh/extensions/gh-<name>/gh-<name>` pointing at its shim,
-as `gh-poi` does.
+Install a `gh` extension as a mise tool, then link
+`~/.local/share/gh/extensions/gh-<name>/gh-<name>` to its shim, as
+`gh-poi` does.
 
 ## Pin the version
 

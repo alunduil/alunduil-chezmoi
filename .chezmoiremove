@@ -53,6 +53,6 @@
 .local/bin/zellij
 .local/lib/bats
 
-# gh-poi resolves through its mise shim. A manifest left beside the link makes
-# gh treat it as a pinned binary extension.
+# gh's install manifest for gh-poi. Beside the mise shim link, it reports a
+# stale pinned version.
 .local/share/gh/extensions/gh-poi/manifest.yml
