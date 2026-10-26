@@ -3,8 +3,6 @@
 # Installing proves only that the asset downloaded and matched mise.lock;
 # running it catches a wrong architecture, a libc mismatch, or a binary
 # missing from the archive.
-#
-# A pin with no VERSION_COMMANDS entry fails, so no pin lands unexercised.
 set -uo pipefail
 
 ROOT="$(git -C "$(dirname "${BASH_SOURCE[0]}")" rev-parse --show-toplevel)"
@@ -15,28 +13,16 @@ npm_lib_version() {
   jq -r .version "$(mise where "npm:$1")/node_modules/$1/package.json"
 }
 
+# A tool runs as `<binary> --version`, its binary named by the last segment
+# of its mise name. These are the tools that don't.
 declare -A VERSION_COMMANDS=(
-  [act]='act --version'
-  [chezmoi]='chezmoi --version'
-  [github:fourmolu/fourmolu]='fourmolu --version'
-  [github:grafana/alloy]='alloy --version'
-  [github:grafana/gcx]='gcx --version'
-  [github:lycheeverse/lychee]='lychee --version'
-  [github:tfausak/cabal-gild]='cabal-gild --version'
-  [github:truenas/truenas-mcp]='truenas-mcp --version'
-  [hlint]='hlint --version'
-  [just]='just --version'
-  [lazygit]='lazygit --version'
   [npm:bats-assert]='npm_lib_version bats-assert'
   [npm:bats-support]='npm_lib_version bats-support'
-  [ormolu]='ormolu --version'
-  [release-plz]='release-plz --version'
-  [trivy]='trivy --version'
-  [uv]='uv --version'
-  [vale]='vale --version'
-  [yq]='yq --version'
-  [zellij]='zellij --version'
 )
+
+version_command() {
+  printf '%s\n' "${VERSION_COMMANDS[$1]:-${1##*/} --version}"
+}
 
 # Whether $1 contains version $2 as a whole token, so 1.3.1 doesn't match
 # 1.3.10.
@@ -47,11 +33,7 @@ reports_version() {
 check_tool() {
   local tool="$1" version="$2" cmd bin output
   local -a argv
-  cmd="${VERSION_COMMANDS[$tool]:-}"
-  if [ -z "$cmd" ]; then
-    printf 'FAIL: %s has no entry in VERSION_COMMANDS\n' "$tool" >&2
-    return 1
-  fi
+  cmd="$(version_command "$tool")"
   read -ra argv <<<"$cmd"
   # Resolve inside the mise install, so a same-named binary elsewhere on PATH
   # can't stand in for one missing from the pinned release.

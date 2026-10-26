@@ -73,9 +73,10 @@ exact version, sorted by tool name. Use the short name when
 `mise registry <tool>` lists one; otherwise use
 `"github:<owner>/<repo>"`. Then lock it with `just lock-tools`.
 
-Add the tool's version command to `VERSION_COMMANDS` in
-`script/checks/pinned-tools`, keyed by its `config.toml` name. The
-command's output must contain the pinned version.
+`script/checks/pinned-tools` runs `<binary> --version`, naming the
+binary by the last segment of the tool's `config.toml` name, and
+expects the pinned version in the output. When either differs, add
+the tool's command to `VERSION_COMMANDS` there.
 
 Commit `config.toml`, `mise.lock`, and any new sidecar under
 `dot_config/mise/.mise/locks/`.
