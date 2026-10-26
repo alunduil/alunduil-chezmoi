@@ -110,7 +110,7 @@ on the first Tab, so the script always matches the installed version.
 7. Run sensors before claiming done:
 
    ```bash
-   pre-commit run --all-files
+   prek run --all-files
    bats --recursive dot_local dot_claude script
    script/checks/chezmoi-apply
    script/checks/pinned-tools

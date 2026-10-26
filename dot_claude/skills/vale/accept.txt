@@ -35,6 +35,7 @@ Dependabot
 Codecov
 (?i)markdownlint
 (?i)pre-commit
+(?i)prek
 Diátaxis
 (?i)devcontainers?
 Codespaces

@@ -27,7 +27,7 @@ Usually qualifies:
 
 - License — `img.shields.io/github/license/<owner>/<repo>` — survives off-GitHub renders.
 - Code coverage when codecov/coveralls is wired up.
-- Tool/config presence (pre-commit, Renovate, Dependabot) when used.
+- Tool/config presence (prek, Renovate, Dependabot) when used.
 - Single-target platform/runtime when exactly one is supported.
 
 Usually doesn't:

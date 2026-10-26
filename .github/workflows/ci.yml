@@ -18,7 +18,7 @@ concurrency:
   cancel-in-progress: ${{ github.ref != 'refs/heads/main' }}
 
 jobs:
-  pre-commit:
+  hooks:
     name: Run pre-commit hooks
     runs-on: ubuntu-24.04
     timeout-minutes: 10
@@ -27,8 +27,13 @@ jobs:
       # The local lychee hook runs lychee from PATH; provision it here.
       - uses: ./.github/actions/setup-mise
         with:
-          tools: github:lycheeverse/lychee
-      - uses: tox-dev/action-pre-commit-uv@4de52c139ed1a6963bcc4c30042c4ef9d75d8b11 # v1.1.0
+          tools: prek github:lycheeverse/lychee
+      - uses: actions/cache@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6
+        with:
+          path: ~/.cache/prek
+          key: prek-${{ runner.os }}-${{ runner.arch }}-${{ hashFiles('.pre-commit-config.yaml') }}
+      - name: Run hooks
+        run: prek run --all-files --show-diff-on-failure --color=always
 
   shell-tests:
     name: Test shell scripts

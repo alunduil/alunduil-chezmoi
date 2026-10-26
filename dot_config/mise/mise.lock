@@ -150,6 +150,17 @@ checksum = "sha256:367eb4969986504cf171f71f91e24ea5d7d9d97c41701e8e6eef9b642fd0d
 url = "https://github.com/tweag/ormolu/releases/download/0.9.0.0/ormolu-x86_64-linux.zip"
 url_api = "https://api.github.com/repos/tweag/ormolu/releases/assets/602990813"
 
+[[tools.prek]]
+version = "0.5.7"
+backend = "aqua:j178/prek"
+specifiers = ["0.5.7"]
+
+[tools.prek."platforms.linux-x64"]
+checksum = "sha256:e238e5a6b4e384e8d18f33d3c3b1a329be0e1237f77ac6e021e641ddd3a2bab6"
+url = "https://github.com/j178/prek/releases/download/v0.5.7/prek-x86_64-unknown-linux-gnu.tar.gz"
+url_api = "https://api.github.com/repos/j178/prek/releases/assets/660929556"
+provenance = "github-attestations"
+
 [[tools.release-plz]]
 version = "0.3.174"
 backend = "aqua:release-plz/release-plz"

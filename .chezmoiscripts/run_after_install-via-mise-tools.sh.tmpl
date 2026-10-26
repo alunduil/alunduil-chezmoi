@@ -7,19 +7,6 @@ set -euo pipefail
 . "{{ .chezmoi.sourceDir }}/script/lib/bootstrap.sh"
 use_mise_shims
 
-# pre-commit ships only as a Python package, so uv owns its install. --force
-# overwrites a pre-existing pip-installed pre-commit on the PATH; the guard
-# keys off `uv tool list` rather than `pre-commit --version`, which can't tell
-# a uv-managed install from the legacy pip one at the same version.
-# renovate: datasource=pypi depName=pre-commit
-PRE_COMMIT_VERSION="4.7.0"
-if uv tool list 2>/dev/null | grep -qx "pre-commit v$PRE_COMMIT_VERSION"; then
-  log "pre-commit: $PRE_COMMIT_VERSION already installed via uv"
-else
-  log "pre-commit: installing $PRE_COMMIT_VERSION via uv"
-  uv tool install --force "pre-commit==$PRE_COMMIT_VERSION"
-fi
-
 # Music-library tagger. pyacoustid and musicbrainzngs have no entry point of
 # their own, so they ride in beets' tool environment via --with rather than
 # being installed as tools; beets 2.x dropped musicbrainzngs as a dependency

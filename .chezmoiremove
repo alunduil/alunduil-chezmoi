@@ -56,3 +56,6 @@
 # gh's install manifest for gh-poi. Beside the mise shim link, it reports a
 # stale pinned version.
 .local/share/gh/extensions/gh-poi/manifest.yml
+
+# The Claude edit guard under its former name.
+.claude/hooks/pre-commit-edit-guard.sh

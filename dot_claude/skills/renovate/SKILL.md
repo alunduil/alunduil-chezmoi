@@ -95,7 +95,7 @@ YQ_VERSION="v4.53.2"
 
 ## Validation
 
-Wire `renovate-config-validator` as a pre-commit hook so schema typos, deprecated fields, and malformed custom-manager regex fail at commit time instead of surfacing as Repository Problems on the next Renovate run.
+Wire `renovate-config-validator` as a prek hook so schema typos, deprecated fields, and malformed custom-manager regex fail at commit time instead of surfacing as Repository Problems on the next Renovate run.
 
 ```yaml
 - repo: https://github.com/renovatebot/pre-commit-hooks
@@ -159,7 +159,7 @@ Renovate opens a "Dependency Dashboard" issue. Read it before assuming a bug:
 
 1. Confirm any field name, default, or preset body you plan to rely on against the source, not memory: defaults in `lib/config/options/index.ts`, preset bodies in `lib/config/presets/internal/*.preset.ts`. Docs summaries and prior commits drift — several fields once worth writing are now defaults.
 2. Read `renovate.json` if present, and any preset it extends.
-3. **Greenfield** — write the Defaults block. Add `customManagers` only for pins the annotation convention cannot reach. Add the `renovate-config-validator` pre-commit hook (see Validation).
+3. **Greenfield** — write the Defaults block. Add `customManagers` only for pins the annotation convention cannot reach. Add the `renovate-config-validator` prek hook (see Validation).
 4. **Audit existing** — flag drift:
    - Restated defaults: `internalChecksFilter`, `vulnerabilityAlerts.minimumReleaseAge`, `baseBranchPatterns`.
    - Silent-stall causes: a no-timestamp carve-out missing or narrower than the eight update types, missing `minimumReleaseAgeBehaviour: "timestamp-optional"`, a non-semver plain pin without `versioning=loose`, unannotated `*_VERSION=` pins, a literal `with:` version on an action missing from the known-actions table.
