@@ -1,14 +1,15 @@
 #!/usr/bin/env bats
 bats_require_minimum_version 1.5.0
 
+TOOLS=(lazygit yq github:grafana/alloy github:seachicken/gh-poi npm:bats-assert npm:bats-support)
 # Read in a subshell so the script's shell options stay out of bats.
-mapfile -t TOOLS < <(bash -c 'source "$1"; printf "%s\n" "${!VERSION_COMMANDS[@]}"' _ "$BATS_TEST_DIRNAME/pinned-tools")
 mapfile -t BINARIES < <(bash -c '
   source "$1"
-  for cmd in "${VERSION_COMMANDS[@]}"; do
-    read -r bin _ <<<"$cmd"
+  shift
+  for tool; do
+    read -r bin _ <<<"$(version_command "$tool")"
     declare -F "$bin" >/dev/null || printf "%s\n" "$bin"
-  done' _ "$BATS_TEST_DIRNAME/pinned-tools")
+  done' _ "$BATS_TEST_DIRNAME/pinned-tools" "${TOOLS[@]}")
 
 setup() {
   bats_load_library bats-support
@@ -55,23 +56,24 @@ fake_tool() {
   run "$BATS_TEST_DIRNAME/pinned-tools"
   assert_success
   assert_output --partial 'OK: lazygit 1.2.3'
+  assert_output --partial 'OK: github:grafana/alloy 1.2.3'
   assert_output --partial 'OK: npm:bats-support 1.2.3'
   assert_output --partial 'OK: github:seachicken/gh-poi 1.2.3'
 }
 
-@test "a pin with no version command fails" {
-  printf 'github:example/new-tool\n' >>"$WORK/pins"
+@test "a backend-qualified pin runs the binary its last segment names" {
+  rm "$WORK/tools/alloy"
   run "$BATS_TEST_DIRNAME/pinned-tools"
   assert_failure
-  assert_output --partial 'github:example/new-tool has no entry in VERSION_COMMANDS'
+  assert_output --partial 'FAIL: github:grafana/alloy: alloy is not a mise bin'
 }
 
 @test "a version command for an unpinned tool fails" {
-  grep -vx yq "$WORK/pins" >"$WORK/pins.new"
+  grep -vx npm:bats-assert "$WORK/pins" >"$WORK/pins.new"
   mv "$WORK/pins.new" "$WORK/pins"
   run "$BATS_TEST_DIRNAME/pinned-tools"
   assert_failure
-  assert_output --partial 'VERSION_COMMANDS lists yq, which is not pinned'
+  assert_output --partial 'VERSION_COMMANDS lists npm:bats-assert, which is not pinned'
 }
 
 @test "a missing binary fails" {

@@ -78,6 +78,16 @@ checksum = "sha256:7b5ba0017ab26fe3866055abd56bcc25d73f9ccb0c4d10668296beb93ea85
 url = "https://github.com/seachicken/gh-poi/releases/download/v0.18.5/linux-amd64"
 url_api = "https://api.github.com/repos/seachicken/gh-poi/releases/assets/653070155"
 
+[[tools."github:tfausak/cabal-gild"]]
+version = "1.8.4.2"
+backend = "github:tfausak/cabal-gild"
+specifiers = ["1.8.4.2"]
+
+[tools."github:tfausak/cabal-gild"."platforms.linux-x64"]
+checksum = "sha256:86310b00f83d949706d35626cd1f65463423edb65771e02fe2b4419707c5d162"
+url = "https://github.com/tfausak/cabal-gild/releases/download/1.8.4.2/cabal-gild-1.8.4.2-linux-x64.tar.gz"
+url_api = "https://api.github.com/repos/tfausak/cabal-gild/releases/assets/518410879"
+
 [[tools."github:truenas/truenas-mcp"]]
 version = "0.0.6"
 backend = "github:truenas/truenas-mcp"
