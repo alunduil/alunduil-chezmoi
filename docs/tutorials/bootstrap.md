@@ -48,6 +48,7 @@ vale --version                             # prose linter (vale-cli/vale)
 just --version                             # command runner (justfiles)
 uv --version                               # Python-CLI installer (astral-sh/uv)
 release-plz --version                      # Rust release and changelog tool
+cabal-gild --version                       # .cabal file formatter
 pre-commit --version                       # git hook runner (uv tool install)
 beet --version                             # music tagger (uv tool install)
 ffprobe -version && mediainfo --version    # media inspection (ffmpeg, mediainfo)
