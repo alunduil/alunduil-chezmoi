@@ -6,9 +6,6 @@
 # Exit 0 = silent pass / nothing to do; exit 2 surfaces stderr to
 # Claude as feedback for the next turn. Parse failures exit 0 — we
 # lose lint coverage rather than loop on infrastructure noise.
-#
-# Skips when the edited path isn't in a git repo, the repo has no
-# .pre-commit-config.yaml, or prek isn't on PATH.
 
 set -euo pipefail
 

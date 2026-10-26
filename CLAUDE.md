@@ -17,7 +17,7 @@ effect on `apply` until committed and pulled into the apply clone. Use
 - Bootstrap passes in `.chezmoiscripts/` converge on host state. Read
   `docs/reference/bootstrap-reference.md` before adding a pass, a tool,
   or a guard, or changing a pass's prefix, phase, or number.
-- prek shellchecks `.sh.tmpl` files unrendered, so a `{{ … }}`
+- The shellcheck hook reads `.sh.tmpl` files unrendered, so a `{{ … }}`
   expression must sit inside quotes or a comment. That is why the package
   lists arrive via `read -ra <<<'{{ … }}'` rather than an array literal.
 - Pinned tools live in `dot_config/mise/config.toml`. After editing it,

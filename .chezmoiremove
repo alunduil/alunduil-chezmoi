@@ -57,5 +57,5 @@
 # stale pinned version.
 .local/share/gh/extensions/gh-poi/manifest.yml
 
-# The Claude edit guard, renamed to hook-edit-guard.sh.
+# The Claude edit guard under its former name.
 .claude/hooks/pre-commit-edit-guard.sh
