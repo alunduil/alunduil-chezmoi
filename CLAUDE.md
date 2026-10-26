@@ -17,7 +17,7 @@ effect on `apply` until committed and pulled into the apply clone. Use
 - Bootstrap passes in `.chezmoiscripts/` converge on host state. Read
   `docs/reference/bootstrap-reference.md` before adding a pass, a tool,
   or a guard, or changing a pass's prefix, phase, or number.
-- pre-commit shellchecks `.sh.tmpl` files unrendered, so a `{{ … }}`
+- prek shellchecks `.sh.tmpl` files unrendered, so a `{{ … }}`
   expression must sit inside quotes or a comment. That is why the package
   lists arrive via `read -ra <<<'{{ … }}'` rather than an array literal.
 - Pinned tools live in `dot_config/mise/config.toml`. After editing it,
@@ -32,7 +32,7 @@ effect on `apply` until committed and pulled into the apply clone. Use
   versioning, extractVersion). One generic manager in `renovate.json`
   reads them all — a new pinned tool needs no Renovate config change.
   An unannotated pin is invisible to Renovate rather than an error, so
-  `script/checks/renovate-pins` (a pre-commit hook) fails the build on
+  `script/checks/renovate-pins` (a prek hook) fails the build on
   one.
 - The repo requires every action pinned to a full-length SHA,
   including the actions a third-party action calls. Renovate's digest
