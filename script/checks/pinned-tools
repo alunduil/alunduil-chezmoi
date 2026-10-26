@@ -22,6 +22,7 @@ declare -A VERSION_COMMANDS=(
   [github:grafana/alloy]='alloy --version'
   [github:grafana/gcx]='gcx --version'
   [github:lycheeverse/lychee]='lychee --version'
+  [github:tfausak/cabal-gild]='cabal-gild --version'
   [github:truenas/truenas-mcp]='truenas-mcp --version'
   [hlint]='hlint --version'
   [just]='just --version'
