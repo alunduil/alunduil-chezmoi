@@ -13,9 +13,19 @@ npm_lib_version() {
   jq -r .version "$(mise where "npm:$1")/node_modules/$1/package.json"
 }
 
+# A Go binary without a version flag still carries its module version in its
+# build info. --help proves it runs.
+go_module_version() {
+  local bin
+  bin="$(mise which "$1")" || return 1
+  "$bin" --help >/dev/null &&
+    grep -m1 -aoE "mod[[:space:]]+${2//./\\.}[[:space:]]+v[0-9.]+" "$bin"
+}
+
 # A tool runs as `<binary> --version`, its binary named by the last segment
 # of its mise name. These are the tools that don't.
 declare -A VERSION_COMMANDS=(
+  [github:seachicken/gh-poi]='go_module_version gh-poi github.com/seachicken/gh-poi'
   [npm:bats-assert]='npm_lib_version bats-assert'
   [npm:bats-support]='npm_lib_version bats-support'
 )

@@ -1,7 +1,7 @@
 #!/usr/bin/env bats
 bats_require_minimum_version 1.5.0
 
-TOOLS=(lazygit yq github:grafana/alloy npm:bats-assert npm:bats-support)
+TOOLS=(lazygit yq github:grafana/alloy github:seachicken/gh-poi npm:bats-assert npm:bats-support)
 # Read in a subshell so the script's shell options stay out of bats.
 mapfile -t BINARIES < <(bash -c '
   source "$1"
@@ -20,6 +20,9 @@ setup() {
   for bin in "${BINARIES[@]}"; do
     fake_tool "$bin" "$bin version v1.2.3"
   done
+  # go_module_version reads the binary itself, so this fake carries Go's
+  # module line.
+  fake_tool gh-poi "$(printf 'mod\tgithub.com/seachicken/gh-poi\tv1.2.3')"
   for tool in "${TOOLS[@]}"; do
     [[ "$tool" == npm:* ]] || continue
     mkdir -p "$WORK/npm/node_modules/${tool#npm:}"
@@ -55,6 +58,7 @@ fake_tool() {
   assert_output --partial 'OK: lazygit 1.2.3'
   assert_output --partial 'OK: github:grafana/alloy 1.2.3'
   assert_output --partial 'OK: npm:bats-support 1.2.3'
+  assert_output --partial 'OK: github:seachicken/gh-poi 1.2.3'
 }
 
 @test "a backend-qualified pin runs the binary its last segment names" {

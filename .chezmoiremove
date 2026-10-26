@@ -52,3 +52,7 @@
 .local/bin/yq
 .local/bin/zellij
 .local/lib/bats
+
+# gh's install manifest for gh-poi. Beside the mise shim link, it reports a
+# stale pinned version.
+.local/share/gh/extensions/gh-poi/manifest.yml

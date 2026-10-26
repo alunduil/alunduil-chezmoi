@@ -26,6 +26,7 @@ script
 .config/**
 .local/bin/**
 .local/share/bash-completion/**
+.local/share/gh/**
 .ssh/**
 .bashrc
 .bash_profile
