@@ -65,7 +65,7 @@ just check                     # runs every sensor below, reports all failures
 Each runs in its own CI workflow and can be invoked alone:
 
 ```bash
-pre-commit run --all-files     # shellcheck, shfmt, check-json
+prek run --all-files           # shellcheck, shfmt, check-json
 bats --recursive dot_local dot_claude script  # unit tests
 script/checks/zellij-config    # zellij KDL validation (needs zellij)
 script/checks/chezmoi-apply    # apply round-trip (needs chezmoi + age)

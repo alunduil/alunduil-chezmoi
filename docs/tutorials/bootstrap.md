@@ -49,7 +49,7 @@ just --version                             # command runner (justfiles)
 uv --version                               # Python-CLI installer (astral-sh/uv)
 release-plz --version                      # Rust release and changelog tool
 cabal-gild --version                       # .cabal file formatter
-pre-commit --version                       # git hook runner (uv tool install)
+prek --version                             # git hook runner (j178/prek)
 beet --version                             # music tagger (uv tool install)
 ffprobe -version && mediainfo --version    # media inspection (ffmpeg, mediainfo)
 exiftool -ver && fpcalc -version           # metadata reader, audio fingerprinter

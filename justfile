@@ -29,7 +29,7 @@ check:
 
 # Lints and formatters across all files.
 check-pre-commit:
-    pre-commit run --all-files
+    prek run --all-files
 
 # Unit tests. CI builds the same BATS_LIB_PATH.
 check-bats:
