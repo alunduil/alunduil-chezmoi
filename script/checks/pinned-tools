@@ -22,8 +22,7 @@ go_module_version() {
     grep -m1 -aoE "mod[[:space:]]+${2//./\\.}[[:space:]]+v[0-9.]+" "$bin"
 }
 
-# A tool runs as `<binary> --version`, its binary named by the last segment
-# of its mise name. These are the tools that don't.
+# Tools that don't run as `<last segment of their mise name> --version`.
 declare -A VERSION_COMMANDS=(
   [github:seachicken/gh-poi]='go_module_version gh-poi github.com/seachicken/gh-poi'
   [npm:bats-assert]='npm_lib_version bats-assert'
