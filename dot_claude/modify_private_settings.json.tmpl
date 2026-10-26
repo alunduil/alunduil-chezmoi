@@ -229,7 +229,7 @@ jq --slurp '(.[0] // {}) + {
         "hooks": [
           {
             "type": "command",
-            "command": "{{ .chezmoi.homeDir }}/.claude/hooks/pre-commit-edit-guard.sh"
+            "command": "{{ .chezmoi.homeDir }}/.claude/hooks/hook-edit-guard.sh"
           }
         ]
       }

@@ -22,13 +22,13 @@ check:
     #!/usr/bin/env bash
     set -uo pipefail
     rc=0
-    for c in check-pre-commit check-bats check-zellij check-chezmoi check-chezmoi-templates check-settings-permissions check-telemetry check-systemd check-bootstrap-convergence check-pinned-tools; do
+    for c in check-hooks check-bats check-zellij check-chezmoi check-chezmoi-templates check-settings-permissions check-telemetry check-systemd check-bootstrap-convergence check-pinned-tools; do
       just "$c" || rc=1
     done
     exit "$rc"
 
 # Lints and formatters across all files.
-check-pre-commit:
+check-hooks:
     prek run --all-files
 
 # Unit tests. CI builds the same BATS_LIB_PATH.
