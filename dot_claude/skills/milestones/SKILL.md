@@ -120,11 +120,10 @@ into a new milestone for next month. Closed milestones stay closed.
 
 ## Operations
 
-A PATCH replaces the whole description. Right before one, `diff -u`
-the live description against the one Claude last wrote this session,
-or the new description when there is none. On a difference, show the
-diff and ask: merge the edits in, overwrite, or stop. A key result
-ticked in the GitHub UI survives only through that merge.
+A PATCH replaces the whole description. Before one, `diff -u` the
+live description against the one Claude last wrote this session, or
+the new description when there is none. On a difference, show the
+diff and ask: merge the edits in, overwrite, or stop.
 
 ```bash
 inbox_repos() {

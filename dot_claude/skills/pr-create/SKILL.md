@@ -70,11 +70,10 @@ shows.
 - **Regenerate, don't append.** Adding commits to an open PR → rewrite
   the body from scratch for the new merge state, via
   `mcp__github__update_pull_request`. Appending each round drifts
-  toward changelog narration. Right before the update, `diff -u` the
-  live body (pre-flight's current-body read) against the body Claude
-  last wrote this session, or the new body when there is none. On a
-  difference, show the diff and ask: merge the edits in, overwrite, or
-  stop.
+  toward changelog narration. Before the update, `diff -u` the live
+  body against the body Claude last wrote this session, or the new
+  body when there is none. On a difference, show the diff and ask:
+  merge the edits in, overwrite, or stop.
 - **Description, not comments.** Carry updates in the body — the single
   source of truth. The only allowed PR comment is a direct reply to an
   existing comment on that PR.
@@ -132,5 +131,5 @@ it already uses `PULL_REQUEST_TEMPLATE.md` for other GitHub files.
 2. Detect a repo template; fill it, else use the standard structure.
 3. Compose the three blocks; surface non-obvious choices.
 4. Open as a draft with `Closes #<N>`; capture the URL.
-5. Iterating later → regenerate the whole body, never append, after
-   checking the live body for edits.
+5. Iterating later → check the live body for edits, then regenerate
+   the whole body, never append.
