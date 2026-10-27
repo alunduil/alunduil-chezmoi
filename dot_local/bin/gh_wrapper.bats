@@ -31,6 +31,14 @@ teardown() {
   [[ "$output" == *"must include --draft"* ]]
 }
 
+@test "block message names both retries and no override" {
+  run "$WRAPPER_DIR/gh" pr create --title "test"
+  [[ "$output" == *"gh pr create --draft"* ]]
+  [[ "$output" == *"create_pull_request with draft: true"* ]]
+  [[ "$output" != *"override"* ]]
+  [[ "$output" != *"GH_DRAFT_GUARD"* ]]
+}
+
 @test "allows 'gh pr create --draft'" {
   run "$WRAPPER_DIR/gh" pr create --draft --title "test"
   [ "$status" -eq 0 ]
