@@ -76,14 +76,6 @@ pin_npm_global() {
   npm install -g "$package@$version"
 }
 
-# ---------------------------------------------------------------- Claude Code
-if ! command -v claude >/dev/null 2>&1; then
-  log "claude-code: npm install -g @anthropic-ai/claude-code"
-  npm install -g @anthropic-ai/claude-code
-else
-  log "claude-code: already installed"
-fi
-
 # ----------------------------------------------------------- Readwise CLI
 # renovate: datasource=npm depName=@readwise/cli
 READWISE_CLI_VERSION="0.5.10"

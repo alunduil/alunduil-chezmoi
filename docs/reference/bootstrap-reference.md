@@ -62,6 +62,7 @@ systemd manager a unit belongs in and what it runs as.
 | Release binaries | `dot_config/mise/config.toml` | `install-binary-tools`, through `mise install` | `dot_config/mise/mise.lock` |
 | Python tools | `install-via-mise-tools` | `uv tool install` | `*_VERSION` in the pass |
 | Node, Haskell, Rust | `install-{node,haskell,rust}-ecosystem` | each ecosystem's own manager | `*_VERSION` in the pass |
+| Claude Code | `install-claude-code` | Anthropic's native installer | nothing: it updates itself |
 | Zellij plugins | `plugins` block of `dot_config/zellij/config.kdl` | Zellij at load | the version in the download address |
 
 Every apt package goes in the one list. Later passes configure what

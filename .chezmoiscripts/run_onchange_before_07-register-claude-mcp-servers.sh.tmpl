@@ -3,7 +3,7 @@
 # lives in ~/.claude.json -- a stateful file Claude Code writes to and chezmoi
 # doesn't manage -- which is why registration happens in the bootstrap rather
 # than via a chezmoi-deployed config file. OAuth pops a browser on first use.
-# Requires `claude` (installed in script 03).
+# Requires `claude` (installed in script 05).
 #
 # These are static endpoint URLs, so a registered server is already correct
 # and gets skipped. Servers carrying a rotating secret go through
@@ -18,10 +18,12 @@ set -euo pipefail
 
 # shellcheck source=script/lib/bootstrap.sh
 . "{{ .chezmoi.sourceDir }}/script/lib/bootstrap.sh"
+use_local_bin
 
 # One listing for every check below: it is a network round-trip per registered
-# server, so a call per candidate costs seconds.
-registered="$(claude mcp list 2>/dev/null || true)"
+# server, so a call per candidate costs seconds. A failed listing stops the
+# pass rather than reading as "nothing registered".
+registered="$(claude mcp list)"
 
 # ----------------------------------------------------------------- Cloudflare
 declare -A CLOUDFLARE_MCP=(

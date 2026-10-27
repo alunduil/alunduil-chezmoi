@@ -1,0 +1,15 @@
+#!/usr/bin/env bash
+# Installs Claude Code through Anthropic's native installer, which links the
+# launcher into ~/.local/bin. The version floats: Claude Code updates itself.
+
+set -euo pipefail
+
+# shellcheck source=script/lib/bootstrap.sh
+. "{{ .chezmoi.sourceDir }}/script/lib/bootstrap.sh"
+
+if [ -x "$HOME/.local/bin/claude" ]; then
+  log "claude-code: already installed"
+else
+  log "claude-code: installing through the native installer"
+  curl -fsSL https://claude.ai/install.sh | bash
+fi
