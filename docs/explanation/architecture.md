@@ -42,7 +42,8 @@ edit from reaching a live apply.
 bootstrap passes that install and configure what those files expect.
 Both converge on a target state: apply offers to restore a file that
 drifted, and a pass installs a removed package again or rewrites a
-hand-edited file under `/etc`.
+hand-edited file under `/etc`. Before rewriting, the pass prints the diff
+and keeps the edit in `<file>.bak`. On a terminal it asks first.
 
 Passes run on every apply so they can see drift. [chezmoi's
 package-install
