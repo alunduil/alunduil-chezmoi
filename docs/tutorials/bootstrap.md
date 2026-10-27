@@ -53,6 +53,7 @@ prek --version                             # git hook runner (j178/prek)
 beet --version                             # music tagger (uv tool install)
 ffprobe -version && mediainfo --version    # media inspection (ffmpeg, mediainfo)
 exiftool -ver && fpcalc -version           # metadata reader, audio fingerprinter
+gource --help | head -n 1                  # repo history video (git gource)
 rsync --version                            # file sync
 git lfs version                            # Git Large File Storage
 ghc --version && cabal --version           # ghcup-managed Haskell toolchain

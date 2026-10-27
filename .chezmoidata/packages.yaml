@@ -27,6 +27,8 @@ packages:
     # which is the fingerprinter pyacoustid shells out to.
     - ffmpeg
     - mediainfo
+    # Repository history animation; git-gource pipes its frames to ffmpeg.
+    - gource
     - libimage-exiftool-perl
     - rsync
     - libchromaprint-tools

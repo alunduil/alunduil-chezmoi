@@ -1,0 +1,137 @@
+#!/usr/bin/env bash
+
+set -euo pipefail
+
+# usage: the script's documentation and its -h/--help output, in one place.
+# Laid out the way Click renders a command's help — Usage synopsis, the full
+# description, then an aligned Options block.
+usage() {
+    cat <<'EOF'
+Usage: git gource [OPTIONS] [-- GOURCE_ARGS...]
+
+  Play the current repository's history in gource, squeezed to a fixed
+  length whatever the repository's age. Opens a live window unless
+  --output is given, in which case gource renders off-screen frames that
+  ffmpeg encodes to an H.264 MP4.
+
+  Authors get their GitHub avatars when origin is on GitHub: each author's
+  email is resolved through the repository's commits API and the image is
+  cached by author name under $XDG_CACHE_HOME/git-gource/avatars, so later
+  runs make no API calls for known authors.
+
+  Arguments after -- pass to gource verbatim and override the defaults:
+
+    git gource -- --user-filter '\[bot\]'    hide bot authors
+    git gource -- -1920x1080                 render at 1080p
+
+Options:
+  -o, --output FILE        Render to an MP4 at FILE instead of a window.
+  -d, --duration SECONDS   Time to spread the history over. gource adds
+                           a fixed lead-in and settle at the end, so the
+                           video runs some seconds longer.  [default: 60]
+  --no-avatars             Skip the GitHub avatar lookup.
+  -h, --help               Show this message and exit.
+EOF
+}
+
+die() { printf 'git-gource: %s\n' "$*" >&2; exit 1; }
+
+# github_slug <remote-url>: emit "owner/repo" from a GitHub remote URL,
+# stripping any trailing .git. Returns non-zero for non-GitHub remotes.
+github_slug() {
+    local url=$1
+    url=${url%.git}
+    case "$url" in
+    *github.com/*) printf '%s\n' "${url##*github.com/}" ;;
+    *github.com:*) printf '%s\n' "${url##*github.com:}" ;;
+    *) return 1 ;;
+    esac
+}
+
+# seconds_per_day <duration> <first-epoch> <last-epoch>: the gource
+# --seconds-per-day that fits the span between two commits into <duration>
+# seconds. Spans under a day count as one day.
+seconds_per_day() {
+    awk -v d="$1" -v a="$2" -v b="$3" 'BEGIN {
+        days = (b - a) / 86400
+        if (days < 1) days = 1
+        printf "%.6f\n", d / days
+    }'
+}
+
+# fetch_avatars <slug> <dir>: download a PNG into <dir> for each author in
+# the current repo's history that lacks one. gource matches an image to an
+# author by filename, so each lands at "<dir>/<author name>.png". An author
+# with no GitHub account gets no image and gource draws its default.
+fetch_avatars() {
+    local slug=$1 dir=$2 name email url
+    mkdir -p "$dir"
+    while IFS=$'\t' read -r name email; do
+        [[ -z "$name" || "$name" == */* || -e "$dir/$name.png" ]] && continue
+        url=$(gh api -X GET "repos/$slug/commits" -f author="$email" -f per_page=1 \
+            --jq '.[0].author.avatar_url // empty' 2>/dev/null) || continue
+        [[ -n "$url" ]] || continue
+        curl -fsSL -o "$dir/$name.png" "$url&s=128" || rm -f "$dir/$name.png"
+    done < <(git log --format='%aN%x09%aE' | sort -u -t $'\t' -k1,1)
+}
+
+# Tests source this script to exercise helpers above without running the
+# main flow.
+if [[ "${BASH_SOURCE[0]}" != "$0" ]]; then return 0; fi
+
+output='' duration=60 avatars=1
+while (($#)); do
+    case "$1" in
+    -h | --help) usage; exit 0 ;;
+    -o | --output) [[ $# -ge 2 ]] || die "$1 requires a FILE"; output=$2; shift 2 ;;
+    -d | --duration) [[ $# -ge 2 ]] || die "$1 requires SECONDS"; duration=$2; shift 2 ;;
+    --no-avatars) avatars=0; shift ;;
+    --) shift; break ;;
+    *) die "unknown option: $1 (try --help)" ;;
+    esac
+done
+[[ "$duration" =~ ^[0-9]+([.][0-9]+)?$ ]] || die "--duration must be a number: $duration"
+
+command -v gource >/dev/null 2>&1 || die "gource required but not found"
+[[ -z "$output" ]] || command -v ffmpeg >/dev/null 2>&1 || die "ffmpeg required for --output"
+
+root=$(git rev-parse --show-toplevel 2>/dev/null) || die "not inside a git repository"
+cd "$root"
+
+slug=''
+if url=$(git remote get-url origin 2>/dev/null); then
+    slug=$(github_slug "$url") || slug=''
+fi
+title=${slug:-${root##*/}}
+
+first=$(git log --format=%at | tail -n 1)
+last=$(git log -1 --format=%at)
+
+args=(
+    --seconds-per-day "$(seconds_per_day "$duration" "$first" "$last")"
+    --auto-skip-seconds 0.5
+    --hide 'mouse,progress,filenames'
+    --key
+    --title "$title"
+    --date-format '%Y-%m-%d'
+    --file-idle-time 0
+    --camera-mode overview
+    -1280x720
+)
+
+if ((avatars)) && [[ -n "$slug" ]] && command -v gh >/dev/null 2>&1; then
+    avatar_dir="${XDG_CACHE_HOME:-$HOME/.cache}/git-gource/avatars"
+    fetch_avatars "$slug" "$avatar_dir"
+    args+=(--user-image-dir "$avatar_dir")
+fi
+
+if [[ -z "$output" ]]; then
+    exec gource "${args[@]}" "$@" "$root"
+fi
+
+# yuv420p is the pixel format browsers and phones decode; gource's frames
+# are RGB, which libx264 would otherwise keep as 4:4:4.
+gource "${args[@]}" --stop-at-end --output-framerate 60 -o - "$@" "$root" |
+    ffmpeg -loglevel error -y -r 60 -f image2pipe -c:v ppm -i - \
+        -c:v libx264 -preset medium -crf 23 -pix_fmt yuv420p "$output"
+printf 'wrote %s\n' "$output"
