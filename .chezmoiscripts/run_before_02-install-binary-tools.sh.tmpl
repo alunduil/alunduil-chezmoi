@@ -8,4 +8,7 @@
 
 set -euo pipefail
 
+# shellcheck source=script/lib/bootstrap.sh
+. "{{ .chezmoi.sourceDir }}/script/lib/bootstrap.sh"
+
 MISE_GLOBAL_CONFIG_FILE="{{ .chezmoi.sourceDir }}/dot_config/mise/config.toml" mise install

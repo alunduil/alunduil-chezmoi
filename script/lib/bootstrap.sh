@@ -6,6 +6,33 @@
 
 log() { printf '==> %s\n' "$*" >&2; }
 
+# The ERR handler for every pass that sources this file. chezmoi runs a pass
+# from a randomly named temp file, so CHEZMOI_SOURCE_FILE supplies its name
+# and phase.
+_report_failed_pass() {
+  local status=$?
+  # Report from the top-level shell only. A subshell without set -e carries on
+  # past its failure, and one that fails the pass fails its parent too.
+  [ "$BASH_SUBSHELL" -eq 0 ] || return
+  local cmd="$1" line="$2" pass="${CHEZMOI_SOURCE_FILE:-$0}"
+  local file="${BASH_SOURCE[1]}"
+  [ "$file" = "$0" ] && file="$pass"
+  # When a helper's own `return N` reaches the trap, BASH_COMMAND still reads
+  # `return N`. The line already points at the call.
+  case "$cmd" in
+  return | return\ *) cmd= ;;
+  esac
+  log "${pass##*/} failed${cmd:+: $cmd} (exit $status at ${file##*/}:$line)"
+  case "$pass" in
+  *_before_*) log "no files were written: before-phase passes run ahead of deployment" ;;
+  esac
+  log "fix the cause, then re-run chezmoi apply (passes converge)"
+}
+
+# errtrace carries the trap into helper functions, where set -e exits first.
+set -E
+trap '_report_failed_pass "$BASH_COMMAND" "$LINENO"' ERR
+
 # Shims resolve through the deployed ~/.config/mise, so only after-phase
 # passes can call this.
 use_mise_shims() { PATH="$HOME/.local/share/mise/shims:$PATH"; }
@@ -81,7 +108,7 @@ reregister_mcp() {
   claude mcp remove "$name" --scope user >/dev/null 2>&1 || true
   log "$name: registering"
   if ! claude mcp add "$name" --scope user "$@"; then
-    log "$name: add failed, nothing registered — run chezmoi apply again"
+    log "$name: add failed, nothing registered"
     return 1
   fi
 }

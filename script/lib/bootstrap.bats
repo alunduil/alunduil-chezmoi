@@ -91,11 +91,50 @@ on_terminal() {
   [[ "$stderr" == *"github: claude not on PATH"* ]]
 }
 
-@test "reregister_mcp reports a failed add with the retry" {
+@test "reregister_mcp reports a failed add" {
   claude() { [ "$2" = remove ]; }
   run --separate-stderr reregister_mcp github --transport http https://example.com
   [ "$status" -ne 0 ]
-  [[ "$stderr" == *"github: add failed, nothing registered — run chezmoi apply again"* ]]
+  [[ "$stderr" == *"github: add failed, nothing registered"* ]]
+}
+
+# run_failing_pass PASS [CALL]: run CALL, by default enable_now, as pass PASS
+# with systemctl, sudo, and claude failing. env -i keeps setup's sudo stub out.
+run_failing_pass() {
+  local tool
+  mkdir -p "$WORK/bin"
+  for tool in systemctl sudo claude; do
+    printf '#!/bin/sh\nexit 1\n' >"$WORK/bin/$tool"
+    chmod +x "$WORK/bin/$tool"
+  done
+  cat >"$WORK/pass" <<EOF
+set -euo pipefail
+. "$BATS_TEST_DIRNAME/bootstrap.sh"
+${2:-enable_now foo.service}
+EOF
+  run --separate-stderr env -i HOME="$WORK" PATH="$WORK/bin:$PATH" \
+    CHEZMOI_SOURCE_FILE=".chezmoiscripts/$1" bash "$WORK/pass"
+}
+
+@test "a pass failing in a helper names itself, the command, and the retry" {
+  run_failing_pass run_after_enable-foo.sh.tmpl
+  [ "$status" -eq 1 ]
+  [[ "$stderr" == *'run_after_enable-foo.sh.tmpl failed: sudo systemctl enable --now "$unit" (exit 1 at bootstrap.sh:'* ]]
+  [[ "$stderr" == *"re-run chezmoi apply (passes converge)"* ]]
+  [[ "$stderr" != *"no files were written"* ]]
+}
+
+@test "a helper that returns non-zero is reported at its call site" {
+  run_failing_pass run_onchange_after_register-foo-mcp.sh.tmpl \
+    'reregister_mcp foo https://example.com'
+  [ "$status" -eq 1 ]
+  [[ "$stderr" == *"run_onchange_after_register-foo-mcp.sh.tmpl failed (exit 1 at run_onchange_after_register-foo-mcp.sh.tmpl:3)"* ]]
+}
+
+@test "a failing before-phase pass says no files were written" {
+  run_failing_pass run_before_04-configure-foo.sh.tmpl
+  [ "$status" -eq 1 ]
+  [[ "$stderr" == *"no files were written"* ]]
 }
 
 without_user_manager() { systemctl() { return 1; }; }
