@@ -16,7 +16,12 @@ _report_failed_pass() {
   local cmd="$1" line="$2" pass="${CHEZMOI_SOURCE_FILE:-$0}"
   local file="${BASH_SOURCE[1]}"
   [ "$file" = "$0" ] && file="$pass"
-  log "${pass##*/} failed: $cmd (exit $status at ${file##*/}:$line)"
+  # A helper's own `return N` reaches the trap at its call site, so the
+  # line names the call and the command names nothing worth printing.
+  case "$cmd" in
+  return | return\ *) cmd= ;;
+  esac
+  log "${pass##*/} failed${cmd:+: $cmd} (exit $status at ${file##*/}:$line)"
   case "$pass" in
   *_before_*) log "no files were written: before-phase passes run ahead of deployment" ;;
   esac

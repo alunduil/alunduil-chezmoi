@@ -98,19 +98,20 @@ on_terminal() {
   [[ "$stderr" == *"github: add failed, nothing registered — run chezmoi apply again"* ]]
 }
 
-# Runs a pass that sources the library and fails inside enable_now, in a clean
-# bash as chezmoi would, so the sudo stub above stays out of it.
+# Runs a pass that sources the library and calls ${2:-enable_now foo.service}
+# with systemctl, sudo, and claude all failing, in a clean bash as chezmoi
+# would, so the sudo stub above stays out of it.
 run_failing_pass() {
   local tool
   mkdir -p "$WORK/bin"
-  for tool in systemctl sudo; do
+  for tool in systemctl sudo claude; do
     printf '#!/bin/sh\nexit 1\n' >"$WORK/bin/$tool"
     chmod +x "$WORK/bin/$tool"
   done
   cat >"$WORK/pass" <<EOF
 set -euo pipefail
 . "$BATS_TEST_DIRNAME/bootstrap.sh"
-enable_now foo.service
+${2:-enable_now foo.service}
 EOF
   run --separate-stderr env -i HOME="$WORK" PATH="$WORK/bin:$PATH" \
     CHEZMOI_SOURCE_FILE=".chezmoiscripts/$1" bash "$WORK/pass"
@@ -122,6 +123,13 @@ EOF
   [[ "$stderr" == *'run_after_enable-foo.sh.tmpl failed: sudo systemctl enable --now "$unit" (exit 1 at bootstrap.sh:'* ]]
   [[ "$stderr" == *"re-run chezmoi apply (passes converge)"* ]]
   [[ "$stderr" != *"no files were written"* ]]
+}
+
+@test "a helper that returns non-zero is reported at its call site" {
+  run_failing_pass run_onchange_after_register-foo-mcp.sh.tmpl \
+    'reregister_mcp foo https://example.com'
+  [ "$status" -eq 1 ]
+  [[ "$stderr" == *"run_onchange_after_register-foo-mcp.sh.tmpl failed (exit 1 at run_onchange_after_register-foo-mcp.sh.tmpl:3)"* ]]
 }
 
 @test "a failing before-phase pass says no files were written" {
