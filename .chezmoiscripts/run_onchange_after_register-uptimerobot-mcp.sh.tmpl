@@ -14,6 +14,7 @@ set -euo pipefail
 
 # shellcheck source=script/lib/bootstrap.sh
 . "{{ .chezmoi.sourceDir }}/script/lib/bootstrap.sh"
+use_local_bin
 
 token_file="$HOME/.config/uptimerobot/token"
 if [ ! -r "$token_file" ]; then

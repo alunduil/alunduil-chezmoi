@@ -37,6 +37,10 @@ trap '_report_failed_pass "$BASH_COMMAND" "$LINENO"' ERR
 # passes can call this.
 use_mise_shims() { PATH="$HOME/.local/share/mise/shims:$PATH"; }
 
+# install-claude-code links claude here. A first apply runs before any shell
+# sources the deployed ~/.profile that puts it on PATH.
+use_local_bin() { PATH="$HOME/.local/bin:$PATH"; }
+
 _bootstrap_installed=0
 
 # A checksum of each file the last apply installed, kept user-owned so reading
