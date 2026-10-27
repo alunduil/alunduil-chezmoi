@@ -25,10 +25,14 @@ teardown() {
   rm -rf "$STUB_DIR" "$WRAPPER_DIR"
 }
 
-@test "blocks 'gh pr create' without --draft" {
+@test "blocks 'gh pr create' without --draft, naming both retries and no override" {
   run "$WRAPPER_DIR/gh" pr create --title "test"
   [ "$status" -eq 1 ]
   [[ "$output" == *"must include --draft"* ]]
+  [[ "$output" == *"gh pr create --draft"* ]]
+  [[ "$output" == *"create_pull_request with draft: true"* ]]
+  [[ "$output" != *"override"* ]]
+  [[ "$output" != *"GH_DRAFT_GUARD"* ]]
 }
 
 @test "allows 'gh pr create --draft'" {
@@ -58,7 +62,7 @@ teardown() {
 }
 
 # Locks in the `-d`-as-flag-value limitation documented in the wrapper.
-# Flip when fixed; update the wrapper's docstring too.
+# Flip when fixed, and update the wrapper's header comment.
 @test "documented limitation: '-d' as a flag value is mistakenly accepted" {
   run "$WRAPPER_DIR/gh" pr create --title -d --body "body"
   [ "$status" -eq 0 ]
