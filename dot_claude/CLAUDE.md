@@ -30,7 +30,7 @@ A per-repo `CLAUDE.md` overrides anything here.
 - Open every PR as a draft; the user promotes to ready after review.
   Enforced by `~/.claude/hooks/pr-draft-guard.sh` (blocks GitHub MCP
   `create_pull_request` and its copilot variant when `draft=true` is
-  missing) and `~/.local/bin/gh` (shadows `gh`, requires
+  missing, and `update_pull_request` with `draft=false`) and `~/.local/bin/gh` (shadows `gh`, requires
   `--draft`/`-d` on `gh pr create`). Always pass `--draft`; opening a
   ready PR is a human-only action done outside Claude.
 - Never post a new comment on a PR we're working. Carry the update in

@@ -66,3 +66,19 @@ teardown() {
   run "$HOOK" <"$FIXTURES/malformed.json"
   [ "$status" -eq 2 ]
 }
+
+@test "blocks update_pull_request with draft=false" {
+  run "$HOOK" <"$FIXTURES/update_pr_draft_false.json"
+  [ "$status" -eq 2 ]
+  [[ "$output" == *"marks a PR ready"* ]]
+}
+
+@test "allows update_pull_request with draft=true" {
+  run "$HOOK" <"$FIXTURES/update_pr_draft_true.json"
+  [ "$status" -eq 0 ]
+}
+
+@test "allows update_pull_request without draft field" {
+  run "$HOOK" <"$FIXTURES/update_pr_no_draft.json"
+  [ "$status" -eq 0 ]
+}
