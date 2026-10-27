@@ -59,20 +59,44 @@ seconds_per_day() {
     }'
 }
 
+# origin_slug: emit "owner/repo" for the current repo's origin. Returns
+# non-zero when there is no origin or it is not on GitHub.
+origin_slug() {
+    local url
+    url=$(git remote get-url origin 2>/dev/null) || return 1
+    github_slug "$url"
+}
+
+# fetch_avatar <slug> <email> <file>: download the avatar of the GitHub
+# account that authored <email>'s commits in <slug> to <file>. Returns
+# non-zero, leaving no file, when no account matches.
+fetch_avatar() {
+    local slug=$1 email=$2 file=$3 url
+    url=$(gh api -X GET "repos/$slug/commits" -f author="$email" -f per_page=1 \
+        --jq '.[0].author.avatar_url // empty' 2>/dev/null) || return 1
+    [[ -n "$url" ]] || return 1
+    curl -fsSL -o "$file" "$url&s=128" || { rm -f "$file"; return 1; }
+}
+
 # fetch_avatars <slug> <dir>: download a PNG into <dir> for each author in
 # the current repo's history that lacks one. gource matches an image to an
 # author by filename, so each lands at "<dir>/<author name>.png". An author
 # with no GitHub account gets no image and gource draws its default.
 fetch_avatars() {
-    local slug=$1 dir=$2 name email url
+    local slug=$1 dir=$2 name email
     mkdir -p "$dir"
     while IFS=$'\t' read -r name email; do
         [[ -z "$name" || "$name" == */* || -e "$dir/$name.png" ]] && continue
-        url=$(gh api -X GET "repos/$slug/commits" -f author="$email" -f per_page=1 \
-            --jq '.[0].author.avatar_url // empty' 2>/dev/null) || continue
-        [[ -n "$url" ]] || continue
-        curl -fsSL -o "$dir/$name.png" "$url&s=128" || rm -f "$dir/$name.png"
+        fetch_avatar "$slug" "$email" "$dir/$name.png" || true
     done < <(git log --format='%aN%x09%aE' | sort -u -t $'\t' -k1,1)
+}
+
+# encode_mp4 <file>: encode gource's PPM frame stream on stdin to an H.264
+# MP4 at <file>. yuv420p is the pixel format browsers and phones decode;
+# gource's frames are RGB, which libx264 would otherwise keep as 4:4:4.
+encode_mp4() {
+    ffmpeg -loglevel error -y -r 60 -f image2pipe -c:v ppm -i - \
+        -c:v libx264 -preset medium -crf 23 -pix_fmt yuv420p "$1"
 }
 
 # Tests source this script to exercise helpers above without running the
@@ -98,11 +122,7 @@ command -v gource >/dev/null 2>&1 || die "gource required but not found"
 root=$(git rev-parse --show-toplevel 2>/dev/null) || die "not inside a git repository"
 cd "$root"
 
-slug=''
-if url=$(git remote get-url origin 2>/dev/null); then
-    slug=$(github_slug "$url") || slug=''
-fi
-title=${slug:-${root##*/}}
+slug=$(origin_slug) || slug=''
 
 first=$(git log --format=%at | tail -n 1)
 last=$(git log -1 --format=%at)
@@ -112,7 +132,7 @@ args=(
     --auto-skip-seconds 0.5
     --hide 'mouse,progress,filenames'
     --key
-    --title "$title"
+    --title "${slug:-${root##*/}}"
     --date-format '%Y-%m-%d'
     --file-idle-time 0
     --camera-mode overview
@@ -129,9 +149,6 @@ if [[ -z "$output" ]]; then
     exec gource "${args[@]}" "$@" "$root"
 fi
 
-# yuv420p is the pixel format browsers and phones decode; gource's frames
-# are RGB, which libx264 would otherwise keep as 4:4:4.
 gource "${args[@]}" --stop-at-end --output-framerate 60 -o - "$@" "$root" |
-    ffmpeg -loglevel error -y -r 60 -f image2pipe -c:v ppm -i - \
-        -c:v libx264 -preset medium -crf 23 -pix_fmt yuv420p "$output"
+    encode_mp4 "$output"
 printf 'wrote %s\n' "$output"
