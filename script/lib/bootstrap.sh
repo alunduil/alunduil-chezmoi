@@ -32,8 +32,8 @@ daemon_reload_if_installed() {
 }
 
 # reregister_mcp NAME ARG...: replace NAME's user-scope registration with
-# `claude mcp add NAME ARG...`. The add refuses a name already registered, so
-# the old entry goes first and a failed add reports nothing is registered.
+# `claude mcp add NAME ARG...`. The add refuses an existing name, so a failed
+# add leaves NAME unregistered.
 reregister_mcp() {
   local name="$1"
   shift
