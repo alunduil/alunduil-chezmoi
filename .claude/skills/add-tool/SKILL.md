@@ -28,7 +28,7 @@ is itself wanted.
 Does the tool need interactive auth (login, browser flow, API token)
 to do real work?
 
-- **Yes** (gh, claude, gcx, readwise, tailscale): add a `login` line
+- **Yes** (gh, claude, gcx, readwise, tailscale): add a `check_login` line
   to `check_logins` in `dot_local/bin/executable_host-status.tmpl`,
   testing local state the login leaves behind (a credential file, or a
   command that reads it without the network). Auth state is runtime,
@@ -107,7 +107,7 @@ on the first Tab, so the script always matches the installed version.
 2. Identify the auth axis and install mechanism.
 3. Wire the installer into the right `.chezmoiscripts/` pass, or add
    the mise entry.
-4. Update `host-status`: a `login` line for an auth-required tool,
+4. Update `host-status`: a `check_login` line for an auth-required tool,
    and a `commands` entry for one installed outside apt and mise.
 5. Annotate every pin per [Pin the version](#pin-the-version).
 6. Add a [Shell completion](#shell-completion) file if the tool
