@@ -107,7 +107,7 @@ reregister_mcp() {
   claude mcp remove "$name" --scope user >/dev/null 2>&1 || true
   log "$name: registering"
   if ! claude mcp add "$name" --scope user "$@"; then
-    log "$name: add failed, nothing registered — run chezmoi apply again"
+    log "$name: add failed, nothing registered"
     return 1
   fi
 }

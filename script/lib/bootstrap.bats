@@ -91,11 +91,11 @@ on_terminal() {
   [[ "$stderr" == *"github: claude not on PATH"* ]]
 }
 
-@test "reregister_mcp reports a failed add with the retry" {
+@test "reregister_mcp reports a failed add" {
   claude() { [ "$2" = remove ]; }
   run --separate-stderr reregister_mcp github --transport http https://example.com
   [ "$status" -ne 0 ]
-  [[ "$stderr" == *"github: add failed, nothing registered — run chezmoi apply again"* ]]
+  [[ "$stderr" == *"github: add failed, nothing registered"* ]]
 }
 
 # Runs a pass that sources the library and calls ${2:-enable_now foo.service}
