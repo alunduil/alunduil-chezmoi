@@ -8,37 +8,41 @@ setup() {
   TMPROOT="$(mktemp -d)"
   export NODE_TEXTFILE_DIR="$TMPROOT/textfile"
   export CGROUP_PIDS_ROOT="$TMPROOT/cgroup"
-  SLICE_DIR="$CGROUP_PIDS_ROOT/user.slice/user-$(id -u).slice"
+  SLICE="user-$(id -u).slice"
+  SLICE_DIR="$CGROUP_PIDS_ROOT/user.slice/$SLICE"
   mkdir -p "$SLICE_DIR"
   PROM="$NODE_TEXTFILE_DIR/cgroup_pids.prom"
 }
 
 teardown() { rm -rf "$TMPROOT"; }
 
+# Write the slice's pids.current and pids.max as the kernel would expose them.
+counters() {
+  echo "$1" >"$SLICE_DIR/pids.current"
+  echo "$2" >"$SLICE_DIR/pids.max"
+}
+
 @test "publishes the slice's pids counters" {
-  echo 42 >"$SLICE_DIR/pids.current"
-  echo 10813 >"$SLICE_DIR/pids.max"
+  counters 42 10813
 
   run bash "$SAMPLER"
 
   [ "$status" -eq 0 ]
-  grep -qx "cgroup_pids_current{slice=\"user-$(id -u).slice\"} 42" "$PROM"
-  grep -qx "cgroup_pids_max{slice=\"user-$(id -u).slice\"} 10813" "$PROM"
+  grep -qx "cgroup_pids_current{slice=\"$SLICE\"} 42" "$PROM"
+  grep -qx "cgroup_pids_max{slice=\"$SLICE\"} 10813" "$PROM"
 }
 
 @test "an unlimited pool publishes +Inf" {
-  echo 42 >"$SLICE_DIR/pids.current"
-  echo max >"$SLICE_DIR/pids.max"
+  counters 42 max
 
   run bash "$SAMPLER"
 
   [ "$status" -eq 0 ]
-  grep -qx "cgroup_pids_max{slice=\"user-$(id -u).slice\"} +Inf" "$PROM"
+  grep -qx "cgroup_pids_max{slice=\"$SLICE\"} +Inf" "$PROM"
 }
 
 @test "a failed read withdraws the previous sample" {
-  echo 42 >"$SLICE_DIR/pids.current"
-  echo 10813 >"$SLICE_DIR/pids.max"
+  counters 42 10813
   run bash "$SAMPLER"
   [ -f "$PROM" ]
 

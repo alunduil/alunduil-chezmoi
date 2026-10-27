@@ -12,10 +12,7 @@ dir="${NODE_TEXTFILE_DIR:-${XDG_STATE_HOME:-$HOME/.local/state}/node-textfile}"
 slice="user-$(id -u).slice"
 cgroup="${CGROUP_PIDS_ROOT:-/sys/fs/cgroup/pids}/user.slice/$slice"
 
-mkdir -p "$dir"
 out="$dir/cgroup_pids.prom"
-tmp="$out.$$"
-trap 'rm -f "$tmp"' EXIT
 
 # The collector serves whatever file it finds as current, so a failed sample
 # withdraws the last one: an absent series reads as unknown, a stale one as fine.
@@ -31,6 +28,10 @@ fi
 if [ "$max" = "max" ]; then
   max="+Inf"
 fi
+
+mkdir -p "$dir"
+tmp="$out.$$"
+trap 'rm -f "$tmp"' EXIT
 
 cat >"$tmp" <<EOF
 # HELP cgroup_pids_current Processes and threads currently in the cgroup.
