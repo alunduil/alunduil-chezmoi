@@ -147,12 +147,21 @@ gh api repos/:owner/:repo/milestones \
   -f due_on='2026-11-30T23:59:59Z' \
   -f description="$(cat description.md)"
 
-# Tick or score
+# Tick or score: check for edits first (below)
+diff -u <(gh api repos/:owner/:repo/milestones/<num> --jq '.description') \
+  last-written.md
 gh api -X PATCH repos/:owner/:repo/milestones/<num> \
   -f description="$(cat description.md)"
 
 gh api -X PATCH repos/:owner/:repo/milestones/<num> -f state=closed
 ```
+
+A PATCH replaces the whole description. Right before one, fetch the
+live description and compare it with the one Claude last wrote this
+session. With no write this session, compare it with the new
+description. When they differ, show the diff and ask: merge the edits
+into the new description, overwrite, or stop. A key result ticked in
+the GitHub UI survives only through that merge.
 
 Assign with `mcp__github__issue_write` (`method: create` or `update`).
 Its `milestone` param takes the milestone *number*, not the title.
