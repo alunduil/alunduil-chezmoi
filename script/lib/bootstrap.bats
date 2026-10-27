@@ -101,10 +101,12 @@ on_terminal() {
 # Runs a pass that sources the library and fails inside enable_now, in a clean
 # bash as chezmoi would, so the sudo stub above stays out of it.
 run_failing_pass() {
+  local tool
   mkdir -p "$WORK/bin"
-  printf '#!/bin/sh\nexit 1\n' >"$WORK/bin/systemctl"
-  printf '#!/bin/sh\nexit 1\n' >"$WORK/bin/sudo"
-  chmod +x "$WORK/bin/systemctl" "$WORK/bin/sudo"
+  for tool in systemctl sudo; do
+    printf '#!/bin/sh\nexit 1\n' >"$WORK/bin/$tool"
+    chmod +x "$WORK/bin/$tool"
+  done
   cat >"$WORK/pass" <<EOF
 set -euo pipefail
 . "$BATS_TEST_DIRNAME/bootstrap.sh"

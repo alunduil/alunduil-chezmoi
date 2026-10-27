@@ -8,12 +8,13 @@ log() { printf '==> %s\n' "$*" >&2; }
 
 # chezmoi runs each pass from a randomly named temp file; CHEZMOI_SOURCE_FILE
 # names the source script, phase included.
-_on_error() {
-  local status=$? cmd="$1" line="$2" pass="${CHEZMOI_SOURCE_FILE:-$0}"
-  local file="${BASH_SOURCE[1]}"
+_report_failed_pass() {
+  local status=$?
   # A subshell without set -e carries on past its failure; the pipeline or
   # substitution that fails the pass reports from the top-level shell.
-  [ "$BASH_SUBSHELL" -eq 0 ] || return "$status"
+  [ "$BASH_SUBSHELL" -eq 0 ] || return
+  local cmd="$1" line="$2" pass="${CHEZMOI_SOURCE_FILE:-$0}"
+  local file="${BASH_SOURCE[1]}"
   [ "$file" = "$0" ] && file="$pass"
   log "${pass##*/} failed: $cmd (exit $status at ${file##*/}:$line)"
   case "$pass" in
@@ -24,7 +25,7 @@ _on_error() {
 
 # errtrace carries the trap into helper functions, where set -e exits first.
 set -E
-trap '_on_error "$BASH_COMMAND" "$LINENO"' ERR
+trap '_report_failed_pass "$BASH_COMMAND" "$LINENO"' ERR
 
 # Shims resolve through the deployed ~/.config/mise, so only after-phase
 # passes can call this.
