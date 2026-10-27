@@ -84,3 +84,26 @@ stub_tools() {
   [ "$status" -eq 0 ]
   [[ "$output" == *"Usage: dev-cache-gc"* ]]
 }
+
+@test "--help prints usage and exits 0" {
+  run env -i HOME="$HOME" PATH="$PATH" GC_LOG="$GC_LOG" GC_FAIL="$GC_FAIL" bash "$GC" --help
+  [ "$status" -eq 0 ]
+  [[ "$output" == *"Usage: dev-cache-gc"* ]]
+}
+
+@test "an unknown option is rejected before any GC runs" {
+  stub_tools ghcup npm cargo-cache pnpm
+  run env -i HOME="$HOME" PATH="$PATH" GC_LOG="$GC_LOG" GC_FAIL="$GC_FAIL" bash "$GC" --dry-run
+  [ "$status" -eq 2 ]
+  [[ "$output" == *"Error: No such option: --dry-run"* ]]
+  [[ "$output" == *"Try 'dev-cache-gc --help' for help."* ]]
+  [ ! -s "$GC_LOG" ]
+}
+
+@test "a stray argument is rejected before any GC runs" {
+  stub_tools ghcup npm cargo-cache pnpm
+  run env -i HOME="$HOME" PATH="$PATH" GC_LOG="$GC_LOG" GC_FAIL="$GC_FAIL" bash "$GC" now
+  [ "$status" -eq 2 ]
+  [[ "$output" == *"Error: Got unexpected extra argument (now)"* ]]
+  [ ! -s "$GC_LOG" ]
+}

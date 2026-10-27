@@ -25,6 +25,23 @@ Options:
 EOF
 }
 
+# usage_error MESSAGE: report a bad invocation the way Click does, exit 2.
+usage_error() {
+    printf "Usage: dev-cache-gc\nTry 'dev-cache-gc --help' for help.\n\nError: %s\n" "$1" >&2
+    exit 2
+}
+
+if (($#)); then
+    case "$1" in
+    -h | --help)
+        usage
+        exit 0
+        ;;
+    -*) usage_error "No such option: $1" ;;
+    *) usage_error "Got unexpected extra argument ($1)" ;;
+    esac
+fi
+
 # systemd --user does not source ~/.bashrc, and each toolchain installs its
 # binaries outside the unit's PATH. Load the same environment .bashrc would so
 # `command -v` resolves ghcup, cargo-cache, npm, and pnpm. Each guard
@@ -70,11 +87,6 @@ run_gc() {
     fi
     printf '\n'
 }
-
-if [[ "${1:-}" == "-h" || "${1:-}" == "--help" ]]; then
-    usage
-    exit 0
-fi
 
 # -c (cache) and -t (tmpdirs) only: -o/-u remove GHC versions and -p/-s strip
 # profiling libs / docs from installed toolchains, all of which the version
