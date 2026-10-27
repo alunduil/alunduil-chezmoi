@@ -105,18 +105,18 @@ Other groupings use other tools:
 
 ## Closing at month end
 
-1. Draft the scored description: score each key result 0.0–1.0
+1. Draft the scored description. Score each key result 0.0–1.0
    against its check and append the score to its line:
    `- [ ] <key result> — 0.5`. Tick the ones scoring 1.0.
-2. Append the objective's score to the draft, the mean of its key
-   results to one decimal: `Scored 0.8.` A committed objective below
-   1.0 adds its reason: `Scored 0.8: <reason>.`
+2. Append the objective's score, the mean of its key results to one
+   decimal: `Scored 0.8.` A committed objective below 1.0 adds its
+   reason: `Scored 0.8: <reason>.`
 3. Pick a destination for each open issue: next month's milestone or
    unset.
 4. Show the user the milestone's title, the draft description, and
    each open issue with its destination. Wait for a yes before any
-   write; closing can't be undone.
-5. Apply, in order: PATCH the description, move or unset the open
+   write. Closing can't be undone.
+5. Apply, in order: update the description, move or unset the open
    issues, close the milestone.
 
 The score is velocity data. Record it as measured and close on
