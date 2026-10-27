@@ -47,7 +47,7 @@ while IFS= read -r bin; do
     exit 1
   fi
   printf '==> systemd-units: %s not installed; skipping\n' "$bin" >&2
-  exit 0
+  exit 77
 done < <(printf '%s\0' "${service_units[@]}" |
   xargs -0 -r grep -hoP '^ExecStart=\K[^ ]+')
 
