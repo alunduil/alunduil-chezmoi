@@ -112,6 +112,38 @@ reregister_mcp() {
   fi
 }
 
+_bootstrap_skipped="$_bootstrap_state/skipped"
+
+_user_manager_remedy() {
+  printf 're-run chezmoi apply from a login session, or after sudo loginctl enable-linger %s' "$(id -un)"
+}
+
+# enable_user_units NAME UNIT...: enable and start each UNIT. Headless applies
+# (SSH without lingering, container builds) have no user systemd manager; there
+# it records the UNITs under NAME for report_skipped_units instead.
+enable_user_units() {
+  local name="$1"
+  shift
+  if ! systemctl --user show-environment >/dev/null 2>&1; then
+    log "$name: no user systemd session; leaving $* disabled — $(_user_manager_remedy)"
+    mkdir -p "$_bootstrap_skipped"
+    printf '%s\n' "$@" >"$_bootstrap_skipped/$name"
+    return 0
+  fi
+  rm -f "$_bootstrap_skipped/$name"
+  systemctl --user daemon-reload
+  systemctl --user enable --now "$@"
+}
+
+# Prints the units enable_user_units left disabled, if any.
+report_skipped_units() {
+  local records=("$_bootstrap_skipped"/*)
+  [ -e "${records[0]}" ] || return 0
+  log "left disabled (no user systemd session):"
+  sed 's/^/      /' "${records[@]}" >&2
+  printf '    enable: %s\n' "$(_user_manager_remedy)" >&2
+}
+
 # enable_now UNIT...: enable and start each UNIT not already enabled and
 # active.
 enable_now() {
