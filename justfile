@@ -15,17 +15,33 @@ lock-tools:
 # Claude's primary use is a post-change sanity sweep, so this reports
 # every sensor's result in one run rather than stopping at the first
 # failure — full signal lets it batch fixes instead of finding them
-# serially across re-runs.
+# serially across re-runs. Skipped sensors are listed so a green run
+# still shows which sensors did not run.
 
 # Run every local sensor; report all failures, not just the first.
 check:
     #!/usr/bin/env bash
     set -uo pipefail
-    rc=0
+    . script/lib/checks.sh
+    failed=()
+    skipped=()
     for c in check-hooks check-bats check-zellij check-chezmoi check-chezmoi-templates check-settings-permissions check-telemetry check-systemd check-bootstrap-convergence check-pinned-tools; do
-      just "$c" || rc=1
+      just "$c"
+      case $? in
+        0) ;;
+        "$SKIP") skipped+=("$c") ;;
+        *) failed+=("$c") ;;
+      esac
     done
-    exit "$rc"
+    if [ "${#failed[@]}" -gt 0 ]; then
+      printf '\nfailed:\n'
+      printf '  %s\n' "${failed[@]}"
+    fi
+    if [ "${#skipped[@]}" -gt 0 ]; then
+      printf '\nskipped:\n'
+      printf '  %s\n' "${skipped[@]}"
+    fi
+    [ "${#failed[@]}" -eq 0 ]
 
 # Lints and formatters across all files.
 check-hooks:
@@ -56,11 +72,13 @@ check-settings-permissions:
     script/checks/settings-permissions
 
 # Alloy shipper config validation (skips when alloy is absent).
+[no-exit-message]
 check-telemetry:
     script/checks/telemetry-config
 
 # systemd user unit validation (skips when the units' referenced binaries are
 # absent).
+[no-exit-message]
 check-systemd:
     script/checks/systemd-units
 

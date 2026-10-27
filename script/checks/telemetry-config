@@ -1,17 +1,14 @@
 #!/usr/bin/env bash
 # Validate the Alloy shipper config with Alloy's own checker. Needs alloy on
-# PATH (a mise tool); skips cleanly when it is absent so a
-# pre-bootstrap `just check` does not fail. CI installs it, so there it
-# actually runs.
+# PATH (a mise tool).
 set -uo pipefail
 
 ROOT="$(git -C "$(dirname "${BASH_SOURCE[0]}")" rev-parse --show-toplevel)"
 cd "$ROOT"
+# shellcheck source=script/lib/checks.sh
+. script/lib/checks.sh
 
-if ! command -v alloy >/dev/null 2>&1; then
-  printf '==> telemetry-config: alloy not on PATH; skipping\n' >&2
-  exit 0
-fi
+command -v alloy >/dev/null 2>&1 || skip "alloy not on PATH"
 
 # Alloy reads these through sys.env at parse time. systemd supplies them at
 # runtime from %h and %U; the values here only have to parse, but they mirror
