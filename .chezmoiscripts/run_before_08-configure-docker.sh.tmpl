@@ -1,8 +1,7 @@
 #!/usr/bin/env bash
 # chezmoi deploys only under $HOME, so daemon.json and the docker-prune units
 # live in etc/ and install with sudo. ADR 0006 explains why the prune is a root
-# system unit. The next apply replaces a hand-edit to these files under /etc,
-# keeping it in <file>.bak.
+# system unit.
 
 set -euo pipefail
 

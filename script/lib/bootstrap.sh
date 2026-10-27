@@ -13,7 +13,7 @@ use_mise_shims() { PATH="$HOME/.local/share/mise/shims:$PATH"; }
 _bootstrap_installed=0
 
 # A checksum of each file the last apply installed, kept user-owned so reading
-# it never needs sudo. It separates a hand-edit of DEST from a source change.
+# it never needs sudo. It separates a hand-edit under /etc from a source change.
 _bootstrap_state="${XDG_STATE_HOME:-$HOME/.local/state}/chezmoi-bootstrap"
 
 _sha256() { sha256sum <"$1" | cut -d' ' -f1; }
@@ -35,9 +35,8 @@ _confirm_replace() {
   [ "$answer" = y ]
 }
 
-# Takes `install`'s arguments; leaves an unchanged DEST alone. Before
-# replacing DEST it prints the diff and keeps the old copy in DEST.bak. On a
-# terminal it asks first when DEST differs from what the last apply installed.
+# Takes `install`'s arguments; leaves an unchanged DEST alone. A replaced DEST
+# is diffed and kept in DEST.bak; on a terminal, a hand-edited one asks first.
 install_if_changed() {
   local src="${*: -2:1}" dest="${*: -1}"
   local record="$_bootstrap_state$dest.sha256"
