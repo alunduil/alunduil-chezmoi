@@ -16,7 +16,6 @@ setup() {
 
 teardown() { rm -rf "$TMPROOT"; }
 
-# Write the slice's pids.current and pids.max as the kernel would expose them.
 counters() {
   echo "$1" >"$SLICE_DIR/pids.current"
   echo "$2" >"$SLICE_DIR/pids.max"

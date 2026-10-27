@@ -14,9 +14,8 @@ cgroup="${CGROUP_PIDS_ROOT:-/sys/fs/cgroup/pids}/user.slice/$slice"
 
 out="$dir/cgroup_pids.prom"
 
-# The collector serves whatever file it finds as current, so a failed sample
-# withdraws the last one: an absent series reads as unknown, a stale one as fine.
-# Sampling is likeliest to fail during the very exhaustion this metric shows.
+# The collector would keep serving the last sample as current, and reads fail
+# likeliest during the exhaustion this metric exists to show.
 if ! current="$(cat "$cgroup/pids.current")" ||
   ! max="$(cat "$cgroup/pids.max")"; then
   rm -f "$out"
