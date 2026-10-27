@@ -66,11 +66,18 @@ report_resolve_errors() {
     exit 1
 }
 
-WORKTREE_ROOT="${XDG_DATA_HOME:-$HOME/.local/share}/git-worktrees"
+DATA_HOME="${XDG_DATA_HOME:-$HOME/.local/share}"
+WORKTREE_ROOT="$DATA_HOME/git-worktrees"
 # Same filesystem as WORKTREE_ROOT, so trashing even a large target/ or
 # node_modules/ is a rename, not a copy.
-TRASH_ROOT="${XDG_DATA_HOME:-$HOME/.local/share}/git-worktree-poi/trash"
+TRASH_ROOT="$DATA_HOME/git-worktree-poi/trash"
 TRASH_RETENTION_DAYS=14
+
+# Set by trash_untracked for the worktree it last emptied: the trash dir
+# (empty when nothing was untracked) and the paths moved into it, which
+# restore_untracked needs to put each back where it was.
+TRASH_DIR=
+declare -a TRASHED_PATHS=()
 
 # Worktrees the NAME args resolved to; empty means "operate on every
 # worktree". candidate_worktrees() narrows the PR-state pass and
@@ -524,6 +531,42 @@ move_paths() {
     done
 }
 
+# trash_untracked <wt> <rel>: move <wt>'s untracked paths into a fresh
+# $TRASH_ROOT/<rel>-<stamp>-<suffix>/. On failure, put back whatever made it
+# across and return non-zero, leaving <wt> as found.
+trash_untracked() {
+    local wt=$1 rel=$2
+    TRASH_DIR=
+    mapfile -d '' -t TRASHED_PATHS < <(untracked_paths "$wt")
+    ((${#TRASHED_PATHS[@]})) || return 0
+    if mkdir -p "$TRASH_ROOT/${rel%%/*}" \
+        && TRASH_DIR=$(mktemp -d "$TRASH_ROOT/$rel-$(date +%Y%m%dT%H%M%S)-XXXXXX") \
+        && move_paths "$wt" "$TRASH_DIR" "${TRASHED_PATHS[@]}"; then
+        return 0
+    fi
+    restore_untracked "$wt"
+    return 1
+}
+
+# restore_untracked <wt>: undo the last trash_untracked, moving its paths
+# back into <wt>.
+restore_untracked() {
+    [[ -n "$TRASH_DIR" ]] || return 0
+    move_paths "$TRASH_DIR" "$1" "${TRASHED_PATHS[@]}"
+}
+
+# trash_preview <tsv-rows>: "<rel>\t<path>" for each untracked path in the
+# rows' worktrees — what acting on those rows would trash.
+trash_preview() {
+    local rel wt p
+    [[ -n "$1" ]] || return 0
+    while IFS=$'\t' read -r _ rel _ _ wt; do
+        while IFS= read -r -d '' p; do
+            printf '%s\t%s\n' "$rel" "$p"
+        done < <(untracked_paths "$wt")
+    done <<<"$1"
+}
+
 # purge_trash: delete trash dirs past the retention period. Each sits at
 # $TRASH_ROOT/<repo>/<petname>-<stamp>-<suffix>; its mtime is when it was
 # filled. A failed purge leaves trash behind rather than blocking the prune.
@@ -642,15 +685,7 @@ if ((dry_run)); then
         print_section 'Would remove' "$remove_rows"
         print_section 'Would keep' "$keep_rows"
     fi
-    trash_rows=""
-    if [[ -n "$act_rows" ]]; then
-        while IFS=$'\t' read -r verdict rel branch detail wt; do
-            while IFS= read -r -d '' p; do
-                trash_rows+="${rel}"$'\t'"${p}"$'\n'
-            done < <(untracked_paths "$wt")
-        done <<<"$act_rows"
-    fi
-    print_trash "Would trash (kept $TRASH_RETENTION_DAYS days in $TRASH_ROOT)" "${trash_rows%$'\n'}"
+    print_trash "Would trash (kept $TRASH_RETENTION_DAYS days in $TRASH_ROOT)" "$(trash_preview "$act_rows")"
     report_resolve_errors
     exit 0
 fi
@@ -663,18 +698,9 @@ trashed_rows=""
 if [[ -n "$act_rows" ]]; then
     while IFS=$'\t' read -r verdict rel branch detail wt; do
         row=$(printf '%s\t%s\t%s\t%s\t%s' "$verdict" "$rel" "$branch" "$detail" "$wt")
-        mapfile -d '' -t untracked < <(untracked_paths "$wt")
-        trash_dir=""
-        if ((${#untracked[@]})); then
-            # On any failure, move what made it back so the worktree is left
-            # as found and reported under Failed.
-            if ! mkdir -p "$TRASH_ROOT/${rel%%/*}" \
-                || ! trash_dir=$(mktemp -d "$TRASH_ROOT/$rel-$(date +%Y%m%dT%H%M%S)-XXXXXX") \
-                || ! move_paths "$wt" "$trash_dir" "${untracked[@]}"; then
-                [[ -n "$trash_dir" ]] && move_paths "$trash_dir" "$wt" "${untracked[@]}"
-                failed_rows+="${row}"$'\n'
-                continue
-            fi
+        if ! trash_untracked "$wt" "$rel"; then
+            failed_rows+="${row}"$'\n'
+            continue
         fi
         # Ask git for the canonical's path rather than reconstructing it from
         # $wt: canonicals don't always live at $HOME/<org>/<repo> (own-org
@@ -692,9 +718,9 @@ if [[ -n "$act_rows" ]]; then
             [[ "$branch" != '(detached HEAD)' && -n "$canonical" ]] \
                 && git -C "$canonical" branch "$del_flag" "$branch" 2>/dev/null || true
             removed_rows+="${row}"$'\n'
-            [[ -n "$trash_dir" ]] && trashed_rows+="${rel}"$'\t'"${trash_dir}"$'\n'
+            [[ -n "$TRASH_DIR" ]] && trashed_rows+="${rel}"$'\t'"${TRASH_DIR}"$'\n'
         else
-            [[ -n "$trash_dir" ]] && move_paths "$trash_dir" "$wt" "${untracked[@]}"
+            restore_untracked "$wt" || true
             failed_rows+="${row}"$'\n'
         fi
     done <<<"$act_rows"

@@ -490,3 +490,21 @@ STUB
   [ ! -e "$trash/old-x" ]
   [ -e "$trash/new-x" ]
 }
+
+@test "restore_untracked: puts trashed paths back where they were" {
+  # The rollback when git worktree remove fails after trashing.
+  _mkworktree
+  mkdir -p "$WT/build/out"
+  printf 'SECRET=1\n' >"$WT/.env"
+  printf 'bin\n' >"$WT/build/out/a"
+
+  run bash -c '
+    source "$1"
+    trash_untracked "$2" repo/feature
+    [[ ! -e "$2/.env" ]] || exit 2
+    restore_untracked "$2"
+  ' _ "$POI" "$WT"
+  assert_success
+  [ "$(cat "$WT/.env")" = "SECRET=1" ]
+  [ "$(cat "$WT/build/out/a")" = "bin" ]
+}
