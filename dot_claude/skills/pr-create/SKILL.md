@@ -70,13 +70,11 @@ shows.
 - **Regenerate, don't append.** Adding commits to an open PR → rewrite
   the body from scratch for the new merge state, via
   `mcp__github__update_pull_request`. Appending each round drifts
-  toward changelog narration.
-- **Check for edits before writing.** Right before
-  `update_pull_request`, fetch the live body (pre-flight's last
-  command) and `diff -u` it against the body Claude last wrote this
-  session. With no write this session, diff it against the new body.
-  When they differ, show the diff and ask: merge the edits into the
-  new body, overwrite, or stop.
+  toward changelog narration. Right before the update, `diff -u` the
+  live body (pre-flight's current-body read) against the body Claude
+  last wrote this session, or the new body when there is none. On a
+  difference, show the diff and ask: merge the edits in, overwrite, or
+  stop.
 - **Description, not comments.** Carry updates in the body — the single
   source of truth. The only allowed PR comment is a direct reply to an
   existing comment on that PR.

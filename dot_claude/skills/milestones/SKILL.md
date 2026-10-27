@@ -120,6 +120,12 @@ into a new milestone for next month. Closed milestones stay closed.
 
 ## Operations
 
+A PATCH replaces the whole description. Right before one, `diff -u`
+the live description against the one Claude last wrote this session,
+or the new description when there is none. On a difference, show the
+diff and ask: merge the edits in, overwrite, or stop. A key result
+ticked in the GitHub UI survives only through that merge.
+
 ```bash
 inbox_repos() {
   for o in alunduil dungeon-studio qua-world; do
@@ -147,7 +153,7 @@ gh api repos/:owner/:repo/milestones \
   -f due_on='2026-11-30T23:59:59Z' \
   -f description="$(cat description.md)"
 
-# Tick or score: check for edits first (below)
+# Tick or score
 diff -u <(gh api repos/:owner/:repo/milestones/<num> --jq '.description') \
   last-written.md
 gh api -X PATCH repos/:owner/:repo/milestones/<num> \
@@ -155,13 +161,6 @@ gh api -X PATCH repos/:owner/:repo/milestones/<num> \
 
 gh api -X PATCH repos/:owner/:repo/milestones/<num> -f state=closed
 ```
-
-A PATCH replaces the whole description. Right before one, fetch the
-live description and compare it with the one Claude last wrote this
-session. With no write this session, compare it with the new
-description. When they differ, show the diff and ask: merge the edits
-into the new description, overwrite, or stop. A key result ticked in
-the GitHub UI survives only through that merge.
 
 Assign with `mcp__github__issue_write` (`method: create` or `update`).
 Its `milestone` param takes the milestone *number*, not the title.
