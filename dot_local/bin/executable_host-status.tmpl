@@ -47,26 +47,26 @@ report() {
     outstanding=1
 }
 
-# login <name> <fix> <test...>: report <fix> unless <test> passes. Each test
-# reads local state, so an offline host still reports correctly.
-login() {
+# check_login <name> <fix> <test...>: report <fix> unless <test> passes.
+# Each test reads local state, so an offline host still reports correctly.
+check_login() {
     local name=$1 fix=$2
     shift 2
     "$@" >/dev/null 2>&1 || report "$name: not logged in" "$fix"
 }
 
 check_logins() {
-    login gh 'gh auth login' gh auth token
-    login claude claude test -s "$HOME/.claude/.credentials.json"
-    login gcx 'gcx login' test -s "$HOME/.config/gcx/config.yaml"
-    login readwise 'readwise login' test -s "$HOME/.readwise-cli.json"
-    login tailscale 'sudo tailscale up' tailscale status
-    login keybase 'keybase login' test -s "$HOME/.config/keybase/config.json"
-    login signal signal-desktop test -s "$HOME/.config/Signal/sql/db.sqlite"
+    check_login gh 'gh auth login' gh auth token
+    check_login claude claude test -s "$HOME/.claude/.credentials.json"
+    check_login gcx 'gcx login' test -s "$HOME/.config/gcx/config.yaml"
+    check_login readwise 'readwise login' test -s "$HOME/.readwise-cli.json"
+    check_login tailscale 'sudo tailscale up' tailscale status
+    check_login keybase 'keybase login' test -s "$HOME/.config/keybase/config.json"
+    check_login signal signal-desktop test -s "$HOME/.config/Signal/sql/db.sqlite"
 }
 
-# running <--system|--user> <unit>: whether <unit> is enabled and active.
-running() {
+# unit_running <--system|--user> <unit>: whether <unit> is enabled and active.
+unit_running() {
     systemctl "$1" is-enabled --quiet "$2" 2>/dev/null &&
         systemctl "$1" is-active --quiet "$2" 2>/dev/null
 }
@@ -74,7 +74,7 @@ running() {
 check_units() {
     local unit
     for unit in "${system_units[@]}"; do
-        running --system "$unit" ||
+        unit_running --system "$unit" ||
             report "$unit: not running" "sudo systemctl enable --now $unit"
     done
     if ! systemctl --user show-environment >/dev/null 2>&1; then
@@ -83,12 +83,12 @@ check_units() {
         return
     fi
     for unit in "${user_units[@]}"; do
-        running --user "$unit" ||
+        unit_running --user "$unit" ||
             report "$unit: not running" "systemctl --user enable --now $unit"
     done
     # The unit exits at once when the app was already started another way,
     # leaving it inactive while 1Password runs.
-    pgrep -x 1password >/dev/null 2>&1 || running --user 1password.service ||
+    pgrep -x 1password >/dev/null 2>&1 || unit_running --user 1password.service ||
         report '1password.service: not running' 'systemctl --user enable --now 1password.service'
 }
 
