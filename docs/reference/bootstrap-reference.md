@@ -21,11 +21,11 @@ A `run_` pass checks host state before acting and reaches no `sudo` when
 the host already matches. Local guards: `dpkg-query` status compared to
 `installed`, a pinned `--version`, `cmp` before `sudo install`.
 
-A `run_onchange_` pass that can't do its work exits non-zero, since
-chezmoi records the hash on exit 0 and never retries. A skip waiting on
-an input the pass's own hash covers exits 0 with
-`# rerun-on: <name>-hash` naming that hash line.
-`script/checks/bootstrap-convergence` fails on an unmarked `exit 0`.
+A `run_onchange_` pass that can't do its work exits non-zero. chezmoi
+records the hash on exit 0, so the pass reruns only when hashed content
+changes. A skip waiting on an input that hash covers may exit 0, marked
+`# rerun-on: <name>-hash`. `script/checks/bootstrap-convergence` fails
+on an unmarked `exit 0`.
 
 ## Phases and order
 

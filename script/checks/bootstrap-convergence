@@ -1,8 +1,7 @@
 #!/usr/bin/env bash
 # Bootstrap passes converge: they run on every apply and check host state
-# before acting. Three things break that silently -- none is a syntax error,
-# none fails an apply, and each leaves a pass that runs and reconciles
-# nothing:
+# before acting. These break that silently -- none is a syntax error, none
+# fails an apply, and each leaves a pass that runs and reconciles nothing:
 #
 #   run_once_    keys off the script's own content, so a package removed by
 #                `apt autoremove`, a deleted binary, or a hand-edited /etc
@@ -10,11 +9,9 @@
 #   dpkg -s      exits 0 for a package in `config-files` state -- removed with
 #                `apt remove` but its conffiles retained -- so it reports a
 #                package that is gone from disk as present.
-#   exit 0       in a run_onchange_ pass records its hash, so a skip never
-#                re-fires until the hashed content changes. A skip waiting on
-#                an input that hash covers is safe, and says so with
-#                `exit 0 # rerun-on: <name>-hash` naming the pass's own
-#                `# <name>-hash:` line.
+#   exit 0       in a run_onchange_ pass records its hash, so a skip waits for
+#                the hashed content to change -- safe only when that content
+#                is the missing input.
 
 set -euo pipefail
 
@@ -36,8 +33,8 @@ status_query='dpkg-query -W -f='\''${db:Status-Status}'\'''
 report 'run_once_ cannot see host drift; use run_ (converging) or run_onchange_ (content-triggered)' \
   < <(git ls-files '.chezmoiscripts/run_once_*')
 
-# Code only: the passes name what they avoid in comments explaining why, and
-# flagging those would make the fix un-documentable.
+# The passes name what they avoid in comments explaining why, and flagging
+# those would make the fix undocumentable.
 code_matches() {
   git grep -n "$@" | grep -vE '^[^:]+:[0-9]+:[[:space:]]*#' || true
 }
@@ -54,7 +51,7 @@ unmarked_skips() {
   done < <(code_matches -w 'exit 0' -- '.chezmoiscripts/run_onchange_*')
 }
 
-report 'run_onchange_ records its hash on exit 0, so this skip never retries; exit non-zero, or mark `# rerun-on: <name>-hash` naming a hash line that covers the missing input' \
+report 'exit 0 records the hash, so this skip waits for hashed content to change; exit non-zero, or mark `# rerun-on: <name>-hash` if that hash covers the missing input' \
   < <(unmarked_skips)
 
 exit "$fail"

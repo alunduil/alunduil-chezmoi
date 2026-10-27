@@ -35,7 +35,7 @@ fi
 EOF
   run_check
   assert_failure
-  assert_output --partial 'run_onchange_after_restart.sh.tmpl:3: run_onchange_ records its hash'
+  assert_output --partial 'run_onchange_after_restart.sh.tmpl:3: exit 0 records the hash'
 }
 
 @test "a skip marked with the pass's own hash line passes" {
