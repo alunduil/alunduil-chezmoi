@@ -25,7 +25,7 @@ accounting on cgroup v1:
 | `cgroup_pids_current` | gauge | Processes and threads in the slice. |
 | `cgroup_pids_max` | gauge | The point where forks start failing with `EAGAIN`. |
 
-Both carry a `slice` label.
+Both carry a `slice` label and go absent while sampling fails.
 
 ## Process groups
 

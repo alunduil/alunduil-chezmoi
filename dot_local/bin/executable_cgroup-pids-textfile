@@ -10,21 +10,27 @@ set -euo pipefail
 
 dir="${NODE_TEXTFILE_DIR:-${XDG_STATE_HOME:-$HOME/.local/state}/node-textfile}"
 slice="user-$(id -u).slice"
-cgroup="/sys/fs/cgroup/pids/user.slice/$slice"
+cgroup="${CGROUP_PIDS_ROOT:-/sys/fs/cgroup/pids}/user.slice/$slice"
 
-mkdir -p "$dir"
 out="$dir/cgroup_pids.prom"
-tmp="$out.$$"
-trap 'rm -f "$tmp"' EXIT
 
-current="$(cat "$cgroup/pids.current")"
-max="$(cat "$cgroup/pids.max")"
+# The collector would keep serving the last sample as current, and reads fail
+# likeliest during the exhaustion this metric exists to show.
+if ! current="$(cat "$cgroup/pids.current")" ||
+  ! max="$(cat "$cgroup/pids.max")"; then
+  rm -f "$out"
+  exit 1
+fi
 
 # An unlimited pool reads "max". +Inf keeps the series numeric, so a headroom
 # expression against it still evaluates instead of going stale.
 if [ "$max" = "max" ]; then
   max="+Inf"
 fi
+
+mkdir -p "$dir"
+tmp="$out.$$"
+trap 'rm -f "$tmp"' EXIT
 
 cat >"$tmp" <<EOF
 # HELP cgroup_pids_current Processes and threads currently in the cgroup.
