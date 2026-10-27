@@ -51,7 +51,6 @@ teardown() {
   rm -rf "$TMPROOT"
 }
 
-# stub <name> <body>: write an executable <name> on the stub PATH.
 stub() {
   printf '#!%s\n%s\n' "$BASH" "$2" >"$STUB_DIR/$1"
   chmod +x "$STUB_DIR/$1"

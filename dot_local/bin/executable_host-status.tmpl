@@ -2,7 +2,6 @@
 
 set -euo pipefail
 
-# usage: the script's documentation and its -h/--help output, in one place.
 usage() {
     cat <<'EOF'
 Usage: host-status [OPTIONS]
@@ -38,8 +37,6 @@ user_units=(
     ssh-agent.service systemd-tmpfiles-clean.timer
 )
 
-# report <item> <fix>: print one outstanding item and the command that
-# fixes it.
 report() {
     printf '%-40s %s\n' "$1" "$2"
 }
@@ -87,8 +84,7 @@ check_units() {
         return
     fi
     check_unit_list --user "$user_enable" "${user_units[@]}"
-    # The unit exits at once when the app was already started another way,
-    # leaving it inactive while 1Password runs.
+    # The unit exits at once when 1Password is already running.
     pgrep -x 1password >/dev/null 2>&1 ||
         check_unit_list --user "$user_enable" 1password.service
 }
