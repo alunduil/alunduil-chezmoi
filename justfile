@@ -15,21 +15,22 @@ lock-tools:
 # Claude's primary use is a post-change sanity sweep, so this reports
 # every sensor's result in one run rather than stopping at the first
 # failure — full signal lets it batch fixes instead of finding them
-# serially across re-runs. A sensor exits 77 when its tool is missing;
-# that is listed as skipped, not counted as a pass, so a green run says
-# which sensors did not run.
+# serially across re-runs. A sensor whose tool is missing is listed as
+# skipped, not counted as a pass, so a green run says which sensors did
+# not run.
 
 # Run every local sensor; report all failures, not just the first.
 check:
     #!/usr/bin/env bash
     set -uo pipefail
+    . script/lib/checks.sh
     failed=()
     skipped=()
     for c in check-hooks check-bats check-zellij check-chezmoi check-chezmoi-templates check-settings-permissions check-telemetry check-systemd check-bootstrap-convergence check-pinned-tools; do
       just "$c"
       case $? in
         0) ;;
-        77) skipped+=("$c") ;;
+        "$SKIP") skipped+=("$c") ;;
         *) failed+=("$c") ;;
       esac
     done

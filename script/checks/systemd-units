@@ -10,16 +10,14 @@
 #
 # verify only *warns* (and still exits 0) on an unknown directive, so any
 # stderr is treated as failure; a missing ExecStart already exits non-zero.
-# A skip exits 77 so `just check` reports it apart from a pass.
 set -uo pipefail
 
 ROOT="$(git -C "$(dirname "${BASH_SOURCE[0]}")" rev-parse --show-toplevel)"
 cd "$ROOT"
+# shellcheck source=script/lib/checks.sh
+. script/lib/checks.sh
 
-if ! command -v systemd-analyze >/dev/null 2>&1; then
-  printf '==> systemd-units: systemd-analyze not on PATH; skipping\n' >&2
-  exit 77
-fi
+command -v systemd-analyze >/dev/null 2>&1 || skip "systemd-analyze not on PATH"
 
 user_dir="dot_config/systemd/user"
 system_dir="etc/systemd/system"
@@ -35,19 +33,11 @@ shopt -u nullglob
 
 # verify needs every ExecStart binary present. Derive them from the units
 # (the first token after ExecStart=, %h expanded) instead of a hand-kept list,
-# so adding a unit needs no change here. A missing binary locally just means an
-# unbootstrapped host, so skip; CI installs the stack first, so there it is a
-# real failure (a broken installer, or a new unit whose binary nobody added to
-# systemd.yml) and must not be skipped into a false pass.
+# so adding a unit needs no change here. Under CI a missing binary can also be
+# a new unit whose binary nobody added to systemd.yml.
 while IFS= read -r bin; do
   bin="${bin/'%h'/$HOME}"
-  [ -x "$bin" ] && continue
-  if [ -n "${CI:-}" ]; then
-    printf 'FAIL: %s not installed (systemd.yml installs the stack before this)\n' "$bin" >&2
-    exit 1
-  fi
-  printf '==> systemd-units: %s not installed; skipping\n' "$bin" >&2
-  exit 77
+  [ -x "$bin" ] || skip "$bin not installed"
 done < <(printf '%s\0' "${service_units[@]}" |
   xargs -0 -r grep -hoP '^ExecStart=\K[^ ]+')
 
