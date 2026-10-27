@@ -36,21 +36,22 @@ status_query='dpkg-query -W -f='\''${db:Status-Status}'\'''
 report 'run_once_ cannot see host drift; use run_ (converging) or run_onchange_ (content-triggered)' \
   < <(git ls-files '.chezmoiscripts/run_once_*')
 
-# Code only: the passes name `dpkg -s` in comments explaining why they avoid
-# it, and flagging those would make the fix un-documentable.
+# Code only: the passes name what they avoid in comments explaining why, and
+# flagging those would make the fix un-documentable.
+code_matches() {
+  git grep -n "$@" | grep -vE '^[^:]+:[0-9]+:[[:space:]]*#' || true
+}
+
 report "\`dpkg -s\` is true for config-files state; compare \`$status_query\` to \"installed\"" \
-  < <(git grep -n 'dpkg -s' -- '.chezmoiscripts/*.tmpl' |
-    grep -vE '^[^:]+:[0-9]+:[[:space:]]*#' || true)
+  < <(code_matches 'dpkg -s' -- '.chezmoiscripts/*.tmpl')
 
 unmarked_skips() {
   local file line text hash
-  while IFS= read -r file; do
-    while IFS=: read -r line text; do
-      hash="$(sed -nE 's/.*# rerun-on: ([[:alnum:]-]+-hash)$/\1/p' <<<"$text")"
-      [ -n "$hash" ] && grep -q "^# ${hash}: " "$file" && continue
-      printf '%s:%s\n' "$file" "$line"
-    done < <(grep -nwE 'exit 0' "$file" | grep -vE '^[0-9]+:[[:space:]]*#' || true)
-  done < <(git ls-files '.chezmoiscripts/run_onchange_*')
+  while IFS=: read -r file line text; do
+    hash="$(sed -nE 's/.*# rerun-on: ([[:alnum:]-]+-hash)$/\1/p' <<<"$text")"
+    [ -n "$hash" ] && grep -q "^# ${hash}: " "$file" && continue
+    printf '%s:%s\n' "$file" "$line"
+  done < <(code_matches -w 'exit 0' -- '.chezmoiscripts/run_onchange_*')
 }
 
 report 'run_onchange_ records its hash on exit 0, so this skip never retries; exit non-zero, or mark `# rerun-on: <name>-hash` naming a hash line that covers the missing input' \
