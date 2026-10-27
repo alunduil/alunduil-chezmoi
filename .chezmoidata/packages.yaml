@@ -21,6 +21,7 @@ packages:
     - protobuf-compiler
     - temurin-21-jdk
     - golang-petname
+    - gource
     # Music-library toolchain around beets, which uv installs separately.
     # Package names differ from the binaries they ship: ffmpeg -> ffprobe,
     # libimage-exiftool-perl -> exiftool, libchromaprint-tools -> fpcalc,
