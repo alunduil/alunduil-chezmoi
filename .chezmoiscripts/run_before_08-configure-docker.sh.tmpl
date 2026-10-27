@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 # chezmoi deploys only under $HOME, so daemon.json and the docker-prune units
 # live in etc/ and install with sudo. ADR 0006 explains why the prune is a root
-# system unit. A hand-edit to these files under /etc reverts on the next apply.
+# system unit.
 
 set -euo pipefail
 
@@ -21,12 +21,16 @@ ETC_SRC="{{ .chezmoi.sourceDir }}/etc"
 #
 # dockerd reads daemon.json only at start. try-restart applies it to a running
 # daemon without starting a stopped one.
+DAEMON_JSON_SRC="$ETC_SRC/docker/daemon.json"
 DAEMON_JSON=/etc/docker/daemon.json
 
-if ! cmp -s "$ETC_SRC/docker/daemon.json" "$DAEMON_JSON"; then
-  log "installing $DAEMON_JSON"
-  sudo install -D -m 0644 "$ETC_SRC/docker/daemon.json" "$DAEMON_JSON"
-  sudo systemctl try-restart docker.service
+if ! cmp -s "$DAEMON_JSON_SRC" "$DAEMON_JSON"; then
+  install_if_changed -D -m 0644 "$DAEMON_JSON_SRC" "$DAEMON_JSON"
+  # Declining the replace leaves the running daemon's config as it is.
+  if cmp -s "$DAEMON_JSON_SRC" "$DAEMON_JSON"; then
+    log "restarting docker.service; running containers restart with it"
+    sudo systemctl try-restart docker.service
+  fi
 fi
 
 # -------------------------------------------------------------------- prune
