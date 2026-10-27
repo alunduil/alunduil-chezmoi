@@ -24,10 +24,10 @@ Usage: git worktree-poi [OPTIONS] [NAME...]
   force-deleting their branches too. Names that don't resolve are reported
   after the run; the rest still act. Safe to run from inside a target.
 
-  Untracked files, gitignored ones included (.env, local config, build
-  output), move to $XDG_DATA_HOME/git-worktree-poi/trash/<repo>/ before a
-  worktree is removed, forced or not. Each run deletes trash older than 14
-  days. --dry-run lists what would be trashed.
+  Before removing a worktree, forced or not, moves its untracked files to
+  $XDG_DATA_HOME/git-worktree-poi/trash/<repo>/, gitignored ones included
+  (.env, local config, build output). Each run deletes trash older than 14
+  days. --dry-run lists the files each removal would move.
 
 Options:
   -f, --force    Remove the named worktrees even if classified keep.
@@ -68,14 +68,13 @@ report_resolve_errors() {
 
 DATA_HOME="${XDG_DATA_HOME:-$HOME/.local/share}"
 WORKTREE_ROOT="$DATA_HOME/git-worktrees"
-# Same filesystem as WORKTREE_ROOT, so trashing even a large target/ or
-# node_modules/ is a rename, not a copy.
+# Under the same root as WORKTREE_ROOT, so trashing a large target/ is
+# usually a rename and stays cheap.
 TRASH_ROOT="$DATA_HOME/git-worktree-poi/trash"
 TRASH_RETENTION_DAYS=14
 
-# Set by trash_untracked for the worktree it last emptied: the trash dir
-# (empty when nothing was untracked) and the paths moved into it, which
-# restore_untracked needs to put each back where it was.
+# trash_untracked's result. Globals because a $(...) subshell would drop
+# TRASHED_PATHS, which restore_untracked needs.
 TRASH_DIR=
 declare -a TRASHED_PATHS=()
 
@@ -509,17 +508,14 @@ print_section() {
     printf '\n'
 }
 
-# untracked_paths <wt>: NUL-separated paths git doesn't track, ignored or not
-# — what `git worktree remove` destroys beyond the branch's commits.
-# --directory collapses a wholly untracked dir (target/, node_modules/) to one
-# entry.
+# untracked_paths <wt>: NUL-separated paths git doesn't track, ignored or not.
+# `git worktree remove` deletes these with no copy anywhere else.
 untracked_paths() {
     git -C "$1" ls-files -z --others --directory 2>/dev/null
 }
 
-# move_paths <src> <dst> <path...>: move each relative path from <src> to the
-# same place under <dst>. Paths missing from <src> are skipped, so moving a
-# partially trashed set back restores whatever made it across.
+# move_paths <src> <dst> <path...>: move relative paths from <src> to <dst>.
+# Skips paths missing from <src>, so a partial trash can be moved back.
 move_paths() {
     local src=$1 dst=$2 p
     shift 2
@@ -532,8 +528,8 @@ move_paths() {
 }
 
 # trash_untracked <wt> <rel>: move <wt>'s untracked paths into a fresh
-# $TRASH_ROOT/<rel>-<stamp>-<suffix>/. On failure, put back whatever made it
-# across and return non-zero, leaving <wt> as found.
+# $TRASH_ROOT/<rel>-<stamp>-<suffix>/. On failure, restores <wt> and returns
+# non-zero.
 trash_untracked() {
     local wt=$1 rel=$2
     TRASH_DIR=
@@ -548,15 +544,14 @@ trash_untracked() {
     return 1
 }
 
-# restore_untracked <wt>: undo the last trash_untracked, moving its paths
-# back into <wt>.
+# restore_untracked <wt>: undo the last trash_untracked.
 restore_untracked() {
     [[ -n "$TRASH_DIR" ]] || return 0
     move_paths "$TRASH_DIR" "$1" "${TRASHED_PATHS[@]}"
 }
 
-# trash_preview <tsv-rows>: "<rel>\t<path>" for each untracked path in the
-# rows' worktrees — what acting on those rows would trash.
+# trash_preview <tsv-rows>: "<rel>\t<path>" for each path that acting on the
+# rows would trash.
 trash_preview() {
     local rel wt p
     [[ -n "$1" ]] || return 0
@@ -567,17 +562,17 @@ trash_preview() {
     done <<<"$1"
 }
 
-# purge_trash: delete trash dirs past the retention period. Each sits at
-# $TRASH_ROOT/<repo>/<petname>-<stamp>-<suffix>; its mtime is when it was
-# filled. A failed purge leaves trash behind rather than blocking the prune.
+# purge_trash: trash dirs sit at $TRASH_ROOT/<repo>/<petname>-<stamp>-<suffix>
+# and age from their mtime, set when filled. Failures are ignored so a purge
+# never blocks a prune.
 purge_trash() {
     [[ -d "$TRASH_ROOT" ]] || return 0
     find "$TRASH_ROOT" -mindepth 2 -maxdepth 2 -type d \
         -mmin "+$((TRASH_RETENTION_DAYS * 24 * 60))" -exec rm -rf {} + || true
 }
 
-# print_trash <heading> <tsv-rows>: one "<rel> <path>" line per row. Silent
-# when there are no rows — most removals have nothing untracked.
+# print_trash <heading> <tsv-rows>: one "<rel> <path>" line per row. Prints
+# nothing for no rows, unlike print_section's (none).
 print_trash() {
     local heading=$1 data=$2 rel path
     [[ -n "$data" ]] || return 0

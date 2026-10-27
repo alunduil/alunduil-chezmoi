@@ -423,9 +423,9 @@ _stub_gh_absent() {
 
 # --- trash: untracked files survive removal ---
 
-# Ignore .env through the canonical's info/exclude, which every worktree
-# shares, so the branch needs no .gitignore commit. Swap origin to a GitHub URL
-# and stub gh to report a merged PR, so the unattended path removes $WT.
+# Ignores .env through the canonical's info/exclude, which every worktree
+# shares, so the branch needs no .gitignore commit. A GitHub origin and a gh
+# stub reporting a merged PR send $WT down the unattended remove path.
 _mkmerged_with_env() {
   _mkworktree
   printf '.env\n' >>"$HOME/me/repo/.git/info/exclude"
@@ -492,7 +492,7 @@ STUB
 }
 
 @test "restore_untracked: puts trashed paths back where they were" {
-  # The rollback when git worktree remove fails after trashing.
+  # Runs when git worktree remove fails after trashing.
   _mkworktree
   mkdir -p "$WT/build/out"
   printf 'SECRET=1\n' >"$WT/.env"
