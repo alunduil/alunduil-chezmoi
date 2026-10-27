@@ -71,25 +71,29 @@ unit_running() {
         systemctl "$1" is-active --quiet "$2" 2>/dev/null
 }
 
-check_units() {
-    local unit
-    for unit in "${system_units[@]}"; do
-        unit_running --system "$unit" ||
-            report "$unit: not running" "sudo systemctl enable --now $unit"
+# check_unit_list <--system|--user> <enable> <unit...>: report each <unit>
+# not running, with "<enable> <unit>" as its fix.
+check_unit_list() {
+    local scope=$1 enable=$2 unit
+    shift 2
+    for unit; do
+        unit_running "$scope" "$unit" || report "$unit: not running" "$enable $unit"
     done
+}
+
+check_units() {
+    local user_enable='systemctl --user enable --now'
+    check_unit_list --system 'sudo systemctl enable --now' "${system_units[@]}"
     if ! systemctl --user show-environment >/dev/null 2>&1; then
         report 'user units: no user systemd session' \
             "chezmoi apply from a login session, or sudo loginctl enable-linger ${USER:-$(id -un)}"
         return
     fi
-    for unit in "${user_units[@]}"; do
-        unit_running --user "$unit" ||
-            report "$unit: not running" "systemctl --user enable --now $unit"
-    done
+    check_unit_list --user "$user_enable" "${user_units[@]}"
     # The unit exits at once when the app was already started another way,
     # leaving it inactive while 1Password runs.
-    pgrep -x 1password >/dev/null 2>&1 || unit_running --user 1password.service ||
-        report '1password.service: not running' 'systemctl --user enable --now 1password.service'
+    pgrep -x 1password >/dev/null 2>&1 ||
+        check_unit_list --user "$user_enable" 1password.service
 }
 
 check_apt_packages() {
