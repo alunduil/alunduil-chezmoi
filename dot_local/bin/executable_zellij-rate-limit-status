@@ -3,11 +3,9 @@
 # `command_ratelimits_rendermode "dynamic"` so the #[...] directives render
 # rather than printing as literal text.
 #
-# Three left-aligned ribbons for the GitHub `core`, `graphql`, and `search`
-# rate-limit buckets. Green by default; amber under 25% remaining; red under
-# 10%. A single grey "gh ?" ribbon when the budget can't be read (no auth,
-# offline, gh missing, malformed response), so a broken widget never looks
-# like an empty one.
+# One ribbon per GitHub rate-limit bucket, colored by remaining budget. When
+# the budget can't be read, a grey "gh ?" ribbon replaces them so a broken
+# widget never looks like an absent one.
 #
 # /rate_limit itself does not count against the rate limit, so polling is free.
 
