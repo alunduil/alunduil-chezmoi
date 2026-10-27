@@ -24,6 +24,11 @@ Usage: git worktree-poi [OPTIONS] [NAME...]
   force-deleting their branches too. Names that don't resolve are reported
   after the run; the rest still act. Safe to run from inside a target.
 
+  Untracked files, gitignored ones included (.env, local config, build
+  output), move to $XDG_DATA_HOME/git-worktree-poi/trash/<repo>/ before a
+  worktree is removed, forced or not. Each run deletes trash older than 14
+  days. --dry-run lists what would be trashed.
+
 Options:
   -f, --force    Remove the named worktrees even if classified keep.
                  Requires at least one NAME.
@@ -62,6 +67,10 @@ report_resolve_errors() {
 }
 
 WORKTREE_ROOT="${XDG_DATA_HOME:-$HOME/.local/share}/git-worktrees"
+# Same filesystem as WORKTREE_ROOT, so trashing even a large target/ or
+# node_modules/ is a rename, not a copy.
+TRASH_ROOT="${XDG_DATA_HOME:-$HOME/.local/share}/git-worktree-poi/trash"
+TRASH_RETENTION_DAYS=14
 
 # Worktrees the NAME args resolved to; empty means "operate on every
 # worktree". candidate_worktrees() narrows the PR-state pass and
@@ -493,6 +502,49 @@ print_section() {
     printf '\n'
 }
 
+# untracked_paths <wt>: NUL-separated paths git doesn't track, ignored or not
+# — what `git worktree remove` destroys beyond the branch's commits.
+# --directory collapses a wholly untracked dir (target/, node_modules/) to one
+# entry.
+untracked_paths() {
+    git -C "$1" ls-files -z --others --directory 2>/dev/null
+}
+
+# move_paths <src> <dst> <path...>: move each relative path from <src> to the
+# same place under <dst>. Paths missing from <src> are skipped, so moving a
+# partially trashed set back restores whatever made it across.
+move_paths() {
+    local src=$1 dst=$2 p
+    shift 2
+    for p in "$@"; do
+        p=${p%/}
+        [[ -e "$src/$p" || -L "$src/$p" ]] || continue
+        mkdir -p "$dst/$(dirname "$p")" || return 1
+        mv "$src/$p" "$dst/$p" || return 1
+    done
+}
+
+# purge_trash: delete trash dirs past the retention period. Each sits at
+# $TRASH_ROOT/<repo>/<petname>-<stamp>-<suffix>; its mtime is when it was
+# filled. A failed purge leaves trash behind rather than blocking the prune.
+purge_trash() {
+    [[ -d "$TRASH_ROOT" ]] || return 0
+    find "$TRASH_ROOT" -mindepth 2 -maxdepth 2 -type d \
+        -mmin "+$((TRASH_RETENTION_DAYS * 24 * 60))" -exec rm -rf {} + || true
+}
+
+# print_trash <heading> <tsv-rows>: one "<rel> <path>" line per row. Silent
+# when there are no rows — most removals have nothing untracked.
+print_trash() {
+    local heading=$1 data=$2 rel path
+    [[ -n "$data" ]] || return 0
+    printf '%s%s%s\n' "$BOLD" "$heading" "$RESET"
+    while IFS=$'\t' read -r rel path; do
+        printf '  %s   %s%s%s\n' "$rel" "$DIM" "$path" "$RESET"
+    done <<<"$data"
+    printf '\n'
+}
+
 # Tests source this script to exercise helpers above without running the
 # main flow.
 if [[ "${BASH_SOURCE[0]}" != "$0" ]]; then return 0; fi
@@ -590,14 +642,40 @@ if ((dry_run)); then
         print_section 'Would remove' "$remove_rows"
         print_section 'Would keep' "$keep_rows"
     fi
+    trash_rows=""
+    if [[ -n "$act_rows" ]]; then
+        while IFS=$'\t' read -r verdict rel branch detail wt; do
+            while IFS= read -r -d '' p; do
+                trash_rows+="${rel}"$'\t'"${p}"$'\n'
+            done < <(untracked_paths "$wt")
+        done <<<"$act_rows"
+    fi
+    print_trash "Would trash (kept $TRASH_RETENTION_DAYS days in $TRASH_ROOT)" "${trash_rows%$'\n'}"
     report_resolve_errors
     exit 0
 fi
 
+purge_trash
+
 removed_rows=""
 failed_rows=""
+trashed_rows=""
 if [[ -n "$act_rows" ]]; then
     while IFS=$'\t' read -r verdict rel branch detail wt; do
+        row=$(printf '%s\t%s\t%s\t%s\t%s' "$verdict" "$rel" "$branch" "$detail" "$wt")
+        mapfile -d '' -t untracked < <(untracked_paths "$wt")
+        trash_dir=""
+        if ((${#untracked[@]})); then
+            # On any failure, move what made it back so the worktree is left
+            # as found and reported under Failed.
+            if ! mkdir -p "$TRASH_ROOT/${rel%%/*}" \
+                || ! trash_dir=$(mktemp -d "$TRASH_ROOT/$rel-$(date +%Y%m%dT%H%M%S)-XXXXXX") \
+                || ! move_paths "$wt" "$trash_dir" "${untracked[@]}"; then
+                [[ -n "$trash_dir" ]] && move_paths "$trash_dir" "$wt" "${untracked[@]}"
+                failed_rows+="${row}"$'\n'
+                continue
+            fi
+        fi
         # Ask git for the canonical's path rather than reconstructing it from
         # $wt: canonicals don't always live at $HOME/<org>/<repo> (own-org
         # repos live at $HOME/<repo>, and the picker honors origin-URL hints
@@ -606,7 +684,6 @@ if [[ -n "$act_rows" ]]; then
         # $wt is gone, branch deletion needs somewhere else to operate from.
         canonical=$(git -C "$wt" rev-parse --path-format=absolute --git-common-dir 2>/dev/null || true)
         canonical=${canonical%/.git}
-        row=$(printf '%s\t%s\t%s\t%s\t%s' "$verdict" "$rel" "$branch" "$detail" "$wt")
         if git -C "$wt" worktree remove "${remove_force[@]}" "$wt" 2>/dev/null; then
             # Branch deletion is best-effort. Unforced, -d refuses unmerged —
             # but the remove gate already required MERGED|CLOSED upstream, so
@@ -615,7 +692,9 @@ if [[ -n "$act_rows" ]]; then
             [[ "$branch" != '(detached HEAD)' && -n "$canonical" ]] \
                 && git -C "$canonical" branch "$del_flag" "$branch" 2>/dev/null || true
             removed_rows+="${row}"$'\n'
+            [[ -n "$trash_dir" ]] && trashed_rows+="${rel}"$'\t'"${trash_dir}"$'\n'
         else
+            [[ -n "$trash_dir" ]] && move_paths "$trash_dir" "$wt" "${untracked[@]}"
             failed_rows+="${row}"$'\n'
         fi
     done <<<"$act_rows"
@@ -624,6 +703,7 @@ removed_rows=${removed_rows%$'\n'}
 failed_rows=${failed_rows%$'\n'}
 
 print_section 'Removed' "$removed_rows"
+print_trash "Trashed (kept $TRASH_RETENTION_DAYS days)" "${trashed_rows%$'\n'}"
 # shellcheck disable=SC2016 # backticks in heading are literal display text
 [[ -n "$failed_rows" ]] && print_section 'Failed (use `git worktree remove --force` if intended)' "$failed_rows"
 # Forced runs target named worktrees and just removed them; a "Kept" section
