@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 # Bootstrap passes converge: they run on every apply and check host state
-# before acting. Two things break that silently -- neither is a syntax error,
-# neither fails an apply, and both leave a pass that runs and reconciles
+# before acting. Three things break that silently -- none is a syntax error,
+# none fails an apply, and each leaves a pass that runs and reconciles
 # nothing:
 #
 #   run_once_    keys off the script's own content, so a package removed by
@@ -10,6 +10,11 @@
 #   dpkg -s      exits 0 for a package in `config-files` state -- removed with
 #                `apt remove` but its conffiles retained -- so it reports a
 #                package that is gone from disk as present.
+#   exit 0       in a run_onchange_ pass records its hash, so a skip never
+#                re-fires until the hashed content changes. A skip waiting on
+#                an input that hash covers is safe, and says so with
+#                `exit 0 # rerun-on: <name>-hash` naming the pass's own
+#                `# <name>-hash:` line.
 
 set -euo pipefail
 
@@ -36,5 +41,19 @@ report 'run_once_ cannot see host drift; use run_ (converging) or run_onchange_ 
 report "\`dpkg -s\` is true for config-files state; compare \`$status_query\` to \"installed\"" \
   < <(git grep -n 'dpkg -s' -- '.chezmoiscripts/*.tmpl' |
     grep -vE '^[^:]+:[0-9]+:[[:space:]]*#' || true)
+
+unmarked_skips() {
+  local file line text hash
+  while IFS= read -r file; do
+    while IFS=: read -r line text; do
+      hash="$(sed -nE 's/.*# rerun-on: ([[:alnum:]-]+-hash)$/\1/p' <<<"$text")"
+      [ -n "$hash" ] && grep -q "^# ${hash}: " "$file" && continue
+      printf '%s:%s\n' "$file" "$line"
+    done < <(grep -nwE 'exit 0' "$file" | grep -vE '^[0-9]+:[[:space:]]*#' || true)
+  done < <(git ls-files '.chezmoiscripts/run_onchange_*')
+}
+
+report 'run_onchange_ records its hash on exit 0, so this skip never retries; exit non-zero, or mark `# rerun-on: <name>-hash` naming a hash line that covers the missing input' \
+  < <(unmarked_skips)
 
 exit "$fail"
