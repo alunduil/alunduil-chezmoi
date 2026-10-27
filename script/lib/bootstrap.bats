@@ -97,3 +97,35 @@ on_terminal() {
   [ "$status" -ne 0 ]
   [[ "$stderr" == *"github: add failed, nothing registered — run chezmoi apply again"* ]]
 }
+
+without_user_manager() { systemctl() { return 1; }; }
+with_user_manager() { systemctl() { printf '%s\n' "$*" >>"$WORK/systemctl.log"; }; }
+
+@test "a headless apply ends listing every skipped unit with the remedy" {
+  without_user_manager
+  enable_user_units ssh-agent ssh-agent.service 2>/dev/null
+  enable_user_units git-maintenance a.timer b.timer 2>/dev/null
+  run --separate-stderr report_skipped_units
+  [ "$status" -eq 0 ]
+  [[ "$stderr" == *"ssh-agent.service"* ]]
+  [[ "$stderr" == *"a.timer"*"b.timer"* ]]
+  [[ "$stderr" == *"enable: re-run chezmoi apply"*"loginctl enable-linger"* ]]
+}
+
+@test "a skip names its units and the remedy" {
+  without_user_manager
+  run --separate-stderr enable_user_units ssh-agent ssh-agent.service
+  [ "$status" -eq 0 ]
+  [[ "$stderr" == *"leaving ssh-agent.service disabled — re-run chezmoi apply"* ]]
+}
+
+@test "a later apply with a user manager enables the unit and drops it from the report" {
+  without_user_manager
+  enable_user_units ssh-agent ssh-agent.service 2>/dev/null
+  with_user_manager
+  enable_user_units ssh-agent ssh-agent.service
+  grep -qx -- '--user enable --now ssh-agent.service' "$WORK/systemctl.log"
+  run --separate-stderr report_skipped_units
+  [ "$status" -eq 0 ]
+  [ -z "$stderr" ]
+}

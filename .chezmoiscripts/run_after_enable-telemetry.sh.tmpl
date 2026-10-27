@@ -7,21 +7,17 @@
 
 set -euo pipefail
 
-# Skip where there is no user systemd manager to talk to (headless apply over
-# SSH without lingering, container builds). The units are still deployed; a
-# later interactive apply, or a manual enable, brings the shipper up.
-if ! systemctl --user show-environment >/dev/null 2>&1; then
-  echo "==> telemetry: no user systemd session; leaving units disabled" >&2
-  exit 0
-fi
+# shellcheck source=script/lib/bootstrap.sh
+. "{{ .chezmoi.sourceDir }}/script/lib/bootstrap.sh"
 
-systemctl --user daemon-reload
-systemctl --user enable --now cgroup-pids-textfile.timer
+units=(cgroup-pids-textfile.timer)
 
 # alloy.service fails to start without its token, which the first bootstrap
 # pass does not deploy.
 if [ -s "$HOME/.config/grafana-cloud/token" ]; then
-  systemctl --user enable --now alloy.service
+  units+=(alloy.service)
 else
-  echo "==> telemetry: no Grafana Cloud token yet; leaving alloy disabled" >&2
+  log "telemetry: no Grafana Cloud token yet; leaving alloy disabled"
 fi
+
+enable_user_units telemetry "${units[@]}"
