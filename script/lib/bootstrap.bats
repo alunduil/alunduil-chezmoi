@@ -8,7 +8,7 @@ setup() {
   export XDG_STATE_HOME="$WORK/state"
   # shellcheck source=script/lib/bootstrap.sh
   . "$BATS_TEST_DIRNAME/bootstrap.sh"
-  SUDO_LOG="$WORK/sudo.log"
+  export SUDO_LOG="$WORK/sudo.log"
   : >"$SUDO_LOG"
   sudo() {
     printf '%s\n' "$*" >>"$SUDO_LOG"
@@ -16,6 +16,7 @@ setup() {
     install | cp) command "$@" ;;
     esac
   }
+  export -f sudo
   printf 'unit\n' >"$WORK/src"
 }
 
@@ -23,16 +24,20 @@ teardown() {
   rm -rf "$WORK"
 }
 
+install_src() {
+  install_if_changed -m 0644 "$WORK/src" "$WORK/dest" 2>/dev/null </dev/null
+}
+
 @test "an unchanged file neither installs nor reloads" {
   cp "$WORK/src" "$WORK/dest"
-  install_if_changed -m 0644 "$WORK/src" "$WORK/dest" 2>/dev/null
+  install_src
   daemon_reload_if_installed
   [ ! -s "$SUDO_LOG" ]
 }
 
 @test "a changed file installs, then reloads once" {
   printf 'stale\n' >"$WORK/dest"
-  install_if_changed -m 0644 "$WORK/src" "$WORK/dest" 2>/dev/null
+  install_src
   daemon_reload_if_installed
   daemon_reload_if_installed
   cmp -s "$WORK/src" "$WORK/dest"
@@ -50,7 +55,7 @@ teardown() {
 }
 
 @test "installing a new file leaves no backup" {
-  install_if_changed -m 0644 "$WORK/src" "$WORK/dest" 2>/dev/null </dev/null
+  install_src
   [ ! -e "$WORK/dest.bak" ]
   cmp -s "$WORK/src" "$WORK/dest"
 }
@@ -59,15 +64,13 @@ teardown() {
 on_terminal() {
   local answer="$1"
   printf '%s\n' "$answer" | script -qec "bash -c '
-    export XDG_STATE_HOME=\"$XDG_STATE_HOME\"
     . \"$BATS_TEST_DIRNAME/bootstrap.sh\"
-    sudo() { case \"\$1\" in install | cp) command \"\$@\" ;; esac; }
     install_if_changed -m 0644 \"$WORK/src\" \"$WORK/dest\"
   '" /dev/null >/dev/null
 }
 
 @test "on a terminal, declining keeps a file edited since the last apply" {
-  install_if_changed -m 0644 "$WORK/src" "$WORK/dest" 2>/dev/null </dev/null
+  install_src
   printf 'hand-edit\n' >"$WORK/dest"
   printf 'next\n' >"$WORK/src"
   on_terminal n
@@ -75,7 +78,7 @@ on_terminal() {
 }
 
 @test "on a terminal, a source change to an unedited file installs unasked" {
-  install_if_changed -m 0644 "$WORK/src" "$WORK/dest" 2>/dev/null </dev/null
+  install_src
   printf 'next\n' >"$WORK/src"
   on_terminal n
   cmp -s "$WORK/src" "$WORK/dest"

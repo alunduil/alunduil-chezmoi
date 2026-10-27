@@ -24,6 +24,17 @@ _record_installed() {
   _sha256 "$src" >"$record"
 }
 
+_edited_since_apply() {
+  local dest="$1" record="$2"
+  [ -f "$record" ] && [ "$(_sha256 "$dest")" != "$(<"$record")" ]
+}
+
+_confirm_replace() {
+  local answer
+  read -rp "$1 was edited since the last apply; replace it? [y/N] " answer
+  [ "$answer" = y ]
+}
+
 # Takes `install`'s arguments; leaves an unchanged DEST alone. Before
 # replacing DEST it prints the diff and keeps the old copy in DEST.bak. On a
 # terminal it asks first when DEST differs from what the last apply installed.
@@ -36,13 +47,10 @@ install_if_changed() {
   fi
   if [ -e "$dest" ]; then
     diff -u "$dest" "$src" >&2 || true
-    if [ -t 0 ] && [ -f "$record" ] && [ "$(_sha256 "$dest")" != "$(<"$record")" ]; then
-      local answer
-      read -rp "$dest was edited since the last apply; replace it? [y/N] " answer
-      if [ "$answer" != y ]; then
-        log "keeping $dest"
-        return 0
-      fi
+    if [ -t 0 ] && _edited_since_apply "$dest" "$record" &&
+      ! _confirm_replace "$dest"; then
+      log "keeping $dest"
+      return 0
     fi
     log "backing up $dest to $dest.bak"
     sudo cp -p "$dest" "$dest.bak"
