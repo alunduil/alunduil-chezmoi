@@ -5,6 +5,36 @@
 
 set -euo pipefail
 
+usage() {
+  cat <<'EOF'
+Usage: ssh-load
+
+  Load the SSH key from 1Password into the OpenSSH agent for eight hours,
+  unless the agent already holds a key. Run it from a terminal; only someone
+  there can approve the 1Password dialog.
+
+Options:
+  -h, --help  Show this message and exit.
+EOF
+}
+
+# usage_error MESSAGE: Click's usage-error layout.
+usage_error() {
+  printf "%s\nTry 'ssh-load --help' for help.\n\nError: %s\n" "$(usage | sed -n 1p)" "$1" >&2
+  exit 2
+}
+
+if [ "$#" -gt 0 ]; then
+  case "$1" in
+    -h | --help)
+      usage
+      exit 0
+      ;;
+    -*) usage_error "No such option: $1" ;;
+    *) usage_error "Got unexpected extra argument ($1)" ;;
+  esac
+fi
+
 export SSH_AUTH_SOCK="${XDG_RUNTIME_DIR:?}/ssh-agent.socket"
 
 loaded() { ssh-add -l >/dev/null 2>&1; }

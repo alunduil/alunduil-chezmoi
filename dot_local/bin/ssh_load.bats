@@ -120,3 +120,19 @@ teardown() {
   [[ "$output" == *"cannot connect to 1Password app"* ]]
   [[ "$(cat "$LOGGER_LOG")" == *"exited 1 after "*": cannot connect to 1Password app"* ]]
 }
+
+@test "--help prints usage without touching the agent or 1Password" {
+  run without_terminal "$SSH_LOAD" --help
+  [ "$status" -eq 0 ]
+  [[ "$output" == *"Usage: ssh-load"* ]]
+  [ ! -e "$OP_LOG" ]
+  [ ! -e "$XDG_RUNTIME_DIR/ssh-load.lock" ]
+}
+
+@test "an unknown option is rejected without loading the key" {
+  run in_terminal "$SSH_LOAD" --bogus
+  [ "$status" -eq 2 ]
+  [[ "$output" == *"Error: No such option: --bogus"* ]]
+  [[ "$output" == *"Try 'ssh-load --help' for help."* ]]
+  [ ! -e "$OP_LOG" ]
+}

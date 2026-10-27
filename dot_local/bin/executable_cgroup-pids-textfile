@@ -8,6 +8,37 @@
 
 set -euo pipefail
 
+usage() {
+  cat <<'EOF'
+Usage: cgroup-pids-textfile
+
+  Write the user slice's cgroup pids counters to cgroup_pids.prom for the
+  node_exporter textfile collector. The file lives in $NODE_TEXTFILE_DIR,
+  default ~/.local/state/node-textfile. A failed read removes the file rather
+  than leave a stale sample.
+
+Options:
+  -h, --help  Show this message and exit.
+EOF
+}
+
+# usage_error MESSAGE: Click's usage-error layout.
+usage_error() {
+  printf "%s\nTry 'cgroup-pids-textfile --help' for help.\n\nError: %s\n" "$(usage | sed -n 1p)" "$1" >&2
+  exit 2
+}
+
+if [ "$#" -gt 0 ]; then
+  case "$1" in
+    -h | --help)
+      usage
+      exit 0
+      ;;
+    -*) usage_error "No such option: $1" ;;
+    *) usage_error "Got unexpected extra argument ($1)" ;;
+  esac
+fi
+
 dir="${NODE_TEXTFILE_DIR:-${XDG_STATE_HOME:-$HOME/.local/state}/node-textfile}"
 slice="user-$(id -u).slice"
 cgroup="${CGROUP_PIDS_ROOT:-/sys/fs/cgroup/pids}/user.slice/$slice"

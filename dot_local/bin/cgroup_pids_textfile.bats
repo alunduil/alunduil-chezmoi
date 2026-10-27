@@ -51,3 +51,24 @@ counters() {
   [ "$status" -ne 0 ]
   [ -z "$(ls -A "$NODE_TEXTFILE_DIR")" ]
 }
+
+@test "--help prints usage without publishing" {
+  counters 42 10813
+
+  run bash "$SAMPLER" --help
+
+  [ "$status" -eq 0 ]
+  [[ "$output" == *"Usage: cgroup-pids-textfile"* ]]
+  [ ! -e "$PROM" ]
+}
+
+@test "an unknown option is rejected without publishing" {
+  counters 42 10813
+
+  run bash "$SAMPLER" --bogus
+
+  [ "$status" -eq 2 ]
+  [[ "$output" == *"Error: No such option: --bogus"* ]]
+  [[ "$output" == *"Try 'cgroup-pids-textfile --help' for help."* ]]
+  [ ! -e "$PROM" ]
+}
