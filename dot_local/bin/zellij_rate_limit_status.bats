@@ -40,6 +40,12 @@ JSON"
   [[ "$output" == *"gh ?"* ]]
 }
 
+@test "renders the unknown ribbon when the response is empty" {
+  stub_gh 'echo'
+  run -0 bash "$SCRIPT"
+  [[ "$output" == *"gh ?"* ]]
+}
+
 @test "renders a zero-limit bucket red instead of failing" {
   stub_rate_limit 0 0
   run -0 bash "$SCRIPT"

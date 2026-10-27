@@ -15,14 +15,21 @@ set -euo pipefail
 
 ARROW=$''
 
+ribbon() {
+  local bg=$1 text=$2
+  printf '#[bg=%s,fg=16]%s#[bg=%s,fg=16] %s #[bg=16,fg=%s]%s' \
+    "$bg" "$ARROW" "$bg" "$text" "$bg" "$ARROW"
+}
+
 unknown() {
-  printf '#[bg=244,fg=16]%s#[bg=244,fg=16] gh ? #[bg=16,fg=244]%s' "$ARROW" "$ARROW"
+  ribbon 244 'gh ?'
   exit 0
 }
 
 json=$(gh api rate_limit 2>/dev/null) || unknown
 
-tsv=$(jq -er '[.resources.core.remaining, .resources.core.limit, .resources.graphql.remaining, .resources.graphql.limit, .resources.search.remaining, .resources.search.limit] | if all(type == "number") then @tsv else error end' <<<"$json" 2>/dev/null) || unknown
+tsv=$(jq -r '[.resources.core.remaining, .resources.core.limit, .resources.graphql.remaining, .resources.graphql.limit, .resources.search.remaining, .resources.search.limit] | if all(type == "number") then @tsv else error end' <<<"$json" 2>/dev/null) || unknown
+[ -n "$tsv" ] || unknown
 
 read -r core_remaining core_limit graphql_remaining graphql_limit search_remaining search_limit <<<"$tsv"
 
@@ -43,10 +50,7 @@ bucket_color() {
 
 emit() {
   local label=$1 remaining=$2 limit=$3
-  local bg
-  bg=$(bucket_color "$remaining" "$limit")
-  printf '#[bg=%s,fg=16]%s#[bg=%s,fg=16] %s %s/%s #[bg=16,fg=%s]%s' \
-    "$bg" "$ARROW" "$bg" "$label" "$remaining" "$limit" "$bg" "$ARROW"
+  ribbon "$(bucket_color "$remaining" "$limit")" "$label $remaining/$limit"
 }
 
 emit core "$core_remaining" "$core_limit"
