@@ -120,6 +120,11 @@ into a new milestone for next month. Closed milestones stay closed.
 
 ## Operations
 
+A PATCH replaces the whole description. Before one, `diff -u` the
+live description against the one Claude last wrote this session, or
+the new description when there is none. If they differ, show the
+diff and ask: merge the edits in, overwrite, or stop.
+
 ```bash
 inbox_repos() {
   for o in alunduil dungeon-studio qua-world; do
@@ -148,6 +153,8 @@ gh api repos/:owner/:repo/milestones \
   -f description="$(cat description.md)"
 
 # Tick or score
+diff -u <(gh api repos/:owner/:repo/milestones/<num> --jq '.description') \
+  last-written.md
 gh api -X PATCH repos/:owner/:repo/milestones/<num> \
   -f description="$(cat description.md)"
 
