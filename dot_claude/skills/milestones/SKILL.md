@@ -111,8 +111,13 @@ Other groupings use other tools:
 2. Append the objective's score, the mean of its key results to one
    decimal: `Scored 0.8.` A committed objective below 1.0 adds its
    reason: `Scored 0.8: <reason>.`
-3. Move open issues to next month's milestone or unset them.
-4. Close the milestone.
+3. Pick a destination for each open issue: next month's milestone or
+   unset.
+4. Show the user the milestone's title, the scored description, and
+   each open issue with its destination. Wait for a yes before any
+   write; closing can't be undone.
+5. PATCH the scored description and move or unset the open issues.
+6. Close the milestone.
 
 The score is velocity data. Record it as measured and close on
 schedule whatever it says. When the objective still matters, carry it
