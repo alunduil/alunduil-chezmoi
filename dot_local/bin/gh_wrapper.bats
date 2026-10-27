@@ -25,14 +25,10 @@ teardown() {
   rm -rf "$STUB_DIR" "$WRAPPER_DIR"
 }
 
-@test "blocks 'gh pr create' without --draft" {
+@test "blocks 'gh pr create' without --draft, naming both retries and no override" {
   run "$WRAPPER_DIR/gh" pr create --title "test"
   [ "$status" -eq 1 ]
   [[ "$output" == *"must include --draft"* ]]
-}
-
-@test "block message names both retries and no override" {
-  run "$WRAPPER_DIR/gh" pr create --title "test"
   [[ "$output" == *"gh pr create --draft"* ]]
   [[ "$output" == *"create_pull_request with draft: true"* ]]
   [[ "$output" != *"override"* ]]

@@ -17,25 +17,25 @@
 
 set -euo pipefail
 
-if [ "${1:-}" = "pr" ] && [ "${2:-}" = "create" ] && [ "${GH_DRAFT_GUARD:-}" != "off" ]; then
-  has_draft=0
-  for arg in "${@:3}"; do
+has_draft_flag() {
+  local arg
+  for arg in "$@"; do
     case "$arg" in
-      --draft | -d)
-        has_draft=1
-        break
-        ;;
+      --draft | -d) return 0 ;;
     esac
   done
-  if [ "$has_draft" -eq 0 ]; then
-    cat >&2 <<'EOF'
+  return 1
+}
+
+if [ "${1:-}" = "pr" ] && [ "${2:-}" = "create" ] &&
+  [ "${GH_DRAFT_GUARD:-}" != "off" ] && ! has_draft_flag "${@:3}"; then
+  cat >&2 <<'EOF'
 gh wrapper (~/.local/bin/gh): `gh pr create` must include --draft (or -d).
 Retry as `gh pr create --draft ...`, or call the GitHub MCP
 create_pull_request with draft: true. The user will mark it ready after
 reviewing.
 EOF
-    exit 1
-  fi
+  exit 1
 fi
 
 # Find the real gh: first executable `gh` in PATH that isn't this script.
