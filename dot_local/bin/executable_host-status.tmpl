@@ -1,0 +1,136 @@
+#!/usr/bin/env bash
+
+set -euo pipefail
+
+usage() {
+    cat <<'EOF'
+Usage: host-status [OPTIONS]
+
+  List what this host still needs after chezmoi apply: interactive
+  logins, managed systemd units that are not running, and tools that
+  are not installed. Each line ends with the command that fixes it.
+
+  Prints nothing and exits 0 when nothing is outstanding.
+
+Options:
+  -h, --help  Show this message and exit.
+EOF
+}
+
+read -ra apt_packages <<<'{{ join " " .packages.apt }}'
+
+# Installed by bootstrap passes outside apt and mise, so neither package
+# list covers them.
+commands=(
+    beet bobbit cabal cargo cargo-cache claude code devcontainer ghc ghcup
+    node pnpm readwise rustc rustup tailscale uptimerobot
+)
+
+system_units=(
+    apt-daily.timer apt-daily-upgrade.timer docker-prune.timer
+    sysstat.service sysstat-collect.timer tailscaled.service
+)
+
+user_units=(
+    alloy.service cgroup-pids-textfile.timer
+    dev-cache-gc.timer git-poi-all.timer git-worktree-poi.timer
+    ssh-agent.service systemd-tmpfiles-clean.timer
+)
+
+report() {
+    printf '%-40s %s\n' "$1" "$2"
+}
+
+# check_login <name> <fix> <test...>: report <fix> unless <test> passes.
+# Each test reads local state, so an offline host still reports correctly.
+check_login() {
+    local name=$1 fix=$2
+    shift 2
+    "$@" >/dev/null 2>&1 || report "$name: not logged in" "$fix"
+}
+
+check_logins() {
+    check_login gh 'gh auth login' gh auth token
+    check_login claude claude test -s "$HOME/.claude/.credentials.json"
+    check_login gcx 'gcx login' test -s "$HOME/.config/gcx/config.yaml"
+    check_login readwise 'readwise login' test -s "$HOME/.readwise-cli.json"
+    check_login tailscale 'sudo tailscale up' tailscale status
+    check_login keybase 'keybase login' test -s "$HOME/.config/keybase/config.json"
+    check_login signal signal-desktop test -s "$HOME/.config/Signal/sql/db.sqlite"
+}
+
+# unit_running <--system|--user> <unit>: whether <unit> is enabled and active.
+unit_running() {
+    systemctl "$1" is-enabled --quiet "$2" 2>/dev/null &&
+        systemctl "$1" is-active --quiet "$2" 2>/dev/null
+}
+
+# check_unit_list <--system|--user> <enable> <unit...>: report each <unit>
+# not running, with "<enable> <unit>" as its fix.
+check_unit_list() {
+    local scope=$1 enable=$2 unit
+    shift 2
+    for unit; do
+        unit_running "$scope" "$unit" || report "$unit: not running" "$enable $unit"
+    done
+}
+
+check_units() {
+    local user_enable='systemctl --user enable --now'
+    check_unit_list --system 'sudo systemctl enable --now' "${system_units[@]}"
+    if ! systemctl --user show-environment >/dev/null 2>&1; then
+        report 'user units: no user systemd session' \
+            "chezmoi apply from a login session, or sudo loginctl enable-linger ${USER:-$(id -un)}"
+        return
+    fi
+    check_unit_list --user "$user_enable" "${user_units[@]}"
+    # The unit exits at once when 1Password is already running.
+    pgrep -x 1password >/dev/null 2>&1 ||
+        check_unit_list --user "$user_enable" 1password.service
+}
+
+check_apt_packages() {
+    local pkg status
+    local -A installed=()
+    while read -r pkg status; do
+        [[ "$status" == installed ]] && installed[$pkg]=1
+    done < <(dpkg-query -W -f='${Package} ${db:Status-Status}\n' "${apt_packages[@]}" 2>/dev/null)
+    for pkg in "${apt_packages[@]}"; do
+        [[ -n "${installed[$pkg]:-}" ]] || report "$pkg: not installed" 'chezmoi apply'
+    done
+}
+
+check_mise_tools() {
+    local tool version
+    while read -r tool version _; do
+        report "$tool $version: not installed" 'chezmoi apply'
+    done < <(mise ls --missing --global 2>/dev/null)
+}
+
+check_commands() {
+    local cmd
+    for cmd in "${commands[@]}"; do
+        command -v "$cmd" >/dev/null 2>&1 || report "$cmd: not on PATH" 'chezmoi apply'
+    done
+}
+
+# Tests source this script to read the lists above without running the
+# checks.
+if [[ "${BASH_SOURCE[0]}" != "$0" ]]; then return 0; fi
+
+case "${1:-}" in
+'') ;;
+-h | --help) usage; exit 0 ;;
+*) printf 'host-status: unknown option: %s (try --help)\n' "$1" >&2; exit 2 ;;
+esac
+
+outstanding=$(
+    check_logins
+    check_units
+    check_apt_packages
+    check_mise_tools
+    check_commands
+)
+[[ -n "$outstanding" ]] || exit 0
+printf '%s\n' "$outstanding"
+exit 1

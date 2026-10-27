@@ -31,55 +31,10 @@ Open 1Password from the launcher and sign in. In **Settings → Developer**, tur
 # Second apply: writes the secrets and starts what needs them.
 chezmoi apply
 
-# Interactive logins (per-machine, never managed):
-gh auth login                              # ~/.config/gh/
-claude                                     # ~/.claude/.credentials.json
-gcx login                                  # ~/.config/gcx/
-readwise login                             # ~/.readwise-cli.json
-sudo tailscale up                          # tailnet auth
-keybase login                              # ~/.config/keybase/ (devices, KBFS)
-signal-desktop                             # link to phone via QR scan
-
-# PATH check for installed binaries:
-zellij --version && lazygit --version && act --version
-lychee --version                           # markdown link checker (mirrors CI)
-yq --version                               # YAML processor (mikefarah/yq)
-vale --version                             # prose linter (vale-cli/vale)
-just --version                             # command runner (justfiles)
-uv --version                               # Python-CLI installer (astral-sh/uv)
-release-plz --version                      # Rust release and changelog tool
-cabal-gild --version                       # .cabal file formatter
-prek --version                             # git hook runner (j178/prek)
-beet --version                             # music tagger (uv tool install)
-ffprobe -version && mediainfo --version    # media inspection (ffmpeg, mediainfo)
-exiftool -ver && fpcalc -version           # metadata reader, audio fingerprinter
-gource --help | head -n 1                  # repo history video (git gource)
-rsync --version                            # file sync
-git lfs version                            # Git Large File Storage
-ghc --version && cabal --version           # ghcup-managed Haskell toolchain
-cargo --version && rustc --version         # rustup-managed Rust toolchain
-pnpm --version                             # pnpm package manager (npm global)
-uptimerobot --version                      # Uptime Robot CLI (npm global)
-java --version                             # Temurin 21 JDK (Firebase emulators)
-command -v cargo-cache                     # cargo registry GC helper
-golang-petname                             # repo-picker worktree namer
-command -v nethack                         # roguelike (nethack-console)
-command -v calibre                         # ebook library manager
-command -v code                            # VS Code (upstream .deb)
-docker --version                           # container engine (docker-ce, auto-updated)
-command -v truenas-mcp                     # TrueNAS MCP server binary
-trivy --version                            # vulnerability scanner (aquasecurity/trivy)
-gh extension list                          # confirms gh-poi (squash-merge pruner)
-claude mcp list                            # confirms registered MCP servers
-kitty --version                            # terminal (apt)
-foot --version                             # terminal, pending kitty's replacement (apt)
-sar -V && forkstat --version               # host telemetry recorders (apt)
-htop --version                             # process viewer (apt)
-systemctl is-active sysstat-collect.timer  # confirms sar is sampling
-systemctl --user is-active alloy.service   # confirms the Grafana Cloud shipper
-systemctl --user is-active 1password.service  # confirms the 1Password app is running
-systemctl --user is-active ssh-agent.service  # confirms the SSH agent is running
-ssh-load && ssh-add -l                     # loads and lists the SSH key from 1Password
+# Lists the logins, units, and tools still outstanding, each with its fix.
+host-status
 ```
+
+Run each fix `host-status` prints, then run it again. It prints nothing once the host is fully set up.
 
 SSH to GitHub works once you sign in to 1Password. The bootstrap clones over HTTPS to bridge the gap before then. Swap the apply clone's remote back to SSH if preferred: `git -C ~/.local/share/chezmoi remote set-url origin git@github.com:alunduil/alunduil-chezmoi.git`.

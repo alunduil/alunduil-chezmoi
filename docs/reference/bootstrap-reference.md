@@ -49,6 +49,8 @@ on an unmarked `exit 0`.
   `zz-report-skipped-units`.
 - Enabling a service its own package shipped, such as `tailscaled`,
   stays in the `before` pass that installed it.
+- `host-status` checks only the units in its `system_units` and
+  `user_units` arrays, so a pass that enables a unit adds it there.
 
 [ADR 0006](../adr/0006-run-units-at-least-privilege.md) sets which
 systemd manager a unit belongs in and what it runs as.
