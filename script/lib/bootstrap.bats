@@ -38,3 +38,17 @@ teardown() {
   cmp -s "$WORK/src" "$WORK/dest"
   [ "$(grep -c '^systemctl daemon-reload$' "$SUDO_LOG")" -eq 1 ]
 }
+
+@test "reregister_mcp without claude fails naming it" {
+  without_claude() { PATH="$WORK" reregister_mcp "$@"; }
+  run --separate-stderr without_claude github --transport http https://example.com
+  [ "$status" -ne 0 ]
+  [[ "$stderr" == *"github MCP: claude not on PATH"* ]]
+}
+
+@test "reregister_mcp reports a failed add with the retry" {
+  claude() { [ "$2" != add ]; }
+  run --separate-stderr reregister_mcp github --transport http https://example.com
+  [ "$status" -ne 0 ]
+  [[ "$stderr" == *"github MCP: old entry removed, re-add failed — run chezmoi apply again"* ]]
+}

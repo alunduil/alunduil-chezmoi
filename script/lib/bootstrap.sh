@@ -31,6 +31,24 @@ daemon_reload_if_installed() {
   fi
 }
 
+# reregister_mcp NAME ARG...: replace NAME's user-scope registration with
+# `claude mcp add NAME ARG...`. The add refuses a name already registered, so
+# the old entry goes first and a failed add reports it is gone.
+reregister_mcp() {
+  local name="$1"
+  shift
+  if ! command -v claude >/dev/null; then
+    log "$name MCP: claude not on PATH, registration unchanged"
+    return 1
+  fi
+  claude mcp remove "$name" --scope user >/dev/null 2>&1 || true
+  log "$name MCP: registering"
+  if ! claude mcp add "$name" --scope user "$@"; then
+    log "$name MCP: old entry removed, re-add failed — run chezmoi apply again"
+    return 1
+  fi
+}
+
 # enable_now UNIT...: enable and start each UNIT not already enabled and
 # active.
 enable_now() {
