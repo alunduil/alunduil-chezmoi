@@ -10,6 +10,7 @@
 #
 # verify only *warns* (and still exits 0) on an unknown directive, so any
 # stderr is treated as failure; a missing ExecStart already exits non-zero.
+# A skip exits 77 so `just check` reports it apart from a pass.
 set -uo pipefail
 
 ROOT="$(git -C "$(dirname "${BASH_SOURCE[0]}")" rev-parse --show-toplevel)"
@@ -17,7 +18,7 @@ cd "$ROOT"
 
 if ! command -v systemd-analyze >/dev/null 2>&1; then
   printf '==> systemd-units: systemd-analyze not on PATH; skipping\n' >&2
-  exit 0
+  exit 77
 fi
 
 user_dir="dot_config/systemd/user"
