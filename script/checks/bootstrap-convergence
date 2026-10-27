@@ -1,8 +1,7 @@
 #!/usr/bin/env bash
 # Bootstrap passes converge: they run on every apply and check host state
-# before acting. Two things break that silently -- neither is a syntax error,
-# neither fails an apply, and both leave a pass that runs and reconciles
-# nothing:
+# before acting. These break that silently -- none is a syntax error, none
+# fails an apply, and each leaves a pass that runs and reconciles nothing:
 #
 #   run_once_    keys off the script's own content, so a package removed by
 #                `apt autoremove`, a deleted binary, or a hand-edited /etc
@@ -10,6 +9,9 @@
 #   dpkg -s      exits 0 for a package in `config-files` state -- removed with
 #                `apt remove` but its conffiles retained -- so it reports a
 #                package that is gone from disk as present.
+#   exit 0       in a run_onchange_ pass records its hash, so a skip waits for
+#                the hashed content to change -- safe only when that content
+#                is the missing input.
 
 set -euo pipefail
 
@@ -31,10 +33,25 @@ status_query='dpkg-query -W -f='\''${db:Status-Status}'\'''
 report 'run_once_ cannot see host drift; use run_ (converging) or run_onchange_ (content-triggered)' \
   < <(git ls-files '.chezmoiscripts/run_once_*')
 
-# Code only: the passes name `dpkg -s` in comments explaining why they avoid
-# it, and flagging those would make the fix un-documentable.
+# The passes name what they avoid in comments explaining why, and flagging
+# those would make the fix undocumentable.
+code_matches() {
+  git grep -n "$@" | grep -vE '^[^:]+:[0-9]+:[[:space:]]*#' || true
+}
+
 report "\`dpkg -s\` is true for config-files state; compare \`$status_query\` to \"installed\"" \
-  < <(git grep -n 'dpkg -s' -- '.chezmoiscripts/*.tmpl' |
-    grep -vE '^[^:]+:[0-9]+:[[:space:]]*#' || true)
+  < <(code_matches 'dpkg -s' -- '.chezmoiscripts/*.tmpl')
+
+unmarked_skips() {
+  local file line text hash
+  while IFS=: read -r file line text; do
+    hash="$(sed -nE 's/.*# rerun-on: ([[:alnum:]-]+-hash)$/\1/p' <<<"$text")"
+    [ -n "$hash" ] && grep -q "^# ${hash}: " "$file" && continue
+    printf '%s:%s\n' "$file" "$line"
+  done < <(code_matches -w 'exit 0' -- '.chezmoiscripts/run_onchange_*')
+}
+
+report 'exit 0 records the hash, so this skip waits for hashed content to change; exit non-zero, or mark `# rerun-on: <name>-hash` if that hash covers the missing input' \
+  < <(unmarked_skips)
 
 exit "$fail"
