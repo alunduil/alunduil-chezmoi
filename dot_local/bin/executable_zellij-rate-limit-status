@@ -3,11 +3,9 @@
 # `command_ratelimits_rendermode "dynamic"` so the #[...] directives render
 # rather than printing as literal text.
 #
-# Three left-aligned ribbons for the GitHub `core`, `graphql`, and `search`
-# rate-limit buckets. Green by default; amber under 25% remaining; red under
-# 10%. Silent on failure (no auth, offline, gh missing) — no flag rather than
-# a "?" placeholder, so absence is ambiguous between healthy-and-quiet and
-# broken.
+# One ribbon per GitHub rate-limit bucket, colored by remaining budget. When
+# the budget can't be read, a grey "gh ?" ribbon replaces them so a broken
+# widget never looks like an absent one.
 #
 # /rate_limit itself does not count against the rate limit, so polling is free.
 
@@ -15,17 +13,30 @@ set -euo pipefail
 
 ARROW=$''
 
-json=$(gh api rate_limit 2>/dev/null) || exit 0
-[ -n "$json" ] || exit 0
+ribbon() {
+  local bg=$1 text=$2
+  printf '#[bg=%s,fg=16]%s#[bg=%s,fg=16] %s #[bg=16,fg=%s]%s' \
+    "$bg" "$ARROW" "$bg" "$text" "$bg" "$ARROW"
+}
 
-tsv=$(jq -r '[.resources.core.remaining, .resources.core.limit, .resources.graphql.remaining, .resources.graphql.limit, .resources.search.remaining, .resources.search.limit] | @tsv' <<<"$json" 2>/dev/null) || exit 0
-[ -n "$tsv" ] || exit 0
+unknown() {
+  ribbon 244 'gh ?'
+  exit 0
+}
+
+json=$(gh api rate_limit 2>/dev/null) || unknown
+
+tsv=$(jq -r '[.resources.core.remaining, .resources.core.limit, .resources.graphql.remaining, .resources.graphql.limit, .resources.search.remaining, .resources.search.limit] | if all(type == "number") then @tsv else error end' <<<"$json" 2>/dev/null) || unknown
+[ -n "$tsv" ] || unknown
 
 read -r core_remaining core_limit graphql_remaining graphql_limit search_remaining search_limit <<<"$tsv"
 
 bucket_color() {
   local remaining=$1 limit=$2
-  local pct=$(( remaining * 100 / limit ))
+  local pct=0
+  if [ "$limit" -gt 0 ]; then
+    pct=$(( remaining * 100 / limit ))
+  fi
   if [ "$pct" -lt 10 ]; then
     printf 196
   elif [ "$pct" -lt 25 ]; then
@@ -37,10 +48,7 @@ bucket_color() {
 
 emit() {
   local label=$1 remaining=$2 limit=$3
-  local bg
-  bg=$(bucket_color "$remaining" "$limit")
-  printf '#[bg=%s,fg=16]%s#[bg=%s,fg=16] %s %s/%s #[bg=16,fg=%s]%s' \
-    "$bg" "$ARROW" "$bg" "$label" "$remaining" "$limit" "$bg" "$ARROW"
+  ribbon "$(bucket_color "$remaining" "$limit")" "$label $remaining/$limit"
 }
 
 emit core "$core_remaining" "$core_limit"
