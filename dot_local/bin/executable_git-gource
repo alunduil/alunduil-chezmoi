@@ -9,15 +9,11 @@ usage() {
     cat <<'EOF'
 Usage: git gource [OPTIONS] [-- GOURCE_ARGS...]
 
-  Play the current repository's history in gource, squeezed to a fixed
-  length whatever the repository's age. Opens a live window unless
-  --output is given, in which case gource renders off-screen frames that
-  ffmpeg encodes to an H.264 MP4.
+  Play the current repository's history in a gource window, fitted to a
+  fixed length. With --output, write an H.264 MP4 instead.
 
-  Authors get their GitHub avatars when origin is on GitHub: each author's
-  email is resolved through the repository's commits API and the image is
-  cached by author name under $XDG_CACHE_HOME/git-gource/avatars, so later
-  runs make no API calls for known authors.
+  When origin is on GitHub, authors appear with their GitHub avatars,
+  cached by author name under $XDG_CACHE_HOME/git-gource/avatars.
 
   Arguments after -- pass to gource verbatim and override the defaults:
 
@@ -26,9 +22,8 @@ Usage: git gource [OPTIONS] [-- GOURCE_ARGS...]
 
 Options:
   -o, --output FILE        Render to an MP4 at FILE instead of a window.
-  -d, --duration SECONDS   Time to spread the history over. gource adds
-                           a fixed lead-in and settle at the end, so the
-                           video runs some seconds longer.  [default: 60]
+  -d, --duration SECONDS   Playback time for the history; gource adds a
+                           few seconds of its own.  [default: 60]
   --no-avatars             Skip the GitHub avatar lookup.
   -h, --help               Show this message and exit.
 EOF
@@ -36,8 +31,8 @@ EOF
 
 die() { printf 'git-gource: %s\n' "$*" >&2; exit 1; }
 
-# github_slug <remote-url>: emit "owner/repo" from a GitHub remote URL,
-# stripping any trailing .git. Returns non-zero for non-GitHub remotes.
+# github_slug <remote-url>: emit "owner/repo" from a GitHub remote URL.
+# Returns non-zero for other remotes.
 github_slug() {
     local url=$1
     url=${url%.git}
@@ -49,8 +44,7 @@ github_slug() {
 }
 
 # seconds_per_day <duration> <first-epoch> <last-epoch>: the gource
-# --seconds-per-day that fits the span between two commits into <duration>
-# seconds. Spans under a day count as one day.
+# --seconds-per-day that plays the span in <duration> seconds.
 seconds_per_day() {
     awk -v d="$1" -v a="$2" -v b="$3" 'BEGIN {
         days = (b - a) / 86400
@@ -59,17 +53,16 @@ seconds_per_day() {
     }'
 }
 
-# origin_slug: emit "owner/repo" for the current repo's origin. Returns
-# non-zero when there is no origin or it is not on GitHub.
+# origin_slug: github_slug of the current repo's origin.
 origin_slug() {
     local url
     url=$(git remote get-url origin 2>/dev/null) || return 1
     github_slug "$url"
 }
 
-# fetch_avatar <slug> <email> <file>: download the avatar of the GitHub
-# account that authored <email>'s commits in <slug> to <file>. Returns
-# non-zero, leaving no file, when no account matches.
+# fetch_avatar <slug> <email> <file>: download to <file> the avatar of the
+# GitHub account behind <email>'s commits in <slug>. A failure leaves no
+# file, because an existing file marks the author as cached.
 fetch_avatar() {
     local slug=$1 email=$2 file=$3 url
     url=$(gh api -X GET "repos/$slug/commits" -f author="$email" -f per_page=1 \
@@ -78,10 +71,9 @@ fetch_avatar() {
     curl -fsSL -o "$file" "$url&s=128" || { rm -f "$file"; return 1; }
 }
 
-# fetch_avatars <slug> <dir>: download a PNG into <dir> for each author in
-# the current repo's history that lacks one. gource matches an image to an
-# author by filename, so each lands at "<dir>/<author name>.png". An author
-# with no GitHub account gets no image and gource draws its default.
+# fetch_avatars <slug> <dir>: download an avatar for each uncached author in
+# the current repo. gource matches images to authors by filename, so each
+# lands at "<dir>/<author name>.png".
 fetch_avatars() {
     local slug=$1 dir=$2 name email
     mkdir -p "$dir"
@@ -91,9 +83,9 @@ fetch_avatars() {
     done < <(git log --format='%aN%x09%aE' | sort -u -t $'\t' -k1,1)
 }
 
-# encode_mp4 <file>: encode gource's PPM frame stream on stdin to an H.264
-# MP4 at <file>. yuv420p is the pixel format browsers and phones decode;
-# gource's frames are RGB, which libx264 would otherwise keep as 4:4:4.
+# encode_mp4 <file>: encode gource's PPM frames on stdin to <file>.
+# yuv420p is the pixel format browsers and phones decode; gource's frames
+# are RGB, which libx264 would otherwise keep as 4:4:4.
 encode_mp4() {
     ffmpeg -loglevel error -y -r 60 -f image2pipe -c:v ppm -i - \
         -c:v libx264 -preset medium -crf 23 -pix_fmt yuv420p "$1"
