@@ -21,8 +21,8 @@ set -euo pipefail
 use_local_bin
 
 # One listing for every check below: it is a network round-trip per registered
-# server, so a call per candidate costs seconds. A failed listing stops the
-# pass rather than reading as "nothing registered".
+# server, so a call per candidate costs seconds. Read as empty, a failed
+# listing would re-add every registered server.
 registered="$(claude mcp list)"
 
 # register_mcp NAME URL: add NAME as a user-scope HTTP server unless the
