@@ -1,6 +1,6 @@
 ---
 name: add-tool
-description: Decide where a new tool slots into the chezmoi bootstrap and README. Use when adding a CLI/binary to the host bootstrap so it lands in the right install pass and the right README block. Routes auth-required tools to "Interactive logins" and fire-and-forget binaries to "PATH check".
+description: Decide where a new tool slots into the chezmoi bootstrap and host-status. Use when adding a CLI/binary to the host bootstrap so it lands in the right install pass and host-status reports it when missing or logged out.
 ---
 
 # Add a tool to bootstrap
@@ -18,7 +18,7 @@ two shapes:
    `pyacoustid`.
 2. Otherwise, keep it off the host. The caller runs
    `uv run --with <pkg>==<version> <script>` and owns the pin. Stop
-   here: no bootstrap change, no README line.
+   here: no bootstrap change, no `host-status` entry.
 
 Install a CLI front-end that wraps the library only when its command
 is itself wanted.
@@ -28,13 +28,19 @@ is itself wanted.
 Does the tool need interactive auth (login, browser flow, API token)
 to do real work?
 
-- **Yes** (gh, claude, gcx, readwise, tailscale): list in README
-  "Interactive logins" with a config-path comment so a fresh-host
-  bootstrap surfaces where state lands. No PATH-check line — running
-  the login command itself proves reachability. Auth state is
-  runtime, never managed by chezmoi.
-- **No** (zellij, lazygit, act, gh-poi): list in README "PATH
-  check" line.
+- **Yes** (gh, claude, gcx, readwise, tailscale): add a `login` line
+  to `check_logins` in `dot_local/bin/executable_host-status.tmpl`,
+  testing local state the login leaves behind (a credential file, or a
+  command that reads it without the network). Auth state is runtime,
+  never managed by chezmoi.
+- **No** (zellij, lazygit, act, gh-poi): no login line.
+
+## Missing-tool report
+
+`host-status` derives apt packages from `.chezmoidata/packages.yaml`
+and pinned tools from `mise ls --missing`, so those need no entry. A
+tool installed any other way (npm, cargo, uv, ghcup, an upstream
+installer) goes in its `commands` array.
 
 ## Install mechanism
 
@@ -101,9 +107,8 @@ on the first Tab, so the script always matches the installed version.
 2. Identify the auth axis and install mechanism.
 3. Wire the installer into the right `.chezmoiscripts/` pass, or add
    the mise entry.
-4. Update README:
-   - Auth-required → add to "Interactive logins" with config-path comment
-   - Fire-and-forget → add to "PATH check" line
+4. Update `host-status`: a `login` line for an auth-required tool,
+   and a `commands` entry for one installed outside apt and mise.
 5. Annotate every pin per [Pin the version](#pin-the-version).
 6. Add a [Shell completion](#shell-completion) file if the tool
    generates one.
