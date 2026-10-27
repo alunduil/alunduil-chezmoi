@@ -1,8 +1,7 @@
 #!/usr/bin/env bash
-# PreToolUse hook: require PRs from the GitHub MCP tools to be drafts,
-# and stay drafts. The `gh pr create` path is enforced separately by
-# ~/.local/bin/gh and `gh pr ready` by the settings.json ask list;
-# this only covers the MCP tools.
+# PreToolUse hook: PRs from the GitHub MCP tools open as drafts and
+# stay drafts. ~/.local/bin/gh and the settings.json ask list cover
+# the `gh` path.
 #
 # Exit 0 = allow; exit 2 = block (per Claude Code's hook protocol).
 # Other non-zero is non-blocking, so parse failures exit 2 explicitly
@@ -21,8 +20,7 @@ block() {
 
 input="$(cat)"
 
-# draft is "true", "false", or "null" when absent. jq's // operator
-# treats false as missing, so it can't tell an explicit false from null.
+# tostring, not //: jq's // treats an explicit false as missing.
 if ! {
   read -r tool_name
   read -r draft
