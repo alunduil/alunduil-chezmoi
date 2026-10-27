@@ -29,16 +29,25 @@ EOF
 
 # usage_error MESSAGE: report a bad invocation the way Click does, exit 2.
 usage_error() {
-  printf "Usage: codecov-api PATH [CURL_ARGS]...\nTry 'codecov-api --help' for help.\n\nError: %s\n" "$1" >&2
+  printf "%s\nTry 'codecov-api --help' for help.\n\nError: %s\n" "$(usage | sed -n 1p)" "$1" >&2
   exit 2
 }
 
 case "${1-}" in
+  /*) ;;
   -h | --help)
     usage
     exit 0
     ;;
   -*) usage_error "No such option: $1" ;;
+  "")
+    printf 'codecov-api: missing path argument (e.g. /api/v2/github/owner/repos/repo/test-results/)\n' >&2
+    exit 64
+    ;;
+  *)
+    printf 'codecov-api: path must start with / (got %q)\n' "$1" >&2
+    exit 64
+    ;;
 esac
 
 if [ -z "${CODECOV_API_TOKEN:-}" ]; then
@@ -46,21 +55,8 @@ if [ -z "${CODECOV_API_TOKEN:-}" ]; then
   exit 64
 fi
 
-if [ "$#" -lt 1 ]; then
-  printf 'codecov-api: missing path argument (e.g. /api/v2/github/owner/repos/repo/test-results/)\n' >&2
-  exit 64
-fi
-
 path="$1"
 shift
-
-case "$path" in
-  /*) ;;
-  *)
-    printf 'codecov-api: path must start with / (got %q)\n' "$path" >&2
-    exit 64
-    ;;
-esac
 
 exec curl --fail --silent --show-error --location \
   --header "Authorization: bearer ${CODECOV_API_TOKEN}" \

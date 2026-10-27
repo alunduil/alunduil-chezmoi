@@ -24,7 +24,7 @@ EOF
 
 # usage_error MESSAGE: report a bad invocation the way Click does, exit 2.
 usage_error() {
-  printf "Usage: cgroup-pids-textfile\nTry 'cgroup-pids-textfile --help' for help.\n\nError: %s\n" "$1" >&2
+  printf "%s\nTry 'cgroup-pids-textfile --help' for help.\n\nError: %s\n" "$(usage | sed -n 1p)" "$1" >&2
   exit 2
 }
 
