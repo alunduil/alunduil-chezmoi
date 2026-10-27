@@ -92,8 +92,8 @@ check_units() {
         report '1password.service: not running' 'systemctl --user enable --now 1password.service'
 }
 
-check_tools() {
-    local pkg status tool version cmd
+check_apt_packages() {
+    local pkg status
     local -A installed=()
     while read -r pkg status; do
         [[ "$status" == installed ]] && installed[$pkg]=1
@@ -101,11 +101,17 @@ check_tools() {
     for pkg in "${apt_packages[@]}"; do
         [[ -n "${installed[$pkg]:-}" ]] || report "$pkg: not installed" 'chezmoi apply'
     done
+}
 
+check_mise_tools() {
+    local tool version
     while read -r tool version _; do
         report "$tool $version: not installed" 'chezmoi apply'
     done < <(mise ls --missing --global 2>/dev/null)
+}
 
+check_commands() {
+    local cmd
     for cmd in "${commands[@]}"; do
         command -v "$cmd" >/dev/null 2>&1 || report "$cmd: not on PATH" 'chezmoi apply'
     done
@@ -123,5 +129,7 @@ esac
 
 check_logins
 check_units
-check_tools
+check_apt_packages
+check_mise_tools
+check_commands
 exit "$outstanding"
