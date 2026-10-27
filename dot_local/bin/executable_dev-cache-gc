@@ -25,7 +25,7 @@ Options:
 EOF
 }
 
-# usage_error MESSAGE: report a bad invocation the way Click does, exit 2.
+# usage_error MESSAGE: Click's usage-error layout.
 usage_error() {
     printf "%s\nTry 'dev-cache-gc --help' for help.\n\nError: %s\n" "$(usage | sed -n 1p)" "$1" >&2
     exit 2

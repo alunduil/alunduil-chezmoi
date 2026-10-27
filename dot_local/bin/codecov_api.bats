@@ -7,7 +7,8 @@ setup() {
 
   TMPROOT="$(mktemp -d)"
 
-  # curl logs its arguments, so tests can tell whether a request went out.
+  # The curl stub logs its arguments, so tests can tell whether a request went
+  # out.
   STUB_DIR="$TMPROOT/stubs"
   mkdir -p "$STUB_DIR"
   cat >"$STUB_DIR/curl" <<'STUB'

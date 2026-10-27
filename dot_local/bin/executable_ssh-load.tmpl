@@ -10,15 +10,15 @@ usage() {
 Usage: ssh-load
 
   Load the SSH key from 1Password into the OpenSSH agent for eight hours,
-  unless the agent already holds a key. Run it from a terminal: without one
-  there is nobody to answer the 1Password dialog, so it fails instead.
+  unless the agent already holds a key. Run it from a terminal; only someone
+  there can approve the 1Password dialog.
 
 Options:
   -h, --help  Show this message and exit.
 EOF
 }
 
-# usage_error MESSAGE: report a bad invocation the way Click does, exit 2.
+# usage_error MESSAGE: Click's usage-error layout.
 usage_error() {
   printf "%s\nTry 'ssh-load --help' for help.\n\nError: %s\n" "$(usage | sed -n 1p)" "$1" >&2
   exit 2
