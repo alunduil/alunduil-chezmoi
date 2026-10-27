@@ -15,9 +15,8 @@ lock-tools:
 # Claude's primary use is a post-change sanity sweep, so this reports
 # every sensor's result in one run rather than stopping at the first
 # failure — full signal lets it batch fixes instead of finding them
-# serially across re-runs. A sensor whose tool is missing is listed as
-# skipped, not counted as a pass, so a green run says which sensors did
-# not run.
+# serially across re-runs. Skipped sensors are listed so a green run
+# still shows which sensors did not run.
 
 # Run every local sensor; report all failures, not just the first.
 check:

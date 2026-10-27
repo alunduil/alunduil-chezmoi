@@ -33,8 +33,8 @@ shopt -u nullglob
 
 # verify needs every ExecStart binary present. Derive them from the units
 # (the first token after ExecStart=, %h expanded) instead of a hand-kept list,
-# so adding a unit needs no change here. Under CI a missing binary can also be
-# a new unit whose binary nobody added to systemd.yml.
+# so adding a unit needs no change here. A binary missing under CI usually
+# belongs to a new unit that systemd.yml doesn't install yet.
 while IFS= read -r bin; do
   bin="${bin/'%h'/$HOME}"
   [ -x "$bin" ] || skip "$bin not installed"

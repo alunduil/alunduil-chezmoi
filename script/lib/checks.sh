@@ -5,9 +5,8 @@
 # apart from a pass. 77 is the automake and meson skip code.
 SKIP=77
 
-# A missing tool locally just means an unbootstrapped host. CI installs every
-# tool first, so there it is a broken installer and must not skip into a false
-# pass.
+# Locally a missing tool means an unbootstrapped host. CI installs every tool
+# first, so there a missing tool means a broken install.
 skip() {
   if [ -n "${CI:-}" ]; then
     printf 'FAIL: %s: %s\n' "${0##*/}" "$*" >&2
