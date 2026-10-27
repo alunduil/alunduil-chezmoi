@@ -97,3 +97,33 @@ on_terminal() {
   [ "$status" -ne 0 ]
   [[ "$stderr" == *"github: add failed, nothing registered — run chezmoi apply again"* ]]
 }
+
+# Runs a pass that sources the library and fails inside enable_now, in a clean
+# bash as chezmoi would, so the sudo stub above stays out of it.
+run_failing_pass() {
+  mkdir -p "$WORK/bin"
+  printf '#!/bin/sh\nexit 1\n' >"$WORK/bin/systemctl"
+  printf '#!/bin/sh\nexit 1\n' >"$WORK/bin/sudo"
+  chmod +x "$WORK/bin/systemctl" "$WORK/bin/sudo"
+  cat >"$WORK/pass" <<EOF
+set -euo pipefail
+. "$BATS_TEST_DIRNAME/bootstrap.sh"
+enable_now foo.service
+EOF
+  run --separate-stderr env -i HOME="$WORK" PATH="$WORK/bin:$PATH" \
+    CHEZMOI_SOURCE_FILE=".chezmoiscripts/$1" bash "$WORK/pass"
+}
+
+@test "a pass failing in a helper names itself, the command, and the retry" {
+  run_failing_pass run_after_enable-foo.sh.tmpl
+  [ "$status" -eq 1 ]
+  [[ "$stderr" == *'run_after_enable-foo.sh.tmpl failed: sudo systemctl enable --now "$unit" (exit 1 at bootstrap.sh:'* ]]
+  [[ "$stderr" == *"re-run chezmoi apply (passes converge)"* ]]
+  [[ "$stderr" != *"no files were written"* ]]
+}
+
+@test "a failing before-phase pass says no files were written" {
+  run_failing_pass run_before_04-configure-foo.sh.tmpl
+  [ "$status" -eq 1 ]
+  [[ "$stderr" == *"no files were written"* ]]
+}

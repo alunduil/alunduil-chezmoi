@@ -6,6 +6,26 @@
 
 log() { printf '==> %s\n' "$*" >&2; }
 
+# chezmoi runs each pass from a randomly named temp file; CHEZMOI_SOURCE_FILE
+# names the source script, phase included.
+_on_error() {
+  local status=$? cmd="$1" line="$2" pass="${CHEZMOI_SOURCE_FILE:-$0}"
+  local file="${BASH_SOURCE[1]}"
+  # A subshell without set -e carries on past its failure; the pipeline or
+  # substitution that fails the pass reports from the top-level shell.
+  [ "$BASH_SUBSHELL" -eq 0 ] || return "$status"
+  [ "$file" = "$0" ] && file="$pass"
+  log "${pass##*/} failed: $cmd (exit $status at ${file##*/}:$line)"
+  case "$pass" in
+  *_before_*) log "no files were written: before-phase passes run ahead of deployment" ;;
+  esac
+  log "fix the cause, then re-run chezmoi apply (passes converge)"
+}
+
+# errtrace carries the trap into helper functions, where set -e exits first.
+set -E
+trap '_on_error "$BASH_COMMAND" "$LINENO"' ERR
+
 # Shims resolve through the deployed ~/.config/mise, so only after-phase
 # passes can call this.
 use_mise_shims() { PATH="$HOME/.local/share/mise/shims:$PATH"; }

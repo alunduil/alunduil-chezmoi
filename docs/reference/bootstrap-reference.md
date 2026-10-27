@@ -11,6 +11,10 @@ Bootstrap passes live in `.chezmoiscripts/` and source shared helpers
 from `script/lib/bootstrap.sh`. Each pass owns one product family: a
 tool that needs both `apt` and a download lives in one pass.
 
+Sourcing the library runs `set -E` and `trap … ERR`. A pass that fails
+prints its name, the failing command and line, and that re-running
+`chezmoi apply` is safe.
+
 | Prefix | Used for |
 | ------ | -------- |
 | `run_` | every pass with a local guard |
