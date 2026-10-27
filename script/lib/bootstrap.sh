@@ -6,18 +6,19 @@
 
 log() { printf '==> %s\n' "$*" >&2; }
 
-# chezmoi runs each pass from a randomly named temp file; CHEZMOI_SOURCE_FILE
-# names the source script, phase included.
+# The ERR handler for every pass that sources this file. chezmoi runs a pass
+# from a randomly named temp file, so CHEZMOI_SOURCE_FILE supplies its name
+# and phase.
 _report_failed_pass() {
   local status=$?
-  # A subshell without set -e carries on past its failure; the pipeline or
-  # substitution that fails the pass reports from the top-level shell.
+  # Report from the top-level shell only. A subshell without set -e carries on
+  # past its failure, and one that fails the pass fails its parent too.
   [ "$BASH_SUBSHELL" -eq 0 ] || return
   local cmd="$1" line="$2" pass="${CHEZMOI_SOURCE_FILE:-$0}"
   local file="${BASH_SOURCE[1]}"
   [ "$file" = "$0" ] && file="$pass"
-  # A helper's own `return N` reaches the trap at its call site, so the
-  # line names the call and the command names nothing worth printing.
+  # When a helper's own `return N` reaches the trap, BASH_COMMAND still reads
+  # `return N`. The line already points at the call.
   case "$cmd" in
   return | return\ *) cmd= ;;
   esac

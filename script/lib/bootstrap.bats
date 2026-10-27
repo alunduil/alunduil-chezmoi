@@ -98,9 +98,8 @@ on_terminal() {
   [[ "$stderr" == *"github: add failed, nothing registered"* ]]
 }
 
-# Runs a pass that sources the library and calls ${2:-enable_now foo.service}
-# with systemctl, sudo, and claude all failing, in a clean bash as chezmoi
-# would, so the sudo stub above stays out of it.
+# run_failing_pass PASS [CALL]: run CALL, by default enable_now, as pass PASS
+# with systemctl, sudo, and claude failing. env -i keeps setup's sudo stub out.
 run_failing_pass() {
   local tool
   mkdir -p "$WORK/bin"
