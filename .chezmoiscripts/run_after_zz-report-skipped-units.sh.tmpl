@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
-# chezmoi runs after-phase passes in name order; the zz- prefix sorts this one
-# last so it sees every skip the enable passes recorded.
+# chezmoi runs after passes in name order; zz- sorts this one after every pass
+# that records a skip.
 
 set -euo pipefail
 

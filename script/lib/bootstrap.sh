@@ -92,10 +92,9 @@ _user_manager_remedy() {
   printf 're-run chezmoi apply from a login session, or after sudo loginctl enable-linger %s' "$(id -un)"
 }
 
-# enable_user_units NAME UNIT...: reload the user systemd manager, then enable
-# and start each UNIT. Headless applies (SSH without lingering, container
-# builds) have no user manager; there it records the UNITs under NAME for
-# report_skipped_units instead.
+# enable_user_units NAME UNIT...: enable and start each UNIT. Headless applies
+# (SSH without lingering, container builds) have no user systemd manager; there
+# it records the UNITs under NAME for report_skipped_units instead.
 enable_user_units() {
   local name="$1"
   shift
