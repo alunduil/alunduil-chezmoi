@@ -38,13 +38,10 @@ user_units=(
     ssh-agent.service systemd-tmpfiles-clean.timer
 )
 
-outstanding=0
-
 # report <item> <fix>: print one outstanding item and the command that
 # fixes it.
 report() {
     printf '%-40s %s\n' "$1" "$2"
-    outstanding=1
 }
 
 # check_login <name> <fix> <test...>: report <fix> unless <test> passes.
@@ -131,9 +128,13 @@ case "${1:-}" in
 *) printf 'host-status: unknown option: %s (try --help)\n' "$1" >&2; exit 2 ;;
 esac
 
-check_logins
-check_units
-check_apt_packages
-check_mise_tools
-check_commands
-exit "$outstanding"
+outstanding=$(
+    check_logins
+    check_units
+    check_apt_packages
+    check_mise_tools
+    check_commands
+)
+[[ -n "$outstanding" ]] || exit 0
+printf '%s\n' "$outstanding"
+exit 1
