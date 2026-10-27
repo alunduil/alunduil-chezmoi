@@ -36,7 +36,12 @@ on an unmarked `exit 0`.
 
 - `before` passes run in `NN` order, a sort key where one install
   depends on another. Gaps are fine.
-- `after` passes are mutually independent and carry no number.
+- `after` passes are mutually independent and carry no number, except
+  `zz-report-skipped-units`, which sorts last to list every unit the
+  others left disabled.
+- An `after` pass that talks to the user systemd manager guards with
+  `require_user_manager`, which records its units for that report on a
+  headless apply.
 - Enabling a service its own package shipped, such as `tailscaled`,
   stays in the `before` pass that installed it.
 

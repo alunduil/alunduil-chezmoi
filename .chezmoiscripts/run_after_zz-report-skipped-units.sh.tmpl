@@ -1,0 +1,10 @@
+#!/usr/bin/env bash
+# chezmoi runs after-phase passes in name order; the zz- prefix sorts this one
+# last so it sees every skip the enable passes recorded.
+
+set -euo pipefail
+
+# shellcheck source=script/lib/bootstrap.sh
+. "{{ .chezmoi.sourceDir }}/script/lib/bootstrap.sh"
+
+report_skipped_units

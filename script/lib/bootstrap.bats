@@ -97,3 +97,34 @@ on_terminal() {
   [ "$status" -ne 0 ]
   [[ "$stderr" == *"github: add failed, nothing registered — run chezmoi apply again"* ]]
 }
+
+without_user_manager() { systemctl() { return 1; }; }
+with_user_manager() { systemctl() { return 0; }; }
+
+@test "a headless apply ends listing every skipped unit with the remedy" {
+  without_user_manager
+  require_user_manager ssh-agent ssh-agent.service 2>/dev/null || true
+  require_user_manager git-maintenance a.timer b.timer 2>/dev/null || true
+  run --separate-stderr report_skipped_units
+  [ "$status" -eq 0 ]
+  [[ "$stderr" == *"ssh-agent.service"* ]]
+  [[ "$stderr" == *"a.timer"*"b.timer"* ]]
+  [[ "$stderr" == *"enable: re-run chezmoi apply"*"loginctl enable-linger"* ]]
+}
+
+@test "a skip names its units and the remedy, and fails so the pass can exit" {
+  without_user_manager
+  run --separate-stderr require_user_manager ssh-agent ssh-agent.service
+  [ "$status" -ne 0 ]
+  [[ "$stderr" == *"leaving ssh-agent.service disabled — re-run chezmoi apply"* ]]
+}
+
+@test "a later apply with a user manager drops the unit from the report" {
+  without_user_manager
+  require_user_manager ssh-agent ssh-agent.service 2>/dev/null || true
+  with_user_manager
+  require_user_manager ssh-agent ssh-agent.service
+  run --separate-stderr report_skipped_units
+  [ "$status" -eq 0 ]
+  [ -z "$stderr" ]
+}
