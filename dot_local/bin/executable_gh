@@ -1,19 +1,17 @@
 #!/usr/bin/env bash
 # Shim for `gh` that enforces --draft on `gh pr create`. Shadows the apt-
 # installed /usr/bin/gh because ~/.local/bin sits ahead of /usr/bin on PATH
-# (see ~/.profile). Everything other than `gh pr create` is a plain exec
-# passthrough, so there is no behavioural surprise for other subcommands.
+# (see ~/.profile). Every other invocation execs the real gh unchanged.
 #
-# Bypass (for when the human genuinely wants a ready PR):
+# Bypass, for a human opening a ready PR:
 #   GH_DRAFT_GUARD=off gh pr create ...
 # or invoke the real binary directly:
 #   /usr/bin/gh pr create ...
 #   command -p gh pr create ...
 #
-# Intentional limitation: the draft-detector is a whole-token scan, not a
-# full parse of gh's flag grammar. If someone passes `-d` as the *value* of
-# another flag (e.g. `--title -d`) the wrapper would mistake it for --draft.
-# Nobody writes that; correctness here isn't worth embedding a gh parser.
+# Known limitation: has_draft_flag matches whole tokens rather than parsing
+# gh's flags, so `-d` as another flag's value (`--title -d`) passes as
+# --draft. That input is rare enough not to justify a gh flag parser.
 
 set -euo pipefail
 

@@ -62,7 +62,7 @@ teardown() {
 }
 
 # Locks in the `-d`-as-flag-value limitation documented in the wrapper.
-# Flip when fixed; update the wrapper's docstring too.
+# Flip when fixed, and update the wrapper's header comment.
 @test "documented limitation: '-d' as a flag value is mistakenly accepted" {
   run "$WRAPPER_DIR/gh" pr create --title -d --body "body"
   [ "$status" -eq 0 ]
