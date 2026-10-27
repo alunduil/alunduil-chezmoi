@@ -25,15 +25,15 @@ bin="$(command -v truenas-mcp || true)"
 
 if [ ! -s "$url_file" ]; then
   log "truenas-mcp: url missing or empty at $url_file, skipping"
-  exit 0
+  exit 0 # rerun-on: url-hash
 fi
 if [ ! -r "$key_file" ]; then
   log "truenas-mcp: api key not deployed at $key_file, skipping"
-  exit 0
+  exit 0 # rerun-on: key-hash
 fi
 if [ -z "$bin" ]; then
-  log "truenas-mcp: not on PATH, skipping"
-  exit 0
+  log "truenas-mcp: not on PATH, registration retries on the next apply"
+  exit 1
 fi
 
 url="$(<"$url_file")"

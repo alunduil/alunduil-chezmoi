@@ -20,7 +20,7 @@ set -euo pipefail
 token_file="$HOME/.config/github/token"
 if [ ! -r "$token_file" ]; then
   log "github: token not deployed at $token_file, skipping"
-  exit 0
+  exit 0 # rerun-on: token-hash
 fi
 
 token="$(<"$token_file")"
