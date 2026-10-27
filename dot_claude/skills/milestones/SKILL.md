@@ -122,7 +122,7 @@ into a new milestone for next month. Closed milestones stay closed.
 
 A PATCH replaces the whole description. Before one, `diff -u` the
 live description against the one Claude last wrote this session, or
-the new description when there is none. On a difference, show the
+the new description when there is none. If they differ, show the
 diff and ask: merge the edits in, overwrite, or stop.
 
 ```bash
