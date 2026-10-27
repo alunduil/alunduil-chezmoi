@@ -420,3 +420,91 @@ _stub_gh_absent() {
   # One row, not two: dedup collapsed the repeated name.
   [ "$(grep -c 'repo/feature' <<<"$output")" -eq 1 ]
 }
+
+# --- trash: untracked files survive removal ---
+
+# Ignores .env through the canonical's info/exclude, which every worktree
+# shares, so the branch needs no .gitignore commit. A GitHub origin and a gh
+# stub reporting a merged PR send $WT down the unattended remove path.
+_mkmerged_with_env() {
+  _mkworktree
+  printf '.env\n' >>"$HOME/me/repo/.git/info/exclude"
+  printf 'SECRET=1\n' >"$WT/.env"
+  git -C "$HOME/me/repo" remote set-url origin "git@github.com:me/repo.git"
+
+  STUB_DIR="$TMPROOT/stubs"
+  mkdir -p "$STUB_DIR"
+  cat >"$STUB_DIR/gh" <<'STUB'
+#!/usr/bin/env bash
+[[ "${1:-}" == api && "${2:-}" == graphql ]] || exit 1
+printf 'pr0\t7\tMERGED\n'
+STUB
+  chmod +x "$STUB_DIR/gh"
+}
+
+@test "trash: pruning a merged worktree keeps its ignored .env recoverable" {
+  _mkmerged_with_env
+
+  PATH="$STUB_DIR:$PATH" run bash "$POI"
+  assert_success
+  assert_output --partial "PR #7 merged"
+  assert_output --partial "Trashed"
+  [ ! -e "$WT" ]
+
+  local trashed
+  trashed=$(find "$XDG_DATA_HOME/git-worktree-poi/trash/repo" -name .env)
+  [ -n "$trashed" ]
+  [ "$(cat "$trashed")" = "SECRET=1" ]
+}
+
+@test "trash: dry run names the ignored files a prune would trash" {
+  _mkmerged_with_env
+
+  PATH="$STUB_DIR:$PATH" run bash "$POI" -n
+  assert_success
+  assert_output --partial "Would trash"
+  assert_output --regexp 'repo/feature +\.env'
+  [ -e "$WT/.env" ]
+  [ ! -e "$XDG_DATA_HOME/git-worktree-poi/trash" ]
+}
+
+@test "trash: forced removal trashes untracked files too" {
+  _mkworktree
+  printf 'draft\n' >"$WT/notes.txt"
+  local stub; stub=$(_stub_gh_absent)
+
+  PATH="$stub:$PATH" run bash "$POI" -f feature
+  assert_success
+  [ ! -e "$WT" ]
+  [ -n "$(find "$XDG_DATA_HOME/git-worktree-poi/trash/repo" -name notes.txt)" ]
+}
+
+@test "purge_trash: deletes trash past retention and keeps recent trash" {
+  local trash="$XDG_DATA_HOME/git-worktree-poi/trash/repo"
+  mkdir -p "$trash/old-x" "$trash/new-x"
+  touch -d '15 days ago' "$trash/old-x"
+  touch -d '13 days ago' "$trash/new-x"
+
+  run bash -c 'source "$1"; purge_trash' _ "$POI"
+  assert_success
+  [ ! -e "$trash/old-x" ]
+  [ -e "$trash/new-x" ]
+}
+
+@test "restore_untracked: puts trashed paths back where they were" {
+  # Runs when git worktree remove fails after trashing.
+  _mkworktree
+  mkdir -p "$WT/build/out"
+  printf 'SECRET=1\n' >"$WT/.env"
+  printf 'bin\n' >"$WT/build/out/a"
+
+  run bash -c '
+    source "$1"
+    trash_untracked "$2" repo/feature
+    [[ ! -e "$2/.env" ]] || exit 2
+    restore_untracked "$2"
+  ' _ "$POI" "$WT"
+  assert_success
+  [ "$(cat "$WT/.env")" = "SECRET=1" ]
+  [ "$(cat "$WT/build/out/a")" = "bin" ]
+}
