@@ -5,7 +5,4 @@ set -euo pipefail
 # shellcheck source=script/lib/bootstrap.sh
 . "{{ .chezmoi.sourceDir }}/script/lib/bootstrap.sh"
 
-require_user_manager ssh-agent ssh-agent.service || exit 0
-
-systemctl --user daemon-reload
-systemctl --user enable --now ssh-agent.service
+enable_user_units ssh-agent ssh-agent.service

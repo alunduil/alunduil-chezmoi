@@ -92,24 +92,25 @@ _user_manager_remedy() {
   printf 're-run chezmoi apply from a login session, or after sudo loginctl enable-linger %s' "$(id -un)"
 }
 
-# require_user_manager NAME UNIT...: succeed when a user systemd manager is
-# reachable. Headless applies (SSH without lingering, container builds) have
-# none; there it records NAME's UNITs for report_skipped_units and fails, so
-# the pass can `|| exit 0`.
-require_user_manager() {
+# enable_user_units NAME UNIT...: reload the user systemd manager, then enable
+# and start each UNIT. Headless applies (SSH without lingering, container
+# builds) have no user manager; there it records the UNITs under NAME for
+# report_skipped_units instead.
+enable_user_units() {
   local name="$1"
   shift
-  if systemctl --user show-environment >/dev/null 2>&1; then
-    rm -f "$_bootstrap_skipped/$name"
+  if ! systemctl --user show-environment >/dev/null 2>&1; then
+    log "$name: no user systemd session; leaving $* disabled — $(_user_manager_remedy)"
+    mkdir -p "$_bootstrap_skipped"
+    printf '%s\n' "$@" >"$_bootstrap_skipped/$name"
     return 0
   fi
-  log "$name: no user systemd session; leaving $* disabled — $(_user_manager_remedy)"
-  mkdir -p "$_bootstrap_skipped"
-  printf '%s\n' "$@" >"$_bootstrap_skipped/$name"
-  return 1
+  rm -f "$_bootstrap_skipped/$name"
+  systemctl --user daemon-reload
+  systemctl --user enable --now "$@"
 }
 
-# Prints the units require_user_manager left disabled, if any.
+# Prints the units enable_user_units left disabled, if any.
 report_skipped_units() {
   local records=("$_bootstrap_skipped"/*)
   [ -e "${records[0]}" ] || return 0

@@ -1,7 +1,6 @@
 #!/usr/bin/env bash
 # The config hash below re-runs this script when the cleaner config appears or
-# changes, re-asserting the (system-provided) timer. No daemon-reload: we ship
-# tmpfiles config, not a unit.
+# changes, re-asserting the (system-provided) timer.
 # cache cleaner config: {{ include "dot_config/user-tmpfiles.d/cache.conf" | sha256sum }}
 
 set -euo pipefail
@@ -9,6 +8,4 @@ set -euo pipefail
 # shellcheck source=script/lib/bootstrap.sh
 . "{{ .chezmoi.sourceDir }}/script/lib/bootstrap.sh"
 
-require_user_manager tmpfiles-clean systemd-tmpfiles-clean.timer || exit 0
-
-systemctl --user enable --now systemd-tmpfiles-clean.timer
+enable_user_units tmpfiles-clean systemd-tmpfiles-clean.timer

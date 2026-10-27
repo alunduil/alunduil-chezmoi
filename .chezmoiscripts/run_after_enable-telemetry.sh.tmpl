@@ -10,15 +10,14 @@ set -euo pipefail
 # shellcheck source=script/lib/bootstrap.sh
 . "{{ .chezmoi.sourceDir }}/script/lib/bootstrap.sh"
 
-require_user_manager telemetry cgroup-pids-textfile.timer alloy.service || exit 0
-
-systemctl --user daemon-reload
-systemctl --user enable --now cgroup-pids-textfile.timer
+units=(cgroup-pids-textfile.timer)
 
 # alloy.service fails to start without its token, which the first bootstrap
 # pass does not deploy.
 if [ -s "$HOME/.config/grafana-cloud/token" ]; then
-  systemctl --user enable --now alloy.service
+  units+=(alloy.service)
 else
-  echo "==> telemetry: no Grafana Cloud token yet; leaving alloy disabled" >&2
+  log "telemetry: no Grafana Cloud token yet; leaving alloy disabled"
 fi
+
+enable_user_units telemetry "${units[@]}"
