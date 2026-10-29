@@ -21,20 +21,19 @@ set -euo pipefail
 # shellcheck source=script/lib/bootstrap.sh
 . "{{ .chezmoi.sourceDir }}/script/lib/bootstrap.sh"
 
-APT_CONF_SRC="{{ .chezmoi.sourceDir }}/etc/apt"
-NEEDRESTART_CONF_SRC="{{ .chezmoi.sourceDir }}/etc/needrestart"
+ETC_SRC="{{ .chezmoi.sourceDir }}/etc"
 
 # --------------------------------------------------------------------- config
-install_if_changed -m 0644 "$APT_CONF_SRC/20auto-upgrades" /etc/apt/apt.conf.d/20auto-upgrades
-install_if_changed -m 0644 "$APT_CONF_SRC/50unattended-upgrades" /etc/apt/apt.conf.d/50unattended-upgrades
+install_if_changed -m 0644 "$ETC_SRC/apt/20auto-upgrades" /etc/apt/apt.conf.d/20auto-upgrades
+install_if_changed -m 0644 "$ETC_SRC/apt/50unattended-upgrades" /etc/apt/apt.conf.d/50unattended-upgrades
 
 # needrestart drop-in: a conf.d snippet so the package's own needrestart.conf
 # stays untouched. -D creates /etc/needrestart/conf.d/ if the package layout
 # ever drops it.
-install_if_changed -D -m 0644 "$NEEDRESTART_CONF_SRC/conf.d/zz-alunduil.conf" /etc/needrestart/conf.d/zz-alunduil.conf
+install_if_changed -D -m 0644 "$ETC_SRC/needrestart/conf.d/zz-alunduil.conf" /etc/needrestart/conf.d/zz-alunduil.conf
 
 install_if_changed -D -m 0644 \
-  "{{ .chezmoi.sourceDir }}/etc/systemd/system/apt-daily.service.d/timeout.conf" \
+  "$ETC_SRC/systemd/system/apt-daily.service.d/timeout.conf" \
   /etc/systemd/system/apt-daily.service.d/timeout.conf
 
 daemon_reload_if_installed
