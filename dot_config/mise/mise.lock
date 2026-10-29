@@ -69,14 +69,15 @@ url = "https://github.com/lycheeverse/lychee/releases/download/lychee-v0.24.2/ly
 url_api = "https://api.github.com/repos/lycheeverse/lychee/releases/assets/409959271"
 
 [[tools."github:seachicken/gh-poi"]]
-version = "0.18.5"
+version = "0.18.6"
 backend = "github:seachicken/gh-poi"
-specifiers = ["0.18.5"]
+specifiers = ["v0.18.6"]
 
 [tools."github:seachicken/gh-poi"."platforms.linux-x64"]
-checksum = "sha256:7b5ba0017ab26fe3866055abd56bcc25d73f9ccb0c4d10668296beb93ea85a3b"
-url = "https://github.com/seachicken/gh-poi/releases/download/v0.18.5/linux-amd64"
-url_api = "https://api.github.com/repos/seachicken/gh-poi/releases/assets/653070155"
+checksum = "sha256:e104f30e89dd2ecc188830113fe00a8cbd839083ba2f576945c4fd25bb373bad"
+checksum_source = "mise-versions"
+url = "https://github.com/seachicken/gh-poi/releases/download/v0.18.6/linux-amd64"
+url_api = "https://api.github.com/repos/seachicken/gh-poi/releases/assets/677914294"
 
 [[tools."github:tfausak/cabal-gild"]]
 version = "1.8.4.2"
