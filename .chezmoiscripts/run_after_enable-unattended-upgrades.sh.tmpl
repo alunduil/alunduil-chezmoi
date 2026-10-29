@@ -33,6 +33,12 @@ install_if_changed -m 0644 "$APT_CONF_SRC/50unattended-upgrades" /etc/apt/apt.co
 # ever drops it.
 install_if_changed -D -m 0644 "$NEEDRESTART_CONF_SRC/conf.d/zz-alunduil.conf" /etc/needrestart/conf.d/zz-alunduil.conf
 
+install_if_changed -D -m 0644 \
+  "{{ .chezmoi.sourceDir }}/etc/systemd/system/apt-daily.service.d/timeout.conf" \
+  /etc/systemd/system/apt-daily.service.d/timeout.conf
+
+daemon_reload_if_installed
+
 # --------------------------------------------------------------------- timers
 enable_now apt-daily.timer apt-daily-upgrade.timer
 
