@@ -9,12 +9,16 @@ usage() {
     cat <<'EOF'
 Usage: dev-cache-gc
 
-  Reclaim disk by running each dev tool's native garbage collection over the
-  caches that live *outside* ~/.cache, where the systemd-tmpfiles cleaner can't
-  reach them. Each tool's own GC is used rather than a blind age-deleter: these
-  trees mix regenerable cache with installed toolchains, and only the tool
-  knows which is which. Installed toolchains and version stores are left
-  untouched by design.
+  Reclaim disk by running each dev tool's native garbage collection. The
+  systemd-tmpfiles cleaner deletes ~/.cache entries by age, so it misses:
+
+    - caches outside ~/.cache
+    - stale entries in caches still in daily use, such as hook environments
+      for deleted worktrees and tool versions an update replaced
+
+  Each tool's own GC is used rather than a blind age-deleter: these trees mix
+  regenerable cache with installed toolchains, and only the tool knows which
+  is which. Toolchains a tracked config still pins are kept.
 
   A tool whose binary is absent is skipped cleanly; a tool that errors is
   reported without aborting the rest. Run daily by dev-cache-gc.timer; safe to
@@ -43,10 +47,11 @@ if (($#)); then
 fi
 
 # systemd --user does not source ~/.bashrc, and each toolchain installs its
-# binaries outside the unit's PATH. Load the same environment .bashrc would so
-# `command -v` resolves ghcup, cargo-cache, npm, and pnpm. Each guard
-# no-ops when the toolchain is absent, which is also what lets the tests run
-# against PATH stubs alone.
+# binaries outside the unit's PATH. Load the same environment ~/.profile and
+# .bashrc would so `command -v` resolves whatever mise, nvm, cargo, and ghcup
+# installed. Each guard no-ops when the toolchain is absent, which is also what
+# lets the tests run against PATH stubs alone.
+[[ -d "$HOME/.local/share/mise/shims" ]] && PATH="$HOME/.local/share/mise/shims:$PATH"
 export NVM_DIR="${XDG_CONFIG_HOME:-$HOME/.config}/nvm"
 if [[ -s "$NVM_DIR/nvm.sh" ]]; then
     # shellcheck disable=SC1091
@@ -92,11 +97,17 @@ run_gc() {
 # profiling libs / docs from installed toolchains, all of which the version
 # store stays out of by design.
 run_gc "ghcup cache" ghcup gc -c -t
+# npm never expires npx entries. Clearing them all costs no download: npx
+# reinstalls from npm's content cache.
+run_gc "npx cache" npm cache npx rm --force
 run_gc "npm cache" npm cache verify
 # cargo-cache, not `cargo cache`: the subcommand form dispatches through
 # rustup's cargo shim, which fails when no default toolchain is installed.
 run_gc "cargo registry" cargo-cache --autoclean
 run_gc "pnpm store" pnpm store prune
+run_gc "prek cache" prek cache gc
+run_gc "pre-commit cache" pre-commit gc
+run_gc "mise versions" mise prune --yes
 
 if ((${#failures[@]})); then
     printf '%s%d tool(s) failed:%s\n' "$BOLD" "${#failures[@]}" "$RESET"

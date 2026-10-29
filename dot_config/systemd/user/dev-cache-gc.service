@@ -1,5 +1,5 @@
 [Unit]
-Description=Reclaim out-of-~/.cache dev tool caches (dev-cache-gc)
+Description=Reclaim dev tool caches via each tool's native GC (dev-cache-gc)
 
 [Service]
 Type=oneshot
