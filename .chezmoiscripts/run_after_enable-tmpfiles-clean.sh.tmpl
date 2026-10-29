@@ -1,9 +1,10 @@
 #!/usr/bin/env bash
 # The config hashes below re-run this script when a cleaner config appears or
 # changes, re-asserting the (system-provided) timers.
-# cache cleaner config: {{ include "dot_config/user-tmpfiles.d/cache.conf" | sha256sum }}
+# cache cleaner config:     {{ include "dot_config/user-tmpfiles.d/cache.conf" | sha256sum }}
 # downloads cleaner config: {{ include "dot_config/user-tmpfiles.d/downloads.conf" | sha256sum }}
-# trash cleaner config: {{ include "dot_config/user-tmpfiles.d/trash.conf" | sha256sum }}
+# trash cleaner config:     {{ include "dot_config/user-tmpfiles.d/trash.conf" | sha256sum }}
+# tmp cleaner config:       {{ include "etc/tmpfiles.d/tmp.conf" | sha256sum }}
 #
 # The system timer is static and runs by default; it only needs the /etc
 # override of Debian's tmp.conf, which gives /tmp and /var/tmp an age.
@@ -13,6 +14,8 @@ set -euo pipefail
 # shellcheck source=script/lib/bootstrap.sh
 . "{{ .chezmoi.sourceDir }}/script/lib/bootstrap.sh"
 
-install_if_changed -m 0644 "{{ .chezmoi.sourceDir }}/etc/tmpfiles.d/tmp.conf" /etc/tmpfiles.d/tmp.conf
+ETC_SRC="{{ .chezmoi.sourceDir }}/etc"
+
+install_if_changed -m 0644 "$ETC_SRC/tmpfiles.d/tmp.conf" /etc/tmpfiles.d/tmp.conf
 
 enable_user_units tmpfiles-clean systemd-tmpfiles-clean.timer
