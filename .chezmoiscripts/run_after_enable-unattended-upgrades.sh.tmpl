@@ -2,16 +2,15 @@
 # Configures unattended-upgrades so updates apply on their own via the
 # apt-daily-upgrade timer. The packages themselves come from the apt list in
 # .chezmoidata; this pass only places config and enables timers. The config
-# files live in etc/apt/ as whole files (chezmoi can't target /etc, which is
+# files live under etc/ as whole files (chezmoi can't target /etc, which is
 # outside $HOME) and are copied in with sudo. Results land in
 # /var/log/unattended-upgrades/ and the journal -- no email or desktop
-# notification (the box is attended), and automatic reboot stays off. See #228.
+# notification (the box is attended), and automatic reboot stays off.
 #
 # needrestart complements u-u: auto-reboot is off, so when an upgrade replaces
 # a shared library the daemons mapping the old copy keep running it until they
 # happen to restart. needrestart's apt DPkg::Post-Invoke hook restarts them in
 # place after each upgrade, so the security fix takes hold without a reboot.
-# See #238.
 #
 # Each file is compared against its deployed copy, so an edit here and a
 # hand-edit under /etc both reconcile.
@@ -21,17 +20,22 @@ set -euo pipefail
 # shellcheck source=script/lib/bootstrap.sh
 . "{{ .chezmoi.sourceDir }}/script/lib/bootstrap.sh"
 
-APT_CONF_SRC="{{ .chezmoi.sourceDir }}/etc/apt"
-NEEDRESTART_CONF_SRC="{{ .chezmoi.sourceDir }}/etc/needrestart"
+ETC_SRC="{{ .chezmoi.sourceDir }}/etc"
 
 # --------------------------------------------------------------------- config
-install_if_changed -m 0644 "$APT_CONF_SRC/20auto-upgrades" /etc/apt/apt.conf.d/20auto-upgrades
-install_if_changed -m 0644 "$APT_CONF_SRC/50unattended-upgrades" /etc/apt/apt.conf.d/50unattended-upgrades
+install_if_changed -m 0644 "$ETC_SRC/apt/20auto-upgrades" /etc/apt/apt.conf.d/20auto-upgrades
+install_if_changed -m 0644 "$ETC_SRC/apt/50unattended-upgrades" /etc/apt/apt.conf.d/50unattended-upgrades
 
 # needrestart drop-in: a conf.d snippet so the package's own needrestart.conf
 # stays untouched. -D creates /etc/needrestart/conf.d/ if the package layout
 # ever drops it.
-install_if_changed -D -m 0644 "$NEEDRESTART_CONF_SRC/conf.d/zz-alunduil.conf" /etc/needrestart/conf.d/zz-alunduil.conf
+install_if_changed -D -m 0644 "$ETC_SRC/needrestart/conf.d/zz-alunduil.conf" /etc/needrestart/conf.d/zz-alunduil.conf
+
+install_if_changed -D -m 0644 \
+  "$ETC_SRC/systemd/system/apt-daily.service.d/timeout.conf" \
+  /etc/systemd/system/apt-daily.service.d/timeout.conf
+
+daemon_reload_if_installed
 
 # --------------------------------------------------------------------- timers
 enable_now apt-daily.timer apt-daily-upgrade.timer
