@@ -45,10 +45,10 @@ if (($#)); then
 fi
 
 # systemd --user does not source ~/.bashrc, and each toolchain installs its
-# binaries outside the unit's PATH. Load the same environment .bashrc would so
-# `command -v` resolves ghcup, cargo-cache, npm, pnpm, and the mise-pinned
-# prek. Each guard no-ops when the toolchain is absent, which is also what lets
-# the tests run against PATH stubs alone.
+# binaries outside the unit's PATH. Load the same environment ~/.profile and
+# .bashrc would so `command -v` resolves whatever mise, nvm, cargo, and ghcup
+# installed. Each guard no-ops when the toolchain is absent, which is also what
+# lets the tests run against PATH stubs alone.
 [[ -d "$HOME/.local/share/mise/shims" ]] && PATH="$HOME/.local/share/mise/shims:$PATH"
 export NVM_DIR="${XDG_CONFIG_HOME:-$HOME/.config}/nvm"
 if [[ -s "$NVM_DIR/nvm.sh" ]]; then
@@ -95,8 +95,8 @@ run_gc() {
 # profiling libs / docs from installed toolchains, all of which the version
 # store stays out of by design.
 run_gc "ghcup cache" ghcup gc -c -t
-# npx entries are never aged out; dropping them all is cheap because npx
-# reinstalls from the content cache verified below.
+# npx entries are never aged out; dropping them all costs no download because
+# npx reinstalls from npm's content cache.
 run_gc "npx cache" npm cache npx rm --force
 run_gc "npm cache" npm cache verify
 # cargo-cache, not `cargo cache`: the subcommand form dispatches through
