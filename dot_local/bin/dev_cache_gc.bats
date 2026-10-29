@@ -39,13 +39,32 @@ stub_tools() {
 }
 
 @test "runs each tool's native GC with the expected flags" {
-  stub_tools ghcup npm cargo-cache pnpm
+  stub_tools ghcup npm cargo-cache pnpm prek pre-commit mise
   run env -i HOME="$HOME" PATH="$PATH" GC_LOG="$GC_LOG" GC_FAIL="$GC_FAIL" bash "$GC"
   [ "$status" -eq 0 ]
   grep -qx "ghcup	gc -c -t" "$GC_LOG"
+  grep -qx "npm	cache npx rm --force" "$GC_LOG"
   grep -qx "npm	cache verify" "$GC_LOG"
   grep -qx "cargo-cache	--autoclean" "$GC_LOG"
   grep -qx "pnpm	store prune" "$GC_LOG"
+  grep -qx "prek	cache gc" "$GC_LOG"
+  grep -qx "pre-commit	gc" "$GC_LOG"
+  grep -qx "mise	prune --yes" "$GC_LOG"
+}
+
+@test "npx entries are dropped before the content cache is verified" {
+  stub_tools npm
+  run env -i HOME="$HOME" PATH="$PATH" GC_LOG="$GC_LOG" GC_FAIL="$GC_FAIL" bash "$GC"
+  [ "$status" -eq 0 ]
+  [ "$(grep '^npm' "$GC_LOG" | cut -f2 | paste -sd,)" = "cache npx rm --force,cache verify" ]
+}
+
+@test "mise shims are put on PATH so mise-pinned tools resolve" {
+  mkdir -p "$HOME/.local/share/mise/shims"
+  ln -sf "$STUB_DIR/stub" "$HOME/.local/share/mise/shims/prek"
+  run env -i HOME="$HOME" PATH="$PATH" GC_LOG="$GC_LOG" GC_FAIL="$GC_FAIL" bash "$GC"
+  [ "$status" -eq 0 ]
+  grep -qx "prek	cache gc" "$GC_LOG"
 }
 
 @test "a missing tool is skipped, not a failure" {

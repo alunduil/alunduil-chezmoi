@@ -1,5 +1,5 @@
 [Unit]
-Description=Daily GC of out-of-~/.cache dev tool caches
+Description=Daily native GC of dev tool caches
 
 [Timer]
 OnCalendar=*-*-* 04:00:00
