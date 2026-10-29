@@ -5,13 +5,12 @@
 # files live under etc/ as whole files (chezmoi can't target /etc, which is
 # outside $HOME) and are copied in with sudo. Results land in
 # /var/log/unattended-upgrades/ and the journal -- no email or desktop
-# notification (the box is attended), and automatic reboot stays off. See #228.
+# notification (the box is attended), and automatic reboot stays off.
 #
 # needrestart complements u-u: auto-reboot is off, so when an upgrade replaces
 # a shared library the daemons mapping the old copy keep running it until they
 # happen to restart. needrestart's apt DPkg::Post-Invoke hook restarts them in
 # place after each upgrade, so the security fix takes hold without a reboot.
-# See #238.
 #
 # Each file is compared against its deployed copy, so an edit here and a
 # hand-edit under /etc both reconcile.
