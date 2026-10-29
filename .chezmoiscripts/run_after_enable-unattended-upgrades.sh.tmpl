@@ -2,7 +2,7 @@
 # Configures unattended-upgrades so updates apply on their own via the
 # apt-daily-upgrade timer. The packages themselves come from the apt list in
 # .chezmoidata; this pass only places config and enables timers. The config
-# files live in etc/apt/ as whole files (chezmoi can't target /etc, which is
+# files live under etc/ as whole files (chezmoi can't target /etc, which is
 # outside $HOME) and are copied in with sudo. Results land in
 # /var/log/unattended-upgrades/ and the journal -- no email or desktop
 # notification (the box is attended), and automatic reboot stays off. See #228.
