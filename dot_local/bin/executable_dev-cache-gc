@@ -10,13 +10,15 @@ usage() {
 Usage: dev-cache-gc
 
   Reclaim disk by running each dev tool's native garbage collection. The
-  systemd-tmpfiles cleaner ages ~/.cache by time alone, so it can't reach
-  caches outside ~/.cache, nor orphaned entries inside a cache that is still in
-  daily use (hook environments for deleted worktrees, tool versions a bump
-  superseded). Each tool's own GC is used rather than a blind age-deleter: these
-  trees mix regenerable cache with installed toolchains, and only the tool
-  knows which is which. Toolchains still referenced by a tracked config are
-  left untouched by design.
+  systemd-tmpfiles cleaner deletes ~/.cache entries by age, so it misses:
+
+    - caches outside ~/.cache
+    - stale entries in caches still in daily use, such as hook environments
+      for deleted worktrees and tool versions an update replaced
+
+  Each tool's own GC is used rather than a blind age-deleter: these trees mix
+  regenerable cache with installed toolchains, and only the tool knows which
+  is which. Toolchains a tracked config still pins are kept.
 
   A tool whose binary is absent is skipped cleanly; a tool that errors is
   reported without aborting the rest. Run daily by dev-cache-gc.timer; safe to
@@ -95,19 +97,16 @@ run_gc() {
 # profiling libs / docs from installed toolchains, all of which the version
 # store stays out of by design.
 run_gc "ghcup cache" ghcup gc -c -t
-# npx entries are never aged out; dropping them all costs no download because
-# npx reinstalls from npm's content cache.
+# npm never expires npx entries. Clearing them all costs no download: npx
+# reinstalls from npm's content cache.
 run_gc "npx cache" npm cache npx rm --force
 run_gc "npm cache" npm cache verify
 # cargo-cache, not `cargo cache`: the subcommand form dispatches through
 # rustup's cargo shim, which fails when no default toolchain is installed.
 run_gc "cargo registry" cargo-cache --autoclean
 run_gc "pnpm store" pnpm store prune
-# Hook caches key environments by the configs that used them; GC drops those
-# whose config is gone, which is every deleted worktree's.
 run_gc "prek cache" prek cache gc
 run_gc "pre-commit cache" pre-commit gc
-# Removes versions no tracked config pins, i.e. the ones a bump superseded.
 run_gc "mise versions" mise prune --yes
 
 if ((${#failures[@]})); then

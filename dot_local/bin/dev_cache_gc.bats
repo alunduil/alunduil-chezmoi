@@ -38,8 +38,8 @@ stub_tools() {
   for t in "$@"; do ln -sf "$STUB_DIR/stub" "$STUB_DIR/$t"; done
 }
 
-# run_dev_cache_gc [ARGS...]: run dev-cache-gc under an emptied environment,
-# as the systemd unit does, passing through only what the stubs read.
+# run_dev_cache_gc [ARGS...]: run the script with the bare environment the
+# systemd unit gives it.
 run_dev_cache_gc() {
   run env -i HOME="$HOME" PATH="$PATH" GC_LOG="$GC_LOG" GC_FAIL="$GC_FAIL" bash "$GC" "$@"
 }
@@ -58,7 +58,7 @@ run_dev_cache_gc() {
   grep -qx "mise	prune --yes" "$GC_LOG"
 }
 
-@test "mise shims are put on PATH so mise-pinned tools resolve" {
+@test "mise-pinned tools resolve through the mise shims" {
   mkdir -p "$HOME/.local/share/mise/shims"
   ln -sf "$STUB_DIR/stub" "$HOME/.local/share/mise/shims/prek"
   run_dev_cache_gc
