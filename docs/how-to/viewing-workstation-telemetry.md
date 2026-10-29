@@ -14,7 +14,8 @@ script/diagnose-zellij-freeze
 
 It writes a bundle to `/tmp/zellij-freeze-<timestamp>/` and a matching
 `.tar.gz`. Alloy ships the `*.txt` files from that directory, so the snapshot
-survives a container reset. For fork ancestry during a reproduction, add
+survives a container reset. The local bundle ages out of `/tmp` after 10
+days, so move the `.tar.gz` elsewhere to keep it. For fork ancestry during a reproduction, add
 `sudo forkstat -e exec,fork`.
 
 ## Read the local record

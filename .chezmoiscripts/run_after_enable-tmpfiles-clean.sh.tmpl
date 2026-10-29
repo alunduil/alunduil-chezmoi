@@ -6,8 +6,8 @@
 # trash cleaner config:     {{ include "dot_config/user-tmpfiles.d/trash.conf" | sha256sum }}
 # tmp cleaner config:       {{ include "etc/tmpfiles.d/tmp.conf" | sha256sum }}
 #
-# The system timer is static and runs by default; it only needs the /etc
-# override of Debian's tmp.conf, which gives /tmp and /var/tmp an age.
+# The system timer is static and already runs daily, so the system side needs
+# only the tmp.conf override.
 
 set -euo pipefail
 
