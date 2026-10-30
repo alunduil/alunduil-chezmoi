@@ -7,7 +7,7 @@
 # The host is a privileged container booting systemd, so system and user units
 # really enable. Secrets stay out: the first apply skips 1Password on a real
 # host too, and the encrypted files need an age key CI does not hold. Needs
-# docker; a run installs the whole workstation and takes a while.
+# docker; a run installs the whole workstation in about ten minutes.
 
 set -euo pipefail
 

@@ -72,8 +72,8 @@ script/checks/chezmoi-apply    # apply round-trip (needs chezmoi + age)
 ```
 
 `script/checks/fresh-host` bootstraps a systemd container from scratch and
-fails on anything a second apply changes. It needs docker, takes most of an
-hour, and stays out of `just check`; CI runs it when bootstrap inputs change
+fails on anything a second apply changes. It needs docker, takes about ten
+minutes, and stays out of `just check`; CI runs it when bootstrap inputs change
 and weekly.
 
 ## Two CLAUDE.md files
