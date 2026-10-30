@@ -80,6 +80,17 @@ repos:
         language: system
         files: \.(md|kdl)$
 
+      # `mise lock --dry-run` exits 0 even when the lockfile is stale.
+      - id: mise-lock
+        name: mise-lock
+        entry: >-
+          bash -c 'export MISE_GLOBAL_CONFIG_FILE="$PWD/dot_config/mise/config.toml";
+          [ "$(mise lock --global --dry-run --json)" = "[]" ] ||
+          { echo "mise.lock is out of date with config.toml. Run just lock-tools and commit dot_config/mise/." >&2; exit 1; }'
+        language: system
+        pass_filenames: false
+        files: ^dot_config/mise/
+
   - repo: https://github.com/renovatebot/pre-commit-hooks
     rev: 44.188.4
     hooks:
