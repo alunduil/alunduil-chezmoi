@@ -8,7 +8,7 @@ ROOT="$(git -C "$(dirname "${BASH_SOURCE[0]}")" rev-parse --show-toplevel)"
 export MISE_GLOBAL_CONFIG_FILE="${MISE_GLOBAL_CONFIG_FILE:-$ROOT/dot_config/mise/config.toml}"
 
 # Tools that don't run as `<last segment of their mise name> --version`. An
-# npm library is empty: it has nothing to run.
+# empty entry marks an npm library, which has nothing to run.
 declare -A RUN_COMMANDS=(
   [github:seachicken/gh-poi]='gh-poi --help'
   [npm:bats-assert]=''

@@ -22,7 +22,7 @@ setup() {
   done
   printf '%s\n' "${TOOLS[@]}" >"$WORK/pins"
 
-  # Stands in for mise: every tool in $WORK/pins is pinned.
+  # Stands in for mise.
   cat >"$WORK/stub/mise" <<EOF
 #!/usr/bin/env bash
 case "\$1" in
