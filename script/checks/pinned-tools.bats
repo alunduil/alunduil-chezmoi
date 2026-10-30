@@ -18,7 +18,7 @@ setup() {
   WORK="$(mktemp -d)"
   mkdir -p "$WORK/stub" "$WORK/tools"
   for bin in "${BINARIES[@]}"; do
-    fake_tool "$bin" "$bin"
+    fake_tool "$bin"
   done
   printf '%s\n' "${TOOLS[@]}" >"$WORK/pins"
 
@@ -39,7 +39,7 @@ teardown() {
 }
 
 fake_tool() {
-  printf '#!/bin/sh\necho "%s"\n' "$2" >"$WORK/tools/$1"
+  printf '#!/bin/sh\n' >"$WORK/tools/$1"
   chmod +x "$WORK/tools/$1"
 }
 

@@ -23,11 +23,11 @@ check_tool() {
   local tool="$1" cmd bin output
   local -a argv
   cmd="$(run_command "$tool")"
-  read -ra argv <<<"$cmd"
-  if [ "${#argv[@]}" -eq 0 ]; then
+  if [ -z "$cmd" ]; then
     printf 'OK: %s\n' "$tool"
     return 0
   fi
+  read -ra argv <<<"$cmd"
   # A same-named binary elsewhere on PATH can't stand in for one missing from
   # the pinned release.
   if ! bin="$(mise which "${argv[0]}" 2>&1)"; then
