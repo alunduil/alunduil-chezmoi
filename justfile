@@ -82,7 +82,7 @@ check-telemetry:
 check-systemd:
     script/checks/systemd-units
 
-# Every pinned tool runs and reports its pinned version (needs mise).
+# Every pinned tool runs (needs mise).
 check-pinned-tools:
     script/checks/pinned-tools
 
