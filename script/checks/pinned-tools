@@ -39,9 +39,8 @@ reports_version() {
   grep -Eq "(^|[^0-9.])${2//./\\.}([^0-9.]|\\.?$)" <<<"$1"
 }
 
-# Resolves $1 inside the mise install, so a same-named binary elsewhere on
-# PATH can't stand in for one missing from the pinned release. A function
-# defined here resolves to itself.
+# A same-named binary elsewhere on PATH can't stand in for one missing from
+# the pinned release.
 resolve_bin() {
   if declare -F "$1" >/dev/null; then
     printf '%s\n' "$1"
@@ -70,8 +69,8 @@ check_tool() {
   printf 'OK: %s %s\n' "$tool" "$version"
 }
 
-# Each pinned tool and the version mise resolved it to, tab-separated. The
-# resolved version drops the v that a release tag carries in config.toml.
+# A pin written as a release tag keeps the tag's v, which the tool's own
+# output may omit. The resolved version drops it.
 resolved_pins() {
   mise ls --current --json | jq -r 'to_entries[] | "\(.key)\t\(.value[0].version)"'
 }

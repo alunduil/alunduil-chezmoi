@@ -2,7 +2,6 @@
 bats_require_minimum_version 1.5.0
 
 TOOLS=(lazygit yq github:grafana/alloy github:seachicken/gh-poi npm:bats-assert npm:bats-support)
-# Every fake tool is pinned at this version.
 PIN=1.2.3
 # Read in a subshell so the script's shell options stay out of bats.
 mapfile -t BINARIES < <(bash -c '
