@@ -2,6 +2,8 @@
 bats_require_minimum_version 1.5.0
 
 TOOLS=(lazygit yq github:grafana/alloy github:seachicken/gh-poi npm:bats-assert npm:bats-support)
+# Every fake tool is pinned at this version.
+PIN=1.2.3
 # Read in a subshell so the script's shell options stay out of bats.
 mapfile -t BINARIES < <(bash -c '
   source "$1"
@@ -18,24 +20,24 @@ setup() {
   WORK="$(mktemp -d)"
   mkdir -p "$WORK/stub" "$WORK/tools"
   for bin in "${BINARIES[@]}"; do
-    fake_tool "$bin" "$bin version v1.2.3"
+    fake_tool "$bin" "$bin version v$PIN"
   done
   # go_module_version reads the binary itself, so this fake carries Go's
   # module line.
-  fake_tool gh-poi "$(printf 'mod\tgithub.com/seachicken/gh-poi\tv1.2.3')"
+  fake_tool gh-poi "$(printf 'mod\tgithub.com/seachicken/gh-poi\tv%s' "$PIN")"
   for tool in "${TOOLS[@]}"; do
     [[ "$tool" == npm:* ]] || continue
     mkdir -p "$WORK/npm/node_modules/${tool#npm:}"
-    printf '{"version": "1.2.3"}\n' >"$WORK/npm/node_modules/${tool#npm:}/package.json"
+    printf '{"version": "%s"}\n' "$PIN" >"$WORK/npm/node_modules/${tool#npm:}/package.json"
   done
   printf '%s\n' "${TOOLS[@]}" >"$WORK/pins"
 
-  # Stands in for mise: every tool in $WORK/pins is pinned at 1.2.3, written
-  # as the release tag v1.2.3.
+  # Stands in for mise: every tool in $WORK/pins is pinned at $PIN, written
+  # as the release tag v$PIN.
   cat >"$WORK/stub/mise" <<EOF
 #!/usr/bin/env bash
 case "\$1" in
-  ls) jq -Rn '[inputs | {(.): [{requested_version: "v1.2.3", version: "1.2.3"}]}] | add' "$WORK/pins" ;;
+  ls) jq -Rn '[inputs | {(.): [{requested_version: "v$PIN", version: "$PIN"}]}] | add' "$WORK/pins" ;;
   which) [ -x "$WORK/tools/\$2" ] && echo "$WORK/tools/\$2" || { echo "\$2 is not a mise bin" >&2; exit 1; } ;;
   where) printf '%s\n' "$WORK/npm" ;;
 esac
@@ -56,17 +58,17 @@ fake_tool() {
 @test "every tool reporting its pin passes" {
   run "$BATS_TEST_DIRNAME/pinned-tools"
   assert_success
-  assert_output --partial 'OK: lazygit 1.2.3'
-  assert_output --partial 'OK: github:grafana/alloy 1.2.3'
-  assert_output --partial 'OK: npm:bats-support 1.2.3'
-  assert_output --partial 'OK: github:seachicken/gh-poi 1.2.3'
+  assert_output --partial "OK: lazygit $PIN"
+  assert_output --partial "OK: github:grafana/alloy $PIN"
+  assert_output --partial "OK: npm:bats-support $PIN"
+  assert_output --partial "OK: github:seachicken/gh-poi $PIN"
 }
 
 @test "a binary omitting the pin's v prefix passes" {
-  fake_tool alloy 'alloy version 1.2.3'
+  fake_tool alloy "alloy version $PIN"
   run "$BATS_TEST_DIRNAME/pinned-tools"
   assert_success
-  assert_output --partial 'OK: github:grafana/alloy 1.2.3'
+  assert_output --partial "OK: github:grafana/alloy $PIN"
 }
 
 @test "a backend-qualified pin runs the binary its last segment names" {
@@ -102,12 +104,12 @@ fake_tool() {
   fake_tool lazygit 'lazygit version v1.2.4'
   run "$BATS_TEST_DIRNAME/pinned-tools"
   assert_failure
-  assert_output --partial 'FAIL: lazygit: `lazygit --version` does not report 1.2.3'
+  assert_output --partial "FAIL: lazygit: \`lazygit --version\` does not report $PIN"
 }
 
 @test "a pin that prefixes the reported version fails" {
-  fake_tool lazygit 'lazygit version v1.2.30'
+  fake_tool lazygit "lazygit version v${PIN}0"
   run "$BATS_TEST_DIRNAME/pinned-tools"
   assert_failure
-  assert_output --partial 'does not report 1.2.3'
+  assert_output --partial "does not report $PIN"
 }
