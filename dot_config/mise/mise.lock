@@ -89,14 +89,15 @@ url = "https://github.com/tfausak/cabal-gild/releases/download/1.8.4.2/cabal-gil
 url_api = "https://api.github.com/repos/tfausak/cabal-gild/releases/assets/518410879"
 
 [[tools."github:truenas/truenas-mcp"]]
-version = "0.0.6"
+version = "0.0.7"
 backend = "github:truenas/truenas-mcp"
-specifiers = ["0.0.6"]
+specifiers = ["v0.0.7"]
 
 [tools."github:truenas/truenas-mcp"."platforms.linux-x64"]
-checksum = "sha256:920a1042763f2ed31937c5cf3072fbd2defdd863dbfb3e1078aeed0275f5fa1d"
-url = "https://github.com/truenas/truenas-mcp/releases/download/v0.0.6/truenas-mcp-linux-amd64.tar.gz"
-url_api = "https://api.github.com/repos/truenas/truenas-mcp/releases/assets/486467024"
+checksum = "sha256:884af2c2871122cab8f4d8ec295f1a6b85e6cfb32799c21f74cd39446302ec2a"
+checksum_source = "mise-versions"
+url = "https://github.com/truenas/truenas-mcp/releases/download/v0.0.7/truenas-mcp-linux-amd64.tar.gz"
+url_api = "https://api.github.com/repos/truenas/truenas-mcp/releases/assets/681985440"
 
 [[tools.hlint]]
 version = "3.10"
