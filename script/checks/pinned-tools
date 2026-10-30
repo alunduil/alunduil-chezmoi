@@ -64,9 +64,15 @@ check_tool() {
   printf 'OK: %s %s\n' "$tool" "$version"
 }
 
+# Each pinned tool and the version mise resolved it to, tab-separated. The
+# resolved version drops the v that a release tag carries in config.toml.
+resolved_pins() {
+  mise ls --current --json | jq -r 'to_entries[] | "\(.key)\t\(.value[0].version)"'
+}
+
 if [[ "${BASH_SOURCE[0]}" != "$0" ]]; then return 0; fi
 
-if ! pins="$(mise ls --current --json | jq -r 'to_entries[] | "\(.key)\t\(.value[0].version)"')"; then
+if ! pins="$(resolved_pins)"; then
   printf 'FAIL: could not list mise pins\n' >&2
   exit 1
 fi
