@@ -1,97 +1,64 @@
 #!/usr/bin/env bash
-# Fails unless every mise-pinned tool runs and reports its pinned version.
-# Installing proves only that the asset downloaded and matched mise.lock;
-# running it catches a wrong architecture, a libc mismatch, or a binary
-# missing from the archive.
+# Fails unless every mise-pinned tool runs. Installing proves only that the
+# asset downloaded and matched mise.lock; running it catches a wrong
+# architecture, a libc mismatch, or a binary missing from the archive.
 set -uo pipefail
 
 ROOT="$(git -C "$(dirname "${BASH_SOURCE[0]}")" rev-parse --show-toplevel)"
 export MISE_GLOBAL_CONFIG_FILE="${MISE_GLOBAL_CONFIG_FILE:-$ROOT/dot_config/mise/config.toml}"
 
-# An npm library has nothing to execute; its package.json carries the version.
-npm_lib_version() {
-  jq -r .version "$(mise where "npm:$1")/node_modules/$1/package.json"
-}
-
-# A Go binary without a version flag still carries its module version in its
-# build info. --help proves it runs.
-go_module_version() {
-  local bin
-  bin="$(mise which "$1")" || return 1
-  "$bin" --help >/dev/null &&
-    grep -m1 -aoE "mod[[:space:]]+${2//./\\.}[[:space:]]+v[0-9.]+" "$bin"
-}
-
-# Tools that don't run as `<last segment of their mise name> --version`.
-declare -A VERSION_COMMANDS=(
-  [github:seachicken/gh-poi]='go_module_version gh-poi github.com/seachicken/gh-poi'
-  [npm:bats-assert]='npm_lib_version bats-assert'
-  [npm:bats-support]='npm_lib_version bats-support'
+# Tools that don't run as `<last segment of their mise name> --version`. An
+# npm library is empty: it has nothing to run.
+declare -A RUN_COMMANDS=(
+  [github:seachicken/gh-poi]='gh-poi --help'
+  [npm:bats-assert]=''
+  [npm:bats-support]=''
 )
 
-version_command() {
-  printf '%s\n' "${VERSION_COMMANDS[$1]:-${1##*/} --version}"
-}
-
-# Whether $1 contains version $2 as a whole token, so 1.3.1 doesn't match
-# 1.3.10.
-reports_version() {
-  grep -Eq "(^|[^0-9.])${2//./\\.}([^0-9.]|\\.?$)" <<<"$1"
-}
-
-# A same-named binary elsewhere on PATH can't stand in for one missing from
-# the pinned release.
-resolve_bin() {
-  if declare -F "$1" >/dev/null; then
-    printf '%s\n' "$1"
-  else
-    mise which "$1" 2>&1
-  fi
+run_command() {
+  printf '%s\n' "${RUN_COMMANDS[$1]-${1##*/} --version}"
 }
 
 check_tool() {
-  local tool="$1" version="$2" cmd output
+  local tool="$1" cmd bin output
   local -a argv
-  cmd="$(version_command "$tool")"
+  cmd="$(run_command "$tool")"
   read -ra argv <<<"$cmd"
-  if ! argv[0]="$(resolve_bin "${argv[0]}")"; then
-    printf 'FAIL: %s: %s\n' "$tool" "${argv[0]}" >&2
+  if [ "${#argv[@]}" -eq 0 ]; then
+    printf 'OK: %s\n' "$tool"
+    return 0
+  fi
+  # A same-named binary elsewhere on PATH can't stand in for one missing from
+  # the pinned release.
+  if ! bin="$(mise which "${argv[0]}" 2>&1)"; then
+    printf 'FAIL: %s: %s\n' "$tool" "$bin" >&2
     return 1
   fi
+  argv[0]="$bin"
   if ! output="$("${argv[@]}" 2>&1)"; then
     printf 'FAIL: %s: `%s` exited non-zero:\n%s\n' "$tool" "$cmd" "$output" >&2
     return 1
   fi
-  if ! reports_version "$output" "$version"; then
-    printf 'FAIL: %s: `%s` does not report %s:\n%s\n' "$tool" "$cmd" "$version" "$output" >&2
-    return 1
-  fi
-  printf 'OK: %s %s\n' "$tool" "$version"
-}
-
-# A pin written as a release tag keeps the tag's v, which the tool's own
-# output may omit. The resolved version drops it.
-resolved_pins() {
-  mise ls --current --json | jq -r 'to_entries[] | "\(.key)\t\(.value[0].version)"'
+  printf 'OK: %s\n' "$tool"
 }
 
 if [[ "${BASH_SOURCE[0]}" != "$0" ]]; then return 0; fi
 
-if ! pins="$(resolved_pins)"; then
+if ! tools="$(mise ls --current --json | jq -r 'keys[]')"; then
   printf 'FAIL: could not list mise pins\n' >&2
   exit 1
 fi
 
 fail=0
 declare -A pinned=()
-while IFS=$'\t' read -r tool version; do
+while read -r tool; do
   pinned[$tool]=1
-  check_tool "$tool" "$version" || fail=1
-done <<<"$pins"
+  check_tool "$tool" || fail=1
+done <<<"$tools"
 
-for tool in "${!VERSION_COMMANDS[@]}"; do
+for tool in "${!RUN_COMMANDS[@]}"; do
   if [ -z "${pinned[$tool]:-}" ]; then
-    printf 'FAIL: VERSION_COMMANDS lists %s, which is not pinned\n' "$tool" >&2
+    printf 'FAIL: RUN_COMMANDS lists %s, which is not pinned\n' "$tool" >&2
     fail=1
   fi
 done

@@ -82,9 +82,9 @@ exact version, sorted by tool name. Use the short name when
 `"github:<owner>/<repo>"`. Then lock it with `just lock-tools`.
 
 `script/checks/pinned-tools` runs
-`<last segment of the config.toml name> --version` and expects the
-pinned version in its output. Add any tool that needs another command
-to `VERSION_COMMANDS` there.
+`<last segment of the config.toml name> --version` and expects it to
+exit 0. Add any tool that needs another command to `RUN_COMMANDS`
+there, or an empty one for a library with nothing to run.
 
 Commit `config.toml`, `mise.lock`, and any new sidecar under
 `dot_config/mise/.mise/locks/`.
