@@ -6,10 +6,9 @@
 #
 # ENABLED in /etc/default/sysstat gates the systemd units: the package's
 # postinst reads it and enables or disables sysstat.service and its timers.
-# The package's config script reads ENABLED from that file and sets debconf to
-# match, so the file is the source of truth: a debconf preseed is overwritten
-# before postinst reads it. dpkg-reconfigure then records the edited file with
-# ucf, so an upgrade keeps it.
+# The package's config script copies ENABLED from that file into debconf,
+# overwriting any preseed, so the file is where to set it. dpkg-reconfigure
+# records the edit with ucf, so upgrades keep it.
 #
 # The guard reads the deployed file rather than asking debconf, because
 # debconf-show needs root and a converged host must not reach sudo.
