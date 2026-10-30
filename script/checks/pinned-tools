@@ -66,7 +66,7 @@ check_tool() {
 
 if [[ "${BASH_SOURCE[0]}" != "$0" ]]; then return 0; fi
 
-if ! pins="$(mise ls --current --json | jq -r 'to_entries[] | "\(.key)\t\(.value[0].requested_version)"')"; then
+if ! pins="$(mise ls --current --json | jq -r 'to_entries[] | "\(.key)\t\(.value[0].version)"')"; then
   printf 'FAIL: could not list mise pins\n' >&2
   exit 1
 fi

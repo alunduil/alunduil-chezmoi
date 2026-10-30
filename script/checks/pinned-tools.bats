@@ -30,11 +30,12 @@ setup() {
   done
   printf '%s\n' "${TOOLS[@]}" >"$WORK/pins"
 
-  # Stands in for mise: every tool in $WORK/pins is pinned at 1.2.3.
+  # Stands in for mise: every tool in $WORK/pins is pinned at 1.2.3, written
+  # as the release tag v1.2.3.
   cat >"$WORK/stub/mise" <<EOF
 #!/usr/bin/env bash
 case "\$1" in
-  ls) jq -Rn '[inputs | {(.): [{requested_version: "1.2.3"}]}] | add' "$WORK/pins" ;;
+  ls) jq -Rn '[inputs | {(.): [{requested_version: "v1.2.3", version: "1.2.3"}]}] | add' "$WORK/pins" ;;
   which) [ -x "$WORK/tools/\$2" ] && echo "$WORK/tools/\$2" || { echo "\$2 is not a mise bin" >&2; exit 1; } ;;
   where) printf '%s\n' "$WORK/npm" ;;
 esac
@@ -59,6 +60,13 @@ fake_tool() {
   assert_output --partial 'OK: github:grafana/alloy 1.2.3'
   assert_output --partial 'OK: npm:bats-support 1.2.3'
   assert_output --partial 'OK: github:seachicken/gh-poi 1.2.3'
+}
+
+@test "a binary omitting the pin's v prefix passes" {
+  fake_tool alloy 'alloy version 1.2.3'
+  run "$BATS_TEST_DIRNAME/pinned-tools"
+  assert_success
+  assert_output --partial 'OK: github:grafana/alloy 1.2.3'
 }
 
 @test "a backend-qualified pin runs the binary its last segment names" {
