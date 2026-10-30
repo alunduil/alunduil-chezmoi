@@ -69,11 +69,14 @@ as_user '
 '
 
 # Status-change time, so a copy that preserves mtimes still shows. The pruned
-# paths change on every apply by design.
+# paths change on every apply by design: npm logs each invocation, and
+# `mise install` regenerates its shims even when nothing is new.
 changed="$(docker exec "$host" find / -xdev \
   \( -path /tmp -o -path /var/tmp -o -path /var/log \
   -o -path /home/ci/.cache \
-  -o -path /home/ci/.config/chezmoi/chezmoistate.boltdb \) -prune \
+  -o -path /home/ci/.config/chezmoi/chezmoistate.boltdb \
+  -o -path /home/ci/.npm/_logs \
+  -o -path /home/ci/.local/share/mise/shims \) -prune \
   -o -cnewer /var/tmp/second-apply -printf '  %p\n')"
 
 if [ -n "$changed" ]; then

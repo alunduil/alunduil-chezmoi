@@ -36,7 +36,10 @@ if ! nvm ls "$NODE_VERSION" >/dev/null 2>&1; then
   log "node: installing $NODE_VERSION via nvm"
   nvm install "$NODE_VERSION"
 fi
-nvm alias default "$NODE_VERSION"
+# nvm rewrites the alias file even when it already names the version.
+if [ "$(cat "$NVM_DIR/alias/default" 2>/dev/null)" != "$NODE_VERSION" ]; then
+  nvm alias default "$NODE_VERSION"
+fi
 nvm use default >/dev/null 2>&1
 log "node: $(node --version) via nvm"
 
