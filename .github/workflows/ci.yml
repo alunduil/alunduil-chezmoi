@@ -153,8 +153,7 @@ jobs:
       - name: Check versions
         run: script/checks/pinned-tools
 
-  # Ungated: it applies the whole source tree, so any deployed file can break
-  # it.
+  # Ungated: any deployed file can break a whole-tree apply.
   fresh-host:
     name: Bootstrap a fresh Debian host
     runs-on: ubuntu-24.04
