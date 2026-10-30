@@ -80,8 +80,7 @@ repos:
         language: system
         files: \.(md|kdl)$
 
-      # `mise lock --dry-run` exits 0 either way; an empty change list is
-      # the pass.
+      # `mise lock --dry-run` exits 0 even when the lockfile is stale.
       - id: mise-lock
         name: mise-lock
         entry: >-
