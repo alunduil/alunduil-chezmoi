@@ -39,19 +39,25 @@ reports_version() {
   grep -Eq "(^|[^0-9.])${2//./\\.}([^0-9.]|\\.?$)" <<<"$1"
 }
 
+# Resolves $1 inside the mise install, so a same-named binary elsewhere on
+# PATH can't stand in for one missing from the pinned release. A function
+# defined here resolves to itself.
+resolve_bin() {
+  if declare -F "$1" >/dev/null; then
+    printf '%s\n' "$1"
+  else
+    mise which "$1" 2>&1
+  fi
+}
+
 check_tool() {
-  local tool="$1" version="$2" cmd bin output
+  local tool="$1" version="$2" cmd output
   local -a argv
   cmd="$(version_command "$tool")"
   read -ra argv <<<"$cmd"
-  # Resolve inside the mise install, so a same-named binary elsewhere on PATH
-  # can't stand in for one missing from the pinned release.
-  if ! declare -F "${argv[0]}" >/dev/null; then
-    if ! bin="$(mise which "${argv[0]}" 2>&1)"; then
-      printf 'FAIL: %s: %s\n' "$tool" "$bin" >&2
-      return 1
-    fi
-    argv[0]="$bin"
+  if ! argv[0]="$(resolve_bin "${argv[0]}")"; then
+    printf 'FAIL: %s: %s\n' "$tool" "${argv[0]}" >&2
+    return 1
   fi
   if ! output="$("${argv[@]}" 2>&1)"; then
     printf 'FAIL: %s: `%s` exited non-zero:\n%s\n' "$tool" "$cmd" "$output" >&2
