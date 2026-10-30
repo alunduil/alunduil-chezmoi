@@ -18,18 +18,7 @@ runs:
       shell: bash
       run: echo "MISE_GLOBAL_CONFIG_FILE=$GITHUB_WORKSPACE/dot_config/mise/config.toml" >>"$GITHUB_ENV"
 
-    - id: mise
-      uses: jdx/mise-action@82a612c5ab8bcda7cc5db6b7e81a8e7584c3dc6e # v5.2.3
+    - uses: jdx/mise-action@82a612c5ab8bcda7cc5db6b7e81a8e7584c3dc6e # v5.2.3
       with:
         install_args: ${{ inputs.tools }}
         cache_key: mise-{{platform}}-{{install_args_hash}}-${{ hashFiles('dot_config/mise/mise.lock', 'dot_config/mise/.mise/**') }}
-
-    # mise's own hint for a lockfile miss suggests `mise install`, which
-    # this repo's locked config refuses.
-    - name: Name the fix for a lockfile miss
-      if: failure() && steps.mise.outcome == 'failure'
-      shell: bash
-      run: |
-        if [ "$(mise lock --global --dry-run --json)" != "[]" ]; then
-          echo '::error file=dot_config/mise/mise.lock::mise.lock is out of date with config.toml. Run `just lock-tools` and commit dot_config/mise/.'
-        fi
