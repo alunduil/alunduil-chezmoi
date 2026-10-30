@@ -13,31 +13,71 @@ set -euo pipefail
 
 SOURCE_DIR="$(git -C "$(dirname "${BASH_SOURCE[0]}")" rev-parse --show-toplevel)"
 
+user=ci
+uid=1000
+home="/home/$user"
+runtime_dir="/run/user/$uid"
+marker=/var/tmp/second-apply
+
+# Paths every apply changes by design, so a change there says nothing about
+# convergence.
+churn=(
+  /tmp
+  /var/tmp
+  /var/log
+  "$home/.cache"
+  "$home/.config/chezmoi/chezmoistate.boltdb"
+  # npm writes a debug log per invocation.
+  "$home/.npm/_logs"
+  # `mise install` regenerates its shims even when nothing is new.
+  "$home/.local/share/mise/shims"
+)
+
+log() { printf '==> %s\n' "$*" >&2; }
+
 image=alunduil-chezmoi-fresh-host
-docker build --quiet --tag "$image" - <"$SOURCE_DIR/script/checks/fresh-host.Dockerfile" >/dev/null
+docker build --quiet --tag "$image" \
+  --build-arg "USER=$user" --build-arg "UID=$uid" \
+  - <"$SOURCE_DIR/script/checks/fresh-host.Dockerfile" >/dev/null
 
 host="$(docker run --detach --privileged "$image")"
 trap 'docker rm --force "$host" >/dev/null' EXIT
 
-# A login shell, as the tutorial's terminal is. mise's GitHub backend is
-# rate-limited without GITHUB_TOKEN.
+# A login shell, as the tutorial's terminal is. CI has no 1Password, so both
+# applies skip it. mise's GitHub backend is rate-limited without GITHUB_TOKEN.
 as_user() {
-  docker exec --user ci --workdir /home/ci \
-    --env USER=ci --env XDG_RUNTIME_DIR=/run/user/1000 --env GITHUB_TOKEN \
+  docker exec --user "$user" --workdir "$home" \
+    --env USER="$user" --env XDG_RUNTIME_DIR="$runtime_dir" \
+    --env CHEZMOI_NO_1PASSWORD=1 --env GITHUB_TOKEN \
     "$host" bash -lc "set -euo pipefail; $1"
 }
 
-for _ in {1..60}; do
-  docker exec "$host" test -S /run/user/1000/bus && break
-  sleep 1
-done
-docker exec "$host" test -S /run/user/1000/bus || {
+user_manager_up() { docker exec "$host" test -S "$runtime_dir/bus"; }
+
+wait_for_user_manager() {
+  for _ in {1..60}; do
+    user_manager_up && return
+    sleep 1
+  done
   echo 'FAIL: the user systemd manager did not start' >&2
-  docker exec "$host" systemctl --no-pager status user@1000.service >&2 || true
+  docker exec "$host" systemctl --no-pager status "user@$uid.service" >&2 || true
   exit 1
 }
 
-echo '==> installing the tutorial prerequisites' >&2
+# Status-change time, so a copy that preserves mtimes still shows.
+changed_since_marker() {
+  local prune=() path
+  for path in "${churn[@]}"; do
+    prune+=(-o -path "$path")
+  done
+  docker exec "$host" find / -xdev \
+    \( "${prune[@]:1}" \) -prune \
+    -o -cnewer "$marker" -printf '  %p\n'
+}
+
+wait_for_user_manager
+
+log 'installing the tutorial prerequisites'
 as_user '
   sudo apt-get install -y extrepo git curl gpg
   sudo extrepo enable mise
@@ -49,36 +89,24 @@ as_user '
 # clone.
 git -C "$SOURCE_DIR" ls-files -z |
   tar -C "$SOURCE_DIR" --null --files-from=- --create |
-  docker exec --interactive --user ci "$host" \
+  docker exec --interactive --user "$user" "$host" \
     sh -c 'mkdir -p ~/.local/share/chezmoi && tar --extract -C ~/.local/share/chezmoi'
 
-echo '==> first apply' >&2
+log 'first apply'
 as_user '
-  CHEZMOI_NO_1PASSWORD=1 \
-    MISE_GLOBAL_CONFIG_FILE=~/.local/share/chezmoi/dot_config/mise/config.toml \
+  MISE_GLOBAL_CONFIG_FILE=~/.local/share/chezmoi/dot_config/mise/config.toml \
     mise exec chezmoi -- chezmoi init --apply --exclude=encrypted
 '
 
-docker exec "$host" touch /var/tmp/second-apply
+docker exec "$host" touch "$marker"
 
-echo '==> second apply' >&2
+log 'second apply'
 as_user '
-  export CHEZMOI_NO_1PASSWORD=1
   chezmoi apply --exclude=encrypted
   chezmoi verify --exclude=scripts,encrypted
 '
 
-# Status-change time, so a copy that preserves mtimes still shows. The pruned
-# paths change on every apply by design: npm logs each invocation, and
-# `mise install` regenerates its shims even when nothing is new.
-changed="$(docker exec "$host" find / -xdev \
-  \( -path /tmp -o -path /var/tmp -o -path /var/log \
-  -o -path /home/ci/.cache \
-  -o -path /home/ci/.config/chezmoi/chezmoistate.boltdb \
-  -o -path /home/ci/.npm/_logs \
-  -o -path /home/ci/.local/share/mise/shims \) -prune \
-  -o -cnewer /var/tmp/second-apply -printf '  %p\n')"
-
+changed="$(changed_since_marker)"
 if [ -n "$changed" ]; then
   echo 'FAIL: the second apply changed these; the pass that wrote each one does not converge:' >&2
   printf '%s\n' "$changed" >&2
