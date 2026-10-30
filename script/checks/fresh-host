@@ -52,11 +52,9 @@ as_user() {
     "$host" bash -lc "set -euo pipefail; $1"
 }
 
-user_manager_up() { docker exec "$host" test -S "$runtime_dir/bus"; }
-
 wait_for_user_manager() {
   for _ in {1..60}; do
-    user_manager_up && return
+    docker exec "$host" test -S "$runtime_dir/bus" && return
     sleep 1
   done
   echo 'FAIL: the user systemd manager did not start' >&2
@@ -66,12 +64,12 @@ wait_for_user_manager() {
 
 # Status-change time, so a copy that preserves mtimes still shows.
 changed_since_marker() {
-  local prune=() path
+  local prune=(-false) path
   for path in "${churn[@]}"; do
     prune+=(-o -path "$path")
   done
   docker exec "$host" find / -xdev \
-    \( "${prune[@]:1}" \) -prune \
+    \( "${prune[@]}" \) -prune \
     -o -cnewer "$marker" -printf '  %p\n'
 }
 
