@@ -29,11 +29,7 @@ runs:
     - name: Name the fix for a lockfile miss
       if: failure() && steps.mise.outcome == 'failure'
       shell: bash
-      env:
-        TOOLS: ${{ inputs.tools }}
       run: |
-        read -ra tools <<<"$TOOLS"
-        output="$(mise install --locked "${tools[@]}" 2>&1)" || true
-        if grep -q 'is not in the lockfile' <<<"$output"; then
-          echo '::error file=dot_config/mise/mise.lock::A pinned version is missing from mise.lock. Run `just lock-tools` and commit dot_config/mise/mise.lock.'
+        if [ "$(mise lock --global --dry-run --json)" != "[]" ]; then
+          echo '::error file=dot_config/mise/mise.lock::mise.lock is out of date with config.toml. Run `just lock-tools` and commit dot_config/mise/.'
         fi
