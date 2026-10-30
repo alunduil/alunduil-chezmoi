@@ -34,7 +34,11 @@ if ! rustup toolchain list | grep -q "^${RUST_VERSION}-"; then
   log "rust: installing toolchain $RUST_VERSION"
   rustup toolchain install "$RUST_VERSION"
 fi
-rustup default "$RUST_VERSION" >/dev/null
+# Setting the default rewrites settings.toml even when it already matches.
+case "$(rustup default)" in
+"${RUST_VERSION}-"*) ;;
+*) rustup default "$RUST_VERSION" >/dev/null ;;
+esac
 log "rust: $(rustc --version)"
 
 # ------------------------------------------------------------------ cargo-cache
