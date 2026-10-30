@@ -153,6 +153,20 @@ jobs:
       - name: Check versions
         run: script/checks/pinned-tools
 
+  # Ungated: it applies the whole source tree, so any deployed file can break
+  # it.
+  fresh-host:
+    name: Bootstrap a fresh Debian host
+    runs-on: ubuntu-24.04
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
+
+      - name: Bootstrap, reapply, and check nothing changed
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: script/checks/fresh-host
+
   # vale exits non-zero only on errors, so reviewdog gates instead and fails on
   # any finding a PR adds: suggestions carry most of the prose signal. The
   # pre-commit hook covers errors tree-wide, including pushes to main, where
