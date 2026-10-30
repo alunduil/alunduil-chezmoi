@@ -6,9 +6,9 @@
 #
 # ENABLED in /etc/default/sysstat gates the systemd units: the package's
 # postinst reads it and enables or disables sysstat.service and its timers.
-# That file is ucf- and debconf-managed, so the answer is set through debconf
-# and applied with dpkg-reconfigure. Writing the file directly works until the
-# next package upgrade rewrites it from the debconf database.
+# The package's config script copies ENABLED from that file into debconf,
+# overwriting any preseed, so the file is where to set it. dpkg-reconfigure
+# records the edit with ucf, so upgrades keep it.
 #
 # The guard reads the deployed file rather than asking debconf, because
 # debconf-show needs root and a converged host must not reach sudo.
@@ -31,7 +31,7 @@ daemon_reload_if_installed
 # ----------------------------------------------------------------- collection
 if ! grep -qx 'ENABLED="true"' /etc/default/sysstat 2>/dev/null; then
   log "enabling sysstat collection"
-  echo 'sysstat sysstat/enable boolean true' | sudo debconf-set-selections
+  sudo sed -i 's/^ENABLED=.*/ENABLED="true"/' /etc/default/sysstat
   sudo dpkg-reconfigure -f noninteractive sysstat
 fi
 

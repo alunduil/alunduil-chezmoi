@@ -1,0 +1,112 @@
+#!/usr/bin/env bash
+# Bootstraps a fresh Debian host from this checkout as
+# docs/tutorials/bootstrap.md does, applies again, and fails on any file the
+# second apply changed. A pass whose guard misses its own work reinstalls or
+# rewrites something on every apply, and chezmoi exits 0 regardless.
+#
+# The host is a privileged container booting systemd, so system and user units
+# enable as on a workstation. Secrets stay out: the first apply skips 1Password
+# on a real host too, and the encrypted files need an age key CI does not hold.
+# Needs docker and installs the whole workstation.
+
+set -euo pipefail
+
+SOURCE_DIR="$(git -C "$(dirname "${BASH_SOURCE[0]}")" rev-parse --show-toplevel)"
+
+user=ci
+uid=1000
+home="/home/$user"
+runtime_dir="/run/user/$uid"
+marker=/var/tmp/second-apply
+
+# Paths every apply changes by design, so a change there says nothing about
+# convergence.
+churn=(
+  /tmp
+  /var/tmp
+  /var/log
+  "$home/.cache"
+  "$home/.config/chezmoi/chezmoistate.boltdb"
+  # npm writes a debug log per invocation.
+  "$home/.npm/_logs"
+  # `mise install` regenerates its shims even when nothing is new.
+  "$home/.local/share/mise/shims"
+)
+
+log() { printf '==> %s\n' "$*" >&2; }
+
+image=alunduil-chezmoi-fresh-host
+docker build --quiet --tag "$image" \
+  --build-arg "USER=$user" --build-arg "UID=$uid" \
+  - <"$SOURCE_DIR/script/checks/fresh-host.Dockerfile" >/dev/null
+
+host="$(docker run --detach --privileged "$image")"
+trap 'docker rm --force "$host" >/dev/null' EXIT
+
+# A login shell, as the tutorial's terminal is. CI has no 1Password, so both
+# applies skip it. mise's GitHub backend is rate-limited without GITHUB_TOKEN.
+as_user() {
+  docker exec --user "$user" --workdir "$home" \
+    --env USER="$user" --env XDG_RUNTIME_DIR="$runtime_dir" \
+    --env CHEZMOI_NO_1PASSWORD=1 --env GITHUB_TOKEN \
+    "$host" bash -lc "set -euo pipefail; $1"
+}
+
+wait_for_user_manager() {
+  for _ in {1..60}; do
+    docker exec "$host" test -S "$runtime_dir/bus" && return
+    sleep 1
+  done
+  echo 'FAIL: the user systemd manager did not start' >&2
+  docker exec "$host" systemctl --no-pager status "user@$uid.service" >&2 || true
+  exit 1
+}
+
+# Status-change time, so a copy that preserves mtimes still shows.
+changed_since_marker() {
+  local prune=(-false) path
+  for path in "${churn[@]}"; do
+    prune+=(-o -path "$path")
+  done
+  docker exec "$host" find / -xdev \
+    \( "${prune[@]}" \) -prune \
+    -o -cnewer "$marker" -printf '  %p\n'
+}
+
+wait_for_user_manager
+
+log 'installing the tutorial prerequisites'
+as_user '
+  sudo apt-get install -y extrepo git curl gpg
+  sudo extrepo enable mise
+  sudo apt-get update
+  sudo apt-get install -y mise
+'
+
+# Tracked files only, including uncommitted edits, in place of the tutorial's
+# clone.
+git -C "$SOURCE_DIR" ls-files -z |
+  tar -C "$SOURCE_DIR" --null --files-from=- --create |
+  docker exec --interactive --user "$user" "$host" \
+    sh -c 'mkdir -p ~/.local/share/chezmoi && tar --extract -C ~/.local/share/chezmoi'
+
+log 'first apply'
+as_user '
+  MISE_GLOBAL_CONFIG_FILE=~/.local/share/chezmoi/dot_config/mise/config.toml \
+    mise exec chezmoi -- chezmoi init --apply --exclude=encrypted
+'
+
+docker exec "$host" touch "$marker"
+
+log 'second apply'
+as_user '
+  chezmoi apply --exclude=encrypted
+  chezmoi verify --exclude=scripts,encrypted
+'
+
+changed="$(changed_since_marker)"
+if [ -n "$changed" ]; then
+  echo 'FAIL: the second apply changed these; the pass that wrote each one does not converge:' >&2
+  printf '%s\n' "$changed" >&2
+  exit 1
+fi

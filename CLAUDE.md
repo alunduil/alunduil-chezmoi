@@ -71,6 +71,10 @@ script/checks/zellij-config    # zellij KDL validation (needs zellij)
 script/checks/chezmoi-apply    # apply round-trip (needs chezmoi + age)
 ```
 
+`script/checks/fresh-host` bootstraps a systemd container from scratch and
+fails on anything a second apply changes. It installs the whole workstation,
+so `just check` leaves it to CI.
+
 ## Two CLAUDE.md files
 
 - This file: rules for AI editing the chezmoi *source*.

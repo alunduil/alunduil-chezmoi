@@ -23,7 +23,10 @@ CABAL_VERSION="3.18.2.0"
 # managed dot_bashrc sources ~/.ghcup/env itself. Its first run also creates
 # ~/.cabal, opting cabal out of XDG directories, and seeds the package index,
 # both only when it installs GHC and cabal itself.
-if ! command -v ghcup >/dev/null 2>&1; then
+#
+# Only interactive shells put ~/.ghcup/bin on PATH.
+GHCUP_BIN="$HOME/.ghcup/bin"
+if [ ! -x "$GHCUP_BIN/ghcup" ]; then
   log "ghcup: installing with GHC $GHC_VERSION + cabal $CABAL_VERSION"
   curl -fsSL https://get-ghcup.haskell.org |
     BOOTSTRAP_HASKELL_NONINTERACTIVE=1 \
@@ -33,7 +36,6 @@ if ! command -v ghcup >/dev/null 2>&1; then
       sh
 fi
 
-GHCUP_BIN="$HOME/.ghcup/bin"
 export PATH="$GHCUP_BIN:$PATH"
 # Every ghcup subcommand otherwise fetches release metadata to check for newer
 # versions, which the guards below must not do.
