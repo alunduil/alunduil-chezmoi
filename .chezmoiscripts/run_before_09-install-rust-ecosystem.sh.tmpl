@@ -14,7 +14,9 @@ set -euo pipefail
 # dot_bashrc sources ~/.cargo/env itself. --default-toolchain none leaves the
 # version pick to the pinned block below, which would otherwise install a
 # second toolchain whenever the pin trails stable.
-if ! command -v rustup >/dev/null 2>&1; then
+# The guard reads the path, not PATH: only interactive shells source
+# ~/.cargo/env.
+if [ ! -x "$HOME/.cargo/bin/rustup" ]; then
   log "rustup: installing"
   curl --proto '=https' --tlsv1.2 -fsSL https://sh.rustup.rs |
     sh -s -- -y --no-modify-path --default-toolchain none
