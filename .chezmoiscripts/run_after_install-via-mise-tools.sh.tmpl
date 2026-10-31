@@ -13,20 +13,26 @@ use_local_bin
 # being installed as tools; beets 2.x dropped musicbrainzngs as a dependency
 # and ships its own MusicBrainz client, so the pin here is deliberate and not
 # a restatement of beets' metadata. Its fingerprinter needs fpcalc
-# (libchromaprint-tools, script 01). The guard compares the whole requirement
-# set, not just beets' version, so bumping either --with pin reinstalls. uv's
-# listing reads only package metadata, so the guard also runs `beet version`:
-# an environment that lost module files still lists as installed, and
-# --reinstall replaces packages uv would otherwise count as present.
+# (libchromaprint-tools, script 01).
 # renovate: datasource=pypi depName=beets
 BEETS_VERSION="2.14.1"
 # renovate: datasource=pypi depName=pyacoustid
 PYACOUSTID_VERSION="1.3.1"
 # renovate: datasource=pypi depName=musicbrainzngs
 MUSICBRAINZNGS_VERSION="0.7.1"
-beets_installed="beets v$BEETS_VERSION [required: ==$BEETS_VERSION] [with: pyacoustid==$PYACOUSTID_VERSION, musicbrainzngs==$MUSICBRAINZNGS_VERSION]"
-if uv tool list --show-with --show-version-specifiers 2>/dev/null |
-  grep -qxF "$beets_installed" && beet version >/dev/null 2>&1; then
+
+# Compares the whole requirement set, not just beets' version, so bumping
+# either --with pin reinstalls. uv's listing reads only package metadata, so an
+# environment that lost module files still lists as installed; running `beet`
+# catches it, and --reinstall replaces the packages uv would count as present.
+beets_installed() {
+  local expected="beets v$BEETS_VERSION [required: ==$BEETS_VERSION] [with: pyacoustid==$PYACOUSTID_VERSION, musicbrainzngs==$MUSICBRAINZNGS_VERSION]"
+  uv tool list --show-with --show-version-specifiers 2>/dev/null |
+    grep -qxF "$expected" &&
+    beet version >/dev/null 2>&1
+}
+
+if beets_installed; then
   log "beets: $BEETS_VERSION already installed via uv"
 else
   log "beets: installing $BEETS_VERSION via uv"
