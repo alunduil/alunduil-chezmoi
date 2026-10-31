@@ -3,6 +3,7 @@ Include ~/.ssh/config.d/*
 
 Host homeassistant
 	HostName 192.168.68.56
+	HostKeyAlias homeassistant
 	User hassio
 	Port 22
 	ControlMaster auto
