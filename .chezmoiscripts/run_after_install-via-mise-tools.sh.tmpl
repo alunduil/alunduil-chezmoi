@@ -6,6 +6,7 @@ set -euo pipefail
 # shellcheck source=script/lib/bootstrap.sh
 . "{{ .chezmoi.sourceDir }}/script/lib/bootstrap.sh"
 use_mise_shims
+use_local_bin
 
 # Music-library tagger. pyacoustid and musicbrainzngs have no entry point of
 # their own, so they ride in beets' tool environment via --with rather than
@@ -13,7 +14,10 @@ use_mise_shims
 # and ships its own MusicBrainz client, so the pin here is deliberate and not
 # a restatement of beets' metadata. Its fingerprinter needs fpcalc
 # (libchromaprint-tools, script 01). The guard compares the whole requirement
-# set, not just beets' version, so bumping either --with pin reinstalls.
+# set, not just beets' version, so bumping either --with pin reinstalls. uv's
+# listing reads only package metadata, so the guard also runs `beet version`:
+# an environment that lost module files still lists as installed, and
+# --reinstall replaces packages uv would otherwise count as present.
 # renovate: datasource=pypi depName=beets
 BEETS_VERSION="2.14.1"
 # renovate: datasource=pypi depName=pyacoustid
@@ -22,11 +26,11 @@ PYACOUSTID_VERSION="1.3.1"
 MUSICBRAINZNGS_VERSION="0.7.1"
 beets_installed="beets v$BEETS_VERSION [required: ==$BEETS_VERSION] [with: pyacoustid==$PYACOUSTID_VERSION, musicbrainzngs==$MUSICBRAINZNGS_VERSION]"
 if uv tool list --show-with --show-version-specifiers 2>/dev/null |
-  grep -qxF "$beets_installed"; then
+  grep -qxF "$beets_installed" && beet version >/dev/null 2>&1; then
   log "beets: $BEETS_VERSION already installed via uv"
 else
   log "beets: installing $BEETS_VERSION via uv"
-  uv tool install --force \
+  uv tool install --force --reinstall \
     --with "pyacoustid==$PYACOUSTID_VERSION" \
     --with "musicbrainzngs==$MUSICBRAINZNGS_VERSION" \
     "beets==$BEETS_VERSION"
