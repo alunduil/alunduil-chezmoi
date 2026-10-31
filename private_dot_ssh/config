@@ -13,8 +13,8 @@ Host homeassistant
 # the side effect matters.
 Match exec "~/.local/bin/ssh-load"
 
-# tailscaled runs userspace networking on Crostini, so the shell has no route
-# or resolver for the tailnet; the daemon dials MagicDNS names itself.
+# On Crostini, tailscaled runs without a TUN device, so tailnet names neither
+# resolve nor route from the shell.
 # https://github.com/tailscale/tailscale/issues/12090
 Host *.ts.net
 	ProxyCommand tailscale nc %h %p
