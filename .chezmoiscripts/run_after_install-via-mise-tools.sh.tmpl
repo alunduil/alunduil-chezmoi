@@ -6,27 +6,44 @@ set -euo pipefail
 # shellcheck source=script/lib/bootstrap.sh
 . "{{ .chezmoi.sourceDir }}/script/lib/bootstrap.sh"
 use_mise_shims
+use_local_bin
 
 # Music-library tagger. pyacoustid and musicbrainzngs have no entry point of
 # their own, so they ride in beets' tool environment via --with rather than
 # being installed as tools; beets 2.x dropped musicbrainzngs as a dependency
 # and ships its own MusicBrainz client, so the pin here is deliberate and not
 # a restatement of beets' metadata. Its fingerprinter needs fpcalc
-# (libchromaprint-tools, script 01). The guard compares the whole requirement
-# set, not just beets' version, so bumping either --with pin reinstalls.
+# (libchromaprint-tools, script 01).
 # renovate: datasource=pypi depName=beets
 BEETS_VERSION="2.14.1"
 # renovate: datasource=pypi depName=pyacoustid
 PYACOUSTID_VERSION="1.3.1"
 # renovate: datasource=pypi depName=musicbrainzngs
 MUSICBRAINZNGS_VERSION="0.7.1"
-beets_installed="beets v$BEETS_VERSION [required: ==$BEETS_VERSION] [with: pyacoustid==$PYACOUSTID_VERSION, musicbrainzngs==$MUSICBRAINZNGS_VERSION]"
-if uv tool list --show-with --show-version-specifiers 2>/dev/null |
-  grep -qxF "$beets_installed"; then
+
+# Bumping any of the three pins reinstalls. uv lists tools from package
+# metadata alone, so a tool whose module files are gone still lists. Its
+# packages still count as present, so the install needs --reinstall. beets
+# opens and migrates its library on startup, so the probe runs against a
+# scratch BEETSDIR and writes no bytecode into the environment.
+beets_installed() {
+  local expected="beets v$BEETS_VERSION [required: ==$BEETS_VERSION] [with: pyacoustid==$PYACOUSTID_VERSION, musicbrainzngs==$MUSICBRAINZNGS_VERSION]"
+  uv tool list --show-with --show-version-specifiers 2>/dev/null |
+    grep -qxF "$expected" || return 1
+
+  local beetsdir status=0
+  beetsdir="$(mktemp -d)"
+  BEETSDIR="$beetsdir" PYTHONDONTWRITEBYTECODE=1 beet version >/dev/null 2>&1 ||
+    status=$?
+  rm -rf "$beetsdir"
+  return "$status"
+}
+
+if beets_installed; then
   log "beets: $BEETS_VERSION already installed via uv"
 else
   log "beets: installing $BEETS_VERSION via uv"
-  uv tool install --force \
+  uv tool install --force --reinstall \
     --with "pyacoustid==$PYACOUSTID_VERSION" \
     --with "musicbrainzngs==$MUSICBRAINZNGS_VERSION" \
     "beets==$BEETS_VERSION"
