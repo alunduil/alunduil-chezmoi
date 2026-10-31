@@ -13,5 +13,11 @@ Host homeassistant
 # the side effect matters.
 Match exec "~/.local/bin/ssh-load"
 
+# On Crostini, tailscaled runs without a TUN device, so tailnet names neither
+# resolve nor route from the shell.
+# https://github.com/tailscale/tailscale/issues/12090
+Host *.ts.net
+	ProxyCommand tailscale nc %h %p
+
 Host *
 	IdentityAgent ${XDG_RUNTIME_DIR}/ssh-agent.socket
