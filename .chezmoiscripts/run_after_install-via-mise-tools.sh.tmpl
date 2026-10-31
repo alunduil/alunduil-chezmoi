@@ -21,10 +21,9 @@ PYACOUSTID_VERSION="1.3.1"
 # renovate: datasource=pypi depName=musicbrainzngs
 MUSICBRAINZNGS_VERSION="0.7.1"
 
-# Compares the whole requirement set, not just beets' version, so bumping
-# either --with pin reinstalls. uv's listing reads only package metadata, so an
-# environment that lost module files still lists as installed; running `beet`
-# catches it, and --reinstall replaces the packages uv would count as present.
+# Bumping any of the three pins reinstalls. uv lists tools from package
+# metadata alone, so a tool whose module files are gone still lists. Its
+# packages still count as present, so the install needs --reinstall.
 beets_installed() {
   local expected="beets v$BEETS_VERSION [required: ==$BEETS_VERSION] [with: pyacoustid==$PYACOUSTID_VERSION, musicbrainzngs==$MUSICBRAINZNGS_VERSION]"
   uv tool list --show-with --show-version-specifiers 2>/dev/null |
