@@ -23,12 +23,20 @@ MUSICBRAINZNGS_VERSION="0.7.1"
 
 # Bumping any of the three pins reinstalls. uv lists tools from package
 # metadata alone, so a tool whose module files are gone still lists. Its
-# packages still count as present, so the install needs --reinstall.
+# packages still count as present, so the install needs --reinstall. beets
+# opens and migrates its library on startup, so the probe runs against a
+# scratch BEETSDIR and writes no bytecode into the environment.
 beets_installed() {
   local expected="beets v$BEETS_VERSION [required: ==$BEETS_VERSION] [with: pyacoustid==$PYACOUSTID_VERSION, musicbrainzngs==$MUSICBRAINZNGS_VERSION]"
   uv tool list --show-with --show-version-specifiers 2>/dev/null |
-    grep -qxF "$expected" &&
-    beet version >/dev/null 2>&1
+    grep -qxF "$expected" || return 1
+
+  local beetsdir status=0
+  beetsdir="$(mktemp -d)"
+  BEETSDIR="$beetsdir" PYTHONDONTWRITEBYTECODE=1 beet version >/dev/null 2>&1 ||
+    status=$?
+  rm -rf "$beetsdir"
+  return "$status"
 }
 
 if beets_installed; then
