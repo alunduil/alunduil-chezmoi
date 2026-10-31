@@ -16,7 +16,6 @@ Match exec "~/.local/bin/ssh-load"
 
 Host *
 	IdentityAgent ${XDG_RUNTIME_DIR}/ssh-agent.socket
-	# Pinned keys let a fresh host connect without a trust prompt. ssh records
-	# newly accepted keys in the first file, so the managed second file never
-	# drifts.
+	# Keep known_hosts first: ssh writes accepted keys to the first file, which
+	# leaves the pins as chezmoi wrote them.
 	UserKnownHostsFile ~/.ssh/known_hosts ~/.ssh/known_hosts.d/pinned
