@@ -3,6 +3,7 @@ Include ~/.ssh/config.d/*
 
 Host homeassistant
 	HostName 192.168.68.56
+	HostKeyAlias homeassistant
 	User hassio
 	Port 22
 	ControlMaster auto
@@ -21,3 +22,6 @@ Host *.ts.net
 
 Host *
 	IdentityAgent ${XDG_RUNTIME_DIR}/ssh-agent.socket
+	# Keep known_hosts first: ssh writes accepted keys to the first file, which
+	# leaves the pins as chezmoi wrote them.
+	UserKnownHostsFile ~/.ssh/known_hosts ~/.ssh/known_hosts.d/pinned
