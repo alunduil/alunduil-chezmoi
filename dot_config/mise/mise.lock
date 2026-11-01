@@ -34,14 +34,14 @@ url = "https://github.com/fourmolu/fourmolu/releases/download/v0.21.0.0/fourmolu
 url_api = "https://api.github.com/repos/fourmolu/fourmolu/releases/assets/606689202"
 
 [[tools."github:grafana/alloy"]]
-version = "1.21.2"
+version = "1.21.3"
 backend = "github:grafana/alloy"
-specifiers = ["v1.21.2"]
+specifiers = ["v1.21.3"]
 
 [tools."github:grafana/alloy"."platforms.linux-x64"]
-checksum = "sha256:1eadb46a0640127184250173acd9b4145e4d590680db37ffe66fa8afd07f04cf"
-url = "https://github.com/grafana/alloy/releases/download/v1.21.2/alloy-linux-amd64.zip"
-url_api = "https://api.github.com/repos/grafana/alloy/releases/assets/667247306"
+checksum = "sha256:50d23af2d0f98c00beac6ce9a365693e60f87fb76b6cad6fe1d161e80588af6d"
+url = "https://github.com/grafana/alloy/releases/download/v1.21.3/alloy-linux-amd64.zip"
+url_api = "https://api.github.com/repos/grafana/alloy/releases/assets/685914493"
 provenance = "github-attestations"
 
 [[tools."github:grafana/gcx"]]
