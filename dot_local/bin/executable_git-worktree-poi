@@ -16,7 +16,11 @@ Usage: git worktree-poi [OPTIONS] [NAME...]
 
   In-use guard: any worktree containing a process cwd (zellij pane, editor,
   tmux, dev server, ...) is annotated `in-use` and never removed. Detection
-  reads /proc/*/cwd, so it generalises beyond zellij's CLI surface.
+  reads /proc/*/cwd, so it generalises beyond zellij's CLI surface, and runs
+  again just before each removal to catch a process that entered mid-run.
+
+  An empty worktree younger than an hour is annotated `new` and kept, so a
+  session gets time to enter one the picker just created.
 
   NAME args scope the run to those worktrees, each matched by petname (the
   leaf dir), <repo>/<petname>, or absolute path. --force then removes them
@@ -72,6 +76,9 @@ WORKTREE_ROOT="$DATA_HOME/git-worktrees"
 # usually a rename and stays cheap.
 TRASH_ROOT="$DATA_HOME/git-worktree-poi/trash"
 TRASH_RETENTION_DAYS=14
+# The hourly timer can fire between `git worktree add` and the session
+# entering the new worktree, when no process cwd marks it in use yet.
+MIN_EMPTY_AGE_MINUTES=60
 
 # trash_untracked's result. Globals because a $(...) subshell would drop
 # TRASHED_PATHS, which restore_untracked needs.
@@ -85,8 +92,8 @@ declare -a TRASHED_PATHS=()
 declare -a TARGET_WTS=()
 declare -a resolve_errors=()
 
-# Process cwds whose target lives under $WORKTREE_ROOT. Populated once before
-# classification; every classify() call consults this set via is_in_use.
+# Process cwds whose target lives under $WORKTREE_ROOT. Populated before
+# classification, and again before each removal, via is_in_use.
 declare -a IN_USE_CWDS=()
 
 # PR state per worktree, populated once by batch_fetch_pr_states before
@@ -114,6 +121,13 @@ is_in_use() {
         [[ "$cwd" == "$wt" || "$cwd" == "$wt"/* ]] && return 0
     done
     return 1
+}
+
+# is_new <wt>: succeeds if <wt> was created under MIN_EMPTY_AGE_MINUTES ago.
+# `git worktree add` writes the .git file once and nothing rewrites it, so
+# its mtime is the creation time.
+is_new() {
+    [[ -n "$(find "$1/.git" -maxdepth 0 -mmin "-$MIN_EMPTY_AGE_MINUTES" 2>/dev/null)" ]]
 }
 
 # github_slug <remote-url>: emit "owner/repo" from a GitHub remote URL,
@@ -351,9 +365,12 @@ classify() {
         NONE)
             if [[ "$branch" != '(detached HEAD)' ]]; then
                 if [[ ${#reasons[@]} -eq 0 && "$ahead" == "0" ]]; then
-                    printf 'remove\t%s\t%s\t%s\t%s\n' \
-                        "$rel" "$branch" "no commits, no PR" "$wt"
-                    return
+                    if ! is_new "$wt"; then
+                        printf 'remove\t%s\t%s\t%s\t%s\n' \
+                            "$rel" "$branch" "no commits, no PR" "$wt"
+                        return
+                    fi
+                    reasons+=("new")
                 fi
                 [[ -n "$upstream_reason" ]] && reasons+=("$upstream_reason")
                 reasons+=("no PR")
@@ -693,6 +710,15 @@ trashed_rows=""
 if [[ -n "$act_rows" ]]; then
     while IFS=$'\t' read -r verdict rel branch detail wt; do
         row=$(printf '%s\t%s\t%s\t%s\t%s' "$verdict" "$rel" "$branch" "$detail" "$wt")
+        # Classification read /proc/*/cwd once at the start of the run; a
+        # session entering since then would lose its directory.
+        if ((!force)); then
+            mapfile -t IN_USE_CWDS < <(collect_in_use_cwds)
+            if is_in_use "$wt"; then
+                keep_rows+=${keep_rows:+$'\n'}$(printf 'keep\t%s\t%s\tin-use, %s\t%s' "$rel" "$branch" "$detail" "$wt")
+                continue
+            fi
+        fi
         if ! trash_untracked "$wt" "$rel"; then
             failed_rows+="${row}"$'\n'
             continue
