@@ -1,0 +1,33 @@
+{{- /* Crostini mounts the SMB media share under a per-share hash. Hosts
+without it fall back to ~/Music so apply still renders. */ -}}
+{{- $music := glob "/mnt/chromeos/SMB/*/Music" -}}
+# Layout follows the media share's Naming Conventions.md, which Plex reads.
+directory: {{ if $music }}{{ first $music | quote }}{{ else }}~/Music{{ end }}
+
+# Listing plugins replaces beets' default list, so musicbrainz must be named.
+plugins: musicbrainz chroma fetchart embedart lastgenre mbsync inline
+
+# Multi-disc albums stay flat: disc 2 track 1 is "201 - Title". $disc is
+# zero-padded to two digits, hence the unpadded prefix field.
+per_disc_numbering: yes
+item_fields:
+  disc_prefix: str(disc) if disctotal > 1 else ''
+paths:
+  default: $albumartist/$album%aunique{}/$disc_prefix$track - $title
+  comp: Various Artists/$album%aunique{}/$disc_prefix$track - $title
+
+import:
+  move: yes
+  write: yes
+  duplicate_action: ask
+  incremental: yes
+  log: ~/.config/beets/import.log
+
+fetchart:
+  cautious: yes
+
+embedart:
+  auto: yes
+
+lastgenre:
+  count: 1
