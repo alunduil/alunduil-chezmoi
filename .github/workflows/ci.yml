@@ -20,7 +20,7 @@ concurrency:
 jobs:
   hooks:
     name: Run pre-commit hooks
-    runs-on: ubuntu-24.04
+    runs-on: ubuntu-26.04
     timeout-minutes: 10
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
@@ -37,7 +37,7 @@ jobs:
 
   shell-tests:
     name: Test shell scripts
-    runs-on: ubuntu-24.04
+    runs-on: ubuntu-26.04
     timeout-minutes: 10
     permissions:
       contents: read
@@ -85,7 +85,7 @@ jobs:
 
   chezmoi-source:
     name: Validate chezmoi source
-    runs-on: ubuntu-24.04
+    runs-on: ubuntu-26.04
     timeout-minutes: 10
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
@@ -115,7 +115,7 @@ jobs:
 
   zellij-config:
     name: Validate zellij config
-    runs-on: ubuntu-24.04
+    runs-on: ubuntu-26.04
     timeout-minutes: 10
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
@@ -131,7 +131,7 @@ jobs:
   # a broken config fails the build whatever changed.
   telemetry-config:
     name: Validate telemetry config
-    runs-on: ubuntu-24.04
+    runs-on: ubuntu-26.04
     timeout-minutes: 10
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
@@ -144,7 +144,7 @@ jobs:
 
   pinned-tools:
     name: Run pinned tools
-    runs-on: ubuntu-24.04
+    runs-on: ubuntu-26.04
     timeout-minutes: 10
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
@@ -156,7 +156,7 @@ jobs:
   # Ungated: any deployed file can break a whole-tree apply.
   fresh-host:
     name: Bootstrap a fresh Debian host
-    runs-on: ubuntu-24.04
+    runs-on: ubuntu-26.04
     timeout-minutes: 30
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
@@ -174,7 +174,7 @@ jobs:
   prose:
     name: Check prose
     if: github.event_name == 'pull_request'
-    runs-on: ubuntu-24.04
+    runs-on: ubuntu-26.04
     timeout-minutes: 10
     permissions:
       contents: read
