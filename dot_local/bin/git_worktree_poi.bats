@@ -101,6 +101,33 @@ _mkworktree() {
   assert_output --partial "PR #99 merged"
 }
 
+# --- classify: empty worktrees age before removal ---
+
+@test "classify: empty worktree created seconds ago is kept as new" {
+  _mkworktree
+  run bash -c '
+    source "$1"
+    IN_USE_CWDS=()
+    classify "$2"
+  ' _ "$POI" "$WT"
+  assert_success
+  assert_line --index 0 --regexp $'^keep\t'
+  assert_output --partial "new"
+}
+
+@test "classify: empty worktree past the minimum age is removed" {
+  _mkworktree
+  touch -d '61 minutes ago' "$WT/.git"
+  run bash -c '
+    source "$1"
+    IN_USE_CWDS=()
+    classify "$2"
+  ' _ "$POI" "$WT"
+  assert_success
+  assert_line --index 0 --regexp $'^remove\t'
+  assert_output --partial "no commits, no PR"
+}
+
 # --- classify: gone vs. never-pushed upstreams ---
 
 @test "classify: merged PR with gone upstream is removed" {
@@ -162,6 +189,7 @@ _mkworktree() {
   # "no commits, no PR" verdict.
   git -C "$wtroot/alpha" push --quiet -u origin alpha
   git -C "$wtroot/beta" push --quiet -u origin beta
+  touch -d '2 hours ago' "$wtroot/gamma/.git"
   # Swap origin to a GitHub URL so github_slug resolves; pushes are done.
   git -C "$canonical" remote set-url origin "git@github.com:me/repo.git"
 
@@ -455,6 +483,26 @@ STUB
   trashed=$(find "$XDG_DATA_HOME/git-worktree-poi/trash/repo" -name .env)
   [ -n "$trashed" ]
   [ "$(cat "$trashed")" = "SECRET=1" ]
+}
+
+@test "worktree entered after the in-use snapshot is kept" {
+  _mkmerged_with_env
+  # The gh call runs after the in-use snapshot, so a process it starts in
+  # $WT is one that entered mid-run.
+  cat >"$STUB_DIR/gh" <<'STUB'
+#!/usr/bin/env bash
+[[ "${1:-}" == api && "${2:-}" == graphql ]] || exit 1
+(cd "$POI_TEST_WT" && exec sleep 30) </dev/null >/dev/null 2>&1 &
+printf '%s\n' "$!" >"$POI_TEST_PID_FILE"
+printf 'pr0\t7\tMERGED\n'
+STUB
+
+  PATH="$STUB_DIR:$PATH" POI_TEST_WT="$WT" POI_TEST_PID_FILE="$TMPROOT/pid" \
+    run bash "$POI"
+  kill "$(cat "$TMPROOT/pid")"
+  assert_success
+  assert_line --regexp 'repo/feature.*in-use, PR #7 merged'
+  [ -e "$WT/.env" ]
 }
 
 @test "trash: dry run names the ignored files a prune would trash" {
