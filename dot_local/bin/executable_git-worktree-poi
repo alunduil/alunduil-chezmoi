@@ -16,11 +16,11 @@ Usage: git worktree-poi [OPTIONS] [NAME...]
 
   In-use guard: any worktree containing a process cwd (zellij pane, editor,
   tmux, dev server, ...) is annotated `in-use` and never removed. Detection
-  reads /proc/*/cwd, so it generalises beyond zellij's CLI surface, and runs
-  again just before each removal to catch a process that entered mid-run.
+  reads /proc/*/cwd, so it generalises beyond zellij's CLI surface. It runs
+  again just before each removal, so a process that entered mid-run counts.
 
-  An empty worktree younger than an hour is annotated `new` and kept, so a
-  session gets time to enter one the picker just created.
+  An empty worktree younger than an hour is annotated `new` and kept, giving
+  a session time to enter it.
 
   NAME args scope the run to those worktrees, each matched by petname (the
   leaf dir), <repo>/<petname>, or absolute path. --force then removes them
@@ -76,8 +76,8 @@ WORKTREE_ROOT="$DATA_HOME/git-worktrees"
 # usually a rename and stays cheap.
 TRASH_ROOT="$DATA_HOME/git-worktree-poi/trash"
 TRASH_RETENTION_DAYS=14
-# The hourly timer can fire between `git worktree add` and the session
-# entering the new worktree, when no process cwd marks it in use yet.
+# Covers the gap between `git worktree add` and a session entering, when no
+# process cwd marks the worktree in use.
 MIN_EMPTY_AGE_MINUTES=60
 
 # trash_untracked's result. Globals because a $(...) subshell would drop
@@ -92,8 +92,7 @@ declare -a TRASHED_PATHS=()
 declare -a TARGET_WTS=()
 declare -a resolve_errors=()
 
-# Process cwds whose target lives under $WORKTREE_ROOT. Populated before
-# classification, and again before each removal, via is_in_use.
+# Process cwds whose target lives under $WORKTREE_ROOT.
 declare -a IN_USE_CWDS=()
 
 # PR state per worktree, populated once by batch_fetch_pr_states before
@@ -123,16 +122,16 @@ is_in_use() {
     return 1
 }
 
-# in_use_now <wt>: is_in_use against a fresh read of /proc/*/cwd. The
-# snapshot classification used misses a session that entered mid-run.
+# in_use_now <wt>: is_in_use against a fresh /proc/*/cwd read, catching a
+# process that entered after classification.
 in_use_now() {
     mapfile -t IN_USE_CWDS < <(collect_in_use_cwds)
     is_in_use "$1"
 }
 
 # is_new <wt>: succeeds if <wt> was created under MIN_EMPTY_AGE_MINUTES ago.
-# `git worktree add` writes the .git file once and nothing rewrites it, so
-# its mtime is the creation time.
+# The .git file's mtime stands in for creation time: `git worktree add`
+# writes it once.
 is_new() {
     [[ -n "$(find "$1/.git" -maxdepth 0 -mmin "-$MIN_EMPTY_AGE_MINUTES" 2>/dev/null)" ]]
 }
