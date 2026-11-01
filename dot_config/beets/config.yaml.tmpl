@@ -1,8 +1,7 @@
 {{- /* Crostini mounts the SMB media share under a per-share hash. Hosts
 without it fall back to ~/Music so apply still renders. */ -}}
-{{- $music := glob "/mnt/chromeos/SMB/*/Music" -}}
 # Layout follows the media share's Naming Conventions.md, which Plex reads.
-directory: {{ if $music }}{{ first $music | quote }}{{ else }}~/Music{{ end }}
+directory: {{ glob "/mnt/chromeos/SMB/*/Music" | first | default "~/Music" | quote }}
 
 # Listing plugins replaces beets' default list, so musicbrainz must be named.
 plugins: musicbrainz chroma fetchart embedart lastgenre mbsync inline
