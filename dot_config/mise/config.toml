@@ -13,7 +13,7 @@ chezmoi = "2.73.3"
 "github:seachicken/gh-poi" = { version = "v0.18.6", bin = "gh-poi" }
 hlint = "3.10"
 just = "1.59.0"
-lazygit = "0.66.0"
+lazygit = "0.66.2"
 # The glibc build needs a newer glibc than Debian bookworm ships.
 "github:lycheeverse/lychee" = { version = "0.24.2", version_prefix = "lychee-v", matching = "musl" }
 "npm:bats-assert" = "2.2.4"
