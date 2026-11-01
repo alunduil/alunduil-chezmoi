@@ -8,10 +8,9 @@ set -euo pipefail
 use_mise_shims
 use_local_bin
 
-# Music-library tagger. pyacoustid (chroma plugin) and pylast (lastgenre
-# plugin) have no entry point of their own, so they ride in beets' tool
-# environment via --with rather than being installed as tools. The plugin set
-# lives in dot_config/beets/config.yaml.tmpl. The fingerprinter needs fpcalc
+# Music-library tagger. pyacoustid (chroma) and pylast (lastgenre) are
+# libraries for the plugins enabled in dot_config/beets/config.yaml.tmpl, so
+# they install into beets' tool environment. chroma needs fpcalc
 # (libchromaprint-tools, script 01).
 # renovate: datasource=pypi depName=beets
 BEETS_VERSION="2.14.1"
