@@ -123,6 +123,13 @@ is_in_use() {
     return 1
 }
 
+# in_use_now <wt>: is_in_use against a fresh read of /proc/*/cwd. The
+# snapshot classification used misses a session that entered mid-run.
+in_use_now() {
+    mapfile -t IN_USE_CWDS < <(collect_in_use_cwds)
+    is_in_use "$1"
+}
+
 # is_new <wt>: succeeds if <wt> was created under MIN_EMPTY_AGE_MINUTES ago.
 # `git worktree add` writes the .git file once and nothing rewrites it, so
 # its mtime is the creation time.
@@ -365,12 +372,13 @@ classify() {
         NONE)
             if [[ "$branch" != '(detached HEAD)' ]]; then
                 if [[ ${#reasons[@]} -eq 0 && "$ahead" == "0" ]]; then
-                    if ! is_new "$wt"; then
+                    if is_new "$wt"; then
+                        reasons+=("new")
+                    else
                         printf 'remove\t%s\t%s\t%s\t%s\n' \
                             "$rel" "$branch" "no commits, no PR" "$wt"
                         return
                     fi
-                    reasons+=("new")
                 fi
                 [[ -n "$upstream_reason" ]] && reasons+=("$upstream_reason")
                 reasons+=("no PR")
@@ -709,16 +717,11 @@ failed_rows=""
 trashed_rows=""
 if [[ -n "$act_rows" ]]; then
     while IFS=$'\t' read -r verdict rel branch detail wt; do
-        row=$(printf '%s\t%s\t%s\t%s\t%s' "$verdict" "$rel" "$branch" "$detail" "$wt")
-        # Classification read /proc/*/cwd once at the start of the run; a
-        # session entering since then would lose its directory.
-        if ((!force)); then
-            mapfile -t IN_USE_CWDS < <(collect_in_use_cwds)
-            if is_in_use "$wt"; then
-                keep_rows+=${keep_rows:+$'\n'}$(printf 'keep\t%s\t%s\tin-use, %s\t%s' "$rel" "$branch" "$detail" "$wt")
-                continue
-            fi
+        if ((!force)) && in_use_now "$wt"; then
+            keep_rows+=${keep_rows:+$'\n'}$(printf 'keep\t%s\t%s\tin-use, %s\t%s' "$rel" "$branch" "$detail" "$wt")
+            continue
         fi
+        row=$(printf '%s\t%s\t%s\t%s\t%s' "$verdict" "$rel" "$branch" "$detail" "$wt")
         if ! trash_untracked "$wt" "$rel"; then
             failed_rows+="${row}"$'\n'
             continue
