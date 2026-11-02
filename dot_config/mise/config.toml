@@ -4,7 +4,7 @@ lockfile_platforms = ["linux-x64"]
 
 [tools]
 act = "0.2.89"
-"github:grafana/alloy" = "v1.21.2"
+"github:grafana/alloy" = "v1.21.3"
 "github:tfausak/cabal-gild" = "1.8.4.2"
 chezmoi = "2.73.3"
 "github:fourmolu/fourmolu" = "0.21.0.0"
