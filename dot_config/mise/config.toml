@@ -3,7 +3,7 @@ locked = true
 lockfile_platforms = ["linux-x64"]
 
 [tools]
-act = "0.2.89"
+act = "0.2.92"
 "github:grafana/alloy" = "v1.21.3"
 "github:tfausak/cabal-gild" = "1.8.4.2"
 chezmoi = "2.73.3"
