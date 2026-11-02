@@ -3,14 +3,15 @@
 lockfile_version = 3
 
 [[tools.act]]
-version = "0.2.89"
+version = "0.2.92"
 backend = "aqua:nektos/act"
-specifiers = ["0.2.89"]
+specifiers = ["0.2.92"]
 
 [tools.act."platforms.linux-x64"]
-checksum = "sha256:0191d6f1f3b716b5c55820032605d05fc3c1cdbf581ebeff655019e5dd1524c0"
-url = "https://github.com/nektos/act/releases/download/v0.2.89/act_Linux_x86_64.tar.gz"
-url_api = "https://api.github.com/repos/nektos/act/releases/assets/434891246"
+checksum = "sha256:c9e13f0eb77948a6d02eb2e06fa7220addfc5b9927ed2a1b35bcdae5441ac7a1"
+checksum_source = "mise-versions"
+url = "https://github.com/nektos/act/releases/download/v0.2.92/act_Linux_x86_64.tar.gz"
+url_api = "https://api.github.com/repos/nektos/act/releases/assets/685898463"
 
 [[tools.chezmoi]]
 version = "2.73.3"
