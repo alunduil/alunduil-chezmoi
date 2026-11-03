@@ -15,12 +15,9 @@ jq --slurp '(.[0] // {}) + {
   "permissions": {
     "defaultMode": "acceptEdits",
     "allow": [
-      "BashOutput(*)",
       "Glob",
       "Grep",
-      "MultiEdit(*)",
       "Read",
-      "TodoWrite(*)",
       "mcp__claude_ai_Notion__notion-fetch",
       "mcp__claude_ai_Notion__notion-get-comments",
       "mcp__claude_ai_Notion__notion-get-teams",
