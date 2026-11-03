@@ -13,17 +13,14 @@ jq --slurp '(.[0] // {}) + {
     "CLAUDE_CODE_DISABLE_ALTERNATE_SCREEN": "1"
   },
   "permissions": {
-    "defaultMode": "manual",
+    "defaultMode": "acceptEdits",
     "allow": [
       "BashOutput(*)",
-      "Edit(*)",
-      "Glob(*)",
-      "Grep(*)",
+      "Glob",
+      "Grep",
       "MultiEdit(*)",
-      "NotebookEdit(*)",
-      "Read(*)",
+      "Read",
       "TodoWrite(*)",
-      "Write(*)",
       "mcp__claude_ai_Notion__notion-fetch",
       "mcp__claude_ai_Notion__notion-get-comments",
       "mcp__claude_ai_Notion__notion-get-teams",
