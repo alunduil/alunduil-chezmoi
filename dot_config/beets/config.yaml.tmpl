@@ -2,7 +2,7 @@
 directory: {{ glob "/mnt/chromeos/SMB/*/Music" | first | default "~/Music" | quote }}
 
 # Listing plugins replaces beets' default list, so musicbrainz must be named.
-plugins: musicbrainz chroma fetchart embedart lastgenre mbsync inline
+plugins: musicbrainz chroma fetchart embedart lastgenre mbsync inline duplicates missing
 
 # Layout follows Naming Conventions.md at the share root. $disc pads to "02",
 # and the share names disc 2 track 1 "201 - Title".
@@ -12,6 +12,9 @@ item_fields:
 paths:
   default: $albumartist/$album%aunique{}/$disc_prefix$track - $title
   comp: Various Artists/$album%aunique{}/$disc_prefix$track - $title
+  # beets' default, Non-Album/$artist/$title, adds a fake "Non-Album" artist to
+  # the top level of the library.
+  singleton: $artist/Non-Album/$title
 
 import:
   move: yes
@@ -19,6 +22,12 @@ import:
   duplicate_action: ask
   incremental: yes
   log: ~/.config/beets/import.log
+
+match:
+  preferred:
+    # Penalise candidates released later than their release group's first
+    # release, in place of comparing against the file's year tag.
+    original_year: yes
 
 fetchart:
   cautious: yes
