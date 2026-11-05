@@ -12,8 +12,7 @@ item_fields:
 paths:
   default: $albumartist/$album%aunique{}/$disc_prefix$track - $title
   comp: Various Artists/$album%aunique{}/$disc_prefix$track - $title
-  # beets' default, Non-Album/$artist/$title, adds a fake "Non-Album" artist to
-  # the top level of the library.
+  # Music/ holds one folder per artist, so singles sit under theirs.
   singleton: $artist/Non-Album/$title
 
 import:
@@ -25,8 +24,6 @@ import:
 
 match:
   preferred:
-    # Penalise candidates released later than their release group's first
-    # release, in place of comparing against the file's year tag.
     original_year: yes
 
 fetchart:
