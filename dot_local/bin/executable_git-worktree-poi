@@ -544,19 +544,22 @@ untracked_paths() {
     git -C "$1" ls-files -z --others --directory 2>/dev/null
 }
 
-# build_dirs <path> [find-option...]: NUL-separated build directories at or
-# under <path>. Git collapses a wholly untracked directory to one entry, so
-# matching its entries by name alone would miss the build output inside it.
+# is_build_dir <path>: whether <path> itself is a build directory.
+is_build_dir() {
+    [[ -n "$(find "$1" -maxdepth 0 -type d \( "${BUILD_DIR_TESTS[@]}" \) -print 2>/dev/null)" ]]
+}
+
+# build_dirs <path>: NUL-separated build directories at or under <path>. Git
+# collapses a wholly untracked directory to one entry, so matching its entries
+# by name alone would miss the build output inside it.
 build_dirs() {
-    local path=$1
-    shift
-    find "$path" "$@" -type d \( "${BUILD_DIR_TESTS[@]}" \) -prune -print0 2>/dev/null
+    find "$1" -type d \( "${BUILD_DIR_TESTS[@]}" \) -prune -print0 2>/dev/null
 }
 
 # prune_build_dirs <trash-dir>: delete build output from a filled trash dir,
 # then any directories that leaves empty, <trash-dir> itself included.
 prune_build_dirs() {
-    build_dirs "$1" -mindepth 1 | xargs -0 -r rm -rf || true
+    build_dirs "$1" | xargs -0 -r rm -rf || true
     find "$1" -depth -type d -empty -delete 2>/dev/null || true
 }
 
@@ -603,7 +606,7 @@ trash_preview() {
     [[ -n "$1" ]] || return 0
     while IFS=$'\t' read -r _ rel _ _ wt; do
         while IFS= read -r -d '' p; do
-            [[ -z "$(build_dirs "$wt/${p%/}" -maxdepth 0 | tr -d '\0')" ]] || continue
+            is_build_dir "$wt/${p%/}" && continue
             printf '%s\t%s\n' "$rel" "$p"
         done < <(untracked_paths "$wt")
     done <<<"$1"
