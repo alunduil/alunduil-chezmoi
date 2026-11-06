@@ -31,9 +31,9 @@ Usage: git worktree-poi [OPTIONS] [NAME...]
   Before removing a worktree, forced or not, moves its untracked files to
   $XDG_DATA_HOME/git-worktree-poi/trash/<repo>/, gitignored ones included
   (.env, local config). Directories named .terraform, .venv, dist-newstyle,
-  node_modules, or target are deleted instead, at any depth, since a tool can
-  regenerate them. Each run deletes trash older than 14 days. --dry-run lists
-  the paths each removal would trash and delete.
+  node_modules, or target are deleted instead, at any depth, because a tool
+  can regenerate them. Each run deletes trash older than 14 days. --dry-run
+  lists the paths each removal would trash and delete.
 
 Options:
   -f, --force    Remove the named worktrees even if classified keep.
@@ -78,9 +78,9 @@ WORKTREE_ROOT="$DATA_HOME/git-worktrees"
 # usually a rename and stays cheap.
 TRASH_ROOT="$DATA_HOME/git-worktree-poi/trash"
 TRASH_RETENTION_DAYS=14
-# `find` tests for regenerable build output. Trash shares a filesystem with the
-# worktrees, so keeping this output frees no disk until retention ends. Deleting
-# narrows what the trash can undo, so list only names a tool always rebuilds.
+# Regenerable build output, as `find` tests. Trashing it frees no disk until
+# retention ends. Deleting narrows what the trash can undo, so list only names a
+# tool always rebuilds.
 BUILD_DIR_TESTS=(-name .terraform -o -name .venv -o -name dist-newstyle -o -name node_modules -o -name target)
 # Covers the gap between `git worktree add` and a session entering, when no
 # process cwd marks the worktree in use.
@@ -544,7 +544,6 @@ untracked_paths() {
     git -C "$1" ls-files -z --others --directory 2>/dev/null
 }
 
-# is_build_dir <path>: whether <path> itself is a build directory.
 is_build_dir() {
     [[ -n "$(find "$1" -maxdepth 0 -type d \( "${BUILD_DIR_TESTS[@]}" \) -print 2>/dev/null)" ]]
 }
@@ -556,8 +555,8 @@ build_dirs() {
     find "$1" -type d \( "${BUILD_DIR_TESTS[@]}" \) -prune -print0 2>/dev/null
 }
 
-# prune_build_dirs <trash-dir>: delete build output from a filled trash dir,
-# then any directories that leaves empty, <trash-dir> itself included.
+# prune_build_dirs <trash-dir>: also removes directories this leaves empty,
+# <trash-dir> included.
 prune_build_dirs() {
     build_dirs "$1" | xargs -0 -r rm -rf || true
     find "$1" -depth -type d -empty -delete 2>/dev/null || true

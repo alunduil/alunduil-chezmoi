@@ -485,9 +485,8 @@ STUB
   [ "$(cat "$trashed")" = "SECRET=1" ]
 }
 
-# Adds ignored build output beside the fixture's .env: at the root, nested in a
-# wholly untracked directory that git collapses to one entry, and a plain file
-# sharing a build directory's name, which is not build output.
+# Git collapses the wholly untracked scratch/ to one entry. notes/target is a
+# file sharing a build directory's name, so it isn't build output.
 _add_build_output() {
   printf 'node_modules/\ntarget\nscratch/\n' >>"$HOME/me/repo/.git/info/exclude"
   mkdir -p "$WT/node_modules/dep" "$WT/scratch/node_modules/dep" "$WT/notes"
