@@ -485,6 +485,26 @@ STUB
   [ "$(cat "$trashed")" = "SECRET=1" ]
 }
 
+@test "trash: pruning deletes ignored build directories and trashes the rest" {
+  _mkmerged_with_env
+  printf 'node_modules/\ntarget\n' >>"$HOME/me/repo/.git/info/exclude"
+  mkdir -p "$WT/node_modules/dep" "$WT/target/debug" "$WT/notes"
+  printf 'dep\n' >"$WT/node_modules/dep/index.js"
+  printf 'bin\n' >"$WT/target/debug/app"
+  # A file sharing a build directory's name is not build output.
+  printf 'keep\n' >"$WT/notes/target"
+
+  PATH="$STUB_DIR:$PATH" run bash "$POI"
+  assert_success
+  [ ! -e "$WT" ]
+
+  local trash="$XDG_DATA_HOME/git-worktree-poi/trash/repo"
+  [ -n "$(find "$trash" -name .env)" ]
+  [ -n "$(find "$trash" -type f -path '*/notes/target')" ]
+  [ -z "$(find "$trash" -name node_modules)" ]
+  [ -z "$(find "$trash" -type d -name target)" ]
+}
+
 @test "worktree entered after the in-use snapshot is kept" {
   _mkmerged_with_env
   # The gh call runs after the in-use snapshot, so a process it starts in

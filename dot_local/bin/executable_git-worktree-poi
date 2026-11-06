@@ -30,8 +30,10 @@ Usage: git worktree-poi [OPTIONS] [NAME...]
 
   Before removing a worktree, forced or not, moves its untracked files to
   $XDG_DATA_HOME/git-worktree-poi/trash/<repo>/, gitignored ones included
-  (.env, local config, build output). Each run deletes trash older than 14
-  days. --dry-run lists the files each removal would move.
+  (.env, local config). Build directories named .terraform, .venv,
+  dist-newstyle, node_modules, or target are deleted instead, since a tool
+  can regenerate them. Each run deletes trash older than 14 days. --dry-run
+  lists the files each removal would move.
 
 Options:
   -f, --force    Remove the named worktrees even if classified keep.
@@ -533,9 +535,12 @@ print_section() {
 }
 
 # untracked_paths <wt>: NUL-separated paths git doesn't track, ignored or not.
-# `git worktree remove` deletes these with no copy anywhere else.
+# `git worktree remove` deletes these with no copy anywhere else. Build output
+# a tool can regenerate is left out: a trash move stays on the same filesystem,
+# so trashing it frees no disk until the retention period ends.
 untracked_paths() {
-    git -C "$1" ls-files -z --others --directory 2>/dev/null
+    git -C "$1" ls-files -z --others --directory \
+        -x .terraform/ -x .venv/ -x dist-newstyle/ -x node_modules/ -x target/ 2>/dev/null
 }
 
 # move_paths <src> <dst> <path...>: move relative paths from <src> to <dst>.
