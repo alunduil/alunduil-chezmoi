@@ -485,14 +485,21 @@ STUB
   [ "$(cat "$trashed")" = "SECRET=1" ]
 }
 
-@test "trash: pruning deletes ignored build directories and trashes the rest" {
-  _mkmerged_with_env
-  printf 'node_modules/\ntarget\n' >>"$HOME/me/repo/.git/info/exclude"
-  mkdir -p "$WT/node_modules/dep" "$WT/target/debug" "$WT/notes"
+# Adds ignored build output beside the fixture's .env: at the root, nested in a
+# wholly untracked directory that git collapses to one entry, and a plain file
+# sharing a build directory's name, which is not build output.
+_add_build_output() {
+  printf 'node_modules/\ntarget\nscratch/\n' >>"$HOME/me/repo/.git/info/exclude"
+  mkdir -p "$WT/node_modules/dep" "$WT/scratch/node_modules/dep" "$WT/notes"
   printf 'dep\n' >"$WT/node_modules/dep/index.js"
-  printf 'bin\n' >"$WT/target/debug/app"
-  # A file sharing a build directory's name is not build output.
+  printf 'dep\n' >"$WT/scratch/node_modules/dep/index.js"
+  printf 'draft\n' >"$WT/scratch/draft.txt"
   printf 'keep\n' >"$WT/notes/target"
+}
+
+@test "trash: pruning deletes build directories at any depth and trashes the rest" {
+  _mkmerged_with_env
+  _add_build_output
 
   PATH="$STUB_DIR:$PATH" run bash "$POI"
   assert_success
@@ -500,9 +507,40 @@ STUB
 
   local trash="$XDG_DATA_HOME/git-worktree-poi/trash/repo"
   [ -n "$(find "$trash" -name .env)" ]
+  [ -n "$(find "$trash" -path '*/scratch/draft.txt')" ]
   [ -n "$(find "$trash" -type f -path '*/notes/target')" ]
   [ -z "$(find "$trash" -name node_modules)" ]
-  [ -z "$(find "$trash" -type d -name target)" ]
+}
+
+@test "trash: a worktree holding only build output leaves no trash behind" {
+  _mkmerged_with_env
+  rm "$WT/.env"
+  printf 'node_modules/\n' >>"$HOME/me/repo/.git/info/exclude"
+  mkdir -p "$WT/node_modules/dep"
+
+  PATH="$STUB_DIR:$PATH" run bash "$POI"
+  assert_success
+  [ ! -e "$WT" ]
+  refute_output --partial "Trashed"
+  [ -z "$(find "$XDG_DATA_HOME/git-worktree-poi/trash/repo" -mindepth 1)" ]
+}
+
+@test "trash: dry run lists deleted and trashed paths separately" {
+  _mkmerged_with_env
+  _add_build_output
+
+  PATH="$STUB_DIR:$PATH" run bash "$POI" -n
+  assert_success
+  local trashed deleted
+  trashed=$(sed -n '/^Would trash/,/^$/p' <<<"$output")
+  deleted=$(sed -n '/^Would delete/,/^$/p' <<<"$output")
+  grep -qE 'repo/feature +\.env' <<<"$trashed"
+  grep -qE 'repo/feature +scratch/' <<<"$trashed"
+  ! grep -q 'node_modules' <<<"$trashed"
+  grep -qE 'repo/feature +node_modules' <<<"$deleted"
+  grep -qE 'repo/feature +scratch/node_modules' <<<"$deleted"
+  ! grep -q 'notes' <<<"$deleted"
+  [ -e "$WT/node_modules/dep/index.js" ]
 }
 
 @test "worktree entered after the in-use snapshot is kept" {
@@ -565,6 +603,8 @@ STUB
   mkdir -p "$WT/build/out"
   printf 'SECRET=1\n' >"$WT/.env"
   printf 'bin\n' >"$WT/build/out/a"
+  mkdir -p "$WT/node_modules/dep"
+  printf 'dep\n' >"$WT/node_modules/dep/index.js"
 
   run bash -c '
     source "$1"
@@ -575,4 +615,5 @@ STUB
   assert_success
   [ "$(cat "$WT/.env")" = "SECRET=1" ]
   [ "$(cat "$WT/build/out/a")" = "bin" ]
+  [ "$(cat "$WT/node_modules/dep/index.js")" = "dep" ]
 }
