@@ -534,12 +534,12 @@ _add_build_output() {
   local trashed deleted
   trashed=$(sed -n '/^Would trash/,/^$/p' <<<"$output")
   deleted=$(sed -n '/^Would delete/,/^$/p' <<<"$output")
-  grep -qE 'repo/feature +\.env' <<<"$trashed"
-  grep -qE 'repo/feature +scratch/' <<<"$trashed"
-  ! grep -q 'node_modules' <<<"$trashed"
-  grep -qE 'repo/feature +node_modules' <<<"$deleted"
-  grep -qE 'repo/feature +scratch/node_modules' <<<"$deleted"
-  ! grep -q 'notes' <<<"$deleted"
+  assert_regex "$trashed" 'repo/feature +\.env'
+  assert_regex "$trashed" 'repo/feature +scratch/'
+  refute_regex "$trashed" 'node_modules'
+  assert_regex "$deleted" 'repo/feature +node_modules'
+  assert_regex "$deleted" 'repo/feature +scratch/node_modules'
+  refute_regex "$deleted" 'notes'
   [ -e "$WT/node_modules/dep/index.js" ]
 }
 
