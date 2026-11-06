@@ -1,0 +1,67 @@
+#!/usr/bin/env -S uv run --quiet --script
+# /// script
+# requires-python = ">=3.11"
+# dependencies = [
+#   "truenas_api_client @ git+https://github.com/truenas/api_client.git@TS-25.10.7",
+# ]
+# ///
+"""Call a TrueNAS middleware method and print the result as JSON.
+
+Covers reads the truenas MCP server has no tool for, such as
+cloudsync.query and cloudsync.credentials.query. Authenticates with the
+same URL and API key the MCP registration uses. That key holds a
+read-only role, so middleware masks credential secrets in what it
+returns.
+
+The client tag tracks the server's TrueNAS version, as upstream
+recommends, so bump it when the server upgrades rather than on release.
+"""
+
+import argparse
+import json
+import pathlib
+import sys
+
+from truenas_api_client import Client, ClientException
+
+CONFIG = pathlib.Path.home() / ".config" / "truenas"
+
+
+def main() -> int:
+    parser = argparse.ArgumentParser(
+        prog="truenas-api",
+        description=__doc__.splitlines()[0],
+        epilog="Example: truenas-api cloudsync.query '[[\"enabled\", \"=\", true]]'",
+    )
+    parser.add_argument("method", help="middleware method, e.g. cloudsync.query")
+    parser.add_argument(
+        "params",
+        nargs="*",
+        type=json.loads,
+        help="positional parameters, each a JSON value",
+    )
+    args = parser.parse_args()
+
+    try:
+        host = (CONFIG / "url").read_text().strip()
+        key = (CONFIG / "api_key").read_text().strip()
+    except OSError as e:
+        parser.exit(1, f"truenas-api: {e}\n")
+
+    # verify_ssl=False: the certificate carries no IP SANs and the host is an
+    # address, so verification can never match the name.
+    try:
+        with Client(f"wss://{host}/api/current", verify_ssl=False) as c:
+            if not c.call("auth.login_with_api_key", key):
+                parser.exit(1, "truenas-api: API key rejected\n")
+            result = c.call(args.method, *args.params)
+    except ClientException as e:
+        parser.exit(1, f"truenas-api: {e}\n")
+
+    json.dump(result, sys.stdout, indent=2, default=str)
+    print()
+    return 0
+
+
+if __name__ == "__main__":
+    sys.exit(main())
