@@ -85,6 +85,14 @@ hand, and showed these preferences:
 chezmoi configures the home layer. A local Ansible playbook configures the
 system layer: apt sources and packages, files under `/etc`, and system units.
 
+Ansible takes the system layer from chezmoi for two reasons. chezmoi isn't
+built for it, and Ansible's maintained modules and roles replace units and
+guards written by hand. Ansible doesn't take the home layer too, because a
+literal dotfile and a module fit the hand equally well. Migration cost breaks
+that tie. chezmoi already reads secrets through the 1Password desktop app and
+decrypts the age-encrypted file. Ansible would need `community.sops` and
+lookups through `op` to do the same.
+
 - `chezmoi apply` stays the one command. A `run_before_` pass runs the
   playbook, so packages the home layer needs exist before its files and units.
 - `ansible-core` installs like every other host tool, through the installer
