@@ -8,9 +8,9 @@
 # postinst reads it and enables or disables sysstat.service and its timers.
 # The package's config script copies ENABLED from that file into debconf,
 # overwriting any preseed, so the file is where to set it. dpkg-reconfigure
-# records the edit with ucf, so upgrades keep it. etc/default/sysstat is
-# byte-for-byte what the postinst writes for ENABLED="true", trailing blank
-# line included, so ucf sees no local change.
+# records the edit with ucf, so upgrades keep it. etc/default/sysstat matches
+# the postinst's output for ENABLED="true" byte for byte, so ucf sees no local
+# change.
 #
 # The guard compares the deployed file rather than asking debconf, because
 # debconf-show needs root and a converged host must not reach sudo.

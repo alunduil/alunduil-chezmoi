@@ -15,15 +15,14 @@ is_installed() {
   [ "$(dpkg-query -W -f='${db:Status-Status}' "$1" 2>/dev/null || true)" = "installed" ]
 }
 
-# Files destined for /etc are written here first, so install_if_changed can
-# show the diff and back up whatever they replace.
+# install_if_changed takes a source file, so generated /etc content lands here.
 staging=$(mktemp -d)
 trap 'rm -rf "$staging"' EXIT
 
 # ------------------------------------------------------------ apt repositories
 # The keyring is the convergence guard: renaming one re-registers its
-# repository on every host. The list is a seed, not a converged file: some
-# packages' postinsts rewrite or take over their own.
+# repository on every host. It also guards the list, which some packages'
+# postinsts rewrite or take over.
 #
 #   add_apt_repo KEYRING KEY_URL LIST ENTRY [OPTIONS]
 #
@@ -69,7 +68,7 @@ add_apt_repo adoptium-archive-keyring.gpg https://packages.adoptium.net/artifact
 # `[trusted=yes]` to skip apt's signature check. Transport integrity
 # comes from HTTPS to prerelease.keybase.io. The keybase service
 # self-updates once installed, so versions track upstream regardless. The
-# package then owns keybase.list, so this writes it only when missing.
+# package then takes over keybase.list.
 if [ ! -f /etc/apt/sources.list.d/keybase.list ]; then
   log "keybase: adding apt repository"
   printf 'deb [trusted=yes] https://prerelease.keybase.io/deb stable main\n' \

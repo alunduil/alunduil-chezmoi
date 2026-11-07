@@ -61,8 +61,8 @@ EOF
   assert_output --partial 'run_onchange_after_register.sh.tmpl:3:'
 }
 
-# printf builds these fixtures so this file holds no raw /etc write of its
-# own for a grep over script/ to find.
+# printf assembles these fixtures so grepping script/ for raw /etc writes
+# skips this file.
 
 @test "a tee through sudo under /etc fails" {
   printf "printf 'deb x\\\\n' |\n  sudo %s /etc/apt/sources.list.d/x.list\n" tee |
