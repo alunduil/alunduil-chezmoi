@@ -85,7 +85,9 @@ system layer: apt sources and packages, files under `/etc`, and system units.
 
 - `chezmoi apply` stays the one command. A `run_before_` pass runs the
   playbook, so packages the home layer needs exist before its files and units.
-- mise pins `ansible-core`, and `requirements.yml` pins Galaxy roles. A
+- `ansible-core` installs like every other host tool, through the installer
+  [ADR 0009](0009-install-pinned-tools-through-mise.md) names, and
+  `requirements.yml` pins Galaxy roles. A
   maintained role takes over where one exists. Built-in modules cover the
   rest.
 - Literal files the playbook installs live in `etc/`, mirroring their paths
@@ -104,10 +106,10 @@ Revisit and prefer NixOS with home-manager when both of these hold:
   Ansible's modules, handlers, and `backup: true`.
 - `--check --diff` previews the system layer before it changes. Check mode
   can't predict what a `command` or `shell` task does, so tasks avoid them.
-- `ansible-core` and its runtime join the bootstrap. `ansible-core` 2.20 and
-  later needs Python 3.12 or newer to run, which trixie provides.
+- `ansible-core` and its Python runtime join the bootstrap. Current releases
+  need a newer Python than bookworm's 3.11, and trixie ships 3.13.
 - A version is a Galaxy role's only pin. A replaced role release installs
-  without complaint, unlike a mise tool.
+  without complaint, unlike a tool pinned in `mise.lock`.
 - `host-status` reads the package list from the playbook's variables.
 - The system layer stays convergent. Dropping a package or file from the
   playbook leaves it on the host until a task removes it.
