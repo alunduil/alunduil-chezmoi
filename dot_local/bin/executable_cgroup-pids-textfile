@@ -3,8 +3,7 @@
 #
 # No packaged collector emits cgroup pids accounting, and this is the pool the
 # freeze exhausts: once pids.current reaches pids.max, every fork in the user
-# slice fails with EAGAIN. cgroup v1 here, so the counters sit under the pids
-# controller rather than beside the slice as they would on v2.
+# slice fails with EAGAIN.
 
 set -euo pipefail
 
@@ -41,7 +40,15 @@ fi
 
 dir="${NODE_TEXTFILE_DIR:-${XDG_STATE_HOME:-$HOME/.local/state}/node-textfile}"
 slice="user-$(id -u).slice"
-cgroup="${CGROUP_PIDS_ROOT:-/sys/fs/cgroup/pids}/user.slice/$slice"
+root="${CGROUP_ROOT:-/sys/fs/cgroup}"
+
+# cgroup v1, and the hybrid layout, mount the pids controller as its own
+# hierarchy; v2 keeps the counters beside the slice in the unified one.
+if [ -d "$root/pids" ]; then
+  cgroup="$root/pids/user.slice/$slice"
+else
+  cgroup="$root/user.slice/$slice"
+fi
 
 out="$dir/cgroup_pids.prom"
 

@@ -13,7 +13,7 @@ local.file "grafana_cloud_token" {
 // `processes` is off by default in node_exporter and is the reason this
 // exporter is here at all: node_forks_total, node_procs_running/blocked and
 // node_processes_state carry the fork-storm shape. `textfile` picks up the
-// cgroup pids pool, which no packaged collector emits on cgroup v1.
+// cgroup pids pool, which no packaged collector emits.
 prometheus.exporter.unix "host" {
   enable_collectors = ["processes", "textfile"]
 

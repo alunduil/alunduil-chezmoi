@@ -7,9 +7,9 @@ setup() {
 
   TMPROOT="$(mktemp -d)"
   export NODE_TEXTFILE_DIR="$TMPROOT/textfile"
-  export CGROUP_PIDS_ROOT="$TMPROOT/cgroup"
+  export CGROUP_ROOT="$TMPROOT/cgroup"
   SLICE="user-$(id -u).slice"
-  SLICE_DIR="$CGROUP_PIDS_ROOT/user.slice/$SLICE"
+  SLICE_DIR="$CGROUP_ROOT/pids/user.slice/$SLICE"
   mkdir -p "$SLICE_DIR"
   PROM="$NODE_TEXTFILE_DIR/cgroup_pids.prom"
 }
@@ -29,6 +29,19 @@ counters() {
   [ "$status" -eq 0 ]
   grep -qx "cgroup_pids_current{slice=\"$SLICE\"} 42" "$PROM"
   grep -qx "cgroup_pids_max{slice=\"$SLICE\"} 10813" "$PROM"
+}
+
+@test "reads the unified hierarchy when no pids controller is mounted" {
+  rm -r "$CGROUP_ROOT/pids"
+  SLICE_DIR="$CGROUP_ROOT/user.slice/$SLICE"
+  mkdir -p "$SLICE_DIR"
+  counters 7 4096
+
+  run bash "$SAMPLER"
+
+  [ "$status" -eq 0 ]
+  grep -qx "cgroup_pids_current{slice=\"$SLICE\"} 7" "$PROM"
+  grep -qx "cgroup_pids_max{slice=\"$SLICE\"} 4096" "$PROM"
 }
 
 @test "an unlimited pool publishes +Inf" {
