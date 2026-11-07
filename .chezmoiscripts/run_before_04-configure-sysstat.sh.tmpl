@@ -8,9 +8,11 @@
 # postinst reads it and enables or disables sysstat.service and its timers.
 # The package's config script copies ENABLED from that file into debconf,
 # overwriting any preseed, so the file is where to set it. dpkg-reconfigure
-# records the edit with ucf, so upgrades keep it.
+# records the edit with ucf, so upgrades keep it. etc/default/sysstat is
+# byte-for-byte what the postinst writes for ENABLED="true", trailing blank
+# line included, so ucf sees no local change.
 #
-# The guard reads the deployed file rather than asking debconf, because
+# The guard compares the deployed file rather than asking debconf, because
 # debconf-show needs root and a converged host must not reach sudo.
 
 set -euo pipefail
@@ -29,10 +31,13 @@ install_if_changed -D -m 0644 \
 daemon_reload_if_installed
 
 # ----------------------------------------------------------------- collection
-if ! grep -qx 'ENABLED="true"' /etc/default/sysstat 2>/dev/null; then
-  log "enabling sysstat collection"
-  sudo sed -i 's/^ENABLED=.*/ENABLED="true"/' /etc/default/sysstat
-  sudo dpkg-reconfigure -f noninteractive sysstat
+if ! cmp -s "$ETC_SRC/default/sysstat" /etc/default/sysstat; then
+  install_if_changed -m 0644 "$ETC_SRC/default/sysstat" /etc/default/sysstat
+  # Declining the replace leaves collection as the hand edit set it.
+  if cmp -s "$ETC_SRC/default/sysstat" /etc/default/sysstat; then
+    log "enabling sysstat collection"
+    sudo dpkg-reconfigure -f noninteractive sysstat
+  fi
 fi
 
 enable_now sysstat.service sysstat-collect.timer
