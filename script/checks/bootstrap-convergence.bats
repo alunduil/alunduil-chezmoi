@@ -60,3 +60,31 @@ EOF
   assert_failure
   assert_output --partial 'run_onchange_after_register.sh.tmpl:3:'
 }
+
+# printf builds these fixtures so this file holds no raw /etc write of its
+# own for a grep over script/ to find.
+
+@test "a tee through sudo under /etc fails" {
+  printf "printf 'deb x\\\\n' |\n  sudo %s /etc/apt/sources.list.d/x.list\n" tee |
+    add_pass run_before_01-install.sh.tmpl
+  run_check
+  assert_failure
+  assert_output --regexp 'run_before_01-install\.sh\.tmpl:2:.*: a write under /etc'
+}
+
+@test "an in-place sed under /etc in script/ fails" {
+  mkdir -p "$WORK/script/install"
+  printf 'sudo %s s/a/b/ /etc/default/x\n' 'sed -i' >"$WORK/script/install/x"
+  git -C "$WORK" add .
+  run_check
+  assert_failure
+  assert_output --regexp 'script/install/x:1:.*: a write under /etc'
+}
+
+@test "install_if_changed under /etc passes" {
+  add_pass run_before_01-install.sh.tmpl <<'EOF2'
+install_if_changed -m 0644 "$staging/x.list" /etc/apt/sources.list.d/x.list
+EOF2
+  run_check
+  assert_success
+}
