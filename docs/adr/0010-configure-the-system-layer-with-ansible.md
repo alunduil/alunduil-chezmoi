@@ -26,51 +26,53 @@ A rebuild from scratch now lands on Baguette, the containerless Crostini VM.
 ChromeOS installs it by default from M147, and penguin runs M156. Baguette
 installs Debian trixie, so any option has to work there.
 
-Each option had to pass three criteria:
+An option qualifies only if it passes three criteria:
 
 - A blank host reaches the target state in few, repeatable steps.
 - CI rebuilds from scratch and proves the result.
 - Renovate tracks every pin, and CI is strong enough for automerge.
 
-The surviving options were then traded off on congruence, fit to the hand,
+Qualifying options are then traded off on congruence, fit to the hand,
 simplicity, built for the purpose, and fit to the platform. Bootstrap
-prerequisites and migration cost only broke ties. Congruence means
+prerequisites and migration cost only break ties. Congruence means
 "maintaining production hosts in complete compliance with a fully descriptive
 baseline"
 ([Traugott and Brown](https://www.usenix.org/legacy/publications/library/proceedings/lisa02/tech/full_papers/traugott/traugott_html/index.html)).
 
-The comparison covered six options:
+Three of the six options compared fail to qualify:
+
+- **A system image built in CI** fails the rebuild and Renovate criteria. Home
+  sits on the same disk as the system in both Crostini and Baguette, so
+  replacing the image wipes home. Renovate can't see the Debian suite or the
+  ChromeOS package repository the image builds from.
+- **home-manager with numtide system-manager on Debian** fails Renovate.
+  Renovate's `nix` manager is in beta and off by default, and it updates
+  `flake.lock` only through lock file maintenance. Outside NixOS, the Nix build
+  of 1Password's desktop app also loses its browser extension and system
+  authentication links
+  ([NixOS wiki](https://wiki.nixos.org/wiki/1Password)), so it would stay on
+  apt.
+- **NixOS as the Baguette guest, with home-manager** fails Renovate for the
+  same reason, and fits the platform worst. Only a developer README documents
+  loading a custom Baguette image, and it warns the instructions may change.
+  The NixOS image comes from a community flake. It's the only fully congruent
+  option.
+
+Three options qualify:
 
 - **chezmoi for both layers.** It isn't built for the system layer, and its
   bash passes carry the hand-written guards.
 - **chezmoi for home, Ansible for the system layer.** Ansible's apt,
   `deb822_repository`, `copy`, and `systemd_service` modules describe state,
   and handlers restart a service when its config changes. `--check --diff`
-  previews a change. Renovate tracks `ansible-core` through mise and Galaxy
-  roles through `requirements.yml`. Galaxy has no lockfile, so a version is
-  the only pin a role gets.
+  previews a change. Renovate tracks `ansible-core` through the host-tool
+  installer and Galaxy roles through `requirements.yml`.
 - **Ansible for both layers.** Ansible can manage dotfiles, but chezmoi's FAQ
   calls whole-system tools "large systems" for that job. The age-encrypted
   file would move to `community.sops`.
-- **home-manager with numtide system-manager on Debian.** Renovate's `nix`
-  manager is in beta and off by default, and it updates `flake.lock` only
-  through lock file maintenance. Outside NixOS, the Nix build of 1Password's
-  desktop app loses its browser extension and system authentication links
-  ([NixOS wiki](https://wiki.nixos.org/wiki/1Password)), so it would stay on
-  apt.
-- **NixOS as the Baguette guest, with home-manager.** This is the only fully
-  congruent option. Only a developer README documents loading a custom
-  Baguette image, and it warns the instructions may change. The NixOS image
-  comes from a community flake. It shares the `nix` manager's
-  limits.
-- **A system image built in CI.** Home sits on the same disk as the system in
-  both Crostini and Baguette, so replacing the image wipes home. Renovate
-  can't see the Debian suite or the ChromeOS package repository the image
-  builds from.
 
-The image option failed the rebuild and Renovate criteria. Both Nix options
-failed Renovate, and NixOS failed fit to the platform. Of the remaining three,
-comparing the same configuration written in each showed these preferences:
+Writing the same configuration in each qualifying option measured fit to the
+hand, and showed these preferences:
 
 - A literal file over a file's syntax restated as data.
 - A maintained module over a unit written by hand.
@@ -86,12 +88,11 @@ system layer: apt sources and packages, files under `/etc`, and system units.
 - `chezmoi apply` stays the one command. A `run_before_` pass runs the
   playbook, so packages the home layer needs exist before its files and units.
 - `ansible-core` installs like every other host tool, through the installer
-  [ADR 0009](0009-install-pinned-tools-through-mise.md) names, and
-  `requirements.yml` pins Galaxy roles. A
-  maintained role takes over where one exists. Built-in modules cover the
-  rest.
+  [ADR 0009](0009-install-pinned-tools-through-mise.md) names.
+- A maintained Galaxy role, pinned in `requirements.yml`, takes over where one
+  exists. Built-in modules cover the rest.
 - Literal files the playbook installs live in `etc/`, mirroring their paths
-  under `/etc`.
+  under `/etc`. The mirror holds only files no role owns.
 - The apt package list moves from `.chezmoidata/` into the playbook's
   variables.
 
@@ -114,4 +115,4 @@ Revisit and prefer NixOS with home-manager when both of these hold:
 - The system layer stays convergent. Dropping a package or file from the
   playbook leaves it on the host until a task removes it.
 - A role may render a config file from variables, as `geerlingguy.docker` does
-  with `daemon.json`. The `etc/` mirror holds only files no role owns.
+  with `daemon.json`, so that file stops being literal.
