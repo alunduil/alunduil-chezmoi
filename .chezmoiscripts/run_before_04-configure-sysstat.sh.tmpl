@@ -31,10 +31,13 @@ install_if_changed -D -m 0644 \
 daemon_reload_if_installed
 
 # ----------------------------------------------------------------- collection
-if ! cmp -s "$ETC_SRC/default/sysstat" /etc/default/sysstat; then
-  install_if_changed -m 0644 "$ETC_SRC/default/sysstat" /etc/default/sysstat
+DEFAULT_SRC="$ETC_SRC/default/sysstat"
+DEFAULT=/etc/default/sysstat
+
+if ! cmp -s "$DEFAULT_SRC" "$DEFAULT"; then
+  install_if_changed -m 0644 "$DEFAULT_SRC" "$DEFAULT"
   # Declining the replace leaves collection as the hand edit set it.
-  if cmp -s "$ETC_SRC/default/sysstat" /etc/default/sysstat; then
+  if cmp -s "$DEFAULT_SRC" "$DEFAULT"; then
     log "enabling sysstat collection"
     sudo dpkg-reconfigure -f noninteractive sysstat
   fi

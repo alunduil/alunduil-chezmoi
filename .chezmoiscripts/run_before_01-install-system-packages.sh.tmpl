@@ -92,20 +92,22 @@ fi
 # ------------------------------------------------------------------ 1password
 # The debsig policy is how apt verifies the package signature at install;
 # 1Password publishes it separately from the apt signing key, keyed by their
-# fixed origin id AC2D62742012EA22.
+# fixed origin id.
 add_apt_repo 1password-archive-keyring.gpg https://downloads.1password.com/linux/keys/1password.asc \
   1password.list "https://downloads.1password.com/linux/debian/$arch stable main" "arch=$arch"
 
-if [ ! -f /etc/debsig/policies/AC2D62742012EA22/1password.pol ] ||
-  [ ! -f /usr/share/debsig/keyrings/AC2D62742012EA22/debsig.gpg ]; then
+debsig_origin=AC2D62742012EA22
+debsig_policy="/etc/debsig/policies/$debsig_origin/1password.pol"
+debsig_keyring="/usr/share/debsig/keyrings/$debsig_origin/debsig.gpg"
+
+if [ ! -f "$debsig_policy" ] || [ ! -f "$debsig_keyring" ]; then
   log "1password: adding debsig policy"
   curl -fsSL https://downloads.1password.com/linux/debian/debsig/1password.pol \
     -o "$staging/1password.pol"
-  install_if_changed -D -m 0644 "$staging/1password.pol" \
-    /etc/debsig/policies/AC2D62742012EA22/1password.pol
-  sudo mkdir -p /usr/share/debsig/keyrings/AC2D62742012EA22
+  install_if_changed -D -m 0644 "$staging/1password.pol" "$debsig_policy"
+  sudo mkdir -p "${debsig_keyring%/*}"
   curl -fsSL https://downloads.1password.com/linux/keys/1password.asc |
-    sudo gpg --dearmor -o /usr/share/debsig/keyrings/AC2D62742012EA22/debsig.gpg
+    sudo gpg --dearmor -o "$debsig_keyring"
 fi
 
 # ----------------------------------------------------------------------- mise
