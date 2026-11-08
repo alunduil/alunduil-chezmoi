@@ -20,7 +20,6 @@ Organised by [Diátaxis](https://diataxis.fr):
 - How-to
   - [Adding a secret](docs/how-to/add-a-secret.md): stored in 1Password, including rotation.
   - [Recovering access](docs/how-to/recover-access.md): the Emergency Kit, and rebuilding without the 1Password account.
-  - [Saving state before a rebuild](docs/how-to/save-state-before-a-rebuild.md): what to copy off the host before a wipe.
 - Reference
   - [Bootstrap rules](docs/reference/bootstrap-reference.md)—script prefixes, phases, install sources, host roles, secrets.
 - Explanation
