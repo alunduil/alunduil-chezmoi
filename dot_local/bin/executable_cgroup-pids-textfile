@@ -43,8 +43,7 @@ slice="user-$(id -u).slice"
 root="${CGROUP_ROOT:-/sys/fs/cgroup}"
 
 hierarchy="$root"
-# The hybrid layout still mounts pids as a v1 hierarchy, so it takes this
-# branch too.
+# Hybrid hosts mount pids as a v1 hierarchy, so they read the v1 path.
 if [ -d "$root/pids" ]; then
   hierarchy="$root/pids"
 fi
