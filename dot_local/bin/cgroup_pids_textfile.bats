@@ -10,15 +10,17 @@ setup() {
   export CGROUP_ROOT="$TMPROOT/cgroup"
   SLICE="user-$(id -u).slice"
   SLICE_DIR="$CGROUP_ROOT/pids/user.slice/$SLICE"
-  mkdir -p "$SLICE_DIR"
   PROM="$NODE_TEXTFILE_DIR/cgroup_pids.prom"
 }
 
 teardown() { rm -rf "$TMPROOT"; }
 
+# counters CURRENT MAX [DIR]: DIR defaults to the cgroup v1 slice.
 counters() {
-  echo "$1" >"$SLICE_DIR/pids.current"
-  echo "$2" >"$SLICE_DIR/pids.max"
+  local dir="${3:-$SLICE_DIR}"
+  mkdir -p "$dir"
+  echo "$1" >"$dir/pids.current"
+  echo "$2" >"$dir/pids.max"
 }
 
 @test "publishes the slice's pids counters" {
@@ -32,10 +34,7 @@ counters() {
 }
 
 @test "reads the unified hierarchy when no pids controller is mounted" {
-  rm -r "$CGROUP_ROOT/pids"
-  SLICE_DIR="$CGROUP_ROOT/user.slice/$SLICE"
-  mkdir -p "$SLICE_DIR"
-  counters 7 4096
+  counters 7 4096 "$CGROUP_ROOT/user.slice/$SLICE"
 
   run bash "$SAMPLER"
 
