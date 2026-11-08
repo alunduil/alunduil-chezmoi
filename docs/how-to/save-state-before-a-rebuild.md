@@ -1,9 +1,10 @@
 # Saving state before a rebuild
 
-Rebuilding the Chromebook's Linux environment from scratch deletes
-everything in it, including home. The bootstrap restores what the repos
-and 1Password hold. Use this checklist to copy the rest off the host
-before the wipe. It assumes you share Google Drive with Linux.
+Before rebuilding the Chromebook's Linux environment, copy off the host
+whatever the bootstrap can't restore. The rebuild deletes home along
+with everything else, and the bootstrap restores only what the repos and
+1Password hold. This checklist assumes you share Google Drive with
+Linux. The rebuild itself is [the bootstrap](../tutorials/bootstrap.md).
 
 Pick a destination folder on Drive:
 
@@ -31,17 +32,15 @@ Push or discard each line until the loop prints nothing.
 
 ## Copy Claude Code memory
 
-Claude Code's memory lives in home and no repo holds it:
-
 ```bash
 (cd ~ && tar -czf "$DEST/claude-memory.tar.gz" .claude/projects/*/memory)
 ```
 
 ## Confirm the age key
 
-The bootstrap needs the age key from the password manager. Paste the
-password manager's copy into `age-keygen -y`, end with Ctrl-D, and
-check that it prints the `recipient` in `.chezmoi.toml.tmpl`:
+The bootstrap reads the age key from the password manager, so check that
+copy before the wipe. Paste it into `age-keygen -y`, end with Ctrl-D,
+and compare the output with `recipient` in `.chezmoi.toml.tmpl`:
 
 ```bash
 age-keygen -y
@@ -49,7 +48,8 @@ age-keygen -y
 
 ## Export Docker volumes
 
-List the volumes and export each one worth keeping:
+List the volumes, then export each one worth keeping, replacing
+`VOLUME` with its name:
 
 ```bash
 docker volume ls
@@ -64,12 +64,12 @@ du -sh ~/.local/share/* | sort -h
 ```
 
 The bootstrap reinstalls tool directories such as `mise`, `pnpm`, and
-`uv`. The first section covers `git-worktrees`. Copy anything else
-whose loss matters to `$DEST`.
+`uv`. Pushing git work covers `git-worktrees`. Copy anything else whose
+loss matters to `$DEST`.
 
 ## Take a fallback backup
 
 In ChromeOS Settings, open **Developers → Linux development
 environment → Backup & restore** and back up to Drive. The backup may
-only restore into the legacy container, not into Baguette, so treat it
-as a way back rather than a source for the new environment.
+restore only into the legacy container, so keep it for returning there
+if the Baguette rebuild fails.

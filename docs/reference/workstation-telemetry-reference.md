@@ -69,7 +69,8 @@ slice was out of pids, so the local column is the one that answers:
 | `node_forks_total` | `sar -w` |
 | `node_procs_running`, `node_procs_blocked` | `sar -q` |
 | `node_processes_state` | `sar -q` (`plist-sz`) |
-| `cgroup_pids_current` | `cat /sys/fs/cgroup/pids/user.slice/user-$(id -u).slice/pids.current` (cgroup v1) or `cat /sys/fs/cgroup/user.slice/user-$(id -u).slice/pids.current` (v2) |
+| `cgroup_pids_current` on cgroup v1 | `cat /sys/fs/cgroup/pids/user.slice/user-$(id -u).slice/pids.current` |
+| `cgroup_pids_current` on cgroup v2 | `cat /sys/fs/cgroup/user.slice/user-$(id -u).slice/pids.current` |
 
 ## Log jobs
 

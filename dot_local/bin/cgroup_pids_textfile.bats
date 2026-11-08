@@ -15,7 +15,6 @@ setup() {
 
 teardown() { rm -rf "$TMPROOT"; }
 
-# counters CURRENT MAX [DIR]: DIR defaults to the cgroup v1 slice.
 counters() {
   local dir="${3:-$SLICE_DIR}"
   mkdir -p "$dir"
