@@ -31,8 +31,7 @@ churn=(
   "$home/.npm/_logs"
   # `mise install` regenerates its shims even when nothing is new.
   "$home/.local/share/mise/shims"
-  # The running 1Password app writes logs and crash state here; chezmoi
-  # deploys nothing into it.
+  # The running 1Password app writes logs and crash state.
   "$home/.config/1Password"
 )
 
@@ -46,8 +45,8 @@ docker build --quiet --tag "$image" \
 host="$(docker run --detach --privileged "$image")"
 trap 'docker rm --force "$host" >/dev/null' EXIT
 
-# A login shell, as the tutorial's terminal is. 1Password secrets render empty,
-# so neither apply needs a vault. mise's GitHub backend is rate-limited without
+# A login shell, as the tutorial's terminal is. CI has no 1Password vault, so
+# secrets render empty. mise's GitHub backend is rate-limited without
 # GITHUB_TOKEN.
 as_user() {
   docker exec --user "$user" --workdir "$home" \
