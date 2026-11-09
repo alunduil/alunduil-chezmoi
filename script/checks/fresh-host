@@ -31,6 +31,9 @@ churn=(
   "$home/.npm/_logs"
   # `mise install` regenerates its shims even when nothing is new.
   "$home/.local/share/mise/shims"
+  # The running 1Password app writes logs and crash state here; chezmoi
+  # deploys nothing into it.
+  "$home/.config/1Password"
 )
 
 log() { printf '==> %s\n' "$*" >&2; }
