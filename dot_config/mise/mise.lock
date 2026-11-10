@@ -156,14 +156,14 @@ url = "https://github.com/tweag/ormolu/releases/download/0.9.0.0/ormolu-x86_64-l
 url_api = "https://api.github.com/repos/tweag/ormolu/releases/assets/602990813"
 
 [[tools.prek]]
-version = "0.5.9"
+version = "0.5.10"
 backend = "aqua:j178/prek"
-specifiers = ["0.5.9"]
+specifiers = ["0.5.10"]
 
 [tools.prek."platforms.linux-x64"]
-checksum = "sha256:2fee13923018dd517c19dba032ddcae8010cadfb81bc47e742ad5e8981a3f126"
-url = "https://github.com/j178/prek/releases/download/v0.5.9/prek-x86_64-unknown-linux-gnu.tar.gz"
-url_api = "https://api.github.com/repos/j178/prek/releases/assets/691760524"
+checksum = "sha256:5c832a9ccd0855b7c054320d8921d90165a37459d3ac175923bdf121ff1aa9b1"
+url = "https://github.com/j178/prek/releases/download/v0.5.10/prek-x86_64-unknown-linux-gnu.tar.gz"
+url_api = "https://api.github.com/repos/j178/prek/releases/assets/707839458"
 provenance = "github-attestations"
 
 [[tools.release-plz]]
