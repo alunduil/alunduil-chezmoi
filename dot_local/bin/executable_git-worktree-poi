@@ -18,6 +18,8 @@ Usage: git worktree-poi [OPTIONS] [NAME...]
   tmux, dev server, ...) is annotated `in-use` and never removed. Detection
   reads /proc/*/cwd, so it generalises beyond zellij's CLI surface. It runs
   again just before each removal, so a process that entered mid-run counts.
+  The devcontainer CLI's attached `docker run` doesn't count: removing a
+  worktree also removes the containers labelled with its folder.
 
   An empty worktree younger than an hour is annotated `new` and kept, giving
   a session time to enter it.
@@ -113,8 +115,53 @@ collect_in_use_cwds() {
     local cwd_link target
     for cwd_link in /proc/*/cwd; do
         target=$(readlink "$cwd_link" 2>/dev/null) || continue
-        [[ "$target" == "$WORKTREE_ROOT"/* ]] && printf '%s\n' "$target"
+        [[ "$target" == "$WORKTREE_ROOT"/* ]] || continue
+        is_devcontainer_holder <"${cwd_link%/cwd}/cmdline" 2>/dev/null && continue
+        printf '%s\n' "$target"
     done
+}
+
+# is_devcontainer_holder < cmdline: succeeds if the NUL-separated argv on stdin
+# is the devcontainer CLI's `docker run`. It stays attached for the container's
+# lifetime from the worktree it was launched in, so counting it as in use would
+# keep the worktree, and with it the container, forever. remove_devcontainers
+# ends it along with the container.
+is_devcontainer_holder() {
+    local -a argv
+    local a
+    mapfile -d '' -t argv
+    [[ "${argv[0]:-}" == docker || "${argv[0]:-}" == */docker ]] || return 1
+    [[ "${argv[1]:-}" == run ]] || return 1
+    for a in "${argv[@]:2}"; do
+        [[ "$a" == devcontainer.local_folder=* ]] && return 0
+    done
+    return 1
+}
+
+# devcontainers <wt>: names of the containers the devcontainer CLI started for
+# <wt>, one per line. Empty without docker or a reachable daemon.
+devcontainers() {
+    command -v docker >/dev/null 2>&1 || return 0
+    docker ps -a --filter "label=devcontainer.local_folder=$1" \
+        --format '{{.Names}}' 2>/dev/null || true
+}
+
+# remove_devcontainers <wt>: best-effort. A container left behind is collected
+# by docker-prune once its folder is gone.
+remove_devcontainers() {
+    devcontainers "$1" | xargs -r docker rm -f >/dev/null 2>&1 || true
+}
+
+# container_preview <tsv-rows>: "<rel>\t<name>" for each container that acting
+# on the rows would remove.
+container_preview() {
+    local rel wt name
+    [[ -n "$1" ]] || return 0
+    while IFS=$'\t' read -r _ rel _ _ wt; do
+        while IFS= read -r name; do
+            [[ -n "$name" ]] && printf '%s\t%s\n' "$rel" "$name"
+        done < <(devcontainers "$wt")
+    done <<<"$1"
 }
 
 # is_in_use <wt>: succeeds if any IN_USE_CWDS entry is the worktree itself or
@@ -745,6 +792,7 @@ if ((dry_run)); then
     fi
     print_trash "Would trash (kept $TRASH_RETENTION_DAYS days in $TRASH_ROOT)" "$(trash_preview "$act_rows")"
     print_trash 'Would delete (regenerable build output)' "$(delete_preview "$act_rows")"
+    print_trash 'Would remove containers' "$(container_preview "$act_rows")"
     report_resolve_errors
     exit 0
 fi
@@ -781,6 +829,7 @@ if [[ -n "$act_rows" ]]; then
             [[ "$branch" != '(detached HEAD)' && -n "$canonical" ]] \
                 && git -C "$canonical" branch "$del_flag" "$branch" 2>/dev/null || true
             removed_rows+="${row}"$'\n'
+            remove_devcontainers "$wt"
             # Pruning waits for a successful remove so restore_untracked can
             # still put everything back when the remove fails.
             if [[ -n "$TRASH_DIR" ]]; then
