@@ -121,18 +121,28 @@ rust_pins() {
         -type f \( -name rust-toolchain.toml -o -name rust-toolchain \) -print0 2>/dev/null)
 }
 
+# is_pinned TOOLCHAIN PIN...: whether any PIN names TOOLCHAIN. rustup appends
+# the host triple to the pinned channel, so a pin matches whole or followed by
+# `-`: 1.98.1 names 1.98.1-x86_64-unknown-linux-gnu, and 1.98 doesn't.
+is_pinned() {
+    local toolchain=$1 pin
+    shift
+    for pin; do
+        [[ "$toolchain" == "$pin" || "$toolchain" == "$pin"-* ]] && return 0
+    done
+    return 1
+}
+
 # prune_rust_toolchains: `rustup toolchain list` marks the default and any
 # active toolchain after its name. A marked toolchain is always kept, so a
 # checkout pinning a channel name can't cost the default.
 prune_rust_toolchains() {
-    local toolchain marker pin failed=0
+    local toolchain marker failed=0
     local -a pins
     mapfile -t pins < <(rust_pins)
     while read -r toolchain marker; do
         [[ -z "$marker" ]] || continue
-        for pin in "${pins[@]}"; do
-            [[ "$toolchain" == "$pin" || "$toolchain" == "$pin"-* ]] && continue 2
-        done
+        is_pinned "$toolchain" "${pins[@]}" && continue
         rustup toolchain uninstall "$toolchain" || failed=1
     done < <(rustup toolchain list)
     return "$failed"
