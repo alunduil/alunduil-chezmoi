@@ -116,7 +116,7 @@ on the first Tab, so the script always matches the installed version.
 
    ```bash
    prek run --all-files
-   bats --recursive dot_local dot_claude script
+   bats --recursive dot_local dot_claude etc script
    script/checks/chezmoi-apply
    script/checks/pinned-tools
    ```

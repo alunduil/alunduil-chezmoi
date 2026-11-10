@@ -39,7 +39,7 @@ while IFS= read -r bin; do
   bin="${bin/'%h'/$HOME}"
   [ -x "$bin" ] || skip "$bin not installed"
 done < <(printf '%s\0' "${service_units[@]}" |
-  xargs -0 -r grep -hoP '^ExecStart=\K[^ ]+')
+  xargs -0 -r grep -hoP '^ExecStart(Pre)?=-?\K[^ ]+')
 
 errfile="$(mktemp)"
 trap 'rm -f "$errfile"' EXIT

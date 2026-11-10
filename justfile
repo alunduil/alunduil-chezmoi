@@ -53,7 +53,7 @@ check-bats:
     set -euo pipefail
     mise_libs="$(mise where npm:bats-support)/node_modules:$(mise where npm:bats-assert)/node_modules"
     BATS_LIB_PATH="${BATS_LIB_PATH:+$BATS_LIB_PATH:}$mise_libs" \
-      bats --recursive dot_local dot_claude script
+      bats --recursive dot_local dot_claude etc script
 
 # Zellij KDL validation (needs zellij on PATH).
 check-zellij:
