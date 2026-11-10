@@ -30,8 +30,10 @@ Usage: git worktree-poi [OPTIONS] [NAME...]
 
   Before removing a worktree, forced or not, moves its untracked files to
   $XDG_DATA_HOME/git-worktree-poi/trash/<repo>/, gitignored ones included
-  (.env, local config, build output). Each run deletes trash older than 14
-  days. --dry-run lists the files each removal would move.
+  (.env, local config). Directories named .terraform, .venv, dist-newstyle,
+  node_modules, or target are deleted instead, at any depth, because a tool
+  can regenerate them. Each run deletes trash older than 14 days. --dry-run
+  lists the paths each removal would trash and delete.
 
 Options:
   -f, --force    Remove the named worktrees even if classified keep.
@@ -76,6 +78,10 @@ WORKTREE_ROOT="$DATA_HOME/git-worktrees"
 # usually a rename and stays cheap.
 TRASH_ROOT="$DATA_HOME/git-worktree-poi/trash"
 TRASH_RETENTION_DAYS=14
+# Regenerable build output, as `find` tests. Trashing it frees no disk until
+# retention ends. Deleting narrows what the trash can undo, so list only names a
+# tool always rebuilds.
+BUILD_DIR_TESTS=(-name .terraform -o -name .venv -o -name dist-newstyle -o -name node_modules -o -name target)
 # Covers the gap between `git worktree add` and a session entering, when no
 # process cwd marks the worktree in use.
 MIN_EMPTY_AGE_MINUTES=60
@@ -538,6 +544,24 @@ untracked_paths() {
     git -C "$1" ls-files -z --others --directory 2>/dev/null
 }
 
+is_build_dir() {
+    [[ -n "$(find "$1" -maxdepth 0 -type d \( "${BUILD_DIR_TESTS[@]}" \) -print 2>/dev/null)" ]]
+}
+
+# build_dirs <path>: NUL-separated build directories at or under <path>. Git
+# collapses a wholly untracked directory to one entry, so matching its entries
+# by name alone would miss the build output inside it.
+build_dirs() {
+    find "$1" -type d \( "${BUILD_DIR_TESTS[@]}" \) -prune -print0 2>/dev/null
+}
+
+# prune_build_dirs <trash-dir>: also removes directories this leaves empty,
+# <trash-dir> included.
+prune_build_dirs() {
+    build_dirs "$1" | xargs -0 -r rm -rf || true
+    find "$1" -depth -type d -empty -delete 2>/dev/null || true
+}
+
 # move_paths <src> <dst> <path...>: move relative paths from <src> to <dst>.
 # Skips paths missing from <src>, so a partial trash can be moved back.
 move_paths() {
@@ -581,7 +605,22 @@ trash_preview() {
     [[ -n "$1" ]] || return 0
     while IFS=$'\t' read -r _ rel _ _ wt; do
         while IFS= read -r -d '' p; do
+            is_build_dir "$wt/${p%/}" && continue
             printf '%s\t%s\n' "$rel" "$p"
+        done < <(untracked_paths "$wt")
+    done <<<"$1"
+}
+
+# delete_preview <tsv-rows>: "<rel>\t<path>" for each build directory that
+# acting on the rows would delete.
+delete_preview() {
+    local rel wt p d
+    [[ -n "$1" ]] || return 0
+    while IFS=$'\t' read -r _ rel _ _ wt; do
+        while IFS= read -r -d '' p; do
+            while IFS= read -r -d '' d; do
+                printf '%s\t%s\n' "$rel" "${d#"$wt/"}"
+            done < <(build_dirs "$wt/${p%/}")
         done < <(untracked_paths "$wt")
     done <<<"$1"
 }
@@ -705,6 +744,7 @@ if ((dry_run)); then
         print_section 'Would keep' "$keep_rows"
     fi
     print_trash "Would trash (kept $TRASH_RETENTION_DAYS days in $TRASH_ROOT)" "$(trash_preview "$act_rows")"
+    print_trash 'Would delete (regenerable build output)' "$(delete_preview "$act_rows")"
     report_resolve_errors
     exit 0
 fi
@@ -741,7 +781,12 @@ if [[ -n "$act_rows" ]]; then
             [[ "$branch" != '(detached HEAD)' && -n "$canonical" ]] \
                 && git -C "$canonical" branch "$del_flag" "$branch" 2>/dev/null || true
             removed_rows+="${row}"$'\n'
-            [[ -n "$TRASH_DIR" ]] && trashed_rows+="${rel}"$'\t'"${TRASH_DIR}"$'\n'
+            # Pruning waits for a successful remove so restore_untracked can
+            # still put everything back when the remove fails.
+            if [[ -n "$TRASH_DIR" ]]; then
+                prune_build_dirs "$TRASH_DIR"
+                [[ -d "$TRASH_DIR" ]] && trashed_rows+="${rel}"$'\t'"${TRASH_DIR}"$'\n'
+            fi
         else
             restore_untracked "$wt" || true
             failed_rows+="${row}"$'\n'
