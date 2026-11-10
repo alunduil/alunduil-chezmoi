@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 # PostToolUse hook: run prek on the just-edited file so lint
 # failures surface immediately instead of piling up at commit time.
-# Matched on Edit/Write/MultiEdit/NotebookEdit by settings.json.
+# Matched on Edit/Write/NotebookEdit by settings.json.
 #
 # Exit 0 = silent pass / nothing to do; exit 2 surfaces stderr to
 # Claude as feedback for the next turn. Parse failures exit 0 — we
