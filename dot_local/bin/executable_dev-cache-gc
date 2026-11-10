@@ -104,21 +104,31 @@ run_gc() {
     printf '\n'
 }
 
-# rust_pins: print the channel each rust-toolchain file in a checkout pins.
-# Main clones sit under $HOME and worktrees under a hidden directory, so the
-# worktree root is walked explicitly while hidden directories are pruned.
+# rust_toolchain_files: print, NUL-separated, each rust-toolchain file in a
+# checkout. Main clones sit under $HOME and worktrees under a hidden directory,
+# so the worktree root is walked explicitly while hidden directories are pruned.
+rust_toolchain_files() {
+    find "$HOME" "${XDG_DATA_HOME:-$HOME/.local/share}/git-worktrees" -xdev -mindepth 1 \
+        -type d \( -name '.*' -o -name node_modules -o -name target \) -prune -o \
+        -type f \( -name rust-toolchain.toml -o -name rust-toolchain \) -print0 2>/dev/null
+}
+
+# toolchain_channel FILE: print the channel FILE pins, from the TOML form's
+# `channel` key or the legacy form's first line.
+toolchain_channel() {
+    if grep -q '^\[toolchain\]' "$1"; then
+        sed -nE "s/^[[:space:]]*channel[[:space:]]*=[[:space:]]*[\"']([^\"']+).*/\1/p" "$1"
+    else
+        head -n 1 "$1" | tr -d '[:space:]'
+        printf '\n'
+    fi
+}
+
 rust_pins() {
     local f
     while IFS= read -r -d '' f; do
-        if grep -q '^\[toolchain\]' "$f"; then
-            sed -nE "s/^[[:space:]]*channel[[:space:]]*=[[:space:]]*[\"']([^\"']+).*/\1/p" "$f"
-        else
-            head -n 1 "$f" | tr -d '[:space:]'
-            printf '\n'
-        fi
-    done < <(find "$HOME" "${XDG_DATA_HOME:-$HOME/.local/share}/git-worktrees" -xdev -mindepth 1 \
-        -type d \( -name '.*' -o -name node_modules -o -name target \) -prune -o \
-        -type f \( -name rust-toolchain.toml -o -name rust-toolchain \) -print0 2>/dev/null)
+        toolchain_channel "$f"
+    done < <(rust_toolchain_files)
 }
 
 # is_pinned TOOLCHAIN PIN...: whether any PIN names TOOLCHAIN. rustup appends
