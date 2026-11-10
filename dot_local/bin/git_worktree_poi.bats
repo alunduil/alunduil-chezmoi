@@ -611,9 +611,9 @@ STUB
 @test "devcontainers: the CLI's attached docker run doesn't hold a worktree" {
   _mkmerged_with_env
   _stub_docker
-  # bash reading a script named `run`, renamed docker, gives the argv
-  # `docker run -l devcontainer.local_folder=…`. Its sleep starts before the
-  # cd, so only the holder itself has its cwd in $WT.
+  # `exec -a docker bash run …` gives the process the argv `docker run -l
+  # devcontainer.local_folder=…`. The script starts sleep before its cd, so
+  # only the holder has its cwd in $WT.
   printf 'sleep 30 &\necho "$!" >"$POI_TEST_PID_FILE"\ncd "$POI_TEST_WT" && wait\n' >"$TMPROOT/run"
   (cd "$TMPROOT" && POI_TEST_WT="$WT" POI_TEST_PID_FILE="$TMPROOT/pid" \
     exec -a docker bash run -l "devcontainer.local_folder=$WT") </dev/null >/dev/null 2>&1 &

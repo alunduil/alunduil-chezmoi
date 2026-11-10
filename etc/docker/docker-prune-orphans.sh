@@ -1,7 +1,6 @@
 #!/usr/bin/env bash
-# Remove devcontainers whose host folder is gone. The devcontainer CLI labels
-# each container with the folder it mounts. Once that folder is deleted nothing
-# reattaches, and docker system prune never removes a running container.
+# Remove devcontainers whose host folder is gone. Nothing will reattach to
+# them, and docker system prune never removes a running container.
 set -euo pipefail
 
 docker ps -a --filter label=devcontainer.local_folder \
