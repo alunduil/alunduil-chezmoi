@@ -36,7 +36,7 @@ Five more criteria rank the qualifying options against each other:
   ([Traugott and Brown](https://www.usenix.org/legacy/publications/library/proceedings/lisa02/tech/full_papers/traugott/traugott_html/index.html)).
 - Fit to the hand: how the configuration reads and writes.
 - Simplicity.
-- Purpose: the tool's own stated domain covers the job.
+- Stated domain: the tool's own documentation covers the job.
 - Fit to the platform.
 
 Bootstrap prerequisites and migration cost only break ties.
@@ -62,8 +62,8 @@ Three of the six options fail to qualify:
 
 Three options qualify:
 
-- **chezmoi for both layers.** The system layer is outside chezmoi's purpose,
-  and its bash passes carry the hand-written guards.
+- **chezmoi for both layers.** The system layer is outside chezmoi's stated
+  domain, and its bash passes carry the hand-written guards.
 - **chezmoi for home, Ansible for the system layer.** Ansible's modules
   describe state, and handlers restart a service when its config changes.
   Renovate tracks `ansible-core` through the host-tool installer and Galaxy
@@ -87,13 +87,13 @@ each qualifying option:
 chezmoi configures the home layer. A local Ansible playbook configures the
 system layer: apt sources and packages, files under `/etc`, and system units.
 
-Ansible owns the system layer on purpose and fit to the hand. The system layer
-is outside chezmoi's purpose, and maintained modules and roles do the work of
-hand-written units and guards. chezmoi owns the home layer because the two
+For the system layer, Ansible wins on stated domain and fit to the hand. The
+system layer is outside chezmoi's stated domain, and maintained modules and
+roles do the work of hand-written units and guards. chezmoi owns the home layer because the two
 tools fit the hand equally well there, and migration cost breaks the tie.
 
-- `chezmoi apply` is the one command. A `run_before_` pass runs the playbook,
-  so packages the home layer needs exist before its files and units.
+- `chezmoi apply` converges both layers. A `run_before_` pass runs the
+  playbook, so the home layer's packages exist before its files and units.
 - `ansible-core` installs like every other host tool, through the installer
   [ADR 0009](0009-install-pinned-tools-through-mise.md) names.
 - A maintained Galaxy role, pinned in `requirements.yml`, configures what it
