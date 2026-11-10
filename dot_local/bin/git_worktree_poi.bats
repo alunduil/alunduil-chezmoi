@@ -49,6 +49,26 @@ teardown() {
   assert_failure 1
 }
 
+# --- is_devcontainer_holder: argv shapes ---
+
+@test "is_devcontainer_holder: devcontainer CLI's docker run matches" {
+  run bash -c 'source "$1"; printf "%s\0" /usr/bin/docker run --sig-proxy=false -l devcontainer.local_folder=/w img | is_devcontainer_holder' \
+    _ "$POI"
+  assert_success
+}
+
+@test "is_devcontainer_holder: docker run without the label doesn't match" {
+  run bash -c 'source "$1"; printf "%s\0" docker run -l other=x img | is_devcontainer_holder' \
+    _ "$POI"
+  assert_failure 1
+}
+
+@test "is_devcontainer_holder: a shell in the worktree doesn't match" {
+  run bash -c 'source "$1"; printf "%s\0" bash -c "echo devcontainer.local_folder=/w" | is_devcontainer_holder' \
+    _ "$POI"
+  assert_failure 1
+}
+
 # --- classify: in-use override ---
 
 # Build a worktree under $WORKTREE_ROOT with upstream tracking. PR state is
@@ -560,6 +580,62 @@ STUB
   assert_success
   assert_line --regexp 'repo/feature.*in-use, PR #7 merged'
   [ -e "$WT/.env" ]
+}
+
+# --- devcontainers: removed with their worktree ---
+
+# A docker stub that lists one container for $WT's folder label and logs
+# every call to $DOCKER_LOG.
+_stub_docker() {
+  DOCKER_LOG="$TMPROOT/docker.log"
+  cat >"$STUB_DIR/docker" <<STUB
+#!/usr/bin/env bash
+printf '%s\n' "\$*" >>"$DOCKER_LOG"
+[[ "\$1" == ps && "\$*" == *"label=devcontainer.local_folder=$WT "* ]] && printf 'dc-feature\n'
+exit 0
+STUB
+  chmod +x "$STUB_DIR/docker"
+}
+
+@test "devcontainers: pruning a worktree removes its containers" {
+  _mkmerged_with_env
+  _stub_docker
+
+  PATH="$STUB_DIR:$PATH" run bash "$POI"
+  assert_success
+  [ ! -e "$WT" ]
+  run grep -x 'rm -f dc-feature' "$DOCKER_LOG"
+  assert_success
+}
+
+@test "devcontainers: the CLI's attached docker run doesn't hold a worktree" {
+  _mkmerged_with_env
+  _stub_docker
+  # `exec -a docker bash run …` gives the process the argv `docker run -l
+  # devcontainer.local_folder=…`. The script starts sleep before its cd, so
+  # only the holder has its cwd in $WT.
+  printf 'sleep 30 &\necho "$!" >"$POI_TEST_PID_FILE"\ncd "$POI_TEST_WT" && wait\n' >"$TMPROOT/run"
+  (cd "$TMPROOT" && POI_TEST_WT="$WT" POI_TEST_PID_FILE="$TMPROOT/pid" \
+    exec -a docker bash run -l "devcontainer.local_folder=$WT") </dev/null >/dev/null 2>&1 &
+  local holder=$!
+  while [ "$(readlink "/proc/$holder/cwd")" != "$WT" ]; do sleep 0.1; done
+
+  PATH="$STUB_DIR:$PATH" run bash "$POI"
+  kill "$holder" "$(cat "$TMPROOT/pid")"
+  assert_success
+  refute_output --partial "in-use"
+  [ ! -e "$WT" ]
+}
+
+@test "devcontainers: dry run lists containers and removes none" {
+  _mkmerged_with_env
+  _stub_docker
+
+  PATH="$STUB_DIR:$PATH" run bash "$POI" -n
+  assert_success
+  assert_output --regexp $'Would remove containers\n +repo/feature +dc-feature'
+  run grep '^rm' "$DOCKER_LOG"
+  assert_failure
 }
 
 @test "trash: dry run names the ignored files a prune would trash" {

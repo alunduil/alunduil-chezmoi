@@ -9,6 +9,9 @@ Type=oneshot
 # prune summary. Runs as root (system unit), so reachability, not docker-group
 # membership, is what's gated.
 ExecCondition=/bin/sh -c 'docker info >/dev/null 2>&1'
+# Removes devcontainers whose folder is gone, so the prune can collect their
+# images. A failed sweep doesn't block the prune.
+ExecStartPre=-/usr/local/sbin/docker-prune-orphans
 # --all prunes unused (not only dangling) images; until=168h spares anything
 # pulled in the last week, so the weekly sweep never deletes today's images. No
 # --volumes -- that risks data loss.

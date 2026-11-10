@@ -34,6 +34,8 @@ if ! cmp -s "$DAEMON_JSON_SRC" "$DAEMON_JSON"; then
 fi
 
 # -------------------------------------------------------------------- prune
+install_if_changed -m 0755 "$ETC_SRC/docker/docker-prune-orphans.sh" /usr/local/sbin/docker-prune-orphans
+
 for unit in docker-prune.service docker-prune.timer; do
   install_if_changed -m 0644 "$ETC_SRC/systemd/system/$unit" "/etc/systemd/system/$unit"
 done

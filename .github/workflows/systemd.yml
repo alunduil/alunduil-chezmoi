@@ -9,6 +9,7 @@ on:
     paths: &paths
       - 'dot_config/systemd/user/**'
       - 'etc/systemd/system/**'
+      - 'etc/docker/docker-prune-orphans.sh'
       - 'dot_local/bin/executable_cgroup-pids-textfile'
       - 'dot_local/bin/executable_git-poi-all'
       - 'dot_local/bin/executable_git-worktree-poi'
@@ -44,6 +45,7 @@ jobs:
           for s in cgroup-pids-textfile git-poi-all git-worktree-poi dev-cache-gc; do
             install -D -m 0755 "dot_local/bin/executable_$s" "$HOME/.local/bin/$s"
           done
+          sudo install -m 0755 etc/docker/docker-prune-orphans.sh /usr/local/sbin/docker-prune-orphans
 
       - name: Install the 1Password desktop app
         run: |

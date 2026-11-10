@@ -70,9 +70,9 @@ jobs:
       - name: Test
         run: |
           BATS_LIB_PATH="$(mise where npm:bats-support)/node_modules:$(mise where npm:bats-assert)/node_modules" \
-            kcov --include-path=dot_local,dot_claude,script \
+            kcov --include-path=dot_local,dot_claude,etc,script \
             --exclude-pattern=.bats,/fixtures/ \
-            coverage bats --recursive dot_local dot_claude script
+            coverage bats --recursive dot_local dot_claude etc script
 
       # kcov writes to coverage/bats.<hash>/ and symlinks coverage/bats beside
       # it; the symlink is the only stable path.
