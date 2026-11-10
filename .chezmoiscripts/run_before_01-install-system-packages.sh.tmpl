@@ -21,8 +21,8 @@ trap 'rm -rf "$staging"' EXIT
 
 # ------------------------------------------------------------ apt repositories
 # The keyring is the convergence guard: renaming one re-registers its
-# repository on every host. It also guards the list, which some packages'
-# postinsts rewrite or take over.
+# repository on every host. An existing keyring also leaves the list alone,
+# since some packages' postinsts rewrite or take over theirs.
 #
 #   add_apt_repo KEYRING KEY_URL LIST ENTRY [OPTIONS]
 #

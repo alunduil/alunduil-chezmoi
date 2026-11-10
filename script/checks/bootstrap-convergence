@@ -13,8 +13,8 @@
 #                the hashed content to change -- safe only when that content
 #                is the missing input.
 #
-# It also fails a write under /etc that bypasses install_if_changed, the
-# helper that diffs and backs up a replaced hand edit.
+# It also fails a write under /etc that bypasses install_if_changed, which
+# diffs and backs up any file it replaces.
 
 set -euo pipefail
 

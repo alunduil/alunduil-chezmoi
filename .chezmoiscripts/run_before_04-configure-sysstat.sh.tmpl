@@ -12,8 +12,9 @@
 # the postinst's output for ENABLED="true" byte for byte, so ucf sees no local
 # change.
 #
-# The guard compares the deployed file rather than asking debconf, because
-# debconf-show needs root and a converged host must not reach sudo.
+# The guard compares the deployed file with the source rather than asking
+# debconf, because debconf-show needs root and a converged host must not
+# reach sudo.
 
 set -euo pipefail
 
@@ -36,7 +37,7 @@ DEFAULT=/etc/default/sysstat
 
 if ! cmp -s "$DEFAULT_SRC" "$DEFAULT"; then
   install_if_changed -m 0644 "$DEFAULT_SRC" "$DEFAULT"
-  # Declining the replace leaves collection as the hand edit set it.
+  # A declined replacement keeps the hand-edited ENABLED value.
   if cmp -s "$DEFAULT_SRC" "$DEFAULT"; then
     log "enabling sysstat collection"
     sudo dpkg-reconfigure -f noninteractive sysstat

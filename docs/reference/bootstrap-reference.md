@@ -27,8 +27,8 @@ the host already matches. Local guards: `dpkg-query` status compared to
 `installed`, a pinned `--version`, `cmp` before `sudo install`.
 
 A pass writes under `/etc` only through `install_if_changed`, which
-shows the diff and keeps `DEST.bak` when it replaces a file. Generated
-content goes to a temporary file first.
+shows the diff and keeps the old file as `<file>.bak` when it replaces
+one. Generated content goes to a temporary file first.
 `script/checks/bootstrap-convergence` fails on any other write.
 
 A `run_onchange_` pass that can't do its work exits non-zero. chezmoi
