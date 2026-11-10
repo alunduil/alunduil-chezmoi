@@ -18,7 +18,7 @@ runs:
       shell: bash
       run: echo "MISE_GLOBAL_CONFIG_FILE=$GITHUB_WORKSPACE/dot_config/mise/config.toml" >>"$GITHUB_ENV"
 
-    - uses: jdx/mise-action@6612f0ef07ed2a736cd1e00a94a065522dd41195 # v5.2.5
+    - uses: jdx/mise-action@b44d12e7d0d8ee7461bb893e1b1993500433185b # v5.2.7
       with:
         install_args: ${{ inputs.tools }}
         cache_key: mise-{{platform}}-{{install_args_hash}}-${{ hashFiles('dot_config/mise/mise.lock', 'dot_config/mise/.mise/**') }}
