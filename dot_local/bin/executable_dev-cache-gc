@@ -80,12 +80,19 @@ fi
 
 declare -a failures=()
 
-# run_gc LABEL CMD...: run one tool's native GC, guarding on CMD's own binary.
+# run_gc LABEL [--needs BIN] CMD...: run one tool's native GC, guarding on BIN,
+# which defaults to CMD's own binary. --needs names the tool a function wraps.
 run_gc() {
-    local label=$1
+    local label=$1 needs
     shift
-    if ! command -v "$1" >/dev/null 2>&1; then
-        printf '%s-- %s: %s absent, skipping%s\n' "$DIM" "$label" "$1" "$RESET"
+    if [[ "$1" == --needs ]]; then
+        needs=$2
+        shift 2
+    else
+        needs=$1
+    fi
+    if ! command -v "$needs" >/dev/null 2>&1; then
+        printf '%s-- %s: %s absent, skipping%s\n' "$DIM" "$label" "$needs" "$RESET"
         return 0
     fi
     printf '%s==> %s%s\n' "$BOLD" "$label" "$RESET"
@@ -118,10 +125,6 @@ rust_pins() {
 # active toolchain after its name. A marked toolchain is always kept, so a
 # checkout pinning a channel name can't cost the default.
 prune_rust_toolchains() {
-    if ! command -v rustup >/dev/null 2>&1; then
-        printf '%srustup absent, skipping%s\n' "$DIM" "$RESET"
-        return 0
-    fi
     local toolchain marker pin failed=0
     local -a pins
     mapfile -t pins < <(rust_pins)
@@ -146,7 +149,7 @@ run_gc "npm cache" npm cache verify
 # cargo-cache, not `cargo cache`: the subcommand form dispatches through
 # rustup's cargo shim, which fails when no default toolchain is installed.
 run_gc "cargo registry" cargo-cache --autoclean
-run_gc "rust toolchains" prune_rust_toolchains
+run_gc "rust toolchains" --needs rustup prune_rust_toolchains
 run_gc "pnpm store" pnpm store prune
 run_gc "prek cache" prek cache gc
 run_gc "pre-commit cache" pre-commit gc

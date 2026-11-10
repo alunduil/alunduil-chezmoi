@@ -167,6 +167,13 @@ TRIPLE=x86_64-unknown-linux-gnu
   grep -qx "rustup	toolchain uninstall 1.97.1-$TRIPLE" "$GC_LOG"
 }
 
+@test "rust toolchains: a missing rustup is skipped like any other tool" {
+  run_dev_cache_gc
+  [ "$status" -eq 0 ]
+  [[ "$output" == *"rust toolchains: rustup absent, skipping"* ]]
+  [[ "$output" != *"==> rust toolchains"* ]]
+}
+
 @test "rust toolchains: a failed uninstall is reported and non-fatal" {
   stub_tools pnpm
   stub_rustup "1.97.1-$TRIPLE" "1.99.1-$TRIPLE (default)"
