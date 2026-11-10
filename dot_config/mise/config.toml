@@ -6,7 +6,7 @@ lockfile_platforms = ["linux-x64"]
 act = "0.2.92"
 "github:grafana/alloy" = "v1.21.3"
 "github:tfausak/cabal-gild" = "1.8.4.2"
-chezmoi = "2.73.3"
+chezmoi = "2.74.0"
 "github:fourmolu/fourmolu" = "0.21.0.0"
 "github:grafana/gcx" = "v1.7.1"
 # The release asset is a bare binary named linux-amd64, not gh-poi.
