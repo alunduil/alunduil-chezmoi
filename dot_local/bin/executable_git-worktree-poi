@@ -87,6 +87,9 @@ BUILD_DIR_TESTS=(-name .terraform -o -name .venv -o -name dist-newstyle -o -name
 # Covers the gap between `git worktree add` and a session entering, when no
 # process cwd marks the worktree in use.
 MIN_EMPTY_AGE_MINUTES=60
+# The devcontainer CLI labels each container it starts with the host folder it
+# mounts.
+DEVCONTAINER_LABEL=devcontainer.local_folder
 
 # trash_untracked's result. Globals because a $(...) subshell would drop
 # TRASHED_PATHS, which restore_untracked needs.
@@ -124,16 +127,15 @@ collect_in_use_cwds() {
 # is_devcontainer_holder < cmdline: succeeds if the NUL-separated argv on stdin
 # is the devcontainer CLI's `docker run`. It stays attached for the container's
 # lifetime from the worktree it was launched in, so counting it as in use would
-# keep the worktree, and with it the container, forever. remove_devcontainers
-# ends it along with the container.
+# keep the worktree, and with it the container, forever. Removing the worktree
+# removes the container, which ends it.
 is_devcontainer_holder() {
     local -a argv
     local a
     mapfile -d '' -t argv
-    [[ "${argv[0]:-}" == docker || "${argv[0]:-}" == */docker ]] || return 1
-    [[ "${argv[1]:-}" == run ]] || return 1
+    [[ "${argv[0]##*/}" == docker && "${argv[1]:-}" == run ]] || return 1
     for a in "${argv[@]:2}"; do
-        [[ "$a" == devcontainer.local_folder=* ]] && return 0
+        [[ "$a" == "$DEVCONTAINER_LABEL"=* ]] && return 0
     done
     return 1
 }
@@ -142,26 +144,8 @@ is_devcontainer_holder() {
 # <wt>, one per line. Empty without docker or a reachable daemon.
 devcontainers() {
     command -v docker >/dev/null 2>&1 || return 0
-    docker ps -a --filter "label=devcontainer.local_folder=$1" \
+    docker ps -a --filter "label=$DEVCONTAINER_LABEL=$1" \
         --format '{{.Names}}' 2>/dev/null || true
-}
-
-# remove_devcontainers <wt>: best-effort. A container left behind is collected
-# by docker-prune once its folder is gone.
-remove_devcontainers() {
-    devcontainers "$1" | xargs -r docker rm -f >/dev/null 2>&1 || true
-}
-
-# container_preview <tsv-rows>: "<rel>\t<name>" for each container that acting
-# on the rows would remove.
-container_preview() {
-    local rel wt name
-    [[ -n "$1" ]] || return 0
-    while IFS=$'\t' read -r _ rel _ _ wt; do
-        while IFS= read -r name; do
-            [[ -n "$name" ]] && printf '%s\t%s\n' "$rel" "$name"
-        done < <(devcontainers "$wt")
-    done <<<"$1"
 }
 
 # is_in_use <wt>: succeeds if any IN_USE_CWDS entry is the worktree itself or
@@ -645,31 +629,35 @@ restore_untracked() {
     move_paths "$TRASH_DIR" "$1" "${TRASHED_PATHS[@]}"
 }
 
-# trash_preview <tsv-rows>: "<rel>\t<path>" for each path that acting on the
-# rows would trash.
-trash_preview() {
-    local rel wt p
-    [[ -n "$1" ]] || return 0
+# preview <lister> <tsv-rows>: "<rel>\t<item>" for each line `<lister> <wt>`
+# prints, across every row's worktree.
+preview() {
+    local lister=$1 rel wt item
+    [[ -n "$2" ]] || return 0
     while IFS=$'\t' read -r _ rel _ _ wt; do
-        while IFS= read -r -d '' p; do
-            is_build_dir "$wt/${p%/}" && continue
-            printf '%s\t%s\n' "$rel" "$p"
-        done < <(untracked_paths "$wt")
-    done <<<"$1"
+        while IFS= read -r item; do
+            [[ -z "$item" ]] || printf '%s\t%s\n' "$rel" "$item"
+        done < <("$lister" "$wt")
+    done <<<"$2"
 }
 
-# delete_preview <tsv-rows>: "<rel>\t<path>" for each build directory that
-# acting on the rows would delete.
-delete_preview() {
-    local rel wt p d
-    [[ -n "$1" ]] || return 0
-    while IFS=$'\t' read -r _ rel _ _ wt; do
-        while IFS= read -r -d '' p; do
-            while IFS= read -r -d '' d; do
-                printf '%s\t%s\n' "$rel" "${d#"$wt/"}"
-            done < <(build_dirs "$wt/${p%/}")
-        done < <(untracked_paths "$wt")
-    done <<<"$1"
+# trashable_paths <wt>: untracked paths removing <wt> would trash.
+trashable_paths() {
+    local p
+    while IFS= read -r -d '' p; do
+        is_build_dir "$1/${p%/}" || printf '%s\n' "$p"
+    done < <(untracked_paths "$1")
+}
+
+# deletable_paths <wt>: build directories removing <wt> would delete, relative
+# to <wt>.
+deletable_paths() {
+    local p d
+    while IFS= read -r -d '' p; do
+        while IFS= read -r -d '' d; do
+            printf '%s\n' "${d#"$1/"}"
+        done < <(build_dirs "$1/${p%/}")
+    done < <(untracked_paths "$1")
 }
 
 # purge_trash: trash dirs sit at $TRASH_ROOT/<repo>/<petname>-<stamp>-<suffix>
@@ -790,9 +778,9 @@ if ((dry_run)); then
         print_section 'Would remove' "$remove_rows"
         print_section 'Would keep' "$keep_rows"
     fi
-    print_trash "Would trash (kept $TRASH_RETENTION_DAYS days in $TRASH_ROOT)" "$(trash_preview "$act_rows")"
-    print_trash 'Would delete (regenerable build output)' "$(delete_preview "$act_rows")"
-    print_trash 'Would remove containers' "$(container_preview "$act_rows")"
+    print_trash "Would trash (kept $TRASH_RETENTION_DAYS days in $TRASH_ROOT)" "$(preview trashable_paths "$act_rows")"
+    print_trash 'Would delete (regenerable build output)' "$(preview deletable_paths "$act_rows")"
+    print_trash 'Would remove containers' "$(preview devcontainers "$act_rows")"
     report_resolve_errors
     exit 0
 fi
@@ -828,8 +816,10 @@ if [[ -n "$act_rows" ]]; then
             # caller's explicit intent to discard the worktree wholesale.
             [[ "$branch" != '(detached HEAD)' && -n "$canonical" ]] \
                 && git -C "$canonical" branch "$del_flag" "$branch" 2>/dev/null || true
+            # Best-effort too: docker-prune collects a container left behind
+            # once its folder is gone.
+            devcontainers "$wt" | xargs -r docker rm -f >/dev/null 2>&1 || true
             removed_rows+="${row}"$'\n'
-            remove_devcontainers "$wt"
             # Pruning waits for a successful remove so restore_untracked can
             # still put everything back when the remove fails.
             if [[ -n "$TRASH_DIR" ]]; then
