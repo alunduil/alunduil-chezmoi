@@ -133,18 +133,28 @@ is_pinned() {
     return 1
 }
 
-# prune_rust_toolchains: `rustup toolchain list` marks the default and any
-# active toolchain after its name. A marked toolchain is always kept, so a
-# checkout pinning a channel name can't cost the default.
-prune_rust_toolchains() {
-    local toolchain marker failed=0
+# unused_toolchains: print each installed toolchain no checkout pins.
+# `rustup toolchain list` marks the default and any active toolchain after its
+# name. A marked toolchain is always kept, so a checkout pinning a channel name
+# can't cost the default.
+unused_toolchains() {
+    local toolchain marker
     local -a pins
     mapfile -t pins < <(rust_pins)
     while read -r toolchain marker; do
         [[ -z "$marker" ]] || continue
         is_pinned "$toolchain" "${pins[@]}" && continue
-        rustup toolchain uninstall "$toolchain" || failed=1
+        printf '%s\n' "$toolchain"
     done < <(rustup toolchain list)
+}
+
+prune_rust_toolchains() {
+    local toolchain failed=0
+    local -a unused
+    mapfile -t unused < <(unused_toolchains)
+    for toolchain in "${unused[@]}"; do
+        rustup toolchain uninstall "$toolchain" || failed=1
+    done
     return "$failed"
 }
 
