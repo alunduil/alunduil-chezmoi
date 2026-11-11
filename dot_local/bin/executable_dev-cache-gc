@@ -20,9 +20,9 @@ Usage: dev-cache-gc
   regenerable cache with installed toolchains, and only the tool knows which
   is which. Toolchains a tracked config still pins are kept.
 
-  rustup has no GC of its own, so this script uninstalls each toolchain that
-  is neither the default nor pinned by a rust-toolchain file in a checkout. A
-  pin the scan misses costs one download on the next build.
+  rustup has no GC, so dev-cache-gc uninstalls each Rust toolchain except the
+  default, the active one, and those a checkout's rust-toolchain file pins. A
+  missed pin costs one download on the next build.
 
   A tool whose binary is absent is skipped cleanly; a tool that errors is
   reported without aborting the rest. Run daily by dev-cache-gc.timer; safe to
@@ -80,8 +80,8 @@ fi
 
 declare -a failures=()
 
-# run_gc LABEL [--needs BIN] CMD...: run one tool's native GC, guarding on BIN,
-# which defaults to CMD's own binary. --needs names the tool a function wraps.
+# run_gc LABEL [--needs BIN] CMD...: run one tool's native GC, skipping it when
+# BIN is absent. BIN defaults to CMD; pass --needs when CMD is a function.
 run_gc() {
     local label=$1 needs
     shift
@@ -104,16 +104,17 @@ run_gc() {
     printf '\n'
 }
 
-# rust_toolchain_files: print, NUL-separated, each rust-toolchain file in a
-# checkout. Main clones sit under $HOME and worktrees under a hidden directory,
-# so the worktree root is walked explicitly while hidden directories are pruned.
+# rust_toolchain_files: print each checkout's rust-toolchain files,
+# NUL-terminated. The search skips hidden directories, and worktrees live in
+# one, so their root is a second starting point. node_modules and target hold
+# dependencies' pins, not the checkout's.
 rust_toolchain_files() {
     find "$HOME" "${XDG_DATA_HOME:-$HOME/.local/share}/git-worktrees" -xdev -mindepth 1 \
         -type d \( -name '.*' -o -name node_modules -o -name target \) -prune -o \
         -type f \( -name rust-toolchain.toml -o -name rust-toolchain \) -print0 2>/dev/null
 }
 
-# toolchain_channel FILE: print the channel FILE pins, from the TOML form's
+# toolchain_channel FILE: print the channel that FILE pins, from the TOML form's
 # `channel` key or the legacy form's first line.
 toolchain_channel() {
     if grep -q '^\[toolchain\]' "$1"; then
@@ -132,8 +133,8 @@ rust_pins() {
 }
 
 # is_pinned TOOLCHAIN PIN...: whether any PIN names TOOLCHAIN. rustup appends
-# the host triple to the pinned channel, so a pin matches whole or followed by
-# `-`: 1.98.1 names 1.98.1-x86_64-unknown-linux-gnu, and 1.98 doesn't.
+# the host triple to an installed channel, so pin 1.98.1 names
+# 1.98.1-x86_64-unknown-linux-gnu. Pin 1.98 doesn't name it.
 is_pinned() {
     local toolchain=$1 pin
     shift
@@ -143,10 +144,8 @@ is_pinned() {
     return 1
 }
 
-# unused_toolchains: print each installed toolchain no checkout pins.
-# `rustup toolchain list` marks the default and any active toolchain after its
-# name. A marked toolchain is always kept, so a checkout pinning a channel name
-# can't cost the default.
+# unused_toolchains: print each installed toolchain except those a checkout
+# pins and those `rustup toolchain list` marks default or active.
 unused_toolchains() {
     local toolchain marker
     local -a pins

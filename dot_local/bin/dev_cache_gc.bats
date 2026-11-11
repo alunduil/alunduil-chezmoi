@@ -97,8 +97,8 @@ run_dev_cache_gc() {
   [[ "$output" == *"npm cache"* ]]
 }
 
-# stub_rustup LIST_LINE...: a rustup whose `toolchain list` prints the given
-# lines, logging every other call. Uninstalls honour $GC_FAIL.
+# stub_rustup LINE...: a rustup that answers `toolchain list` with LINEs and
+# logs any other call, failing it when $GC_FAIL names rustup.
 stub_rustup() {
   printf '%s\n' "$@" >"$TMPROOT/toolchains"
   cat >"$STUB_DIR/rustup" <<STUB
