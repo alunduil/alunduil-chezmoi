@@ -97,6 +97,93 @@ run_dev_cache_gc() {
   [[ "$output" == *"npm cache"* ]]
 }
 
+# stub_rustup LINE...: a rustup that answers `toolchain list` with LINEs and
+# logs any other call, failing it when $GC_FAIL names rustup.
+stub_rustup() {
+  printf '%s\n' "$@" >"$TMPROOT/toolchains"
+  cat >"$STUB_DIR/rustup" <<STUB
+#!/usr/bin/env bash
+if [[ "\$*" == "toolchain list" ]]; then
+  cat "$TMPROOT/toolchains"
+  exit 0
+fi
+printf 'rustup\t%s\n' "\$*" >>"\$GC_LOG"
+[[ " \$GC_FAIL " != *" rustup "* ]]
+STUB
+  chmod +x "$STUB_DIR/rustup"
+}
+
+# pin_toolchain PATH CONTENT: write a rust-toolchain file under $HOME.
+pin_toolchain() {
+  mkdir -p "$(dirname "$HOME/$1")"
+  printf '%s\n' "$2" >"$HOME/$1"
+}
+
+TRIPLE=x86_64-unknown-linux-gnu
+
+@test "rust toolchains: only those neither default nor pinned are uninstalled" {
+  stub_rustup "1.97.1-$TRIPLE" "1.98.1-$TRIPLE" "1.99.1-$TRIPLE (active, default)"
+  pin_toolchain .local/share/git-worktrees/me/repo/pet/rust-toolchain.toml \
+    $'[toolchain]\nchannel = "1.98.1"\ncomponents = ["clippy"]'
+  run_dev_cache_gc
+  [ "$status" -eq 0 ]
+  [ "$(grep -c '^rustup' "$GC_LOG")" -eq 1 ]
+  grep -qx "rustup	toolchain uninstall 1.97.1-$TRIPLE" "$GC_LOG"
+}
+
+@test "rust toolchains: main clones and plain rust-toolchain files count as pins" {
+  stub_rustup "1.97.1-$TRIPLE" "1.98.1-$TRIPLE" "1.99.1-$TRIPLE (default)"
+  pin_toolchain repo/rust-toolchain.toml $'[toolchain]\nchannel = \'1.98.1\''
+  pin_toolchain other/rust-toolchain "1.97.1"
+  run_dev_cache_gc
+  [ "$status" -eq 0 ]
+  [ "$(grep -c '^rustup' "$GC_LOG")" -eq 0 ]
+}
+
+@test "rust toolchains: a channel-name pin never removes the default" {
+  stub_rustup "stable-$TRIPLE (default)" "1.97.1-$TRIPLE"
+  pin_toolchain repo/rust-toolchain.toml $'[toolchain]\nchannel = "nightly"'
+  run_dev_cache_gc
+  [ "$status" -eq 0 ]
+  [ "$(grep -c '^rustup' "$GC_LOG")" -eq 1 ]
+  grep -qx "rustup	toolchain uninstall 1.97.1-$TRIPLE" "$GC_LOG"
+}
+
+@test "rust toolchains: a pin is matched whole, not as a version prefix" {
+  stub_rustup "1.98.1-$TRIPLE" "1.99.1-$TRIPLE (default)"
+  pin_toolchain repo/rust-toolchain.toml $'[toolchain]\nchannel = "1.98"'
+  run_dev_cache_gc
+  [ "$status" -eq 0 ]
+  grep -qx "rustup	toolchain uninstall 1.98.1-$TRIPLE" "$GC_LOG"
+}
+
+@test "rust toolchains: pins in dependency and hidden directories don't count" {
+  stub_rustup "1.97.1-$TRIPLE" "1.99.1-$TRIPLE (default)"
+  pin_toolchain repo/node_modules/dep/rust-toolchain "1.97.1"
+  pin_toolchain repo/target/package/rust-toolchain "1.97.1"
+  pin_toolchain .cargo/registry/src/dep/rust-toolchain "1.97.1"
+  run_dev_cache_gc
+  [ "$status" -eq 0 ]
+  grep -qx "rustup	toolchain uninstall 1.97.1-$TRIPLE" "$GC_LOG"
+}
+
+@test "rust toolchains: a missing rustup is skipped like any other tool" {
+  run_dev_cache_gc
+  [ "$status" -eq 0 ]
+  [[ "$output" == *"rust toolchains: rustup absent, skipping"* ]]
+  [[ "$output" != *"==> rust toolchains"* ]]
+}
+
+@test "rust toolchains: a failed uninstall is reported and non-fatal" {
+  stub_tools pnpm
+  stub_rustup "1.97.1-$TRIPLE" "1.99.1-$TRIPLE (default)"
+  export GC_FAIL="rustup"
+  run_dev_cache_gc
+  [ "$status" -eq 1 ]
+  [[ "$output" == *"rust toolchains"* ]]
+  grep -qx "pnpm	store prune" "$GC_LOG"
+}
+
 @test "-h prints usage and exits 0" {
   run_dev_cache_gc -h
   [ "$status" -eq 0 ]

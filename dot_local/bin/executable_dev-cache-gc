@@ -20,6 +20,10 @@ Usage: dev-cache-gc
   regenerable cache with installed toolchains, and only the tool knows which
   is which. Toolchains a tracked config still pins are kept.
 
+  rustup has no GC, so dev-cache-gc uninstalls each Rust toolchain except the
+  default, the active one, and those a checkout's rust-toolchain file pins. A
+  missed pin costs one download on the next build.
+
   A tool whose binary is absent is skipped cleanly; a tool that errors is
   reported without aborting the rest. Run daily by dev-cache-gc.timer; safe to
   run by hand any time.
@@ -76,12 +80,19 @@ fi
 
 declare -a failures=()
 
-# run_gc LABEL CMD...: run one tool's native GC, guarding on CMD's own binary.
+# run_gc LABEL [--needs BIN] CMD...: run one tool's native GC, skipping it when
+# BIN is absent. BIN defaults to CMD; pass --needs when CMD is a function.
 run_gc() {
-    local label=$1
+    local label=$1 needs
     shift
-    if ! command -v "$1" >/dev/null 2>&1; then
-        printf '%s-- %s: %s absent, skipping%s\n' "$DIM" "$label" "$1" "$RESET"
+    if [[ "$1" == --needs ]]; then
+        needs=$2
+        shift 2
+    else
+        needs=$1
+    fi
+    if ! command -v "$needs" >/dev/null 2>&1; then
+        printf '%s-- %s: %s absent, skipping%s\n' "$DIM" "$label" "$needs" "$RESET"
         return 0
     fi
     printf '%s==> %s%s\n' "$BOLD" "$label" "$RESET"
@@ -91,6 +102,69 @@ run_gc() {
         failures+=("$label")
     fi
     printf '\n'
+}
+
+# rust_toolchain_files: print each checkout's rust-toolchain files,
+# NUL-terminated. The search skips hidden directories, and worktrees live in
+# one, so their root is a second starting point. node_modules and target hold
+# dependencies' pins, not the checkout's.
+rust_toolchain_files() {
+    find "$HOME" "${XDG_DATA_HOME:-$HOME/.local/share}/git-worktrees" -xdev -mindepth 1 \
+        -type d \( -name '.*' -o -name node_modules -o -name target \) -prune -o \
+        -type f \( -name rust-toolchain.toml -o -name rust-toolchain \) -print0 2>/dev/null
+}
+
+# toolchain_channel FILE: print the channel that FILE pins, from the TOML form's
+# `channel` key or the legacy form's first line.
+toolchain_channel() {
+    if grep -q '^\[toolchain\]' "$1"; then
+        sed -nE "s/^[[:space:]]*channel[[:space:]]*=[[:space:]]*[\"']([^\"']+).*/\1/p" "$1"
+    else
+        head -n 1 "$1" | tr -d '[:space:]'
+        printf '\n'
+    fi
+}
+
+rust_pins() {
+    local f
+    while IFS= read -r -d '' f; do
+        toolchain_channel "$f"
+    done < <(rust_toolchain_files)
+}
+
+# is_pinned TOOLCHAIN PIN...: whether any PIN names TOOLCHAIN. rustup appends
+# the host triple to an installed channel, so pin 1.98.1 names
+# 1.98.1-x86_64-unknown-linux-gnu. Pin 1.98 doesn't name it.
+is_pinned() {
+    local toolchain=$1 pin
+    shift
+    for pin; do
+        [[ "$toolchain" == "$pin" || "$toolchain" == "$pin"-* ]] && return 0
+    done
+    return 1
+}
+
+# unused_toolchains: print each installed toolchain except those a checkout
+# pins and those `rustup toolchain list` marks default or active.
+unused_toolchains() {
+    local toolchain marker
+    local -a pins
+    mapfile -t pins < <(rust_pins)
+    while read -r toolchain marker; do
+        [[ -z "$marker" ]] || continue
+        is_pinned "$toolchain" "${pins[@]}" && continue
+        printf '%s\n' "$toolchain"
+    done < <(rustup toolchain list)
+}
+
+prune_rust_toolchains() {
+    local toolchain failed=0
+    local -a unused
+    mapfile -t unused < <(unused_toolchains)
+    for toolchain in "${unused[@]}"; do
+        rustup toolchain uninstall "$toolchain" || failed=1
+    done
+    return "$failed"
 }
 
 # -c (cache) and -t (tmpdirs) only: -o/-u remove GHC versions and -p/-s strip
@@ -104,6 +178,7 @@ run_gc "npm cache" npm cache verify
 # cargo-cache, not `cargo cache`: the subcommand form dispatches through
 # rustup's cargo shim, which fails when no default toolchain is installed.
 run_gc "cargo registry" cargo-cache --autoclean
+run_gc "rust toolchains" --needs rustup prune_rust_toolchains
 run_gc "pnpm store" pnpm store prune
 run_gc "prek cache" prek cache gc
 run_gc "pre-commit cache" pre-commit gc
