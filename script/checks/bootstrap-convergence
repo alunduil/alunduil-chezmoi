@@ -12,6 +12,9 @@
 #   exit 0       in a run_onchange_ pass records its hash, so a skip waits for
 #                the hashed content to change -- safe only when that content
 #                is the missing input.
+#
+# It also fails a write under /etc that bypasses install_if_changed, which
+# diffs and backs up any file it replaces.
 
 set -euo pipefail
 
@@ -53,5 +56,9 @@ unmarked_skips() {
 
 report 'exit 0 records the hash, so this skip waits for hashed content to change; exit non-zero, or mark `# rerun-on: <name>-hash` if that hash covers the missing input' \
   < <(unmarked_skips)
+
+report 'a write under /etc replaces hand edits silently; stage the file and install it with install_if_changed' \
+  < <(code_matches -E 'sudo (tee|sed -i|cp|mv|install)\b[^|]*/etc' \
+    -- '.chezmoiscripts/*' 'script/*' ':!*.bats')
 
 exit "$fail"

@@ -15,9 +15,14 @@ is_installed() {
   [ "$(dpkg-query -W -f='${db:Status-Status}' "$1" 2>/dev/null || true)" = "installed" ]
 }
 
+# install_if_changed takes a source file, so generated /etc content lands here.
+staging=$(mktemp -d)
+trap 'rm -rf "$staging"' EXIT
+
 # ------------------------------------------------------------ apt repositories
 # The keyring is the convergence guard: renaming one re-registers its
-# repository on every host.
+# repository on every host. An existing keyring also leaves the list alone,
+# since some packages' postinsts rewrite or take over theirs.
 #
 #   add_apt_repo KEYRING KEY_URL LIST ENTRY [OPTIONS]
 #
@@ -29,8 +34,9 @@ add_apt_repo() {
   [ -f "$keyring" ] && return
   log "${list%.list}: adding apt repository"
   curl -fsSL "$key_url" | sudo gpg --dearmor -o "$keyring"
-  printf 'deb [%ssigned-by=%s] %s\n' "${options:+$options }" "$keyring" "$entry" |
-    sudo tee "/etc/apt/sources.list.d/$list" >/dev/null
+  printf 'deb [%ssigned-by=%s] %s\n' "${options:+$options }" "$keyring" "$entry" \
+    >"$staging/$list"
+  install_if_changed -m 0644 "$staging/$list" "/etc/apt/sources.list.d/$list"
 }
 
 arch=$(dpkg --print-architecture)
@@ -61,11 +67,13 @@ add_apt_repo adoptium-archive-keyring.gpg https://packages.adoptium.net/artifact
 # Keybase's apt repo is unsigned; their official install guide uses
 # `[trusted=yes]` to skip apt's signature check. Transport integrity
 # comes from HTTPS to prerelease.keybase.io. The keybase service
-# self-updates once installed, so versions track upstream regardless.
+# self-updates once installed, so versions track upstream regardless. The
+# package then takes over keybase.list.
 if [ ! -f /etc/apt/sources.list.d/keybase.list ]; then
   log "keybase: adding apt repository"
-  printf 'deb [trusted=yes] https://prerelease.keybase.io/deb stable main\n' |
-    sudo tee /etc/apt/sources.list.d/keybase.list >/dev/null
+  printf 'deb [trusted=yes] https://prerelease.keybase.io/deb stable main\n' \
+    >"$staging/keybase.list"
+  install_if_changed -m 0644 "$staging/keybase.list" /etc/apt/sources.list.d/keybase.list
 fi
 
 # --------------------------------------------------------------- vscode (code)
@@ -83,19 +91,22 @@ fi
 # ------------------------------------------------------------------ 1password
 # The debsig policy is how apt verifies the package signature at install;
 # 1Password publishes it separately from the apt signing key, keyed by their
-# fixed origin id AC2D62742012EA22.
+# fixed origin id.
 add_apt_repo 1password-archive-keyring.gpg https://downloads.1password.com/linux/keys/1password.asc \
   1password.list "https://downloads.1password.com/linux/debian/$arch stable main" "arch=$arch"
 
-if [ ! -f /etc/debsig/policies/AC2D62742012EA22/1password.pol ] ||
-  [ ! -f /usr/share/debsig/keyrings/AC2D62742012EA22/debsig.gpg ]; then
+debsig_origin=AC2D62742012EA22
+debsig_policy="/etc/debsig/policies/$debsig_origin/1password.pol"
+debsig_keyring="/usr/share/debsig/keyrings/$debsig_origin/debsig.gpg"
+
+if [ ! -f "$debsig_policy" ] || [ ! -f "$debsig_keyring" ]; then
   log "1password: adding debsig policy"
-  sudo mkdir -p /etc/debsig/policies/AC2D62742012EA22/
-  curl -fsSL https://downloads.1password.com/linux/debian/debsig/1password.pol |
-    sudo tee /etc/debsig/policies/AC2D62742012EA22/1password.pol >/dev/null
-  sudo mkdir -p /usr/share/debsig/keyrings/AC2D62742012EA22
+  curl -fsSL https://downloads.1password.com/linux/debian/debsig/1password.pol \
+    -o "$staging/1password.pol"
+  install_if_changed -D -m 0644 "$staging/1password.pol" "$debsig_policy"
+  sudo mkdir -p "${debsig_keyring%/*}"
   curl -fsSL https://downloads.1password.com/linux/keys/1password.asc |
-    sudo gpg --dearmor -o /usr/share/debsig/keyrings/AC2D62742012EA22/debsig.gpg
+    sudo gpg --dearmor -o "$debsig_keyring"
 fi
 
 # ----------------------------------------------------------------------- mise
