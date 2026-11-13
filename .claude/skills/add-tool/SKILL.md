@@ -84,7 +84,9 @@ exact version, sorted by tool name. Use the short name when
 `script/checks/pinned-tools` runs
 `<last segment of the config.toml name> --version` and expects it to
 exit 0. Add any tool that needs another command to `RUN_COMMANDS`
-there, or an empty entry for a library with nothing to run.
+there, or an empty entry for a library with nothing to run. A TUI
+also goes in `TUI`, which runs it in a pseudo-terminal and expects it
+still running at the timeout.
 
 Commit `config.toml`, `mise.lock`, and any new sidecar under
 `dot_config/mise/.mise/locks/`.

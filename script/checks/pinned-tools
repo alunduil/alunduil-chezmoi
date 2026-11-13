@@ -17,17 +17,24 @@ declare -A RUN_COMMANDS=(
   [act]='act --list'
   [github:fourmolu/fourmolu]="fourmolu --mode check $HASKELL_FIXTURE"
   [github:seachicken/gh-poi]='gh-poi --help'
+  [lazygit]='lazygit -ucf dot_config/lazygit/config.yml'
   [ormolu]="ormolu --mode check $HASKELL_FIXTURE"
   [npm:bats-assert]=''
   [npm:bats-support]=''
 )
+
+# Interactive tools never exit on their own and need a terminal. Each runs in
+# a pseudo-terminal and passes only when still running after TUI_SECONDS: a
+# config that fails to parse or a crash on start exits before then.
+declare -A TUI=([lazygit]=1)
+TUI_SECONDS=3
 
 run_command() {
   printf '%s\n' "${RUN_COMMANDS[$1]-${1##*/} --version}"
 }
 
 check_tool() {
-  local tool="$1" cmd bin output
+  local tool="$1" cmd bin output status
   local -a argv
   cmd="$(run_command "$tool")"
   if [ -z "$cmd" ]; then
@@ -42,6 +49,20 @@ check_tool() {
     return 1
   fi
   argv[0]="$bin"
+  if [ -n "${TUI[$tool]:-}" ]; then
+    # timeout runs inside the pseudo-terminal: script answers SIGTERM by
+    # waiting on its child, and a SIGKILLed script orphans it.
+    output="$(script -qec "$(printf '%q ' timeout --kill-after=2 \
+      "$TUI_SECONDS" "${argv[@]}")" /dev/null 2>&1 </dev/null)"
+    status=$?
+    if [ "$status" -ne 124 ]; then
+      printf 'FAIL: %s: `%s` exited %s before %ss:\n%s\n' \
+        "$tool" "$cmd" "$status" "$TUI_SECONDS" "$output" >&2
+      return 1
+    fi
+    printf 'OK: %s\n' "$tool"
+    return 0
+  fi
   # stdin is the tool list being looped over; a tool must not consume it.
   if ! output="$("${argv[@]}" 2>&1 </dev/null)"; then
     printf 'FAIL: %s: `%s` exited non-zero:\n%s\n' "$tool" "$cmd" "$output" >&2
