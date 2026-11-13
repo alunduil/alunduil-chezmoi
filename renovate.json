@@ -12,7 +12,7 @@
       "automerge": false
     },
     {
-      "description": "CI jobs use these as this repo does: pre-commit hooks run prek and lychee, Validate zellij config runs zellij, fresh-host installs through uv, and the shell tests load bats-support",
+      "description": "CI uses these as this repo does, so green CI covers a 0.x patch: pre-commit hooks run prek and lychee, Validate zellij config runs zellij, fresh-host installs through uv, and the shell tests load bats-support",
       "matchManagers": ["mise"],
       "matchUpdateTypes": ["patch"],
       "matchDepNames": [
@@ -25,7 +25,7 @@
       "automerge": true
     },
     {
-      "description": "script/checks/pinned-tools runs these past --version; each needs an entry in its RUN_COMMANDS",
+      "description": "script/checks/pinned-tools exercises these beyond --version, so green CI covers a 0.x patch; each needs a RUN_COMMANDS entry there",
       "matchManagers": ["mise"],
       "matchUpdateTypes": ["patch"],
       "matchDepNames": ["act", "github:fourmolu/fourmolu", "ormolu"],

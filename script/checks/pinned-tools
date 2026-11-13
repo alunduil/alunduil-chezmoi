@@ -11,8 +11,8 @@ HASKELL_FIXTURE=script/checks/fixtures/pinned-tools.hs
 
 # Tools that don't run as `<last segment of their mise name> --version`. An
 # empty entry marks an npm library, which has nothing to run. Commands run from
-# the repository root. A command that exercises real use lets renovate.json
-# automerge the tool's 0.x patches.
+# the repository root. renovate.json automerges 0.x patches for the tools it
+# lists whose command here exercises real use.
 declare -A RUN_COMMANDS=(
   [act]='act --list'
   [github:fourmolu/fourmolu]="fourmolu --mode check $HASKELL_FIXTURE"
