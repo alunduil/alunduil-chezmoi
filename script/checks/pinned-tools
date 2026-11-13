@@ -23,9 +23,9 @@ declare -A RUN_COMMANDS=(
   [npm:bats-support]=''
 )
 
-# Interactive tools never exit on their own and need a terminal. Each runs in
-# a pseudo-terminal and passes only when still running after TUI_SECONDS: a
-# config that fails to parse or a crash on start exits before then.
+# Interactive tools need a terminal and never exit on their own. Each runs in a
+# pseudo-terminal and passes only if still running after TUI_SECONDS. A config
+# that fails to parse, or a crash on start, exits sooner.
 declare -A TUI=([lazygit]=1)
 TUI_SECONDS=3
 TIMEOUT_EXPIRED=124
@@ -35,8 +35,8 @@ run_command() {
 }
 
 run_tui() {
-  # timeout runs inside the pseudo-terminal: script answers SIGTERM by
-  # waiting on its child, and a SIGKILLed script orphans it.
+  # timeout goes inside script, not around it. script stalls for seconds on
+  # SIGTERM, and a SIGKILLed script leaves its child running.
   script -qec "$(printf '%q ' timeout --kill-after=2 "$TUI_SECONDS" "$@")" /dev/null
   [ $? -eq "$TIMEOUT_EXPIRED" ]
 }

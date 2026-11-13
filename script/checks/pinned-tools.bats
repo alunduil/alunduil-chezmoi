@@ -20,7 +20,7 @@ setup() {
   for bin in "${BINARIES[@]}"; do
     fake_tool "$bin"
   done
-  # lazygit is the pinned TUI: it needs a terminal and stays running.
+  # lazygit is in TUI, so its stand-in passes only in a pseudo-terminal.
   fake_tool lazygit '[ -t 0 ] && [ -t 1 ] || exit 1
 exec sleep 30'
   printf '%s\n' "${TOOLS[@]}" >"$WORK/pins"
