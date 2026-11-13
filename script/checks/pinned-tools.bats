@@ -20,7 +20,8 @@ setup() {
   for bin in "${BINARIES[@]}"; do
     fake_tool "$bin"
   done
-  tui_body '[ -t 0 ] && [ -t 1 ] || exit 1
+  # lazygit is the pinned TUI: it needs a terminal and stays running.
+  fake_tool lazygit '[ -t 0 ] && [ -t 1 ] || exit 1
 exec sleep 30'
   printf '%s\n' "${TOOLS[@]}" >"$WORK/pins"
 
@@ -41,13 +42,8 @@ teardown() {
 }
 
 fake_tool() {
-  printf '#!/bin/sh\n' >"$WORK/tools/$1"
+  printf '#!/bin/sh\n%s\n' "${2:-}" >"$WORK/tools/$1"
   chmod +x "$WORK/tools/$1"
-}
-
-# Stands in for lazygit, the pinned TUI, with $1 as its body.
-tui_body() {
-  printf '#!/bin/sh\n%s\n' "$1" >"$WORK/tools/lazygit"
 }
 
 @test "every tool that runs passes" {
@@ -125,9 +121,9 @@ tui_body() {
 }
 
 @test "a TUI that exits before the timeout fails with its output" {
-  tui_body "echo 'config could not be parsed'"
+  fake_tool lazygit "echo 'config could not be parsed'"
   run "$BATS_TEST_DIRNAME/pinned-tools"
   assert_failure
-  assert_output --partial 'FAIL: lazygit: `lazygit -ucf dot_config/lazygit/config.yml` exited 0 before'
+  assert_output --partial 'FAIL: lazygit: `lazygit -ucf dot_config/lazygit/config.yml` exited before 3s'
   assert_output --partial 'config could not be parsed'
 }

@@ -28,14 +28,22 @@ declare -A RUN_COMMANDS=(
 # config that fails to parse or a crash on start exits before then.
 declare -A TUI=([lazygit]=1)
 TUI_SECONDS=3
+TIMEOUT_EXPIRED=124
 
 run_command() {
   printf '%s\n' "${RUN_COMMANDS[$1]-${1##*/} --version}"
 }
 
+run_tui() {
+  # timeout runs inside the pseudo-terminal: script answers SIGTERM by
+  # waiting on its child, and a SIGKILLed script orphans it.
+  script -qec "$(printf '%q ' timeout --kill-after=2 "$TUI_SECONDS" "$@")" /dev/null
+  [ $? -eq "$TIMEOUT_EXPIRED" ]
+}
+
 check_tool() {
-  local tool="$1" cmd bin output status
-  local -a argv
+  local tool="$1" cmd bin output failure='exited non-zero'
+  local -a argv runner=()
   cmd="$(run_command "$tool")"
   if [ -z "$cmd" ]; then
     printf 'OK: %s\n' "$tool"
@@ -50,22 +58,12 @@ check_tool() {
   fi
   argv[0]="$bin"
   if [ -n "${TUI[$tool]:-}" ]; then
-    # timeout runs inside the pseudo-terminal: script answers SIGTERM by
-    # waiting on its child, and a SIGKILLed script orphans it.
-    output="$(script -qec "$(printf '%q ' timeout --kill-after=2 \
-      "$TUI_SECONDS" "${argv[@]}")" /dev/null 2>&1 </dev/null)"
-    status=$?
-    if [ "$status" -ne 124 ]; then
-      printf 'FAIL: %s: `%s` exited %s before %ss:\n%s\n' \
-        "$tool" "$cmd" "$status" "$TUI_SECONDS" "$output" >&2
-      return 1
-    fi
-    printf 'OK: %s\n' "$tool"
-    return 0
+    runner=(run_tui)
+    failure="exited before ${TUI_SECONDS}s"
   fi
   # stdin is the tool list being looped over; a tool must not consume it.
-  if ! output="$("${argv[@]}" 2>&1 </dev/null)"; then
-    printf 'FAIL: %s: `%s` exited non-zero:\n%s\n' "$tool" "$cmd" "$output" >&2
+  if ! output="$("${runner[@]}" "${argv[@]}" 2>&1 </dev/null)"; then
+    printf 'FAIL: %s: `%s` %s:\n%s\n' "$tool" "$cmd" "$failure" "$output" >&2
     return 1
   fi
   printf 'OK: %s\n' "$tool"
