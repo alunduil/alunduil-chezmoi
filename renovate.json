@@ -32,7 +32,7 @@
       "automerge": true
     },
     {
-      "description": "No check runs what these pins install, so green CI shows only that the file parses",
+      "description": "CI never exercises these pins, so green CI shows only that the file parses",
       "matchFileNames": [
         "dot_config/zellij/config.kdl",
         ".github/workflows/daily.yml",
