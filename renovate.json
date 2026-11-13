@@ -34,7 +34,6 @@
     {
       "description": "No check runs what these pins install, so green CI shows only that the file parses",
       "matchFileNames": [
-        ".chezmoiscripts/**",
         "script/install/signal-cli",
         "dot_config/zellij/config.kdl",
         ".github/workflows/daily.yml",
