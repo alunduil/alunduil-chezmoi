@@ -1,7 +1,7 @@
 #!/usr/bin/env bats
 bats_require_minimum_version 1.5.0
 
-TOOLS=(lazygit yq github:grafana/alloy github:seachicken/gh-poi npm:bats-assert npm:bats-support)
+TOOLS=(act lazygit yq ormolu github:fourmolu/fourmolu github:grafana/alloy github:seachicken/gh-poi npm:bats-assert npm:bats-support)
 # Read in a subshell so the script's shell options stay out of bats.
 mapfile -t BINARIES < <(bash -c '
   source "$1"
@@ -70,6 +70,36 @@ fake_tool() {
   run "$BATS_TEST_DIRNAME/pinned-tools"
   assert_failure
   assert_output --partial 'RUN_COMMANDS lists npm:bats-assert, which is not pinned'
+}
+
+@test "a tool reading stdin leaves the rest of the pins checked" {
+  printf '#!/bin/sh\ncat >/dev/null\n' >"$WORK/tools/act"
+  run "$BATS_TEST_DIRNAME/pinned-tools"
+  assert_success
+  assert_output --partial 'OK: act'
+  assert_output --partial 'OK: npm:bats-support'
+}
+
+@test "run commands start in the repository root" {
+  printf '#!/bin/sh\ntest -d .github/workflows\n' >"$WORK/tools/act"
+  cd "$WORK"
+  run "$BATS_TEST_DIRNAME/pinned-tools"
+  assert_success
+  assert_output --partial 'OK: act'
+}
+
+@test "every tool renovate.json trusts pinned-tools to exercise has a run command" {
+  run bash -c '
+    source "$1"
+    mapfile -t deps < <(jq -r ".packageRules[]
+      | select(.description | contains(\"script/checks/pinned-tools\"))
+      | .matchDepNames[]" "$2")
+    [ "${#deps[@]}" -gt 0 ] || { echo "no renovate.json rule names pinned-tools"; exit 1; }
+    for dep in "${deps[@]}"; do
+      [ -n "${RUN_COMMANDS[$dep]:-}" ] || echo "no run command: $dep"
+    done' _ "$BATS_TEST_DIRNAME/pinned-tools" "$BATS_TEST_DIRNAME/../../renovate.json"
+  assert_success
+  assert_output ''
 }
 
 @test "a missing binary fails" {
