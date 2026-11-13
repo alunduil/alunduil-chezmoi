@@ -28,7 +28,12 @@
       "description": "script/checks/pinned-tools exercises these beyond --version, so green CI covers a 0.x patch; each needs a RUN_COMMANDS entry there",
       "matchManagers": ["mise"],
       "matchUpdateTypes": ["patch"],
-      "matchDepNames": ["act", "github:fourmolu/fourmolu", "ormolu"],
+      "matchDepNames": [
+        "act",
+        "github:fourmolu/fourmolu",
+        "lazygit",
+        "ormolu"
+      ],
       "automerge": true
     },
     {

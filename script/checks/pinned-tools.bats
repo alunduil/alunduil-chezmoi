@@ -20,6 +20,9 @@ setup() {
   for bin in "${BINARIES[@]}"; do
     fake_tool "$bin"
   done
+  # lazygit is in TUI, so its stand-in passes only in a pseudo-terminal.
+  fake_tool lazygit '[ -t 0 ] && [ -t 1 ] || exit 1
+exec sleep 30'
   printf '%s\n' "${TOOLS[@]}" >"$WORK/pins"
 
   # Stands in for mise.
@@ -39,7 +42,7 @@ teardown() {
 }
 
 fake_tool() {
-  printf '#!/bin/sh\n' >"$WORK/tools/$1"
+  printf '#!/bin/sh\n%s\n' "${2:-}" >"$WORK/tools/$1"
   chmod +x "$WORK/tools/$1"
 }
 
@@ -47,6 +50,7 @@ fake_tool() {
   run "$BATS_TEST_DIRNAME/pinned-tools"
   assert_success
   assert_output --partial 'OK: lazygit'
+  assert_output --partial 'OK: yq'
   assert_output --partial 'OK: github:grafana/alloy'
   assert_output --partial 'OK: github:seachicken/gh-poi'
 }
@@ -103,15 +107,23 @@ fake_tool() {
 }
 
 @test "a missing binary fails" {
-  rm "$WORK/tools/lazygit"
+  rm "$WORK/tools/yq"
   run "$BATS_TEST_DIRNAME/pinned-tools"
   assert_failure
-  assert_output --partial 'FAIL: lazygit: lazygit is not a mise bin'
+  assert_output --partial 'FAIL: yq: yq is not a mise bin'
 }
 
 @test "a binary that cannot execute fails" {
-  printf '\x7fELF\x02\x01\x01garbage' >"$WORK/tools/lazygit"
+  printf '\x7fELF\x02\x01\x01garbage' >"$WORK/tools/yq"
   run "$BATS_TEST_DIRNAME/pinned-tools"
   assert_failure
-  assert_output --partial 'FAIL: lazygit: `lazygit --version` exited non-zero'
+  assert_output --partial 'FAIL: yq: `yq --version` exited non-zero'
+}
+
+@test "a TUI that exits before the timeout fails with its output" {
+  fake_tool lazygit "echo 'config could not be parsed'"
+  run "$BATS_TEST_DIRNAME/pinned-tools"
+  assert_failure
+  assert_output --partial 'FAIL: lazygit: `lazygit -ucf dot_config/lazygit/config.yml` exited before 3s'
+  assert_output --partial 'config could not be parsed'
 }

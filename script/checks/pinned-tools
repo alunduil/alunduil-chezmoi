@@ -17,18 +17,33 @@ declare -A RUN_COMMANDS=(
   [act]='act --list'
   [github:fourmolu/fourmolu]="fourmolu --mode check $HASKELL_FIXTURE"
   [github:seachicken/gh-poi]='gh-poi --help'
+  [lazygit]='lazygit -ucf dot_config/lazygit/config.yml'
   [ormolu]="ormolu --mode check $HASKELL_FIXTURE"
   [npm:bats-assert]=''
   [npm:bats-support]=''
 )
 
+# Interactive tools need a terminal and never exit on their own. Each runs in a
+# pseudo-terminal and passes only if still running after TUI_SECONDS. A config
+# that fails to parse, or a crash on start, exits sooner.
+declare -A TUI=([lazygit]=1)
+TUI_SECONDS=3
+TIMEOUT_EXPIRED=124
+
 run_command() {
   printf '%s\n' "${RUN_COMMANDS[$1]-${1##*/} --version}"
 }
 
+run_tui() {
+  # timeout goes inside script, not around it. script stalls for seconds on
+  # SIGTERM, and a SIGKILLed script leaves its child running.
+  script -qec "$(printf '%q ' timeout --kill-after=2 "$TUI_SECONDS" "$@")" /dev/null
+  [ $? -eq "$TIMEOUT_EXPIRED" ]
+}
+
 check_tool() {
-  local tool="$1" cmd bin output
-  local -a argv
+  local tool="$1" cmd bin output failure='exited non-zero'
+  local -a argv runner=()
   cmd="$(run_command "$tool")"
   if [ -z "$cmd" ]; then
     printf 'OK: %s\n' "$tool"
@@ -42,9 +57,13 @@ check_tool() {
     return 1
   fi
   argv[0]="$bin"
+  if [ -n "${TUI[$tool]:-}" ]; then
+    runner=(run_tui)
+    failure="exited before ${TUI_SECONDS}s"
+  fi
   # stdin is the tool list being looped over; a tool must not consume it.
-  if ! output="$("${argv[@]}" 2>&1 </dev/null)"; then
-    printf 'FAIL: %s: `%s` exited non-zero:\n%s\n' "$tool" "$cmd" "$output" >&2
+  if ! output="$("${runner[@]}" "${argv[@]}" 2>&1 </dev/null)"; then
+    printf 'FAIL: %s: `%s` %s:\n%s\n' "$tool" "$cmd" "$failure" "$output" >&2
     return 1
   fi
   printf 'OK: %s\n' "$tool"
