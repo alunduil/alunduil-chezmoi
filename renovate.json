@@ -12,19 +12,23 @@
       "automerge": false
     },
     {
-      "description": "CI exercises these the way this repo uses them, not only --version: pre-commit hooks run prek and lychee, Validate zellij config runs zellij, fresh-host installs through uv, the shell tests load bats-support, and script/checks/pinned-tools runs the rest",
+      "description": "CI jobs use these as this repo does: pre-commit hooks run prek and lychee, Validate zellij config runs zellij, fresh-host installs through uv, and the shell tests load bats-support",
       "matchManagers": ["mise"],
       "matchUpdateTypes": ["patch"],
       "matchDepNames": [
-        "act",
-        "github:fourmolu/fourmolu",
         "github:lycheeverse/lychee",
         "npm:bats-support",
-        "ormolu",
         "prek",
         "uv",
         "zellij"
       ],
+      "automerge": true
+    },
+    {
+      "description": "script/checks/pinned-tools runs these past --version; each needs an entry in its RUN_COMMANDS",
+      "matchManagers": ["mise"],
+      "matchUpdateTypes": ["patch"],
+      "matchDepNames": ["act", "github:fourmolu/fourmolu", "ormolu"],
       "automerge": true
     },
     {

@@ -7,15 +7,17 @@ set -uo pipefail
 ROOT="$(git -C "$(dirname "${BASH_SOURCE[0]}")" rev-parse --show-toplevel)"
 export MISE_GLOBAL_CONFIG_FILE="${MISE_GLOBAL_CONFIG_FILE:-$ROOT/dot_config/mise/config.toml}"
 
+HASKELL_FIXTURE=script/checks/fixtures/pinned-tools.hs
+
 # Tools that don't run as `<last segment of their mise name> --version`. An
 # empty entry marks an npm library, which has nothing to run. Commands run from
 # the repository root. A command that exercises real use lets renovate.json
-# automerge the tool's 0.x patches; keep its list in step with these.
+# automerge the tool's 0.x patches.
 declare -A RUN_COMMANDS=(
   [act]='act --list'
-  [github:fourmolu/fourmolu]='fourmolu --mode check script/checks/fixtures/pinned-tools.hs'
+  [github:fourmolu/fourmolu]="fourmolu --mode check $HASKELL_FIXTURE"
   [github:seachicken/gh-poi]='gh-poi --help'
-  [ormolu]='ormolu --mode check script/checks/fixtures/pinned-tools.hs'
+  [ormolu]="ormolu --mode check $HASKELL_FIXTURE"
   [npm:bats-assert]=''
   [npm:bats-support]=''
 )

@@ -88,6 +88,20 @@ fake_tool() {
   assert_output --partial 'OK: act'
 }
 
+@test "every tool renovate.json trusts pinned-tools to exercise has a run command" {
+  run bash -c '
+    source "$1"
+    mapfile -t deps < <(jq -r ".packageRules[]
+      | select(.description | contains(\"script/checks/pinned-tools\"))
+      | .matchDepNames[]" "$2")
+    [ "${#deps[@]}" -gt 0 ] || { echo "no renovate.json rule names pinned-tools"; exit 1; }
+    for dep in "${deps[@]}"; do
+      [ -n "${RUN_COMMANDS[$dep]:-}" ] || echo "no run command: $dep"
+    done' _ "$BATS_TEST_DIRNAME/pinned-tools" "$BATS_TEST_DIRNAME/../../renovate.json"
+  assert_success
+  assert_output ''
+}
+
 @test "a missing binary fails" {
   rm "$WORK/tools/lazygit"
   run "$BATS_TEST_DIRNAME/pinned-tools"
