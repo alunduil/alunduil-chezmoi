@@ -12,6 +12,22 @@
       "automerge": false
     },
     {
+      "description": "CI exercises these the way this repo uses them, not only --version: pre-commit hooks run prek and lychee, Validate zellij config runs zellij, fresh-host installs through uv, the shell tests load bats-support, and script/checks/pinned-tools runs the rest",
+      "matchManagers": ["mise"],
+      "matchUpdateTypes": ["patch"],
+      "matchDepNames": [
+        "act",
+        "github:fourmolu/fourmolu",
+        "github:lycheeverse/lychee",
+        "npm:bats-support",
+        "ormolu",
+        "prek",
+        "uv",
+        "zellij"
+      ],
+      "automerge": true
+    },
+    {
       "description": "No check runs what these pins install, so green CI shows only that the file parses",
       "matchFileNames": [
         ".chezmoiscripts/**",

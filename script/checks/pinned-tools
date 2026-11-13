@@ -8,9 +8,14 @@ ROOT="$(git -C "$(dirname "${BASH_SOURCE[0]}")" rev-parse --show-toplevel)"
 export MISE_GLOBAL_CONFIG_FILE="${MISE_GLOBAL_CONFIG_FILE:-$ROOT/dot_config/mise/config.toml}"
 
 # Tools that don't run as `<last segment of their mise name> --version`. An
-# empty entry marks an npm library, which has nothing to run.
+# empty entry marks an npm library, which has nothing to run. Commands run from
+# the repository root. A command that exercises real use lets renovate.json
+# automerge the tool's 0.x patches; keep its list in step with these.
 declare -A RUN_COMMANDS=(
+  [act]='act --list'
+  [github:fourmolu/fourmolu]='fourmolu --mode check script/checks/fixtures/pinned-tools.hs'
   [github:seachicken/gh-poi]='gh-poi --help'
+  [ormolu]='ormolu --mode check script/checks/fixtures/pinned-tools.hs'
   [npm:bats-assert]=''
   [npm:bats-support]=''
 )
@@ -35,7 +40,8 @@ check_tool() {
     return 1
   fi
   argv[0]="$bin"
-  if ! output="$("${argv[@]}" 2>&1)"; then
+  # stdin is the tool list being looped over; a tool must not consume it.
+  if ! output="$("${argv[@]}" 2>&1 </dev/null)"; then
     printf 'FAIL: %s: `%s` exited non-zero:\n%s\n' "$tool" "$cmd" "$output" >&2
     return 1
   fi
@@ -43,6 +49,8 @@ check_tool() {
 }
 
 if [[ "${BASH_SOURCE[0]}" != "$0" ]]; then return 0; fi
+
+cd "$ROOT" || exit 1
 
 if ! tools="$(mise ls --current --json | jq -r 'keys[]')"; then
   printf 'FAIL: could not list mise pins\n' >&2
