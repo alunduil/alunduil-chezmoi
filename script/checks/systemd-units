@@ -15,6 +15,18 @@
 # count.
 set -uo pipefail
 
+# Print the lines of verify's stderr (on stdin) that name one of the given
+# units. verify names a unit either by absolute path ("<path>:<line>: ...") or
+# by unit name ("<name>: ...").
+warnings_about() {
+  local u
+  awk 'NR == FNR { p[++n] = $0; next }
+    { for (i = 1; i <= n; i++) if (index($0, p[i]) == 1) { print; next } }' \
+    <(for u; do printf '%s:\n%s:\n' "$(realpath -m "$u")" "$(basename "$u")"; done) -
+}
+
+if [[ "${BASH_SOURCE[0]}" != "$0" ]]; then return 0; fi
+
 ROOT="$(git -C "$(dirname "${BASH_SOURCE[0]}")" rev-parse --show-toplevel)"
 cd "$ROOT"
 # shellcheck source=script/lib/checks.sh
@@ -58,19 +70,14 @@ if [ "${#system_units[@]}" -gt 0 ]; then
   systemd-analyze verify "${system_units[@]}" >/dev/null 2>>"$errfile"
   rc=$((rc | $?))
 fi
-# verify names a unit either by absolute path ("<path>:<line>: ...") or by
-# unit name ("<name>: ...").
-ours="$(
-  for u in "${user_units[@]}" "${system_units[@]}"; do
-    printf '%s\n%s\n' "$ROOT/$u:" "$(basename "$u"):"
-  done |
-    awk 'NR == FNR { p[++n] = $0; next }
-      { for (i = 1; i <= n; i++) if (index($0, p[i]) == 1) { print; next } }' \
-      - "$errfile"
-)"
-if [ "$rc" -ne 0 ] || [ -n "$ours" ]; then
+if [ "$rc" -ne 0 ]; then
   printf 'FAIL: systemd unit verification\n' >&2
-  if [ "$rc" -ne 0 ]; then cat "$errfile" >&2; else printf '%s\n' "$ours" >&2; fi
+  cat "$errfile" >&2
+  exit 1
+fi
+if warnings="$(warnings_about "${user_units[@]}" "${system_units[@]}" <"$errfile")" &&
+  [ -n "$warnings" ]; then
+  printf 'FAIL: systemd unit verification\n%s\n' "$warnings" >&2
   exit 1
 fi
 
