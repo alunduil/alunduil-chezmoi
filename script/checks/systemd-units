@@ -8,8 +8,11 @@
 # root units under etc/systemd/system (verified system-scope). docker-prune is
 # the only system unit; its /usr/bin/docker is preinstalled on the CI runner.
 #
-# verify only *warns* (and still exits 0) on an unknown directive, so any
-# stderr is treated as failure; a missing ExecStart already exits non-zero.
+# verify only *warns* (and still exits 0) on an unknown directive, so a warning
+# about one of our units is treated as failure; a missing ExecStart already
+# exits non-zero. System-scope verify also loads the host's own units and warns
+# about those, which this repo can't fix, so only warnings naming our units
+# count.
 set -uo pipefail
 
 ROOT="$(git -C "$(dirname "${BASH_SOURCE[0]}")" rev-parse --show-toplevel)"
@@ -55,9 +58,19 @@ if [ "${#system_units[@]}" -gt 0 ]; then
   systemd-analyze verify "${system_units[@]}" >/dev/null 2>>"$errfile"
   rc=$((rc | $?))
 fi
-if [ "$rc" -ne 0 ] || [ -s "$errfile" ]; then
+# verify names a unit either by absolute path ("<path>:<line>: ...") or by
+# unit name ("<name>: ...").
+ours="$(
+  for u in "${user_units[@]}" "${system_units[@]}"; do
+    printf '%s\n%s\n' "$ROOT/$u:" "$(basename "$u"):"
+  done |
+    awk 'NR == FNR { p[++n] = $0; next }
+      { for (i = 1; i <= n; i++) if (index($0, p[i]) == 1) { print; next } }' \
+      - "$errfile"
+)"
+if [ "$rc" -ne 0 ] || [ -n "$ours" ]; then
   printf 'FAIL: systemd unit verification\n' >&2
-  cat "$errfile" >&2
+  if [ "$rc" -ne 0 ]; then cat "$errfile" >&2; else printf '%s\n' "$ours" >&2; fi
   exit 1
 fi
 
