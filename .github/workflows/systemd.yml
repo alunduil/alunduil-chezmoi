@@ -47,12 +47,15 @@ jobs:
           done
           sudo install -m 0755 etc/docker/docker-prune-orphans.sh /usr/local/sbin/docker-prune-orphans
 
-      - name: Install the 1Password desktop app and sshfs
+      - name: Add the 1Password apt repository
         run: |
           curl -fsSL https://downloads.1password.com/linux/keys/1password.asc |
             sudo gpg --dearmor -o /usr/share/keyrings/1password-archive-keyring.gpg
           echo 'deb [arch=amd64 signed-by=/usr/share/keyrings/1password-archive-keyring.gpg] https://downloads.1password.com/linux/debian/amd64 stable main' |
             sudo tee /etc/apt/sources.list.d/1password.list
+
+      - name: Install the packages the units run
+        run: |
           sudo apt-get update
           sudo apt-get install -y 1password sshfs
 
