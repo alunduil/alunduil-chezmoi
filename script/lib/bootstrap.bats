@@ -168,3 +168,24 @@ with_user_manager() { systemctl() { printf '%s\n' "$*" >>"$WORK/systemctl.log"; 
   [ "$status" -eq 0 ]
   [ -z "$stderr" ]
 }
+
+@test "every pass sources bootstrap.sh" {
+  run grep -L '^\. "{{ \.chezmoi\.sourceDir }}/script/lib/bootstrap\.sh"$' \
+    "$BATS_TEST_DIRNAME"/../../.chezmoiscripts/*
+  [ -z "$output" ]
+}
+
+@test "a headless alloy restart names the pass, the command, and the retry" {
+  local pass=run_onchange_after_restart-alloy-on-token-change.sh.tmpl
+  local root="$BATS_TEST_DIRNAME/../.."
+  mkdir -p "$WORK/bin"
+  printf '#!/bin/sh\nexit 1\n' >"$WORK/bin/systemctl"
+  chmod +x "$WORK/bin/systemctl"
+  sed "s|{{ .chezmoi.sourceDir }}|$root|" "$root/.chezmoiscripts/$pass" >"$WORK/pass"
+  run --separate-stderr env -i HOME="$WORK" PATH="$WORK/bin:$PATH" \
+    CHEZMOI_SOURCE_FILE=".chezmoiscripts/$pass" bash "$WORK/pass"
+  [ "$status" -eq 1 ]
+  [[ "$stderr" == *"alloy: no user systemd session"* ]]
+  [[ "$stderr" == *"$pass failed: systemctl --user try-restart alloy.service (exit 1 at $pass:"* ]]
+  [[ "$stderr" == *"re-run chezmoi apply (passes converge)"* ]]
+}
