@@ -38,10 +38,18 @@ repos:
       - id: detect-private-key
       - id: check-merge-conflict
 
-  - repo: https://github.com/rhysd/actionlint
-    rev: v1.7.12
+  - repo: local
     hooks:
-      - id: actionlint
+      # Renovate tracks additional_dependencies only on hooks that declare a
+      # language. jactionlint checks `run:` scripts only when shellcheck is on
+      # PATH, and run without arguments it finds the files it lints.
+      - id: jactionlint
+        name: jactionlint
+        entry: jactionlint
+        language: python
+        additional_dependencies: [jactionlint==2.6.0, shellcheck-py==0.11.0.1]
+        pass_filenames: false
+        files: ^\.github/
 
   - repo: https://github.com/errata-ai/vale
     rev: v3.26.0
