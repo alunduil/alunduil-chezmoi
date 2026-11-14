@@ -38,11 +38,6 @@ repos:
       - id: detect-private-key
       - id: check-merge-conflict
 
-  - repo: https://github.com/rhysd/actionlint
-    rev: v1.7.12
-    hooks:
-      - id: actionlint
-
   - repo: https://github.com/errata-ai/vale
     rev: v3.26.0
     hooks:
@@ -55,13 +50,19 @@ repos:
     hooks:
       - id: markdownlint-cli2
 
-  # lychee from PATH (a mise tool) rather than an upstream hook: one version
-  # pin, and the hook's precompiled binary needs a newer glibc than the host
-  # has. --offline gates on internal/relative links only — fast and
-  # deterministic. External URLs rot from time and third parties, not the
-  # diff, so weekly.yml checks them out-of-band (#359).
   - repo: local
     hooks:
+      # Renovate bumps additional_dependencies only on hooks that declare a
+      # language. jactionlint lints `run:` scripts only with shellcheck on
+      # PATH. It finds the workflow files itself.
+      - id: jactionlint
+        name: jactionlint
+        entry: jactionlint
+        language: python
+        additional_dependencies: [jactionlint==2.6.0, shellcheck-py==0.11.0.1]
+        pass_filenames: false
+        files: ^\.github/
+
       - id: renovate-pins
         name: renovate-pins
         entry: script/checks/renovate-pins
@@ -76,6 +77,11 @@ repos:
         pass_filenames: false
         files: ^(\.chezmoiscripts/|script/)
 
+      # lychee from PATH (a mise tool) rather than an upstream hook: one
+      # version pin, and the hook's precompiled binary needs a newer glibc
+      # than the host has. --offline gates on internal/relative links only —
+      # fast and deterministic. External URLs rot from time and third
+      # parties, not the diff, so weekly.yml checks them out-of-band (#359).
       - id: lychee
         name: lychee
         entry: lychee --config lychee.toml --no-progress --offline --include-fragments=full
