@@ -8,13 +8,14 @@ system has this shape, see
 ## Passes
 
 Bootstrap passes live in `.chezmoiscripts/` and source shared helpers
-from `script/lib/bootstrap.sh`. Each pass owns one product family: a
-tool that needs both `apt` and a download lives in one pass.
+from `script/lib/bootstrap.sh`. `script/lib/bootstrap.bats` fails on a
+pass that doesn't. Each pass owns one product family: a tool that needs
+both `apt` and a download lives in one pass.
 
-A pass that sources the library reports its own failure: its name, the
-failing command and line, and that re-running `chezmoi apply` is safe.
-The library turns on `set -E`, so the report also covers failures inside
-helpers.
+Each pass reports its own failure: its name, the failing command and
+line, and that re-running `chezmoi apply` is safe. The library turns on
+`set -E`, so the report also covers failures inside helpers. An `exit`
+skips the report, so a pass fails by letting a command fail.
 
 | Prefix | Used for |
 | ------ | -------- |
