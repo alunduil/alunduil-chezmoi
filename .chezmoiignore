@@ -14,22 +14,3 @@ script
 # the scripts but not their tests or fixtures.
 **/*.bats
 **/fixtures
-{{- if and (hasKey . "role") (eq .role "ha-terminal") }}
-
-# ha-terminal (HA SSH addon: Alpine/musl, ephemeral /root) is a lean
-# Claude-session profile. Ignore workstation-only sources: the Debian/systemd
-# bootstrap, service configs, long-lived SSH secrets, and the signing
-# gitconfig. What stays is the Claude session config (~/.claude) plus
-# ~/.vimrc. Patterns match target paths, not source names.
-# See docs/explanation/architecture.md, "Host roles".
-.chezmoiscripts/**
-.config/**
-.local/bin/**
-.local/share/bash-completion/**
-.local/share/gh/**
-.ssh/**
-.bashrc
-.bash_profile
-.profile
-.gitconfig
-{{- end }}
