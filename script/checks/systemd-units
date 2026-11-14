@@ -2,7 +2,7 @@
 # Validate the systemd units with `systemd-analyze verify`: every directive must
 # be known and every ExecStart binary must resolve. verify resolves %h/%S
 # against the calling user, so the binaries the units reference must exist at
-# their real paths first — systemd.yml installs them in CI.
+# their real paths first — the CI job installs them.
 #
 # Two scopes: user units under dot_config/systemd/user (verified --user) and
 # root units under etc/systemd/system (verified system-scope). docker-prune is
@@ -48,7 +48,7 @@ shopt -u nullglob
 # verify needs every ExecStart binary present. Derive them from the units
 # (the first token after ExecStart=, %h expanded) instead of a hand-kept list,
 # so adding a unit needs no change here. A binary missing under CI usually
-# belongs to a new unit that systemd.yml doesn't install yet.
+# belongs to a new unit whose binary the CI job doesn't install yet.
 while IFS= read -r bin; do
   bin="${bin/'%h'/$HOME}"
   [ -x "$bin" ] || skip "$bin not installed"
