@@ -2,6 +2,8 @@
 
 Zero to a fully configured host. Requires a Debian/Crostini host, a 1Password account with access to the `chezmoi` vault, and the age key from a password manager.
 
+Before wiping an existing host, back it up to Drive from ChromeOS Settings, under **Developers → Linux development environment → Backup & restore**. The backup may restore only into the legacy container.
+
 mise installs every pinned tool, chezmoi included, at the versions and checksums in the repo's `mise.lock`, so it comes first. Debian's `extrepo` package carries the key that signs mise's apt repository. The first bootstrap pass fetches the other repositories' keys with `curl` and `gpg`.
 
 Apply runs twice. Secrets come from the 1Password desktop app, which the first apply installs, so the first apply skips them.
