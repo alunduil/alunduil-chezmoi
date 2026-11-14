@@ -142,9 +142,8 @@ jobs:
       - name: Validate config
         run: script/checks/telemetry-config
 
-  # verify resolves each unit's ExecStart against the calling user's %h, so
-  # every binary the units reference is installed first. Ungated so the check
-  # reports on every PR and branch protection can require it.
+  # Ungated so the check reports on every PR and branch protection can
+  # require it.
   systemd-units:
     name: Verify systemd units
     runs-on: ubuntu-24.04
