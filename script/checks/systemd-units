@@ -47,8 +47,8 @@ shopt -u nullglob
 
 # verify needs every ExecStart binary present. Derive them from the units
 # (the first token after ExecStart=, %h expanded) instead of a hand-kept list,
-# so adding a unit needs no change here. A binary missing under CI usually
-# belongs to a new unit whose binary the CI job doesn't install yet.
+# so adding a unit needs no change here. Under CI, a missing binary means the
+# job lacks an install step for it.
 while IFS= read -r bin; do
   bin="${bin/'%h'/$HOME}"
   [ -x "$bin" ] || skip "$bin not installed"

@@ -142,8 +142,7 @@ jobs:
       - name: Validate config
         run: script/checks/telemetry-config
 
-  # Ungated so the check reports on every PR and branch protection can
-  # require it.
+  # Ungated: a required check must report on every PR.
   systemd-units:
     name: Verify systemd units
     runs-on: ubuntu-24.04
@@ -155,8 +154,6 @@ jobs:
         with:
           tools: github:grafana/alloy
 
-      # Derived from the units, the way the check finds them, so a unit that
-      # runs a new ~/.local/bin script needs no edit here.
       - name: Install referenced scripts
         shell: bash
         run: |
