@@ -142,6 +142,43 @@ jobs:
       - name: Validate config
         run: script/checks/telemetry-config
 
+  # Ungated: a required check must report on every PR.
+  systemd-units:
+    name: Verify systemd units
+    runs-on: ubuntu-24.04
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
+
+      - uses: ./.github/actions/setup-mise
+        with:
+          tools: github:grafana/alloy
+
+      - name: Install referenced scripts
+        shell: bash
+        run: |
+          grep -hoP '^ExecStart(Pre)?=-?%h/\.local/bin/\K[^ ]+' dot_config/systemd/user/*.service |
+            sort -u |
+            while read -r s; do
+              install -D -m 0755 "dot_local/bin/executable_$s" "$HOME/.local/bin/$s"
+            done
+          sudo install -m 0755 etc/docker/docker-prune-orphans.sh /usr/local/sbin/docker-prune-orphans
+
+      - name: Add the 1Password apt repository
+        run: |
+          curl -fsSL https://downloads.1password.com/linux/keys/1password.asc |
+            sudo gpg --dearmor -o /usr/share/keyrings/1password-archive-keyring.gpg
+          echo 'deb [arch=amd64 signed-by=/usr/share/keyrings/1password-archive-keyring.gpg] https://downloads.1password.com/linux/debian/amd64 stable main' |
+            sudo tee /etc/apt/sources.list.d/1password.list
+
+      - name: Install the packages the units run
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y 1password sshfs
+
+      - name: Verify units
+        run: script/checks/systemd-units
+
   pinned-tools:
     name: Run pinned tools
     runs-on: ubuntu-24.04
