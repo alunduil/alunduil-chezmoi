@@ -1,0 +1,17 @@
+[Unit]
+Description=Home Assistant /config, read-only over SFTP
+Documentation=man:sshfs(1)
+# Started and stopped by the homeassistant-workspace session hooks rather
+# than enabled, so nothing is connected while no session needs it.
+
+[Service]
+# sshfs forks once the mount is up, so a starting session waits for it.
+Type=forking
+ExecStartPre=/usr/bin/mkdir -p %S/homeassistant/config
+# The hassio login can't read /homeassistant (root, 0700), but has
+# passwordless sudo. sftp-server -R refuses every write on the box, on top of
+# ro here.
+ExecStart=/usr/bin/sshfs homeassistant-sftp:/config %S/homeassistant/config \
+	-o ro,reconnect,ServerAliveInterval=15,ServerAliveCountMax=3 \
+	-o "sftp_server=sudo /usr/lib/ssh/sftp-server -R"
+ExecStop=/usr/bin/fusermount3 -u %S/homeassistant/config

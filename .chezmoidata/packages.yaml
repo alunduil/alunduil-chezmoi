@@ -68,3 +68,5 @@ packages:
     # Installs every pinned user tool from dot_config/mise/mise.lock.
     - mise
     - htop
+    # Backs homeassistant-config.service.
+    - sshfs
