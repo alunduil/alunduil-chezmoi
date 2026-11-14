@@ -21,7 +21,7 @@ Organised by [Diátaxis](https://diataxis.fr):
   - [Adding a secret](docs/how-to/add-a-secret.md): stored in 1Password, including rotation.
   - [Recovering access](docs/how-to/recover-access.md): the Emergency Kit, and rebuilding without the 1Password account.
 - Reference
-  - [Bootstrap rules](docs/reference/bootstrap-reference.md)—script prefixes, phases, install sources, host roles, secrets.
+  - [Bootstrap rules](docs/reference/bootstrap-reference.md)—script prefixes, phases, install sources, secrets.
 - Explanation
   - [Architecture](docs/explanation/architecture.md)—how a change travels from an edit to a configured host.
 

@@ -58,18 +58,6 @@ pass runs `mise install` on every apply, so a deleted or bumped tool
 comes back at the version and checksum in `mise.lock`
 ([ADR 0009](../adr/0009-install-pinned-tools-through-mise.md)).
 
-## Host roles
-
-The `role` value names the kind of host an apply targets, and
-`.chezmoiignore` drops what a role doesn't get. The workstation, which
-gets the full toolchain, is the only role.
-
-Each host states its role when it bootstraps rather than chezmoi
-guessing it. Detection would tie intent to incidental signals such as
-the OS, the hostname, or a marker file, and those grow brittle as hosts
-multiply. An explicit value scales: a new role is a new value and a
-list of exclusions, with no detection code.
-
 ## Secrets live in the vault
 
 Apart from one age-encrypted Cloudflare token, the repo holds no

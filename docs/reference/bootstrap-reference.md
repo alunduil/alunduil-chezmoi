@@ -80,18 +80,6 @@ Callers reach mise tools through the shims in
 `gh` looks for extensions only in its data directory, so
 `~/.local/share/gh/extensions/gh-poi/gh-poi` links to the gh-poi shim.
 
-## Host roles
-
-`chezmoi init` reads `role` from `CHEZMOI_ROLE`, defaulting to
-`workstation`. `.chezmoiignore` applies it.
-
-| Role | Host | Ignores |
-| ---- | ---- | ------- |
-| `workstation` | Debian/Crostini | nothing |
-
-To keep one target a role's pattern drops, re-include that file with
-`!`.
-
 ## Secrets
 
 Every secret but the Cloudflare token lives in the `chezmoi` 1Password
