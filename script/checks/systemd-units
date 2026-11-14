@@ -8,9 +8,23 @@
 # root units under etc/systemd/system (verified system-scope). docker-prune is
 # the only system unit; its /usr/bin/docker is preinstalled on the CI runner.
 #
-# verify only *warns* (and still exits 0) on an unknown directive, so any
-# stderr is treated as failure; a missing ExecStart already exits non-zero.
+# verify only *warns* (and still exits 0) on an unknown directive, so a warning
+# fails the check; a missing ExecStart already exits non-zero. System-scope
+# verify also warns about the host's own units, which this repo can't fix, so
+# only warnings naming our units count.
 set -uo pipefail
+
+# Print the lines of verify's stderr, read on stdin, that name one of the given
+# units. verify names a unit by absolute path ("<path>:<line>: ...") or by unit
+# name ("<name>: ...").
+warnings_about() {
+  local u
+  awk 'NR == FNR { p[++n] = $0; next }
+    { for (i = 1; i <= n; i++) if (index($0, p[i]) == 1) { print; next } }' \
+    <(for u; do printf '%s:\n%s:\n' "$(realpath -m "$u")" "$(basename "$u")"; done) -
+}
+
+if [[ "${BASH_SOURCE[0]}" != "$0" ]]; then return 0; fi
 
 ROOT="$(git -C "$(dirname "${BASH_SOURCE[0]}")" rev-parse --show-toplevel)"
 cd "$ROOT"
@@ -44,8 +58,8 @@ done < <(printf '%s\0' "${service_units[@]}" |
 errfile="$(mktemp)"
 trap 'rm -f "$errfile"' EXIT
 # User units carry %h/%S specifiers, so they verify in --user mode; the root
-# units verify system-scope. Both runs append stderr so either scope's warning
-# fails the check.
+# units verify system-scope. Both runs write to one stderr file so warnings
+# from either scope are checked.
 rc=0
 if [ "${#user_units[@]}" -gt 0 ]; then
   systemd-analyze --user verify "${user_units[@]}" >/dev/null 2>"$errfile"
@@ -55,9 +69,14 @@ if [ "${#system_units[@]}" -gt 0 ]; then
   systemd-analyze verify "${system_units[@]}" >/dev/null 2>>"$errfile"
   rc=$((rc | $?))
 fi
-if [ "$rc" -ne 0 ] || [ -s "$errfile" ]; then
+if [ "$rc" -ne 0 ]; then
   printf 'FAIL: systemd unit verification\n' >&2
   cat "$errfile" >&2
+  exit 1
+fi
+if warnings="$(warnings_about "${user_units[@]}" "${system_units[@]}" <"$errfile")" &&
+  [ -n "$warnings" ]; then
+  printf 'FAIL: systemd unit verification\n%s\n' "$warnings" >&2
   exit 1
 fi
 
