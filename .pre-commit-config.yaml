@@ -52,9 +52,9 @@ repos:
 
   - repo: local
     hooks:
-      # Renovate tracks additional_dependencies only on hooks that declare a
-      # language. jactionlint checks `run:` scripts only when shellcheck is on
-      # PATH, and run without arguments it finds the files it lints.
+      # Renovate bumps additional_dependencies only on hooks that declare a
+      # language. jactionlint lints `run:` scripts only with shellcheck on
+      # PATH. It finds the workflow files itself.
       - id: jactionlint
         name: jactionlint
         entry: jactionlint
