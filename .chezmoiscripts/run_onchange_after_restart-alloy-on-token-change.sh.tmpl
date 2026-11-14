@@ -10,7 +10,7 @@ set -euo pipefail
 
 # The restart fails without a user manager, leaving the token hash unrecorded
 # so the next apply retries it.
-systemctl --user show-environment >/dev/null 2>&1 ||
-  log "alloy: no user systemd session; the restart below fails"
+has_user_manager ||
+  log "alloy: no user systemd session; restart fails — $(user_manager_remedy)"
 
 systemctl --user try-restart alloy.service
