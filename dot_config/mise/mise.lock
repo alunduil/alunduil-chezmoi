@@ -221,11 +221,12 @@ url_api = "https://api.github.com/repos/mikefarah/yq/releases/assets/726219936"
 provenance = "cosign"
 
 [[tools.zellij]]
-version = "0.45.1"
+version = "0.46.0"
 backend = "aqua:zellij-org/zellij"
-specifiers = ["0.45.1"]
+specifiers = ["0.46.0"]
 
 [tools.zellij."platforms.linux-x64"]
-checksum = "sha256:40bcc2e03f5d5ae8e054e39f676081fe12ab70871506996ba595834c3718eefc"
-url = "https://github.com/zellij-org/zellij/releases/download/v0.45.1/zellij-x86_64-unknown-linux-musl.tar.gz"
-url_api = "https://api.github.com/repos/zellij-org/zellij/releases/assets/533538763"
+checksum = "sha256:0940e467f99ca57aec5a63edcad633450d49cd6f22e8a7d9c686771a0d9f86ae"
+checksum_source = "mise-versions"
+url = "https://github.com/zellij-org/zellij/releases/download/v0.46.0/zellij-x86_64-unknown-linux-gnu.tar.gz"
+url_api = "https://api.github.com/repos/zellij-org/zellij/releases/assets/734911871"
