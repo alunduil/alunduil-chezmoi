@@ -155,11 +155,16 @@ jobs:
         with:
           tools: github:grafana/alloy
 
+      # Derived from the units, the way the check finds them, so a unit that
+      # runs a new ~/.local/bin script needs no edit here.
       - name: Install referenced scripts
+        shell: bash
         run: |
-          for s in cgroup-pids-textfile git-poi-all git-worktree-poi dev-cache-gc; do
-            install -D -m 0755 "dot_local/bin/executable_$s" "$HOME/.local/bin/$s"
-          done
+          grep -hoP '^ExecStart(Pre)?=-?%h/\.local/bin/\K[^ ]+' dot_config/systemd/user/*.service |
+            sort -u |
+            while read -r s; do
+              install -D -m 0755 "dot_local/bin/executable_$s" "$HOME/.local/bin/$s"
+            done
           sudo install -m 0755 etc/docker/docker-prune-orphans.sh /usr/local/sbin/docker-prune-orphans
 
       - name: Add the 1Password apt repository
