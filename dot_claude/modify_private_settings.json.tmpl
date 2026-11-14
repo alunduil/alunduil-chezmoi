@@ -215,6 +215,9 @@ jq --slurp '(.[0] // {}) + {
       "Bash(xargs* sudo*)"
     ]
   },
+  "sandbox": {
+    "allowUnsandboxedCommands": false
+  },
   "hooks": {
     "PreToolUse": [
       {
