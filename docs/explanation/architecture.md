@@ -60,20 +60,15 @@ comes back at the version and checksum in `mise.lock`
 
 ## Host roles
 
-One repo configures more than one kind of host. The workstation wants
-the full toolchain. The Home Assistant SSH add-on, an ephemeral Alpine
-container, wants only enough to run a Claude session. The `role` value
-picks between them, and `.chezmoiignore` drops what a role doesn't get.
+The `role` value names the kind of host an apply targets, and
+`.chezmoiignore` drops what a role doesn't get. The workstation, which
+gets the full toolchain, is the only role.
 
 Each host states its role when it bootstraps rather than chezmoi
 guessing it. Detection would tie intent to incidental signals such as
 the OS, the hostname, or a marker file, and those grow brittle as hosts
 multiply. An explicit value scales: a new role is a new value and a
 list of exclusions, with no detection code.
-
-Exclusion also limits what a host can leak. The add-on sits on the
-network next to home automation, so it receives none of the secrets:
-no SSH key, no tokens.
 
 ## Secrets live in the vault
 

@@ -88,7 +88,6 @@ Callers reach mise tools through the shims in
 | Role | Host | Ignores |
 | ---- | ---- | ------- |
 | `workstation` | Debian/Crostini | nothing |
-| `ha-terminal` | Home Assistant SSH add-on (Alpine/musl, ephemeral `/root`) | the targets in the `ha-terminal` block of `.chezmoiignore` |
 
 To keep one target a role's pattern drops, re-include that file with
 `!`.
@@ -103,8 +102,8 @@ writing it to disk.
 `CHEZMOI_NO_1PASSWORD` renders every 1Password secret empty. The checks
 and the first bootstrap pass set it.
 
-| Secret | Source | Unlocks with | `ha-terminal` |
-| ------ | ------ | ------------ | ------------- |
-| SSH and commit-signing key | `ssh-load` into `ssh-agent.service` | 1Password | ignored |
-| Service tokens | `dot_config/<service>/private_*.tmpl` | 1Password | ignored |
-| Cloudflare token | `dot_config/cloudflare/encrypted_private_token.age` | age key | ignored |
+| Secret | Source | Unlocks with |
+| ------ | ------ | ------------ |
+| SSH and commit-signing key | `ssh-load` into `ssh-agent.service` | 1Password |
+| Service tokens | `dot_config/<service>/private_*.tmpl` | 1Password |
+| Cloudflare token | `dot_config/cloudflare/encrypted_private_token.age` | age key |
