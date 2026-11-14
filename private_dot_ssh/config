@@ -10,22 +10,14 @@ Host homeassistant
 	ControlPath ~/.ssh/sockets/%r@%h:%p
 	ControlPersist 10m
 
-# SFTP login for homeassistant-config.service. Same box, reached by tailnet
-# name, so the pinned homeassistant key applies.
-Host homeassistant-sftp
-	HostName homeassistant.tail3af06.ts.net
-	HostKeyAlias homeassistant
-	User hassio
-
 # Reloads an expired key before each connection. The block sets nothing; only
 # the side effect matters.
 Match exec "~/.local/bin/ssh-load"
 
 # On Crostini, tailscaled runs without a TUN device, so tailnet names neither
-# resolve nor route from the shell. Match host tests the HostName, so aliases
-# pointing at the tailnet take the proxy too.
+# resolve nor route from the shell.
 # https://github.com/tailscale/tailscale/issues/12090
-Match host *.ts.net
+Host *.ts.net
 	ProxyCommand tailscale nc %h %p
 
 Host *
