@@ -9,15 +9,14 @@
 # the only system unit; its /usr/bin/docker is preinstalled on the CI runner.
 #
 # verify only *warns* (and still exits 0) on an unknown directive, so a warning
-# about one of our units is treated as failure; a missing ExecStart already
-# exits non-zero. System-scope verify also loads the host's own units and warns
-# about those, which this repo can't fix, so only warnings naming our units
-# count.
+# fails the check; a missing ExecStart already exits non-zero. System-scope
+# verify also warns about the host's own units, which this repo can't fix, so
+# only warnings naming our units count.
 set -uo pipefail
 
-# Print the lines of verify's stderr (on stdin) that name one of the given
-# units. verify names a unit either by absolute path ("<path>:<line>: ...") or
-# by unit name ("<name>: ...").
+# Print the lines of verify's stderr, read on stdin, that name one of the given
+# units. verify names a unit by absolute path ("<path>:<line>: ...") or by unit
+# name ("<name>: ...").
 warnings_about() {
   local u
   awk 'NR == FNR { p[++n] = $0; next }
@@ -59,8 +58,8 @@ done < <(printf '%s\0' "${service_units[@]}" |
 errfile="$(mktemp)"
 trap 'rm -f "$errfile"' EXIT
 # User units carry %h/%S specifiers, so they verify in --user mode; the root
-# units verify system-scope. Both runs append stderr so either scope's warning
-# fails the check.
+# units verify system-scope. Both runs write to one stderr file so warnings
+# from either scope are checked.
 rc=0
 if [ "${#user_units[@]}" -gt 0 ]; then
   systemd-analyze --user verify "${user_units[@]}" >/dev/null 2>"$errfile"
