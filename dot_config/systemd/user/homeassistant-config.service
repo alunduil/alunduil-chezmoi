@@ -1,0 +1,21 @@
+[Unit]
+Description=Home Assistant /config, read-only over SFTP
+Documentation=man:sshfs(1)
+# The homeassistant-workspace session hooks start and stop this unit, so it
+# connects only while a session runs.
+
+[Service]
+# Debian 12's user manager resolves %S to ~/.config. The workspace's deny
+# rules name this path.
+Environment=MOUNTPOINT=%h/.local/state/homeassistant/config
+# sshfs forks once the mount is up, so a starting session waits for it.
+Type=forking
+ExecStartPre=/usr/bin/mkdir -p ${MOUNTPOINT}
+# hassio can't read /homeassistant but has passwordless sudo. -R makes the
+# box refuse writes too.
+ExecStart=/usr/bin/sshfs hassio@homeassistant.tail3af06.ts.net:/config ${MOUNTPOINT} \
+	-o ro,reconnect,ServerAliveInterval=15,ServerAliveCountMax=3 \
+	-o HostKeyAlias=homeassistant \
+	-o "sftp_server=sudo /usr/lib/ssh/sftp-server -R"
+# Also runs after a crash, so a dead mount can't fail the next start.
+ExecStopPost=-/usr/bin/fusermount3 -uz ${MOUNTPOINT}
