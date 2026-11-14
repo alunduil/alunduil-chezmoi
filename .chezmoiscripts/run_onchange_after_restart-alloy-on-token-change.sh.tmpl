@@ -5,9 +5,12 @@
 
 set -euo pipefail
 
-if ! systemctl --user show-environment >/dev/null 2>&1; then
-  echo "==> alloy: no user systemd session; restart retries on the next apply" >&2
-  exit 1
-fi
+# shellcheck source=script/lib/bootstrap.sh
+. "{{ .chezmoi.sourceDir }}/script/lib/bootstrap.sh"
+
+# The restart fails without a user manager, leaving the token hash unrecorded
+# so the next apply retries it.
+has_user_manager ||
+  log "alloy: no user systemd session; restart fails — $(user_manager_remedy)"
 
 systemctl --user try-restart alloy.service

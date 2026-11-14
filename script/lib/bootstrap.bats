@@ -98,22 +98,27 @@ on_terminal() {
   [[ "$stderr" == *"github: add failed, nothing registered"* ]]
 }
 
-# run_failing_pass PASS [CALL]: run CALL, by default enable_now, as pass PASS
-# with systemctl, sudo, and claude failing. env -i keeps setup's sudo stub out.
-run_failing_pass() {
+# run_pass PASS FILE: run FILE as pass PASS with systemctl, sudo, and claude
+# failing. env -i keeps setup's sudo stub out.
+run_pass() {
   local tool
   mkdir -p "$WORK/bin"
   for tool in systemctl sudo claude; do
     printf '#!/bin/sh\nexit 1\n' >"$WORK/bin/$tool"
     chmod +x "$WORK/bin/$tool"
   done
+  run --separate-stderr env -i HOME="$WORK" PATH="$WORK/bin:$PATH" \
+    CHEZMOI_SOURCE_FILE=".chezmoiscripts/$1" bash "$2"
+}
+
+# run_failing_pass PASS [CALL]: run CALL, by default enable_now, as pass PASS.
+run_failing_pass() {
   cat >"$WORK/pass" <<EOF
 set -euo pipefail
 . "$BATS_TEST_DIRNAME/bootstrap.sh"
 ${2:-enable_now foo.service}
 EOF
-  run --separate-stderr env -i HOME="$WORK" PATH="$WORK/bin:$PATH" \
-    CHEZMOI_SOURCE_FILE=".chezmoiscripts/$1" bash "$WORK/pass"
+  run_pass "$1" "$WORK/pass"
 }
 
 @test "a pass failing in a helper names itself, the command, and the retry" {
@@ -167,4 +172,21 @@ with_user_manager() { systemctl() { printf '%s\n' "$*" >>"$WORK/systemctl.log"; 
   run --separate-stderr report_skipped_units
   [ "$status" -eq 0 ]
   [ -z "$stderr" ]
+}
+
+@test "every pass sources bootstrap.sh" {
+  run grep -L '^\. "{{ \.chezmoi\.sourceDir }}/script/lib/bootstrap\.sh"$' \
+    "$BATS_TEST_DIRNAME"/../../.chezmoiscripts/*
+  [ -z "$output" ]
+}
+
+@test "a headless alloy restart names the pass, the command, and the retry" {
+  local pass=run_onchange_after_restart-alloy-on-token-change.sh.tmpl
+  local root="$BATS_TEST_DIRNAME/../.."
+  sed "s|{{ .chezmoi.sourceDir }}|$root|" "$root/.chezmoiscripts/$pass" >"$WORK/pass"
+  run_pass "$pass" "$WORK/pass"
+  [ "$status" -eq 1 ]
+  [[ "$stderr" == *"alloy: no user systemd session; restart fails — re-run chezmoi apply"*"loginctl enable-linger"* ]]
+  [[ "$stderr" == *"$pass failed: systemctl --user try-restart alloy.service (exit 1 at $pass:"* ]]
+  [[ "$stderr" == *"re-run chezmoi apply (passes converge)"* ]]
 }
