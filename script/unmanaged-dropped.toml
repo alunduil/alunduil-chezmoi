@@ -1,0 +1,98 @@
+# Items script/unmanaged-inventory reports that a rebuild deliberately leaves
+# behind. kind is file, package, or unit; pattern is a glob matched against
+# the item as the script prints it, where * also matches /.
+
+[[dropped]]
+kind = "file"
+pattern = ".cache"
+reason = "Cache; tools refill it on demand."
+
+[[dropped]]
+kind = "file"
+pattern = ".local/state"
+reason = "Runtime state, by the XDG base directory spec."
+
+[[dropped]]
+kind = "file"
+pattern = ".local/share/Trash"
+reason = "Deleted files."
+
+[[dropped]]
+kind = "file"
+pattern = ".local/share/chezmoi"
+reason = "The apply clone; the bootstrap's chezmoi init recreates it."
+
+[[dropped]]
+kind = "file"
+pattern = ".config/systemd/user/*.target.wants"
+reason = "Enable symlinks; the bootstrap's systemctl enable recreates them."
+
+[[dropped]]
+kind = "file"
+pattern = ".npm"
+reason = "npm's download cache."
+
+[[dropped]]
+kind = "file"
+pattern = ".Xauthority"
+reason = "Per-session X credentials."
+
+[[dropped]]
+kind = "file"
+pattern = ".sudo_as_admin_successful"
+reason = "Marker that suppresses sudo's first-use hint."
+
+[[dropped]]
+kind = "file"
+pattern = ".bash_history"
+reason = "Shell history."
+
+[[dropped]]
+kind = "file"
+pattern = ".python_history"
+reason = "REPL history."
+
+[[dropped]]
+kind = "file"
+pattern = ".lesshs*"
+reason = "less search history, and its temporary file."
+
+[[dropped]]
+kind = "file"
+pattern = ".viminfo"
+reason = "vim history and marks."
+
+[[dropped]]
+kind = "file"
+pattern = ".wget-hsts"
+reason = "wget's HSTS cache."
+
+[[dropped]]
+kind = "file"
+pattern = ".claude.json.tmp.*"
+reason = "Claude Code's abandoned atomic-write temporaries."
+
+[[dropped]]
+kind = "file"
+pattern = ".claude/cache"
+reason = "Claude Code cache."
+
+[[dropped]]
+kind = "file"
+pattern = ".claude/paste-cache"
+reason = "Claude Code cache."
+
+[[dropped]]
+kind = "file"
+pattern = ".claude/shell-snapshots"
+reason = "Claude Code per-session shell state."
+
+[[dropped]]
+kind = "file"
+pattern = ".claude/session-env"
+reason = "Claude Code per-session environment."
+
+[[dropped]]
+kind = "file"
+pattern = ".config/zellij/config.kdl.bak*"
+reason = "zellij's backups of a config chezmoi owns."
