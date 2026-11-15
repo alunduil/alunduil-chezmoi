@@ -8,13 +8,14 @@ Supersedes [0009](0009-install-pinned-tools-through-mise.md).
 
 ## Context
 
-[ADR 0009](0009-install-pinned-tools-through-mise.md) installs penguin's
-pinned tools through mise. mise is a per-project version manager. Its
-shims read the current directory's config on every call, so a checkout
-that pins a tool takes it over from the host's copy. An untrusted
-checkout stops the shim with a trust prompt instead. #1133 and #1138
-are that one cause. A checkout's tool config should apply only inside a
-devcontainer or when asked for explicitly.
+mise shims let a checkout change which tool the host runs. mise is a
+per-project version manager, and
+[ADR 0009](0009-install-pinned-tools-through-mise.md) made it the host's
+installer. Its shims read the current directory's config on every call,
+so a checkout that pins a tool takes it over from the host's copy. An
+untrusted checkout stops the shim with a trust prompt instead. A
+checkout's tool config should apply only inside a devcontainer or when
+asked for explicitly.
 
 The installer has to carry more than single binaries. The host runs
 Erlang for a repository with no devcontainer, and Terraform,
@@ -56,65 +57,46 @@ Three options qualify:
 - **home-manager on Nix.** The profile holds fixed store paths, so a
   checkout can't change the host's tools. A spike on penguin on
   2026-11-15 found no sandbox blocker. Nix 2.35.6 from the official
-  multi-user installer built under `lxcfs` over `/proc` with
-  `sandbox-fallback = false` and no other setting. A standalone
-  home-manager generation switched. Versions follow one nixpkgs revision
-  rather than a pin per tool. At nixos-unstable `d5cc683`, nixpkgs had
-  21 of 22 tools and lacked `truenas-mcp`. `fourmolu`, `ormolu` and
-  `cabal-gild` trailed their pins because nixpkgs follows Stackage's
-  long-term-support snapshots.
-  Renovate's [`nix` manager](https://docs.renovatebot.com/modules/manager/nix/)
-  is beta and off by default, and moves an unpinned input only through
-  lock file maintenance. It needs root, `/nix`, a daemon, and build
-  users.
+  multi-user installer built sandboxed under `lxcfs` with no setting
+  changed. A standalone home-manager generation switched. Versions
+  follow one nixpkgs revision rather than a pin per tool. At
+  nixos-unstable `d5cc683`, nixpkgs lacked `truenas-mcp`, and
+  `fourmolu`, `ormolu` and `cabal-gild` trailed their pins because
+  nixpkgs follows Stackage's long-term-support snapshots. Renovate's
+  [`nix` manager](https://docs.renovatebot.com/modules/manager/nix/) is
+  beta, off by default, and moves an unpinned input only through lock
+  file maintenance. Nix needs root, `/nix`, a daemon, and build users.
 - **chezmoi externals pinned by sha256.** chezmoi reads nothing from the
   current directory, and `chezmoi apply` fails on a checksum mismatch.
-  ADR 0009 rejected pinned hashes because each bump needed a hand edit.
-  That no longer holds. Renovate's `github-release-attachments`
-  datasource hashes the same-named asset in the new release. The
-  hosted app bumped a version and four digests in one pull request in
-  [monetr/monetr#3517](https://github.com/monetr/monetr/pull/3517). Every
-  binary tool publishes a linux-x64 asset. Runtimes and the bats
+  Renovate's `github-release-attachments` datasource updates the hash
+  with the version, as the hosted app did for four digests in
+  [monetr/monetr#3517](https://github.com/monetr/monetr/pull/3517).
+  Every binary tool publishes a linux-x64 asset. Runtimes and the bats
   libraries don't fit, so a second installer would carry them.
-- **mise, restricted to its global config.** Four environment variables
-  confine discovery to `~/.config/mise/config.toml`. A checkout's
+- **mise, restricted to its global config.** Environment variables can
+  switch off each way mise finds project config: config filenames,
+  `.tool-versions`, mise environments, and `auto_env`. A checkout's
   `.miserc.toml` overrides the same settings in the global `miserc.toml`,
-  so they must be environment variables. mise has no global-only mode,
-  so the restriction holds by configuration. A context without the
-  variables lets a checkout take over a host tool again, and so does a
-  new discovery mechanism upstream. `auto_env` turns on by default in
-  mise 2027.6.0.
+  so only environment variables hold. mise has no global-only mode. A
+  context without the variables lets a checkout take over a host tool
+  again, and so does a new discovery mechanism upstream. `auto_env` turns
+  on by default in mise 2027.6.0. A test on 2026-11-15 used a checkout
+  carrying `mise.toml` with `[env]`, `.tool-versions`, `.miserc.toml`,
+  and `mise.linux.toml`. With all four switched off, mise 2026.10.8
+  ignored it and ran the host's `just`.
 
-  Tests on 2026-11-15 ran the host's `just` shim with mise 2026.10.8 from
-  checkouts carrying `mise.toml` with `[env]`, `.tool-versions`,
-  `.miserc.toml`, and `mise.linux.toml`. With no variables, the shim
-  stopped on a trust error. With only `MISE_OVERRIDE_CONFIG_FILENAMES`,
-  `.tool-versions` and an environment that `.miserc.toml` selected each
-  still loaded and broke the shim. With all four, mise loaded only the
-  global config and ran the host's `just`.
-
-A probe can test the restriction, while no setting makes mise isolated
-by design. The costs of the other two are structural: home-manager
-trades per-tool pins and supported Renovate bumps for isolation, and
-externals split the installer in two.
+A probe tests mise's gap. No probe removes the other two qualifiers'
+costs: home-manager trades per-tool pins and supported Renovate bumps
+for isolation, and externals split the installer in two.
 
 ## Decision
 
 Keep mise as the host-tool installer and restrict it to its global
 config.
 
-- Login shells and the systemd user manager set these variables,
-  covering every context a shim runs in:
-
-  ```sh
-  MISE_OVERRIDE_CONFIG_FILENAMES=none
-  MISE_OVERRIDE_TOOL_VERSIONS_FILENAMES=none
-  MISE_ENV=
-  MISE_AUTO_ENV=false
-  ```
-
-- The global config sets `auto_install = false` and
-  `not_found_auto_install = false`.
+- Login shells and the systemd user manager set environment variables
+  that switch off every project discovery path.
+- Host shims never install a missing version.
 - A hostile-checkout probe runs a shim from a checkout carrying every
   config file mise discovers. It fails unless only the global config
   loads and the host's version runs. `host-status` runs it on the host,
@@ -135,8 +117,8 @@ also requires.
 
 ## Consequences
 
-- A checkout's `mise.toml` no longer changes or stops a host tool. A
-  project that needs its own pin on the host asks for it explicitly.
+- A checkout's config no longer changes or stops a host tool. A project
+  that needs its own pin on the host asks for it explicitly.
 - The restriction can fail open. The hostile-checkout probe turns that
   failure into a failing check rather than a silent takeover.
 - mise's apt repository leaves the bootstrap, and each mise release waits
