@@ -38,6 +38,20 @@ repos:
       - id: detect-private-key
       - id: check-merge-conflict
 
+  # pre-commit tags an extensionless script by its python3 shebang, so these
+  # reach Python scripts without a files pattern.
+  - repo: https://github.com/astral-sh/ruff-pre-commit
+    rev: v0.17.5
+    hooks:
+      - id: ruff-check
+        args: [--fix]
+      - id: ruff-format
+
+  - repo: https://github.com/pre-commit/mirrors-mypy
+    rev: v2.4.1
+    hooks:
+      - id: mypy
+
   - repo: https://github.com/errata-ai/vale
     rev: v3.26.0
     hooks:

@@ -25,7 +25,7 @@ check:
     . script/lib/checks.sh
     failed=()
     skipped=()
-    for c in check-hooks check-bats check-zellij check-chezmoi check-chezmoi-templates check-settings-permissions check-telemetry check-systemd check-bootstrap-convergence check-pinned-tools; do
+    for c in check-hooks check-bats check-python check-zellij check-themes check-chezmoi check-chezmoi-templates check-settings-permissions check-telemetry check-systemd check-bootstrap-convergence check-pinned-tools; do
       just "$c"
       case $? in
         0) ;;
@@ -58,6 +58,14 @@ check-bats:
 # Zellij KDL validation (needs zellij on PATH).
 check-zellij:
     script/checks/zellij-config
+
+# Python unit tests, with the coverage report CI uploads.
+check-python:
+    uv run --no-project --with pytest,pytest-cov pytest --cov --cov-report=xml --cov-report=term
+
+# Theme colors meet WCAG AAA and kitty matches the dark theme.
+check-themes:
+    script/checks/theme-contrast
 
 # Apply round-trip (needs chezmoi + age on PATH).
 check-chezmoi:
