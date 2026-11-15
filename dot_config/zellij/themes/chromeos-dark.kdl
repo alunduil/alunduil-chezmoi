@@ -1,9 +1,9 @@
 // Zellij's bundled "default" theme recoloured to match Chrome on ChromeOS:
 // the New Tab page background and text, with the side panel's colour for
 // selections. ChromeOS tints these from the wallpaper, so a new wallpaper
-// needs them resampled. Every foreground meets WCAG AAA (7:1) against its
-// background; the bright terminal colours sit at 9:1 so each stays
-// distinct from its plain twin.
+// needs them resampled. script/checks/theme-contrast holds them to WCAG
+// AAA; the bright terminal colours reach 9:1 so each stays distinct from
+// its plain twin.
 
 themes {
     chromeos-dark {

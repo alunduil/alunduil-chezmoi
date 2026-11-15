@@ -127,6 +127,12 @@ jobs:
       - name: Check config
         run: script/checks/zellij-config
 
+      - name: Test theme contrast check
+        run: python3 -m unittest discover -s script/checks -p 'test_*.py'
+
+      - name: Check theme contrast
+        run: script/checks/theme-contrast
+
   # Alloy validates its own config, hence the install. Deliberately ungated so
   # a broken config fails the build whatever changed.
   telemetry-config:
