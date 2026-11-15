@@ -1,4 +1,5 @@
 [settings]
+auto_install = false
 locked = true
 lockfile_platforms = ["linux-x64"]
 not_found_auto_install = false
