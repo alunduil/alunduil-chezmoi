@@ -1,9 +1,3 @@
-"""Function-layer tests for script/checks/theme-contrast.
-
-Loads the extensionless check by path and feeds each rule a palette it
-should reject.
-"""
-
 import pathlib
 import runpy
 import unittest

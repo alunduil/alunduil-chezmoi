@@ -1,11 +1,7 @@
-# Lint/format config for the repo's Python. Leading dot keeps chezmoi from
-# deploying it as a dotfile.
+# The leading dot keeps chezmoi from deploying this file.
 target-version = "py311"
 
 [lint]
-# A modern baseline covering what the old black/isort/flake8/pyupgrade stack
-# did: pycodestyle (E/W), pyflakes (F), isort (I), pyupgrade (UP), bugbear
-# (B), simplify (SIM), comprehensions (C4).
 select = ["E", "W", "F", "I", "UP", "B", "SIM", "C4"]
 # ruff-format owns line length.
 ignore = ["E501"]

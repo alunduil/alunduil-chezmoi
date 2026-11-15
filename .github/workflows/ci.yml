@@ -93,8 +93,8 @@ jobs:
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
 
-      # uv supplies pytest and pytest-cov per run, so neither joins the repo's
-      # dependency surface.
+      # uv fetches pytest and pytest-cov per run, so neither is a repo
+      # dependency.
       - uses: ./.github/actions/setup-mise
         with:
           tools: uv

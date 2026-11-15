@@ -22,9 +22,8 @@ show_startup_tips false
 // without a bottom border between them.
 pane_frame_style "full"
 
-// Defined in themes/. Crostini does not pass the ChromeOS light/dark
-// setting to Linux, so nothing reports it and the session starts dark;
-// Alt t or the right-click menu switches.
+// Crostini doesn't pass the ChromeOS light/dark setting to Linux, so
+// sessions start dark. Alt t or the right-click menu toggles.
 theme_dark "chromeos-dark"
 theme_light "chromeos-light"
 
@@ -34,8 +33,6 @@ context_menu {
     }
 }
 
-// The Zellij terminal (`zellij terminal`), launched from the ChromeOS
-// launcher by dev.zellij.Zellij.desktop.
 terminal {
     // The only installed font covering U+E0B0, which zellij-rate-limit-status
     // draws. Without it the separator falls back to a Unifont bitmap blob.

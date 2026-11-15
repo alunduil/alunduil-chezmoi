@@ -1,7 +1,6 @@
-# pytest, coverage and mypy config for the repo's Python. Callers pass
-# `uv run --no-project`; without it uv treats the checkout as a package and
-# writes a .venv into it. pytest has no dot-prefixed config file, so
-# .chezmoiignore keeps this one out of $HOME.
+# Callers pass `uv run --no-project`; without it uv treats the checkout as a
+# package and writes a .venv into it. pytest has no dot-prefixed config file,
+# so .chezmoiignore keeps this one out of $HOME.
 
 [tool.pytest.ini_options]
 # Tests sit beside the scripts they exercise rather than under a tests/ dir.

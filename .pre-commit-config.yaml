@@ -38,8 +38,8 @@ repos:
       - id: detect-private-key
       - id: check-merge-conflict
 
-  # identify tags an extensionless script by its python3 shebang, so these
-  # reach script/checks/theme-contrast without a files pattern.
+  # pre-commit tags an extensionless script by its python3 shebang, so these
+  # reach Python scripts without a files pattern.
   - repo: https://github.com/astral-sh/ruff-pre-commit
     rev: v0.17.5
     hooks:
