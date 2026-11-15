@@ -6,7 +6,9 @@ GenericName=Terminal Workspace
 Comment=Manage Your Terminal Applications
 # The ChromeOS launcher starts apps with the system PATH alone. A login shell
 # adds ~/.local/bin, the mise shims (where zellij lives) and SSH_AUTH_SOCK.
-Exec=bash --login -c "exec zellij terminal"
+# Without a GPU, native Wayland windows freeze on a stale frame after undocking.
+# The login profile restores WAYLAND_DISPLAY.
+Exec=bash --login -c "exec env -u WAYLAND_DISPLAY zellij terminal"
 Icon=dev.zellij.Zellij
 Terminal=false
 StartupNotify=true
