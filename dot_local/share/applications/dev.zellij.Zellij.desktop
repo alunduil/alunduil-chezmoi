@@ -1,0 +1,15 @@
+[Desktop Entry]
+Version=1.0
+Type=Application
+Name=Zellij
+GenericName=Terminal Workspace
+Comment=Manage Your Terminal Applications
+# The ChromeOS launcher starts apps with the system PATH alone. A login shell
+# adds ~/.local/bin, the mise shims (where zellij lives) and SSH_AUTH_SOCK.
+Exec=bash --login -c "exec zellij terminal"
+Icon=dev.zellij.Zellij
+Terminal=false
+StartupNotify=true
+StartupWMClass=dev.zellij.Zellij
+Categories=System;TerminalEmulator;
+Keywords=terminal;multiplexer;shell;workspace;

@@ -4,8 +4,9 @@ set -euo pipefail
 config_dir="$(mktemp -d)"
 trap 'rm -rf "$config_dir"' EXIT
 
-mkdir -p "$config_dir/zellij/layouts"
+mkdir -p "$config_dir/zellij/layouts" "$config_dir/zellij/themes"
 cp dot_config/zellij/config.kdl "$config_dir/zellij/config.kdl"
 cp dot_config/zellij/layouts/*.kdl "$config_dir/zellij/layouts/"
+cp dot_config/zellij/themes/*.kdl "$config_dir/zellij/themes/"
 
 ZELLIJ_CONFIG_DIR="$config_dir/zellij" zellij setup --check

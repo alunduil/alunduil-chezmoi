@@ -22,6 +22,32 @@ show_startup_tips false
 // without a bottom border between them.
 pane_frame_style "full"
 
+// Defined in themes/. Crostini does not pass the ChromeOS light/dark
+// setting to Linux, so nothing reports it and the session starts dark;
+// Alt t or the right-click menu switches.
+theme_dark "chromeos-dark"
+theme_light "chromeos-light"
+
+context_menu {
+    common {
+        item "Switch light/dark" { ToggleTheme; }
+    }
+}
+
+// The Zellij terminal (`zellij terminal`), launched from the ChromeOS
+// launcher by dev.zellij.Zellij.desktop.
+terminal {
+    // The only installed font covering U+E0B0, which zellij-rate-limit-status
+    // draws. Without it the separator falls back to a Unifont bitmap blob.
+    font "JetBrains Mono"
+    font_size 11
+    padding 4
+    hide_pointer_while_typing true
+    // WCAG AAA. The Chrome-matched backgrounds leave several of the bundled
+    // ANSI colors short of it on dark.
+    minimum_contrast 7.0
+}
+
 plugins {
     zellaude location="https://github.com/ishefi/zellaude/releases/download/v0.5.1/zellaude.wasm"
     zjstatus location="https://github.com/dj95/zjstatus/releases/download/v0.25.0/zjstatus.wasm"
@@ -52,5 +78,7 @@ keybinds {
         // one exists in the direction, which surprises during tab-hopping.
         bind "Alt Left"  { GoToPreviousTab; }
         bind "Alt Right" { GoToNextTab; }
+        // t for theme. Shadows readline's transpose-words in unlocked panes.
+        bind "Alt t" { ToggleTheme; }
     }
 }
