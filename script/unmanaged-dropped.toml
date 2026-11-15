@@ -43,6 +43,11 @@ patterns = [
 
 [[dropped]]
 kind = "package"
+reason = "Transitional package; the apt list declares what it pulls in."
+patterns = ["dnsutils"]
+
+[[dropped]]
+kind = "package"
 reason = "uv manages Python environments instead."
 patterns = [
   "python3-pip",

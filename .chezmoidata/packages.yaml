@@ -80,7 +80,7 @@ packages:
     - gnome-keyring
     - locales
     - shellcheck
-    - dnsutils
+    - bind9-dnsutils
     - ipcalc
     - nmap
     - lynx
