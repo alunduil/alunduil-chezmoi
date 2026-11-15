@@ -44,10 +44,9 @@ key="$(<"$key_file")"
 # --insecure: the cert carries no IP SANs and the URL is an address, so
 # verification can never match the name. --tls-ca does not help a mismatch.
 #
-# The server launches through `mise -C $HOME x` rather than its shim. A shim
-# resolves config from the session's working directory, so an untrusted
-# mise.toml there stops it before the server starts. mise picks the version at
-# launch, so ~/.claude.json stays the same across version bumps.
+# Claude Code starts the server in the session's checkout, whose mise.toml may
+# be untrusted; `-C $HOME` keeps mise from reading it. mise resolves the version
+# on each launch, so a bump leaves ~/.claude.json unchanged.
 reregister_mcp truenas \
   -e "TRUENAS_URL=${url}" \
   -e "TRUENAS_API_KEY=${key}" \
