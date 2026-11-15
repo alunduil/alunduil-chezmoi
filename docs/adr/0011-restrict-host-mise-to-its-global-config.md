@@ -77,23 +77,13 @@ Three options qualify:
   binary tool publishes a linux-x64 asset. Runtimes and the bats
   libraries don't fit, so a second installer would carry them.
 - **mise, restricted to its global config.** Four environment variables
-  confine discovery to `~/.config/mise/config.toml`:
-
-  ```sh
-  MISE_OVERRIDE_CONFIG_FILENAMES=none
-  MISE_OVERRIDE_TOOL_VERSIONS_FILENAMES=none
-  MISE_ENV=
-  MISE_AUTO_ENV=false
-  ```
-
-  A checkout's `.miserc.toml` overrides these settings in the global
-  `miserc.toml`, so they must be environment variables. Once only the
-  global config loads, `auto_install = false` and
-  `not_found_auto_install = false` there stop a shim downloading a
-  missing version. mise has no global-only mode, so the restriction
-  holds by configuration. A context without the variables reopens the
-  gap, and so does a new discovery mechanism upstream. `auto_env` turns
-  on by default in mise 2027.6.0.
+  confine discovery to `~/.config/mise/config.toml`. A checkout's
+  `.miserc.toml` overrides the same settings in the global `miserc.toml`,
+  so they must be environment variables. mise has no global-only mode,
+  so the restriction holds by configuration. A context without the
+  variables lets a checkout take over a host tool again, and so does a
+  new discovery mechanism upstream. `auto_env` turns on by default in
+  mise 2027.6.0.
 
   Tests on 2026-11-15 ran the host's `just` shim with mise 2026.10.8 from
   checkouts carrying `mise.toml` with `[env]`, `.tool-versions`,
@@ -113,12 +103,22 @@ externals split the installer in two.
 Keep mise as the host-tool installer and restrict it to its global
 config.
 
-- Login shells and the systemd user manager set the four variables
-  above, covering every context a shim runs in.
-- A probe runs a shim from a checkout carrying every config file mise
-  discovers, and fails unless only the global config loads and the
-  host's version runs. host-status runs it on the host, and CI runs it
-  on every change.
+- Login shells and the systemd user manager set these variables,
+  covering every context a shim runs in:
+
+  ```sh
+  MISE_OVERRIDE_CONFIG_FILENAMES=none
+  MISE_OVERRIDE_TOOL_VERSIONS_FILENAMES=none
+  MISE_ENV=
+  MISE_AUTO_ENV=false
+  ```
+
+- The global config sets `auto_install = false` and
+  `not_found_auto_install = false`.
+- A hostile-checkout probe runs a shim from a checkout carrying every
+  config file mise discovers. It fails unless only the global config
+  loads and the host's version runs. `host-status` runs it on the host,
+  and CI runs it on every change.
 - A pinned, verified download installs mise itself, and Renovate bumps
   it, so an upstream change to discovery reaches the host only after the
   probe passes in CI.
@@ -137,9 +137,8 @@ also requires.
 
 - A checkout's `mise.toml` no longer changes or stops a host tool. A
   project that needs its own pin on the host asks for it explicitly.
-- The restriction can fail open. The probe turns that failure into a
-  failing check rather than a silent takeover.
-- mise leaves its apt repository for a pinned, verified install, and
-  each mise release waits for a Renovate pull request.
-- `auto_install` and `not_found_auto_install` stay off on the host, so a
-  shim for a missing version fails instead of downloading it.
+- The restriction can fail open. The hostile-checkout probe turns that
+  failure into a failing check rather than a silent takeover.
+- mise's apt repository leaves the bootstrap, and each mise release waits
+  for a Renovate pull request.
+- A shim for a missing version fails instead of downloading it.
