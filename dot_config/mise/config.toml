@@ -1,6 +1,7 @@
 [settings]
 locked = true
 lockfile_platforms = ["linux-x64"]
+not_found_auto_install = false
 
 [tools]
 act = "0.2.97"
