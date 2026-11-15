@@ -21,33 +21,26 @@ set -euo pipefail
 use_mise_shims
 use_local_bin
 
-url_file="$HOME/.config/truenas/url"
-key_file="$HOME/.config/truenas/api_key"
-user_file="$HOME/.config/truenas/user"
+read_setting() {
+  local label="$1" file="$HOME/.config/truenas/$2"
+  if [ ! -s "$file" ]; then
+    log "truenas-mcp: $label missing or empty at $file, skipping"
+    return 1
+  fi
+  cat -- "$file"
+}
+
+url="$(read_setting url url)" || exit 0 # rerun-on: url-hash
+key="$(read_setting "api key" api_key)" || exit 0 # rerun-on: key-hash
+user="$(read_setting "api key user" user)" || exit 0 # rerun-on: user-hash
+
 # Resolves to the shim, whose path stays the same across version bumps, so
 # ~/.claude.json does too.
 bin="$(command -v truenas-mcp || true)"
-
-if [ ! -s "$url_file" ]; then
-  log "truenas-mcp: url missing or empty at $url_file, skipping"
-  exit 0 # rerun-on: url-hash
-fi
-if [ ! -r "$key_file" ]; then
-  log "truenas-mcp: api key not deployed at $key_file, skipping"
-  exit 0 # rerun-on: key-hash
-fi
-if [ ! -s "$user_file" ]; then
-  log "truenas-mcp: api key user missing or empty at $user_file, skipping"
-  exit 0 # rerun-on: user-hash
-fi
 if [ -z "$bin" ]; then
   log "truenas-mcp: not on PATH, registration retries on the next apply"
   exit 1
 fi
-
-url="$(<"$url_file")"
-key="$(<"$key_file")"
-user="$(<"$user_file")"
 
 # --insecure: the cert carries no IP SANs and the URL is an address, so
 # verification can never match the name. --tls-ca does not help a mismatch.
