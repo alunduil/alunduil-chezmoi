@@ -96,3 +96,843 @@ reason = "Claude Code per-session environment."
 kind = "file"
 pattern = ".config/zellij/config.kdl.bak*"
 reason = "zellij's backups of a config chezmoi owns."
+
+[[dropped]]
+kind = "file"
+pattern = ".local/share/mise"
+reason = "Pass 02 installs every mise tool again."
+
+[[dropped]]
+kind = "file"
+pattern = ".config/nvm"
+reason = "Pass 03 installs nvm, Node, and pnpm again."
+
+[[dropped]]
+kind = "file"
+pattern = ".local/share/pnpm"
+reason = "Pass 03 installs nvm, Node, and pnpm again."
+
+[[dropped]]
+kind = "file"
+pattern = ".local/share/claude"
+reason = "Pass 05 installs Claude Code again."
+
+[[dropped]]
+kind = "file"
+pattern = ".local/bin/claude"
+reason = "Pass 05 installs Claude Code again."
+
+[[dropped]]
+kind = "file"
+pattern = ".local/share/applications/claude-code-url-handler.desktop"
+reason = "Pass 05 installs Claude Code again."
+
+[[dropped]]
+kind = "file"
+pattern = ".config/mimeapps.list"
+reason = "Pass 05 installs Claude Code again."
+
+[[dropped]]
+kind = "file"
+pattern = ".ghcup"
+reason = "Pass 06 installs ghcup, GHC, and cabal again."
+
+[[dropped]]
+kind = "file"
+pattern = ".config/cabal"
+reason = "Pass 06 installs ghcup, GHC, and cabal again."
+
+[[dropped]]
+kind = "file"
+pattern = ".rustup"
+reason = "Pass 09 installs rustup, the toolchain, and cargo-cache again."
+
+[[dropped]]
+kind = "file"
+pattern = ".cargo"
+reason = "Pass 09 installs rustup, the toolchain, and cargo-cache again."
+
+[[dropped]]
+kind = "file"
+pattern = ".local/share/uv"
+reason = "install-via-mise-tools installs beets through uv again."
+
+[[dropped]]
+kind = "file"
+pattern = ".local/bin/beet"
+reason = "install-via-mise-tools installs beets through uv again."
+
+[[dropped]]
+kind = "file"
+pattern = ".agents"
+reason = "install-via-mise-tools installs gcx's agent skills again."
+
+[[dropped]]
+kind = "file"
+pattern = ".config/chezmoi"
+reason = "chezmoi init writes it again; the bootstrap tutorial restores key.txt."
+
+[[dropped]]
+kind = "file"
+pattern = ".config/zellij/plugins/zellaude-hook.sh"
+reason = "The zellaude plugin writes it on load."
+
+[[dropped]]
+kind = "file"
+pattern = ".local/bin-tools"
+reason = "mise installs fourmolu and hlint now."
+
+[[dropped]]
+kind = "file"
+pattern = ".local/bin/fourmolu"
+reason = "mise installs fourmolu and hlint now."
+
+[[dropped]]
+kind = "file"
+pattern = ".local/bin/hlint"
+reason = "mise installs fourmolu and hlint now."
+
+[[dropped]]
+kind = "file"
+pattern = ".local/bin/zellij.release-stripped"
+reason = "mise installs zellij now; left from a source build."
+
+[[dropped]]
+kind = "file"
+pattern = ".local/bin/.zellij-source-ref"
+reason = "mise installs zellij now; left from a source build."
+
+[[dropped]]
+kind = "file"
+pattern = ".local/bin/pre-commit"
+reason = "pip install of pre-commit, which prek replaced."
+
+[[dropped]]
+kind = "file"
+pattern = ".local/bin/identify-cli"
+reason = "pip install of pre-commit, which prek replaced."
+
+[[dropped]]
+kind = "file"
+pattern = ".local/bin/nodeenv"
+reason = "pip install of pre-commit, which prek replaced."
+
+[[dropped]]
+kind = "file"
+pattern = ".local/bin/virtualenv"
+reason = "pip install of pre-commit, which prek replaced."
+
+[[dropped]]
+kind = "file"
+pattern = ".local/lib"
+reason = "pip install of pre-commit, which prek replaced."
+
+[[dropped]]
+kind = "file"
+pattern = ".local/bin/hadolint"
+reason = "One-off install nothing in the repo calls."
+
+[[dropped]]
+kind = "file"
+pattern = ".local/bin/signal-cli"
+reason = "One-off install nothing in the repo calls."
+
+[[dropped]]
+kind = "file"
+pattern = ".config/systemd/user/tray.target"
+reason = "Left by an earlier home-manager install."
+
+[[dropped]]
+kind = "file"
+pattern = ".local/share/home-manager"
+reason = "Left by an earlier home-manager install."
+
+[[dropped]]
+kind = "file"
+pattern = ".claude/settings.json.bak"
+reason = "Backup of a file the repo or ssh owns."
+
+[[dropped]]
+kind = "file"
+pattern = ".ssh/known_hosts.old"
+reason = "Backup of a file the repo or ssh owns."
+
+[[dropped]]
+kind = "file"
+pattern = ".bash_logout"
+reason = "Crostini's container image writes it."
+
+[[dropped]]
+kind = "file"
+pattern = ".sommelierrc"
+reason = "Crostini's container image writes it."
+
+[[dropped]]
+kind = "file"
+pattern = ".config/weston.ini"
+reason = "Crostini's container image writes it."
+
+[[dropped]]
+kind = "file"
+pattern = ".config/cros-garcon.conf"
+reason = "Crostini's container image writes it."
+
+[[dropped]]
+kind = "file"
+pattern = ".local/share/cros-motd"
+reason = "Crostini's container image writes it."
+
+[[dropped]]
+kind = "file"
+pattern = ".config/gh/hosts.yml"
+reason = "Login or account state; signing in again restores it."
+
+[[dropped]]
+kind = "file"
+pattern = ".config/gcloud"
+reason = "Login or account state; signing in again restores it."
+
+[[dropped]]
+kind = "file"
+pattern = ".gsutil"
+reason = "Login or account state; signing in again restores it."
+
+[[dropped]]
+kind = "file"
+pattern = ".config/op"
+reason = "Login or account state; signing in again restores it."
+
+[[dropped]]
+kind = "file"
+pattern = ".config/1Password"
+reason = "Login or account state; signing in again restores it."
+
+[[dropped]]
+kind = "file"
+pattern = ".config/tailscale"
+reason = "Login or account state; signing in again restores it."
+
+[[dropped]]
+kind = "file"
+pattern = ".config/Keybase"
+reason = "Login or account state; signing in again restores it."
+
+[[dropped]]
+kind = "file"
+pattern = ".config/keybase"
+reason = "Login or account state; signing in again restores it."
+
+[[dropped]]
+kind = "file"
+pattern = ".local/share/keybase"
+reason = "Login or account state; signing in again restores it."
+
+[[dropped]]
+kind = "file"
+pattern = ".config/.wrangler"
+reason = "Login or account state; signing in again restores it."
+
+[[dropped]]
+kind = "file"
+pattern = ".config/gcx"
+reason = "Login or account state; signing in again restores it."
+
+[[dropped]]
+kind = "file"
+pattern = ".config/configstore"
+reason = "Login or account state; signing in again restores it."
+
+[[dropped]]
+kind = "file"
+pattern = ".claude/.credentials.json"
+reason = "Login or account state; signing in again restores it."
+
+[[dropped]]
+kind = "file"
+pattern = ".claude.json"
+reason = "Login or account state; signing in again restores it."
+
+[[dropped]]
+kind = "file"
+pattern = ".docker"
+reason = "Login or account state; signing in again restores it."
+
+[[dropped]]
+kind = "file"
+pattern = ".android"
+reason = "Login or account state; signing in again restores it."
+
+[[dropped]]
+kind = "file"
+pattern = ".ansible"
+reason = "Login or account state; signing in again restores it."
+
+[[dropped]]
+kind = "file"
+pattern = ".copilot"
+reason = "Login or account state; signing in again restores it."
+
+[[dropped]]
+kind = "file"
+pattern = ".local/share/keyrings"
+reason = "Login or account state; signing in again restores it."
+
+[[dropped]]
+kind = "file"
+pattern = ".config/Signal"
+reason = "Login or account state; signing in again restores it."
+
+[[dropped]]
+kind = "file"
+pattern = ".config/autostart"
+reason = "Login or account state; signing in again restores it."
+
+[[dropped]]
+kind = "file"
+pattern = ".config/BraveSoftware"
+reason = "Browser profile; the browser's own sync restores it."
+
+[[dropped]]
+kind = "file"
+pattern = ".config/chromium"
+reason = "Browser profile; the browser's own sync restores it."
+
+[[dropped]]
+kind = "file"
+pattern = ".config/google-chrome*"
+reason = "Browser profile; the browser's own sync restores it."
+
+[[dropped]]
+kind = "file"
+pattern = ".config/microsoft-edge-dev"
+reason = "Browser profile; the browser's own sync restores it."
+
+[[dropped]]
+kind = "file"
+pattern = ".config/vivaldi*"
+reason = "Browser profile; the browser's own sync restores it."
+
+[[dropped]]
+kind = "file"
+pattern = ".mozilla"
+reason = "Browser profile; the browser's own sync restores it."
+
+[[dropped]]
+kind = "file"
+pattern = ".pki"
+reason = "Browser profile; the browser's own sync restores it."
+
+[[dropped]]
+kind = "file"
+pattern = ".config/Code"
+reason = "VS Code profile; Settings Sync restores it."
+
+[[dropped]]
+kind = "file"
+pattern = ".vscode"
+reason = "VS Code profile; Settings Sync restores it."
+
+[[dropped]]
+kind = "file"
+pattern = ".ssh/known_hosts"
+reason = "Each host key is verified again on first connection."
+
+[[dropped]]
+kind = "file"
+pattern = ".claude/.last-cleanup"
+reason = "Claude Code runtime state."
+
+[[dropped]]
+kind = "file"
+pattern = ".claude/.last-update-result.json"
+reason = "Claude Code runtime state."
+
+[[dropped]]
+kind = "file"
+pattern = ".claude/backups"
+reason = "Claude Code runtime state."
+
+[[dropped]]
+kind = "file"
+pattern = ".claude/daemon*"
+reason = "Claude Code runtime state."
+
+[[dropped]]
+kind = "file"
+pattern = ".claude/feedback"
+reason = "Claude Code runtime state."
+
+[[dropped]]
+kind = "file"
+pattern = ".claude/file-history"
+reason = "Claude Code runtime state."
+
+[[dropped]]
+kind = "file"
+pattern = ".claude/gh-pr-status-cache.json"
+reason = "Claude Code runtime state."
+
+[[dropped]]
+kind = "file"
+pattern = ".claude/jobs"
+reason = "Claude Code runtime state."
+
+[[dropped]]
+kind = "file"
+pattern = ".claude/mcp-needs-auth-cache.json"
+reason = "Claude Code runtime state."
+
+[[dropped]]
+kind = "file"
+pattern = ".claude/sessions"
+reason = "Claude Code runtime state."
+
+[[dropped]]
+kind = "file"
+pattern = ".claude/state"
+reason = "Claude Code runtime state."
+
+[[dropped]]
+kind = "file"
+pattern = ".claude/skills/synced"
+reason = "Claude Code runtime state."
+
+[[dropped]]
+kind = "file"
+pattern = ".ghc"
+reason = "Cache, history, or runtime state a tool rebuilds."
+
+[[dropped]]
+kind = "file"
+pattern = ".local/share/ghc"
+reason = "Cache, history, or runtime state a tool rebuilds."
+
+[[dropped]]
+kind = "file"
+pattern = ".config/go"
+reason = "Cache, history, or runtime state a tool rebuilds."
+
+[[dropped]]
+kind = "file"
+pattern = ".dotnet"
+reason = "Cache, history, or runtime state a tool rebuilds."
+
+[[dropped]]
+kind = "file"
+pattern = ".terraform.d"
+reason = "Cache, history, or runtime state a tool rebuilds."
+
+[[dropped]]
+kind = "file"
+pattern = ".config/astro"
+reason = "Cache, history, or runtime state a tool rebuilds."
+
+[[dropped]]
+kind = "file"
+pattern = ".config/turborepo"
+reason = "Cache, history, or runtime state a tool rebuilds."
+
+[[dropped]]
+kind = "file"
+pattern = ".config/dconf"
+reason = "Cache, history, or runtime state a tool rebuilds."
+
+[[dropped]]
+kind = "file"
+pattern = ".config/pulse"
+reason = "Cache, history, or runtime state a tool rebuilds."
+
+[[dropped]]
+kind = "file"
+pattern = ".config/gtk-2.0"
+reason = "Cache, history, or runtime state a tool rebuilds."
+
+[[dropped]]
+kind = "file"
+pattern = ".config/QtProject.conf"
+reason = "Cache, history, or runtime state a tool rebuilds."
+
+[[dropped]]
+kind = "file"
+pattern = ".local/share/recently-used.xbel"
+reason = "Cache, history, or runtime state a tool rebuilds."
+
+[[dropped]]
+kind = "file"
+pattern = ".local/share/systemd"
+reason = "Cache, history, or runtime state a tool rebuilds."
+
+[[dropped]]
+kind = "file"
+pattern = ".local/share/containers"
+reason = "Cache, history, or runtime state a tool rebuilds."
+
+[[dropped]]
+kind = "file"
+pattern = ".config/cni"
+reason = "Cache, history, or runtime state a tool rebuilds."
+
+[[dropped]]
+kind = "file"
+pattern = ".local/share/vitest"
+reason = "Cache, history, or runtime state a tool rebuilds."
+
+[[dropped]]
+kind = "file"
+pattern = ".local/share/vale"
+reason = "Cache, history, or runtime state a tool rebuilds."
+
+[[dropped]]
+kind = "file"
+pattern = ".local/share/rtk"
+reason = "Cache, history, or runtime state a tool rebuilds."
+
+[[dropped]]
+kind = "file"
+pattern = ".config/rtk"
+reason = "Cache, history, or runtime state a tool rebuilds."
+
+[[dropped]]
+kind = "file"
+pattern = ".local/share/zellij"
+reason = "Cache, history, or runtime state a tool rebuilds."
+
+[[dropped]]
+kind = "file"
+pattern = ".local/share/git-worktree-poi"
+reason = "Cache, history, or runtime state a tool rebuilds."
+
+[[dropped]]
+kind = "file"
+pattern = ".local/share/GitKrakenCLI"
+reason = "Cache, history, or runtime state a tool rebuilds."
+
+[[dropped]]
+kind = "file"
+pattern = ".local/share/gk"
+reason = "Cache, history, or runtime state a tool rebuilds."
+
+[[dropped]]
+kind = "file"
+pattern = ".vim"
+reason = "Cache, history, or runtime state a tool rebuilds."
+
+[[dropped]]
+kind = "file"
+pattern = ".claustre"
+reason = "Cache, history, or runtime state a tool rebuilds."
+
+[[dropped]]
+kind = "file"
+pattern = ".config/Docker Desktop"
+reason = "Cache, history, or runtime state a tool rebuilds."
+
+[[dropped]]
+kind = "file"
+pattern = ".Immersed"
+reason = "App unused for over a year."
+
+[[dropped]]
+kind = "file"
+pattern = ".ImmersedConf"
+reason = "App unused for over a year."
+
+[[dropped]]
+kind = "file"
+pattern = ".config/Chrysalis"
+reason = "App unused for over a year."
+
+[[dropped]]
+kind = "file"
+pattern = "Chrysalis-linux-x64"
+reason = "App unused for over a year."
+
+[[dropped]]
+kind = "file"
+pattern = ".thunderbird"
+reason = "App unused for over a year."
+
+[[dropped]]
+kind = "file"
+pattern = ".config/obsidian"
+reason = "App unused for over a year."
+
+[[dropped]]
+kind = "file"
+pattern = "obsidian"
+reason = "App unused for over a year."
+
+[[dropped]]
+kind = "file"
+pattern = ".config/MusicBrainz"
+reason = "App unused for over a year."
+
+[[dropped]]
+kind = "file"
+pattern = "foundryvtt"
+reason = "App unused for over a year."
+
+[[dropped]]
+kind = "file"
+pattern = "FoundryVTT-*.zip"
+reason = "App unused for over a year."
+
+[[dropped]]
+kind = "file"
+pattern = ".claude/projects"
+reason = "Personal data; the .tini container backup carries it."
+
+[[dropped]]
+kind = "file"
+pattern = ".claude/history.jsonl"
+reason = "Personal data; the .tini container backup carries it."
+
+[[dropped]]
+kind = "file"
+pattern = ".claude/plugins"
+reason = "Personal data; the .tini container backup carries it."
+
+[[dropped]]
+kind = "file"
+pattern = ".local/share/claude-research"
+reason = "Personal data; the .tini container backup carries it."
+
+[[dropped]]
+kind = "file"
+pattern = ".config/beets/*"
+reason = "Personal data; the .tini container backup carries it."
+
+[[dropped]]
+kind = "file"
+pattern = "Calibre Library"
+reason = "Personal data; the .tini container backup carries it."
+
+[[dropped]]
+kind = "file"
+pattern = ".config/calibre"
+reason = "Personal data; the .tini container backup carries it."
+
+[[dropped]]
+kind = "file"
+pattern = ".local/share/calibre-ebook.com"
+reason = "Personal data; the .tini container backup carries it."
+
+[[dropped]]
+kind = "file"
+pattern = "Zotero"
+reason = "Personal data; the .tini container backup carries it."
+
+[[dropped]]
+kind = "file"
+pattern = ".zotero"
+reason = "Personal data; the .tini container backup carries it."
+
+[[dropped]]
+kind = "file"
+pattern = ".gnupg"
+reason = "Personal data; the .tini container backup carries it."
+
+[[dropped]]
+kind = "file"
+pattern = "Downloads"
+reason = "Personal data; the .tini container backup carries it."
+
+[[dropped]]
+kind = "file"
+pattern = "statements.zip"
+reason = "Personal data; the .tini container backup carries it."
+
+[[dropped]]
+kind = "file"
+pattern = "discogs-token.txt"
+reason = "Personal data; the .tini container backup carries it."
+
+[[dropped]]
+kind = "file"
+pattern = "z2m-network.puml"
+reason = "Personal data; the .tini container backup carries it."
+
+[[dropped]]
+kind = "file"
+pattern = "zigbee-incident"
+reason = "Personal data; the .tini container backup carries it."
+
+[[dropped]]
+kind = "file"
+pattern = "Conduct"
+reason = "Personal data; the .tini container backup carries it."
+
+[[dropped]]
+kind = "file"
+pattern = "axle"
+reason = "Personal data; the .tini container backup carries it."
+
+[[dropped]]
+kind = "file"
+pattern = "genhsin"
+reason = "Personal data; the .tini container backup carries it."
+
+[[dropped]]
+kind = "file"
+pattern = "honkai"
+reason = "Personal data; the .tini container backup carries it."
+
+[[dropped]]
+kind = "file"
+pattern = "tmp"
+reason = "Personal data; the .tini container backup carries it."
+
+[[dropped]]
+kind = "file"
+pattern = "signal-desktop-keyring.gpg"
+reason = "Personal data; the .tini container backup carries it."
+
+[[dropped]]
+kind = "package"
+pattern = "fonts-ipafont-gothic"
+reason = "Playwright's install-deps pulled it in for headless browsers."
+
+[[dropped]]
+kind = "package"
+pattern = "fonts-noto-color-emoji"
+reason = "Playwright's install-deps pulled it in for headless browsers."
+
+[[dropped]]
+kind = "package"
+pattern = "fonts-tlwg-loma-otf"
+reason = "Playwright's install-deps pulled it in for headless browsers."
+
+[[dropped]]
+kind = "package"
+pattern = "fonts-unifont"
+reason = "Playwright's install-deps pulled it in for headless browsers."
+
+[[dropped]]
+kind = "package"
+pattern = "fonts-wqy-zenhei"
+reason = "Playwright's install-deps pulled it in for headless browsers."
+
+[[dropped]]
+kind = "package"
+pattern = "xfonts-scalable"
+reason = "Playwright's install-deps pulled it in for headless browsers."
+
+[[dropped]]
+kind = "package"
+pattern = "xvfb"
+reason = "Playwright's install-deps pulled it in for headless browsers."
+
+[[dropped]]
+kind = "package"
+pattern = "gstreamer1.0-*"
+reason = "Playwright's install-deps pulled it in for headless browsers."
+
+[[dropped]]
+kind = "package"
+pattern = "libgstreamer*"
+reason = "Playwright's install-deps pulled it in for headless browsers."
+
+[[dropped]]
+kind = "package"
+pattern = "freeglut3-dev"
+reason = "Playwright's install-deps pulled it in for headless browsers."
+
+[[dropped]]
+kind = "package"
+pattern = "libglu1-mesa-dev"
+reason = "Playwright's install-deps pulled it in for headless browsers."
+
+[[dropped]]
+kind = "package"
+pattern = "libffi7"
+reason = "Left from an earlier Debian release."
+
+[[dropped]]
+kind = "package"
+pattern = "libssl1.1"
+reason = "Left from an earlier Debian release."
+
+[[dropped]]
+kind = "package"
+pattern = "libsepol1"
+reason = "Left from an earlier Debian release."
+
+[[dropped]]
+kind = "package"
+pattern = "btrfs-progs"
+reason = "One-off install for a task that is done."
+
+[[dropped]]
+kind = "package"
+pattern = "cifs-utils"
+reason = "One-off install for a task that is done."
+
+[[dropped]]
+kind = "package"
+pattern = "ipmitool"
+reason = "One-off install for a task that is done."
+
+[[dropped]]
+kind = "package"
+pattern = "influxdb-client"
+reason = "One-off install for a task that is done."
+
+[[dropped]]
+kind = "package"
+pattern = "libssl-dev"
+reason = "One-off install for a task that is done."
+
+[[dropped]]
+kind = "package"
+pattern = "rclone"
+reason = "One-off install for a task that is done."
+
+[[dropped]]
+kind = "package"
+pattern = "whiptail"
+reason = "One-off install for a task that is done."
+
+[[dropped]]
+kind = "package"
+pattern = "python3-pip"
+reason = "uv manages Python environments instead."
+
+[[dropped]]
+kind = "package"
+pattern = "python3.11-venv"
+reason = "uv manages Python environments instead."
+
+[[dropped]]
+kind = "package"
+pattern = "picard"
+reason = "beets tags the music library instead."
+
+[[dropped]]
+kind = "package"
+pattern = "zotero"
+reason = "App unused since 2026-04."
+
+[[dropped]]
+kind = "package"
+pattern = "podman"
+reason = "Docker is the declared container runtime."
+
+[[dropped]]
+kind = "package"
+pattern = "xdg-desktop-portal-gtk"
+reason = "Portal for sandboxed apps, and nothing here runs sandboxed."
+
+[[dropped]]
+kind = "unit"
+pattern = "podman*"
+reason = "Ships with podman, which is dropped."
+
+[[dropped]]
+kind = "unit"
+pattern = "xdg-desktop-portal-rewrite-launchers.service"
+reason = "Ships with xdg-desktop-portal-gtk, which is dropped."
+
+[[dropped]]
+kind = "file"
+pattern = ".config/mise/locks"
+reason = "Stray npm lock sidecars; the repo keeps them under .mise/locks."
