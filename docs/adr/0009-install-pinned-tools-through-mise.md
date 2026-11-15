@@ -2,7 +2,7 @@
 
 ## Status
 
-Accepted
+Superseded by [0011](0011-restrict-host-mise-to-its-global-config.md).
 
 Supersedes [0008](0008-install-pinned-binaries-as-chezmoi-externals.md).
 
