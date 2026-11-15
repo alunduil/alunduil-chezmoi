@@ -78,13 +78,19 @@ Every apt package goes in the one list. Later passes configure what
 
 Callers reach mise tools through the shims in
 `~/.local/share/mise/shims`, which keep one path across version bumps.
-On the host, a shim reads only `~/.config/mise/config.toml`, so a
-checkout's `mise.toml`, `.tool-versions`, `.miserc.toml` or
-`mise.<env>.toml` neither pins tools nor asks for trust. The variables
-in `~/.config/environment.d/mise.conf` set this. To use a checkout's
-config for one command, run
-`env -u MISE_OVERRIDE_CONFIG_FILENAMES -u MISE_OVERRIDE_TOOL_VERSIONS_FILENAMES -u MISE_ENV -u MISE_AUTO_ENV <command>`. A shim for a version
-that isn't installed fails, so run `mise install` first.
+On the host, a shim reads only `~/.config/mise/config.toml`. It ignores
+a checkout's `mise.toml`, `.tool-versions`, `.miserc.toml`, and
+`mise.<env>.toml`, so a checkout neither pins host tools nor asks for
+trust. The variables in `~/.config/environment.d/mise.conf` set this.
+To use a checkout's config for one command, unset them:
+
+```bash
+env -u MISE_OVERRIDE_CONFIG_FILENAMES -u MISE_OVERRIDE_TOOL_VERSIONS_FILENAMES \
+  -u MISE_ENV -u MISE_AUTO_ENV <command>
+```
+
+A shim for a version that isn't installed fails, so run `mise install`
+first.
 `gh` looks for extensions only in its data directory, so
 `~/.local/share/gh/extensions/gh-poi/gh-poi` links to the gh-poi shim.
 
