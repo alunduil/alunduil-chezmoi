@@ -78,6 +78,9 @@ Every apt package goes in the one list. Later passes configure what
 
 Callers reach mise tools through the shims in
 `~/.local/share/mise/shims`, which keep one path across version bumps.
+A shim reads the mise config of its working directory. A caller that starts
+in arbitrary checkouts, such as a server Claude Code launches, runs
+`mise -C "$HOME" x -- <tool>` instead.
 `gh` looks for extensions only in its data directory, so
 `~/.local/share/gh/extensions/gh-poi/gh-poi` links to the gh-poi shim.
 

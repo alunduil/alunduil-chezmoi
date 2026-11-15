@@ -15,14 +15,11 @@ set -euo pipefail
 
 # shellcheck source=script/lib/bootstrap.sh
 . "{{ .chezmoi.sourceDir }}/script/lib/bootstrap.sh"
-use_mise_shims
 use_local_bin
 
 url_file="$HOME/.config/truenas/url"
 key_file="$HOME/.config/truenas/api_key"
-# Resolves to the shim, whose path stays the same across version bumps, so
-# ~/.claude.json does too.
-bin="$(command -v truenas-mcp || true)"
+mise_bin="$(command -v mise || true)"
 
 if [ ! -s "$url_file" ]; then
   log "truenas-mcp: url missing or empty at $url_file, skipping"
@@ -32,8 +29,12 @@ if [ ! -r "$key_file" ]; then
   log "truenas-mcp: api key not deployed at $key_file, skipping"
   exit 0 # rerun-on: key-hash
 fi
-if [ -z "$bin" ]; then
-  log "truenas-mcp: not on PATH, registration retries on the next apply"
+if [ -z "$mise_bin" ]; then
+  log "truenas-mcp: mise not on PATH, registration retries on the next apply"
+  exit 1
+fi
+if ! "$mise_bin" -C "$HOME" which truenas-mcp >/dev/null 2>&1; then
+  log "truenas-mcp: not installed under mise, registration retries on the next apply"
   exit 1
 fi
 
@@ -42,7 +43,11 @@ key="$(<"$key_file")"
 
 # --insecure: the cert carries no IP SANs and the URL is an address, so
 # verification can never match the name. --tls-ca does not help a mismatch.
+#
+# Claude Code starts the server in the session's checkout, whose mise.toml may
+# be untrusted; `-C $HOME` keeps mise from reading it. mise resolves the version
+# on each launch, so a bump leaves ~/.claude.json unchanged.
 reregister_mcp truenas \
   -e "TRUENAS_URL=${url}" \
   -e "TRUENAS_API_KEY=${key}" \
-  -- "$bin" --insecure
+  -- "$mise_bin" -C "$HOME" x -- truenas-mcp --insecure
