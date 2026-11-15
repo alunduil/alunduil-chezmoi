@@ -57,7 +57,8 @@ class Dropped:
 
 
 def package_names(field: str) -> frozenset[str]:
-    """Names in a comma- or pipe-separated dpkg field, versions stripped."""
+    """Names in a comma- or pipe-separated dpkg field, without versions or
+    architecture qualifiers."""
     return frozenset(
         re.split(r"[\s:(]", name.strip(), maxsplit=1)[0]
         for name in re.split(r"[,|]", field)
@@ -87,8 +88,8 @@ def parse_packages(dpkg_output: str) -> dict[str, Package]:
 
 
 def closure(roots: Iterable[str], packages: Mapping[str, Package]) -> set[str]:
-    """Installed packages reachable from roots through any installed
-    alternative, virtual packages resolved to their installed providers."""
+    """Installed packages reachable from roots. Every installed alternative
+    counts, and a virtual package resolves to its installed providers."""
     providers: dict[str, set[str]] = {}
     for package in packages.values():
         for virtual in package.provides | {package.name}:
@@ -108,8 +109,6 @@ def closure(roots: Iterable[str], packages: Mapping[str, Package]) -> set[str]:
 
 
 def kept_packages(apt: Iterable[str], packages: Mapping[str, Package]) -> set[str]:
-    """Packages a rebuild installs: the closure of the apt list, the passes'
-    direct installs, the base packages, and the base priorities."""
     roots = (
         set(apt)
         | PASS_PACKAGES
