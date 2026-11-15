@@ -78,13 +78,12 @@ Every apt package goes in the one list. Later passes configure what
 
 Callers reach mise tools through the shims in
 `~/.local/share/mise/shims`, which keep one path across version bumps.
-On the host, a shim reads only `~/.config/mise/config.toml`:
-`~/.config/environment.d/mise.conf`, which `~/.profile` sources, sets
-`MISE_OVERRIDE_CONFIG_FILENAMES` to a filename no checkout uses. A
-checkout's `mise.toml` pins nothing and asks for no trust. To run one
-command with the checkout's config, unset it:
+On the host, a shim reads only `~/.config/mise/config.toml`, so a
+checkout's `mise.toml` neither pins tools nor asks for trust.
+`MISE_OVERRIDE_CONFIG_FILENAMES` in `~/.config/environment.d/mise.conf`
+sets this. To use a checkout's config for one command, run
 `env -u MISE_OVERRIDE_CONFIG_FILENAMES <command>`. A shim for a version
-that isn't installed fails rather than downloading it.
+that isn't installed fails; run `mise install` first.
 `gh` looks for extensions only in its data directory, so
 `~/.local/share/gh/extensions/gh-poi/gh-poi` links to the gh-poi shim.
 

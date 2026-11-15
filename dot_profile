@@ -32,7 +32,7 @@ if [ -d "$HOME/.local/share/mise/shims" ] ; then
     PATH="$HOME/.local/share/mise/shims:$PATH"
 fi
 
-# environment.d lines are plain KEY=VALUE, so sh can source them too.
+# Login shells share the systemd user units' mise environment.
 if [ -f "$HOME/.config/environment.d/mise.conf" ] ; then
     set -a
     . "$HOME/.config/environment.d/mise.conf"
