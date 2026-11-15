@@ -63,6 +63,11 @@ add_apt_repo docker-archive-keyring.gpg https://download.docker.com/linux/debian
 add_apt_repo adoptium-archive-keyring.gpg https://packages.adoptium.net/artifactory/api/gpg/key/public \
   adoptium.list "https://packages.adoptium.net/artifactory/deb $codename main"
 
+# Names match Google's install guide, so a host set up from it already
+# converges.
+add_apt_repo cloud.google.gpg https://packages.cloud.google.com/apt/doc/apt-key.gpg \
+  google-cloud-sdk.list 'https://packages.cloud.google.com/apt cloud-sdk main'
+
 # -------------------------------------------------------------------- keybase
 # Keybase's apt repo is unsigned; their official install guide uses
 # `[trusted=yes]` to skip apt's signature check. Transport integrity

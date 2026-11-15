@@ -1,9 +1,8 @@
 #!/usr/bin/env python3
 """List what this host carries that the repo would not rebuild.
 
-Three kinds of item, one per output line as "<kind>\\t<item>":
+Two kinds of item, one per output line as "<kind>\\t<item>":
 
-- file: a path `chezmoi unmanaged` reports under $HOME.
 - package: a manually installed apt package nothing declared pulls in. The
   roots are the bootstrap's apt list, the packages its passes install
   directly, the Crostini guest tools, and Debian's required and important
@@ -35,7 +34,7 @@ PASS_PACKAGES = frozenset({"code", "extrepo", "tailscale"})
 BASE_PACKAGES = frozenset({"cros-guest-tools"})
 BASE_PRIORITIES = frozenset({"required", "important"})
 
-KINDS = ("file", "package", "unit")
+KINDS = ("package", "unit")
 DPKG_FIELDS = ("Package", "db:Status-Status", "Priority", "Provides")
 DEPENDENCY_FIELDS = ("Pre-Depends", "Depends", "Recommends")
 
@@ -52,7 +51,7 @@ class Package:
 @dataclass(frozen=True)
 class Dropped:
     kind: str
-    pattern: str
+    patterns: list[str]
     reason: str
 
 
@@ -149,14 +148,16 @@ def parse_dropped(text: str) -> list[Dropped]:
     entries = [Dropped(**entry) for entry in tomllib.loads(text).get("dropped", [])]
     for entry in entries:
         if entry.kind not in KINDS:
-            raise ValueError(f"{entry.pattern}: unknown kind {entry.kind!r}")
+            raise ValueError(f"{entry.reason}: unknown kind {entry.kind!r}")
+        if not entry.patterns:
+            raise ValueError(f"{entry.reason}: no patterns")
         if not entry.reason.strip():
-            raise ValueError(f"{entry.pattern}: no reason")
+            raise ValueError(f"{entry.patterns}: no reason")
     return entries
 
 
 def undropped(kind: str, items: Iterable[str], dropped: Iterable[Dropped]) -> set[str]:
-    patterns = [d.pattern for d in dropped if d.kind == kind]
+    patterns = [p for d in dropped if d.kind == kind for p in d.patterns]
     return {
         item
         for item in items
@@ -165,9 +166,7 @@ def undropped(kind: str, items: Iterable[str], dropped: Iterable[Dropped]) -> se
 
 
 def run(*args: str, check: bool = True) -> str:
-    return subprocess.run(
-        args, check=check, capture_output=True, text=True, cwd=pathlib.Path.home()
-    ).stdout
+    return subprocess.run(args, check=check, capture_output=True, text=True).stdout
 
 
 def apt_list() -> set[str]:
@@ -206,7 +205,6 @@ def main() -> int:
     enabled = enabled_units()
 
     found = {
-        "file": set(run("chezmoi", "unmanaged").splitlines()),
         "package": set(run("apt-mark", "showmanual").split()) - kept,
         "unit": unmanaged_units(enabled, deployed_units(), unit_owners(enabled), kept),
     }

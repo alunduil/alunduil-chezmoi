@@ -70,3 +70,25 @@ packages:
     - htop
     # Backs homeassistant-config.service.
     - sshfs
+    # Runs the repo's shell tests.
+    - bats
+    # script/diagnose-zellij-freeze captures backtraces and syscalls with these.
+    - gdb
+    - strace
+    # The Secret Service that VS Code, Signal, and other Electron apps store
+    # credentials in.
+    - gnome-keyring
+    - locales
+    - shellcheck
+    - bind9-dnsutils
+    - ipcalc
+    - nmap
+    - lynx
+    - ncdu
+    - tree
+    - pwgen
+    - qpdf
+    - zip
+    # alunduil-infrastructure's Terraform authenticates its state bucket and
+    # reads secrets through gcloud.
+    - google-cloud-cli

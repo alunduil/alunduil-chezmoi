@@ -1,98 +1,85 @@
 # Items script/unmanaged-inventory reports that a rebuild deliberately leaves
-# behind. kind is file, package, or unit; pattern is a glob matched against
-# the item as the script prints it, where * also matches /.
+# behind. kind is package or unit; each pattern is a glob matched against the
+# item as the script prints it.
 
 [[dropped]]
-kind = "file"
-pattern = ".cache"
-reason = "Cache; tools refill it on demand."
+kind = "package"
+reason = "Headless-browser dependency; Playwright's install-deps reinstalls it."
+patterns = [
+  "fonts-ipafont-gothic",
+  "fonts-noto-color-emoji",
+  "fonts-tlwg-loma-otf",
+  "fonts-unifont",
+  "fonts-wqy-zenhei",
+  "xfonts-scalable",
+  "xvfb",
+]
 
 [[dropped]]
-kind = "file"
-pattern = ".local/state"
-reason = "Runtime state, by the XDG base directory spec."
+kind = "package"
+reason = "Library from an earlier Debian release."
+patterns = [
+  "libffi7",
+  "libssl1.1",
+  "libsepol1",
+]
 
 [[dropped]]
-kind = "file"
-pattern = ".local/share/Trash"
-reason = "Deleted files."
+kind = "package"
+reason = "One-off install for a task that is done."
+patterns = [
+  "btrfs-progs",
+  "gstreamer1.0-*",
+  "libgstreamer*",
+  "freeglut3-dev",
+  "libglu1-mesa-dev",
+  "cifs-utils",
+  "ipmitool",
+  "influxdb-client",
+  "libssl-dev",
+  "rclone",
+  "whiptail",
+]
 
 [[dropped]]
-kind = "file"
-pattern = ".local/share/chezmoi"
-reason = "The apply clone; the bootstrap's chezmoi init recreates it."
+kind = "package"
+reason = "Transitional package; the apt list declares what it pulls in."
+patterns = ["dnsutils"]
 
 [[dropped]]
-kind = "file"
-pattern = ".config/systemd/user/*.target.wants"
-reason = "Enable symlinks; the bootstrap's systemctl enable recreates them."
+kind = "package"
+reason = "uv manages Python environments instead."
+patterns = [
+  "python3-pip",
+  "python3.11-venv",
+]
 
 [[dropped]]
-kind = "file"
-pattern = ".npm"
-reason = "npm's download cache."
+kind = "package"
+reason = "beets tags the music library instead."
+patterns = ["picard"]
 
 [[dropped]]
-kind = "file"
-pattern = ".Xauthority"
-reason = "Per-session X credentials."
+kind = "package"
+reason = "App unused since 2026-04."
+patterns = ["zotero"]
 
 [[dropped]]
-kind = "file"
-pattern = ".sudo_as_admin_successful"
-reason = "Marker that suppresses sudo's first-use hint."
+kind = "package"
+reason = "Docker is the declared container runtime."
+patterns = ["podman"]
 
 [[dropped]]
-kind = "file"
-pattern = ".bash_history"
-reason = "Shell history."
+kind = "package"
+reason = "Portal for sandboxed apps, and nothing here runs sandboxed."
+patterns = ["xdg-desktop-portal-gtk"]
 
 [[dropped]]
-kind = "file"
-pattern = ".python_history"
-reason = "REPL history."
+kind = "unit"
+reason = "Ships with podman, which is dropped."
+patterns = ["podman*"]
 
 [[dropped]]
-kind = "file"
-pattern = ".lesshs*"
-reason = "less search history, and its temporary file."
-
-[[dropped]]
-kind = "file"
-pattern = ".viminfo"
-reason = "vim history and marks."
-
-[[dropped]]
-kind = "file"
-pattern = ".wget-hsts"
-reason = "wget's HSTS cache."
-
-[[dropped]]
-kind = "file"
-pattern = ".claude.json.tmp.*"
-reason = "Claude Code's abandoned atomic-write temporaries."
-
-[[dropped]]
-kind = "file"
-pattern = ".claude/cache"
-reason = "Claude Code cache."
-
-[[dropped]]
-kind = "file"
-pattern = ".claude/paste-cache"
-reason = "Claude Code cache."
-
-[[dropped]]
-kind = "file"
-pattern = ".claude/shell-snapshots"
-reason = "Claude Code per-session shell state."
-
-[[dropped]]
-kind = "file"
-pattern = ".claude/session-env"
-reason = "Claude Code per-session environment."
-
-[[dropped]]
-kind = "file"
-pattern = ".config/zellij/config.kdl.bak*"
-reason = "zellij's backups of a config chezmoi owns."
+kind = "unit"
+reason = "Ships with xdg-desktop-portal-gtk, which is dropped."
+patterns = ["xdg-desktop-portal-rewrite-launchers.service"]

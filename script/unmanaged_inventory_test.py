@@ -98,26 +98,32 @@ class UndroppedTest(unittest.TestCase):
     dropped = ui.parse_dropped(
         """
         [[dropped]]
-        kind = "file"
-        pattern = ".config/*.bak*"
-        reason = "backups"
+        kind = "package"
+        patterns = ["gstreamer1.0-*"]
+        reason = "one-off"
         """
     )
 
     def test_filters_matching_items_of_the_same_kind(self) -> None:
-        items = {".config/zellij/config.kdl.bak.1", ".config/foo"}
-        self.assertEqual(ui.undropped("file", items, self.dropped), {".config/foo"})
+        items = {"gstreamer1.0-tools", "gdb"}
+        self.assertEqual(ui.undropped("package", items, self.dropped), {"gdb"})
 
     def test_leaves_other_kinds_alone(self) -> None:
-        items = {".config/x.bak"}
-        self.assertEqual(ui.undropped("package", items, self.dropped), items)
+        items = {"gstreamer1.0-x"}
+        self.assertEqual(ui.undropped("unit", items, self.dropped), items)
 
 
-def dropped_entry(kind: str = "file", reason: str = "why") -> str:
-    return f'[[dropped]]\nkind = "{kind}"\npattern = "x"\nreason = "{reason}"\n'
+def dropped_entry(
+    kind: str = "package", patterns: str = '["x"]', reason: str = "why"
+) -> str:
+    return f'[[dropped]]\nkind = "{kind}"\npatterns = {patterns}\nreason = "{reason}"\n'
 
 
 class ParseDroppedTest(unittest.TestCase):
+    def test_rejects_an_entry_without_patterns(self) -> None:
+        with self.assertRaisesRegex(ValueError, "no patterns"):
+            ui.parse_dropped(dropped_entry(patterns="[]"))
+
     def test_rejects_an_unknown_kind(self) -> None:
         with self.assertRaisesRegex(ValueError, "unknown kind"):
             ui.parse_dropped(dropped_entry(kind="pacakge"))
