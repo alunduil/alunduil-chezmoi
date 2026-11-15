@@ -166,9 +166,7 @@ def undropped(kind: str, items: Iterable[str], dropped: Iterable[Dropped]) -> se
 
 
 def run(*args: str, check: bool = True) -> str:
-    return subprocess.run(
-        args, check=check, capture_output=True, text=True, cwd=pathlib.Path.home()
-    ).stdout
+    return subprocess.run(args, check=check, capture_output=True, text=True).stdout
 
 
 def apt_list() -> set[str]:
