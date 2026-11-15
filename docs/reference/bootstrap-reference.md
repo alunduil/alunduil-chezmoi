@@ -83,7 +83,7 @@ checkout's `mise.toml` neither pins tools nor asks for trust.
 `MISE_OVERRIDE_CONFIG_FILENAMES` in `~/.config/environment.d/mise.conf`
 sets this. To use a checkout's config for one command, run
 `env -u MISE_OVERRIDE_CONFIG_FILENAMES <command>`. A shim for a version
-that isn't installed fails; run `mise install` first.
+that isn't installed fails, so run `mise install` first.
 `gh` looks for extensions only in its data directory, so
 `~/.local/share/gh/extensions/gh-poi/gh-poi` links to the gh-poi shim.
 
