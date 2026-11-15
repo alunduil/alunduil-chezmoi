@@ -57,6 +57,9 @@ repairs whatever changed since. Pinned tools follow the same rule: a
 pass runs `mise install` on every apply, so a deleted or bumped tool
 comes back at the version and checksum in `mise.lock`
 ([ADR 0009](../adr/0009-install-pinned-tools-through-mise.md)).
+Host mise skips a checkout's `mise.toml`, which applies in that
+checkout's devcontainer or CI instead
+([ADR 0011](../adr/0011-restrict-host-mise-to-its-global-config.md)).
 
 ## Secrets live in the vault
 

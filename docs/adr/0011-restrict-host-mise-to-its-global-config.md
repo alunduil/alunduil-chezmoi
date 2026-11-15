@@ -76,49 +76,52 @@ Three options qualify:
   [monetr/monetr#3517](https://github.com/monetr/monetr/pull/3517). Every
   binary tool publishes a linux-x64 asset. Runtimes and the bats
   libraries don't fit, so a second installer would carry them.
-- **mise, restricted to its global config.** Six environment variables
+- **mise, restricted to its global config.** Four environment variables
   confine discovery to `~/.config/mise/config.toml`:
 
   ```sh
-  MISE_OVERRIDE_CONFIG_FILENAMES=mise.host-only.toml
+  MISE_OVERRIDE_CONFIG_FILENAMES=none
   MISE_OVERRIDE_TOOL_VERSIONS_FILENAMES=none
   MISE_ENV=
   MISE_AUTO_ENV=false
-  MISE_AUTO_INSTALL=false
-  MISE_NOT_FOUND_AUTO_INSTALL=false
   ```
 
-  A checkout's `.miserc.toml` overrides the same settings in the global
-  `miserc.toml`, so they must be environment variables. mise has no
-  global-only mode, so the restriction holds by configuration. A context
-  without the variables reopens the gap, and so does a new discovery
-  mechanism upstream. `auto_env` turns on by default in mise 2027.6.0. A test on
-  2026-11-15 used a checkout carrying `mise.toml` with `[env]`,
-  `.tool-versions`, `.miserc.toml`, and `mise.linux.toml`. With all six
-  set, mise 2026.10.8 loaded only the global config and ran the host's
-  `just`. Without them, the shim stopped on a trust error.
+  A checkout's `.miserc.toml` overrides these settings in the global
+  `miserc.toml`, so they must be environment variables. Once only the
+  global config loads, `auto_install = false` and
+  `not_found_auto_install = false` there stop a shim downloading a
+  missing version. mise has no global-only mode, so the restriction
+  holds by configuration. A context without the variables reopens the
+  gap, and so does a new discovery mechanism upstream. `auto_env` turns
+  on by default in mise 2027.6.0.
+
+  Tests on 2026-11-15 ran the host's `just` shim with mise 2026.10.8 from
+  checkouts carrying `mise.toml` with `[env]`, `.tool-versions`,
+  `.miserc.toml`, and `mise.linux.toml`. With no variables, the shim
+  stopped on a trust error. With only `MISE_OVERRIDE_CONFIG_FILENAMES`,
+  `.tool-versions` and an environment that `.miserc.toml` selected each
+  still loaded and broke the shim. With all four, mise loaded only the
+  global config and ran the host's `just`.
 
 A probe can test the restriction, while no setting makes mise isolated
-by design. The
-costs of the other two are structural: home-manager trades per-tool pins
-and supported Renovate bumps for isolation, and externals split the
-installer in two.
+by design. The costs of the other two are structural: home-manager
+trades per-tool pins and supported Renovate bumps for isolation, and
+externals split the installer in two.
 
 ## Decision
 
 Keep mise as the host-tool installer and restrict it to its global
 config.
 
-- Login shells and the systemd user manager set the six variables
+- Login shells and the systemd user manager set the four variables
   above, covering every context a shim runs in.
 - A probe runs a shim from a checkout carrying every config file mise
   discovers, and fails unless only the global config loads and the
   host's version runs. host-status runs it on the host, and CI runs it
   on every change.
 - A pinned, verified download installs mise itself, and Renovate bumps
-  it, so
-  an upstream change to discovery reaches the host only after the probe
-  passes in CI.
+  it, so an upstream change to discovery reaches the host only after the
+  probe passes in CI.
 - A checkout's config applies inside its devcontainer, in CI, or for one
   command with the variables unset.
 
