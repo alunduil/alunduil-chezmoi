@@ -113,11 +113,21 @@ class UndroppedTest(unittest.TestCase):
         self.assertEqual(ui.undropped("package", items, self.dropped), items)
 
 
-class DroppedListTest(unittest.TestCase):
-    def test_every_entry_has_a_known_kind_and_a_reason(self) -> None:
-        for entry in ui.parse_dropped(ui.DROPPED.read_text()):
-            self.assertIn(entry.kind, {"file", "package", "unit"})
-            self.assertTrue(entry.reason.strip(), entry.pattern)
+def dropped_entry(kind: str = "file", reason: str = "why") -> str:
+    return f'[[dropped]]\nkind = "{kind}"\npattern = "x"\nreason = "{reason}"\n'
+
+
+class ParseDroppedTest(unittest.TestCase):
+    def test_rejects_an_unknown_kind(self) -> None:
+        with self.assertRaisesRegex(ValueError, "unknown kind"):
+            ui.parse_dropped(dropped_entry(kind="pacakge"))
+
+    def test_rejects_a_blank_reason(self) -> None:
+        with self.assertRaisesRegex(ValueError, "no reason"):
+            ui.parse_dropped(dropped_entry(reason=" "))
+
+    def test_accepts_the_committed_list(self) -> None:
+        ui.parse_dropped(ui.DROPPED.read_text())
 
 
 if __name__ == "__main__":

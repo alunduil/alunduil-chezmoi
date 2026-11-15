@@ -22,7 +22,7 @@ import re
 import subprocess
 import sys
 import tomllib
-from collections.abc import Iterable, Mapping
+from collections.abc import Iterable, Mapping, Set
 from dataclasses import dataclass
 
 ROOT = pathlib.Path(__file__).resolve().parent.parent
@@ -35,6 +35,7 @@ PASS_PACKAGES = frozenset({"code", "extrepo", "tailscale"})
 BASE_PACKAGES = frozenset({"cros-guest-tools"})
 BASE_PRIORITIES = frozenset({"required", "important"})
 
+KINDS = ("file", "package", "unit")
 DPKG_FIELDS = ("Package", "db:Status-Status", "Priority", "Provides")
 DEPENDENCY_FIELDS = ("Pre-Depends", "Depends", "Recommends")
 
@@ -106,12 +107,15 @@ def closure(roots: Iterable[str], packages: Mapping[str, Package]) -> set[str]:
     return reached
 
 
-def kept_packages(declared: Iterable[str], packages: Mapping[str, Package]) -> set[str]:
-    """Packages a rebuild installs: the declared ones, the base priorities,
-    and their closure."""
-    roots = set(declared) | {
-        p.name for p in packages.values() if p.priority in BASE_PRIORITIES
-    }
+def kept_packages(apt: Iterable[str], packages: Mapping[str, Package]) -> set[str]:
+    """Packages a rebuild installs: the closure of the apt list, the passes'
+    direct installs, the base packages, and the base priorities."""
+    roots = (
+        set(apt)
+        | PASS_PACKAGES
+        | BASE_PACKAGES
+        | {p.name for p in packages.values() if p.priority in BASE_PRIORITIES}
+    )
     return closure(roots, packages)
 
 
@@ -130,21 +134,26 @@ def parse_owners(dpkg_search_output: str) -> dict[str, set[str]]:
 
 
 def unmanaged_units(
-    enabled: Iterable[str],
-    deployed: Iterable[str],
+    enabled: Set[str],
+    deployed: Set[str],
     owners: Mapping[str, Iterable[str]],
-    kept: Iterable[str],
+    kept: Set[str],
 ) -> set[str]:
-    kept = set(kept)
     return {
-        unit
-        for unit in set(enabled) - set(deployed)
-        if kept.isdisjoint(owners.get(unit, ()))
+        unit for unit in enabled - deployed if kept.isdisjoint(owners.get(unit, ()))
     }
 
 
 def parse_dropped(text: str) -> list[Dropped]:
-    return [Dropped(**entry) for entry in tomllib.loads(text).get("dropped", [])]
+    """Entries from unmanaged-dropped.toml; rejects an entry that would
+    silently match nothing or carry no reason."""
+    entries = [Dropped(**entry) for entry in tomllib.loads(text).get("dropped", [])]
+    for entry in entries:
+        if entry.kind not in KINDS:
+            raise ValueError(f"{entry.pattern}: unknown kind {entry.kind!r}")
+        if not entry.reason.strip():
+            raise ValueError(f"{entry.pattern}: no reason")
+    return entries
 
 
 def undropped(kind: str, items: Iterable[str], dropped: Iterable[Dropped]) -> set[str]:
@@ -166,44 +175,49 @@ def apt_list() -> set[str]:
     return set(re.findall(r"^\s*-\s*(\S+)", APT_PACKAGES.read_text(), re.MULTILINE))
 
 
-def enabled_units(*scope: str) -> set[str]:
-    output = run(
-        "systemctl", *scope, "list-unit-files", "--state=enabled", "--no-legend"
-    )
-    return {line.split()[0] for line in output.splitlines() if line.strip()}
+def installed_packages() -> dict[str, Package]:
+    fmt = "\t".join(f"${{{f}}}" for f in DPKG_FIELDS + DEPENDENCY_FIELDS) + "\n"
+    return parse_packages(run("dpkg-query", "-W", f"-f={fmt}"))
+
+
+def enabled_units() -> set[str]:
+    units = set()
+    for scope in ((), ("--user",)):
+        output = run(
+            "systemctl", *scope, "list-unit-files", "--state=enabled", "--no-legend"
+        )
+        units |= {line.split()[0] for line in output.splitlines() if line.strip()}
+    return units
+
+
+def deployed_units() -> set[str]:
+    return {unit.name for d in UNIT_DIRS for unit in d.iterdir()}
+
+
+def unit_owners(units: Iterable[str]) -> dict[str, set[str]]:
+    # dpkg -S exits 1 when any pattern matches nothing, which is the case for
+    # every unit the repo deploys.
+    patterns = (f"*/systemd/*/{unit}" for unit in sorted(units))
+    return parse_owners(run("dpkg", "-S", *patterns, check=False))
 
 
 def main() -> int:
     dropped = parse_dropped(DROPPED.read_text())
-
-    fmt = "\t".join(f"${{{f}}}" for f in DPKG_FIELDS + DEPENDENCY_FIELDS) + "\n"
-    packages = parse_packages(run("dpkg-query", "-W", f"-f={fmt}"))
-    kept = kept_packages(apt_list() | PASS_PACKAGES | BASE_PACKAGES, packages)
-
-    enabled = enabled_units() | enabled_units("--user")
-    deployed = {unit.name for d in UNIT_DIRS for unit in d.iterdir()}
-    # dpkg -S exits 1 when any pattern matches nothing, which is the case for
-    # every unit the repo deploys.
-    owners = parse_owners(
-        run(
-            "dpkg",
-            "-S",
-            *(f"*/systemd/*/{unit}" for unit in sorted(enabled)),
-            check=False,
-        )
-    )
+    kept = kept_packages(apt_list(), installed_packages())
+    enabled = enabled_units()
 
     found = {
         "file": set(run("chezmoi", "unmanaged").splitlines()),
         "package": set(run("apt-mark", "showmanual").split()) - kept,
-        "unit": unmanaged_units(enabled, deployed, owners, kept),
+        "unit": unmanaged_units(enabled, deployed_units(), unit_owners(enabled), kept),
     }
-    listed = False
-    for kind, items in found.items():
-        for item in sorted(undropped(kind, items, dropped)):
-            print(f"{kind}\t{item}")
-            listed = True
-    return 1 if listed else 0
+    lines = [
+        f"{kind}\t{item}"
+        for kind in KINDS
+        for item in sorted(undropped(kind, found[kind], dropped))
+    ]
+    print(*lines, sep="\n")
+    return 1 if lines else 0
 
 
 if __name__ == "__main__":
