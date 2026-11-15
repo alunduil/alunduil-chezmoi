@@ -1,14 +1,17 @@
 #!/usr/bin/env bash
 # Registers TrueNAS Research Labs' official MCP with Claude Code. Local
-# stdio binary (truenas-mcp, a mise tool) plus URL and API key
-# passed as -e env vars, which Claude Code bakes into ~/.claude.json.
+# stdio binary (truenas-mcp, a mise tool) plus URL, API key, and the key's
+# owning user passed as -e env vars, which Claude Code bakes into
+# ~/.claude.json.
 #
 # Why run_onchange_after instead of a converging run_before pass:
-#   - _after_: ~/.config/truenas/api_key and url exist only once files are
-#     applied.
-#   - run_onchange, keyed on the key's value and the URL: a rotation or a new
-#     URL reruns this script and replaces the stale entry in ~/.claude.json.
+#   - _after_: ~/.config/truenas/api_key, user, and url exist only once files
+#     are applied.
+#   - run_onchange, keyed on the key, its user, and the URL: a rotation or a
+#     new URL reruns this script and replaces the stale entry in
+#     ~/.claude.json.
 # key-hash: {{ includeTemplate "onepassword-read" .onepassword.truenas | sha256sum }}
+# user-hash: {{ includeTemplate "onepassword-read" .onepassword.truenas_user | sha256sum }}
 # url-hash: {{ include "dot_config/truenas/url" | sha256sum }}
 
 set -euo pipefail
@@ -20,6 +23,7 @@ use_local_bin
 
 url_file="$HOME/.config/truenas/url"
 key_file="$HOME/.config/truenas/api_key"
+user_file="$HOME/.config/truenas/user"
 # Resolves to the shim, whose path stays the same across version bumps, so
 # ~/.claude.json does too.
 bin="$(command -v truenas-mcp || true)"
@@ -32,6 +36,10 @@ if [ ! -r "$key_file" ]; then
   log "truenas-mcp: api key not deployed at $key_file, skipping"
   exit 0 # rerun-on: key-hash
 fi
+if [ ! -s "$user_file" ]; then
+  log "truenas-mcp: api key user missing or empty at $user_file, skipping"
+  exit 0 # rerun-on: user-hash
+fi
 if [ -z "$bin" ]; then
   log "truenas-mcp: not on PATH, registration retries on the next apply"
   exit 1
@@ -39,10 +47,12 @@ fi
 
 url="$(<"$url_file")"
 key="$(<"$key_file")"
+user="$(<"$user_file")"
 
 # --insecure: the cert carries no IP SANs and the URL is an address, so
 # verification can never match the name. --tls-ca does not help a mismatch.
 reregister_mcp truenas \
   -e "TRUENAS_URL=${url}" \
   -e "TRUENAS_API_KEY=${key}" \
+  -e "TRUENAS_API_USER=${user}" \
   -- "$bin" --insecure
