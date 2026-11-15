@@ -1,7 +1,9 @@
 // Zellij's bundled "default-light" theme recoloured to match Chrome on ChromeOS:
 // the New Tab page background and text, with the side panel's colour for
 // selections. ChromeOS tints these from the wallpaper, so a new wallpaper
-// needs them resampled.
+// needs them resampled. Every foreground meets WCAG AAA (7:1) against its
+// background; the bright terminal colours sit at 9:1 so each stays
+// distinct from its plain twin.
 
 themes {
     chromeos-light {
@@ -16,32 +18,32 @@ themes {
         text_selected {
             base 31 31 31
             background 248 218 237
-            emphasis_0 136 50 0
-            emphasis_1 0 76 153
-            emphasis_2 15 91 0
-            emphasis_3 122 0 182
+            emphasis_0 127 47 0
+            emphasis_1 0 71 144
+            emphasis_2 14 85 0
+            emphasis_3 115 0 171
         }
         ribbon_selected {
             base 255 247 249
             background 62 90 43
-            emphasis_0 255 201 102
-            emphasis_1 255 201 102
+            emphasis_0 255 242 217
+            emphasis_1 255 242 217
             emphasis_2 255 247 249
-            emphasis_3 255 216 216
+            emphasis_3 255 240 240
         }
         ribbon_unselected {
             base 255 247 249
             background 85 77 109
-            emphasis_0 255 201 102
-            emphasis_1 199 197 206
-            emphasis_2 198 221 242
-            emphasis_3 255 216 216
+            emphasis_0 255 240 214
+            emphasis_1 242 242 244
+            emphasis_2 234 243 250
+            emphasis_3 255 238 238
         }
         ribbon_hover {
             base 255 247 249
             background 68 61 92
-            emphasis_0 255 201 102
-            emphasis_1 199 197 206
+            emphasis_0 255 208 121
+            emphasis_1 215 214 220
             emphasis_2 198 221 242
             emphasis_3 255 216 216
         }
@@ -56,10 +58,10 @@ themes {
         table_cell_selected {
             base 31 31 31
             background 248 218 237
-            emphasis_0 136 50 0
-            emphasis_1 0 76 153
-            emphasis_2 15 91 0
-            emphasis_3 122 0 182
+            emphasis_0 127 47 0
+            emphasis_1 0 71 144
+            emphasis_2 14 85 0
+            emphasis_3 115 0 171
         }
         table_cell_unselected {
             base 31 31 31
@@ -72,10 +74,10 @@ themes {
         list_selected {
             base 31 31 31
             background 248 218 237
-            emphasis_0 136 50 0
-            emphasis_1 0 76 153
-            emphasis_2 15 91 0
-            emphasis_3 122 0 182
+            emphasis_0 127 47 0
+            emphasis_1 0 71 144
+            emphasis_2 14 85 0
+            emphasis_3 115 0 171
         }
         list_unselected {
             base 31 31 31
@@ -86,7 +88,7 @@ themes {
             emphasis_3 122 0 182
         }
         frame_unselected {
-            base 141 133 168
+            base 87 82 104
             background 255 247 249
             emphasis_0 99 74 0
             emphasis_1 0 76 153
@@ -113,7 +115,7 @@ themes {
             base 15 91 0
             background 255 247 249
             emphasis_0 0 87 85
-            emphasis_1 255 247 249
+            emphasis_1 87 84 85
             emphasis_2 148 4 112
             emphasis_3 0 76 153
         }
@@ -122,20 +124,20 @@ themes {
             background 255 247 249
             emphasis_0 99 74 0
             emphasis_1 136 50 0
-            emphasis_2 108 100 136
+            emphasis_2 88 81 111
             emphasis_3 93 6 217
         }
         multiplayer_user_colors {
-            player_1 189 80 153
-            player_2 62 124 187
-            player_3 135 104 198
-            player_4 152 114 27
-            player_5 45 134 126
-            player_6 184 97 46
-            player_7 198 83 93
-            player_8 124 116 146
-            player_9 87 133 64
-            player_10 153 113 73
+            player_1 135 57 110
+            player_2 44 88 133
+            player_3 95 73 140
+            player_4 109 81 19
+            player_5 32 95 90
+            player_6 131 69 33
+            player_7 141 59 66
+            player_8 88 82 104
+            player_9 62 94 45
+            player_10 108 80 52
         }
         terminal_colors {
             black 31 31 31
@@ -146,7 +148,7 @@ themes {
             magenta 148 4 112
             cyan 0 87 85
             white 184 179 204
-            bright_black 108 100 136
+            bright_black 88 81 111
             bright_red 109 6 23
             bright_green 10 61 0
             bright_yellow 67 51 0

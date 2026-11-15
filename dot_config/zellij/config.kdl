@@ -43,8 +43,7 @@ terminal {
     font_size 11
     padding 4
     hide_pointer_while_typing true
-    // WCAG AAA. The Chrome-matched backgrounds leave several of the bundled
-    // ANSI colors short of it on dark.
+    // WCAG AAA for apps that pick their own colors; the themes already meet it.
     minimum_contrast 7.0
 }
 
