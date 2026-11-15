@@ -20,8 +20,11 @@ use_local_bin
 
 url_file="$HOME/.config/truenas/url"
 key_file="$HOME/.config/truenas/api_key"
-# Resolves to the shim, whose path stays the same across version bumps, so
-# ~/.claude.json does too.
+# The server launches through `mise -C $HOME x` rather than its shim. A shim
+# resolves config from the session's working directory, so an untrusted
+# mise.toml there stops it before the server starts. mise picks the version at
+# launch, so ~/.claude.json stays the same across version bumps.
+mise_bin="$(command -v mise || true)"
 bin="$(command -v truenas-mcp || true)"
 
 if [ ! -s "$url_file" ]; then
@@ -32,7 +35,7 @@ if [ ! -r "$key_file" ]; then
   log "truenas-mcp: api key not deployed at $key_file, skipping"
   exit 0 # rerun-on: key-hash
 fi
-if [ -z "$bin" ]; then
+if [ -z "$mise_bin" ] || [ -z "$bin" ]; then
   log "truenas-mcp: not on PATH, registration retries on the next apply"
   exit 1
 fi
@@ -45,4 +48,4 @@ key="$(<"$key_file")"
 reregister_mcp truenas \
   -e "TRUENAS_URL=${url}" \
   -e "TRUENAS_API_KEY=${key}" \
-  -- "$bin" --insecure
+  -- "$mise_bin" -C "$HOME" x -- truenas-mcp --insecure
