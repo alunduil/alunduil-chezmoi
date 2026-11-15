@@ -3,7 +3,10 @@
 
 Three kinds of item, one per output line as "<kind>\\t<item>":
 
-- file: a path `chezmoi unmanaged` reports under $HOME.
+- file: a path `chezmoi unmanaged` reports under $HOME. An empty directory
+  tree is left out. A directory holding only git checkouts is narrowed to the
+  checkouts a rebuild would lose: the repo picker clones any other GitHub
+  repo again on demand.
 - package: a manually installed apt package nothing declared pulls in. The
   roots are the bootstrap's apt list, the packages its passes install
   directly, the Crostini guest tools, and Debian's required and important
@@ -22,7 +25,7 @@ import re
 import subprocess
 import sys
 import tomllib
-from collections.abc import Iterable, Mapping, Set
+from collections.abc import Callable, Iterable, Mapping, Set
 from dataclasses import dataclass
 
 ROOT = pathlib.Path(__file__).resolve().parent.parent
@@ -36,6 +39,8 @@ BASE_PACKAGES = frozenset({"cros-guest-tools"})
 BASE_PRIORITIES = frozenset({"required", "important"})
 
 KINDS = ("file", "package", "unit")
+# Deep enough for worktrees at .local/share/git-worktrees/<org>/<repo>/<petname>.
+CHECKOUT_DEPTH = 3
 DPKG_FIELDS = ("Package", "db:Status-Status", "Priority", "Provides")
 DEPENDENCY_FIELDS = ("Pre-Depends", "Depends", "Recommends")
 
@@ -164,6 +169,76 @@ def undropped(kind: str, items: Iterable[str], dropped: Iterable[Dropped]) -> se
     }
 
 
+def is_empty(path: pathlib.Path) -> bool:
+    """A directory with no files anywhere beneath it."""
+    try:
+        return (
+            path.is_dir()
+            and not path.is_symlink()
+            and all(is_empty(child) for child in path.iterdir())
+        )
+    except OSError:
+        return False
+
+
+def checkout_residue(
+    path: pathlib.Path,
+    recoverable: Callable[[pathlib.Path], bool],
+    depth: int = CHECKOUT_DEPTH,
+) -> list[pathlib.Path] | None:
+    """The checkouts under path that recoverable rejects, or None when path
+    holds anything besides checkouts and empty directories."""
+    if (path / ".git").exists():
+        return [] if recoverable(path) else [path]
+    if is_empty(path):
+        return []
+    if depth == 0 or path.is_symlink() or not path.is_dir():
+        return None
+    residue: list[pathlib.Path] = []
+    for child in path.iterdir():
+        found = checkout_residue(child, recoverable, depth - 1)
+        if found is None:
+            return None
+        residue += found
+    return residue
+
+
+def recoverable(checkout: pathlib.Path) -> bool:
+    """A GitHub checkout with nothing uncommitted and HEAD on a remote."""
+
+    def git(*args: str) -> str:
+        return subprocess.run(
+            ("git", "-C", str(checkout), *args),
+            check=True,
+            capture_output=True,
+            text=True,
+        ).stdout
+
+    try:
+        return (
+            "github.com" in git("remote", "get-url", "origin")
+            and not git("status", "--porcelain")
+            and not git("rev-list", "HEAD", "--not", "--remotes")
+        )
+    except subprocess.CalledProcessError:
+        return False
+
+
+def unmanaged_files(
+    items: Iterable[str],
+    home: pathlib.Path,
+    recoverable: Callable[[pathlib.Path], bool],
+) -> set[str]:
+    found = set()
+    for item in items:
+        residue = checkout_residue(home / item, recoverable)
+        if residue is None:
+            found.add(item)
+        else:
+            found |= {str(p.relative_to(home)) for p in residue}
+    return found
+
+
 def run(*args: str, check: bool = True) -> str:
     return subprocess.run(
         args, check=check, capture_output=True, text=True, cwd=pathlib.Path.home()
@@ -206,7 +281,9 @@ def main() -> int:
     enabled = enabled_units()
 
     found = {
-        "file": set(run("chezmoi", "unmanaged").splitlines()),
+        "file": unmanaged_files(
+            run("chezmoi", "unmanaged").splitlines(), pathlib.Path.home(), recoverable
+        ),
         "package": set(run("apt-mark", "showmanual").split()) - kept,
         "unit": unmanaged_units(enabled, deployed_units(), unit_owners(enabled), kept),
     }

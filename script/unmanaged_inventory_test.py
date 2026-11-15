@@ -1,5 +1,7 @@
 import pathlib
 import runpy
+import subprocess
+import tempfile
 import unittest
 from types import SimpleNamespace
 from typing import Any
@@ -111,6 +113,93 @@ class UndroppedTest(unittest.TestCase):
     def test_leaves_other_kinds_alone(self) -> None:
         items = {".config/x.bak"}
         self.assertEqual(ui.undropped("package", items, self.dropped), items)
+
+
+class UnmanagedFilesTest(unittest.TestCase):
+    """Checkouts are marked by a .git entry; the stub recoverable accepts any
+    checkout whose name starts with "clean"."""
+
+    def setUp(self) -> None:
+        self.home = pathlib.Path(self.enterContext(tempfile.TemporaryDirectory()))
+
+    def checkout(self, path: str) -> None:
+        self.file(f"{path}/.git/HEAD")
+
+    def file(self, path: str) -> None:
+        (self.home / path).parent.mkdir(parents=True, exist_ok=True)
+        (self.home / path).touch()
+
+    def found(self, *items: str) -> set[str]:
+        found: set[str] = ui.unmanaged_files(
+            items, self.home, lambda p: p.name.startswith("clean")
+        )
+        return found
+
+    def test_leaves_out_empty_directory_trees(self) -> None:
+        (self.home / "empty/nested").mkdir(parents=True)
+        self.assertEqual(self.found("empty"), set())
+
+    def test_leaves_out_recoverable_checkouts(self) -> None:
+        self.checkout("clean-repo")
+        self.assertEqual(self.found("clean-repo"), set())
+
+    def test_reports_unrecoverable_checkouts(self) -> None:
+        self.checkout("dirty-repo")
+        self.assertEqual(self.found("dirty-repo"), {"dirty-repo"})
+
+    def test_narrows_a_directory_of_checkouts_to_the_unrecoverable(self) -> None:
+        self.checkout("worktrees/org/repo/clean-pet")
+        self.checkout("worktrees/org/repo/dirty-pet")
+        (self.home / "worktrees/org/emptied").mkdir()
+        self.assertEqual(self.found("worktrees"), {"worktrees/org/repo/dirty-pet"})
+
+    def test_reports_a_directory_holding_anything_besides_checkouts(self) -> None:
+        self.checkout("org/clean-repo")
+        self.file("org/notes.md")
+        self.assertEqual(self.found("org"), {"org"})
+
+    def test_reports_checkouts_nested_deeper_than_the_limit(self) -> None:
+        self.checkout("a/b/c/d/clean-repo")
+        self.assertEqual(self.found("a"), {"a"})
+
+    def test_reports_plain_files(self) -> None:
+        self.file("notes.md")
+        self.assertEqual(self.found("notes.md"), {"notes.md"})
+
+
+class RecoverableTest(unittest.TestCase):
+    def setUp(self) -> None:
+        self.repo = pathlib.Path(self.enterContext(tempfile.TemporaryDirectory()))
+        self.git("init", "--quiet")
+        self.git("remote", "add", "origin", "git@github.com:owner/repo.git")
+        self.git("commit", "--quiet", "--allow-empty", "-m", "first")
+        self.git("update-ref", "refs/remotes/origin/main", "HEAD")
+
+    def git(self, *args: str) -> None:
+        subprocess.run(
+            ("git", "-C", str(self.repo), "-c", "user.name=t", "-c", "user.email=t@t")
+            + args,
+            check=True,
+        )
+
+    def test_accepts_a_clean_pushed_github_checkout(self) -> None:
+        self.assertTrue(ui.recoverable(self.repo))
+
+    def test_rejects_untracked_files(self) -> None:
+        (self.repo / "new").touch()
+        self.assertFalse(ui.recoverable(self.repo))
+
+    def test_rejects_a_head_on_no_remote(self) -> None:
+        self.git("commit", "--quiet", "--allow-empty", "-m", "local")
+        self.assertFalse(ui.recoverable(self.repo))
+
+    def test_rejects_an_origin_off_github(self) -> None:
+        self.git("remote", "set-url", "origin", "https://example.com/repo.git")
+        self.assertFalse(ui.recoverable(self.repo))
+
+    def test_rejects_a_checkout_without_origin(self) -> None:
+        self.git("remote", "remove", "origin")
+        self.assertFalse(ui.recoverable(self.repo))
 
 
 def dropped_entry(kind: str = "file", reason: str = "why") -> str:
