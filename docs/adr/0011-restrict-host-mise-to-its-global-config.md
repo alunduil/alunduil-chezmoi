@@ -22,7 +22,7 @@ Erlang for a repository with no devcontainer, and Terraform,
 `ansible-core`, Node, Rust, and Haskell for host-side runs, alongside the
 `github:` and `npm:` tools in `dot_config/mise/config.toml`.
 
-Six options compete on these criteria:
+The installer has to meet these criteria:
 
 - A checkout's files can't change the tool the host runs.
 - Each tool carries its own pinned version and checksum, as `mise.lock`
@@ -34,7 +34,7 @@ Six options compete on these criteria:
 - Few prerequisites, little root access, CI testing, and little code to
   own.
 
-Three options drop out:
+Homebrew, apt, and aqua each fall short where another option doesn't:
 
 - **Homebrew on Linux** has no version pins. homebrew-bundle removed
   `Brewfile.lock.json` in
@@ -52,7 +52,8 @@ Three options drop out:
   Renovate can't update `aqua-checksums.json` without a separate
   workflow. The registry lacks six of the tools and npm.
 
-Three options qualify:
+home-manager, chezmoi externals pinned by sha256, and restricted mise
+meet most criteria:
 
 - **home-manager on Nix.** The profile holds fixed store paths, so a
   checkout can't change the host's tools. A spike on penguin on
@@ -60,7 +61,7 @@ Three options qualify:
   multi-user installer built sandboxed under `lxcfs` with no setting
   changed. A standalone home-manager generation switched. Versions
   follow one nixpkgs revision rather than a pin per tool. At
-  nixos-unstable `d5cc683`, nixpkgs lacked `truenas-mcp`, and
+  nixos-unstable `d5cc683`, nixpkgs lacked `truenas-mcp`. Its
   `fourmolu`, `ormolu` and `cabal-gild` trailed their pins because
   nixpkgs follows Stackage's long-term-support snapshots. Renovate's
   [`nix` manager](https://docs.renovatebot.com/modules/manager/nix/) is
@@ -76,8 +77,8 @@ Three options qualify:
 - **mise, restricted to its global config.** Environment variables can
   switch off each way mise finds project config: config filenames,
   `.tool-versions`, mise environments, and `auto_env`. A checkout's
-  `.miserc.toml` overrides the same settings in the global `miserc.toml`,
-  so only environment variables hold. mise has no global-only mode. A
+  `.miserc.toml` wins over the global `miserc.toml` for these settings,
+  and environment variables win over both. mise has no global-only mode. A
   context without the variables lets a checkout take over a host tool
   again, and so does a new discovery mechanism upstream. `auto_env` turns
   on by default in mise 2027.6.0. A test on 2026-11-15 used a checkout
@@ -85,9 +86,9 @@ Three options qualify:
   and `mise.linux.toml`. With all four switched off, mise 2026.10.8
   ignored it and ran the host's `just`.
 
-A probe tests mise's gap. No probe removes the other two qualifiers'
-costs: home-manager trades per-tool pins and supported Renovate bumps
-for isolation, and externals split the installer in two.
+A probe tests mise's gap. No probe removes the costs of the other two:
+home-manager trades per-tool pins and supported Renovate bumps for
+isolation, and externals split the installer in two.
 
 ## Decision
 
@@ -112,8 +113,9 @@ runtimes and their CLIs included, installs through mise from a committed
 `mise.lock`.
 
 Revisit and prefer home-manager when Renovate's `nix` manager leaves beta
-and bumps each package, as [ADR 0010](0010-configure-the-system-layer-with-ansible.md)
-also requires.
+and bumps each package.
+[ADR 0010](0010-configure-the-system-layer-with-ansible.md) sets the same
+condition for NixOS.
 
 ## Consequences
 
