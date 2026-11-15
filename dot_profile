@@ -32,9 +32,11 @@ if [ -d "$HOME/.local/share/mise/shims" ] ; then
     PATH="$HOME/.local/share/mise/shims:$PATH"
 fi
 
-# Host mise reads only ~/.config/mise/config.toml. No checkout names its
-# config mise.host-only.toml, so a checkout's pins and trust prompts never
-# reach the shims. Keep in step with ~/.config/environment.d/mise.conf.
-export MISE_OVERRIDE_CONFIG_FILENAMES=mise.host-only.toml
+# environment.d lines are plain KEY=VALUE, so sh can source them too.
+if [ -f "$HOME/.config/environment.d/mise.conf" ] ; then
+    set -a
+    . "$HOME/.config/environment.d/mise.conf"
+    set +a
+fi
 
 export EDITOR=vim

@@ -79,7 +79,7 @@ Every apt package goes in the one list. Later passes configure what
 Callers reach mise tools through the shims in
 `~/.local/share/mise/shims`, which keep one path across version bumps.
 On the host, a shim reads only `~/.config/mise/config.toml`:
-`~/.profile` and `~/.config/environment.d/mise.conf` set
+`~/.config/environment.d/mise.conf`, which `~/.profile` sources, sets
 `MISE_OVERRIDE_CONFIG_FILENAMES` to a filename no checkout uses. A
 checkout's `mise.toml` pins nothing and asks for no trust. To run one
 command with the checkout's config, unset it:
