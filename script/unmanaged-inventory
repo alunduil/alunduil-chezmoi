@@ -3,10 +3,9 @@
 
 Three kinds of item, one per output line as "<kind>\\t<item>":
 
-- file: a path `chezmoi unmanaged` reports under $HOME. An empty directory
-  tree is left out. A directory holding only git checkouts is narrowed to the
-  checkouts a rebuild would lose: the repo picker clones any other GitHub
-  repo again on demand.
+- file: a path `chezmoi unmanaged` reports under $HOME. Empty directory
+  trees drop out, and a directory holding only git checkouts narrows to the
+  checkouts a rebuild would lose. The repo picker clones the rest on demand.
 - package: a manually installed apt package nothing declared pulls in. The
   roots are the bootstrap's apt list, the packages its passes install
   directly, the Crostini guest tools, and Debian's required and important
@@ -206,7 +205,7 @@ def checkout_residue(
 
 
 def is_recoverable(checkout: pathlib.Path) -> bool:
-    """A GitHub checkout with nothing uncommitted and HEAD on a remote."""
+    """Whether a fresh clone from GitHub would lose none of checkout's work."""
     git = ("git", "-C", str(checkout))
     try:
         return (

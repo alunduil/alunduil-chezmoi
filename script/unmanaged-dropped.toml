@@ -159,7 +159,7 @@ patterns = [".config/zellij/plugins/zellaude-hook.sh"]
 
 [[dropped]]
 kind = "file"
-reason = "mise installs fourmolu and hlint now."
+reason = "Stale copies of tools mise installs."
 patterns = [
   ".local/bin-tools",
   ".local/bin/fourmolu",
@@ -168,7 +168,7 @@ patterns = [
 
 [[dropped]]
 kind = "file"
-reason = "mise installs zellij now; left from a source build."
+reason = "Stale zellij source build; mise installs zellij."
 patterns = [
   ".local/bin/zellij.release-stripped",
   ".local/bin/.zellij-source-ref",
@@ -176,7 +176,7 @@ patterns = [
 
 [[dropped]]
 kind = "file"
-reason = "pip install of pre-commit, which prek replaced."
+reason = "Stale pre-commit install; the repo runs prek."
 patterns = [
   ".local/bin/pre-commit",
   ".local/bin/identify-cli",
@@ -195,7 +195,7 @@ patterns = [
 
 [[dropped]]
 kind = "file"
-reason = "Left by an earlier home-manager install."
+reason = "Stale home-manager output; nothing here runs home-manager."
 patterns = [
   ".config/systemd/user/tray.target",
   ".local/share/home-manager",
@@ -369,7 +369,7 @@ patterns = [
 
 [[dropped]]
 kind = "package"
-reason = "Playwright's install-deps pulled it in for headless browsers."
+reason = "Headless-browser dependency; Playwright's install-deps reinstalls it."
 patterns = [
   "fonts-ipafont-gothic",
   "fonts-noto-color-emoji",
@@ -378,15 +378,11 @@ patterns = [
   "fonts-wqy-zenhei",
   "xfonts-scalable",
   "xvfb",
-  "gstreamer1.0-*",
-  "libgstreamer*",
-  "freeglut3-dev",
-  "libglu1-mesa-dev",
 ]
 
 [[dropped]]
 kind = "package"
-reason = "Left from an earlier Debian release."
+reason = "Library from an earlier Debian release."
 patterns = [
   "libffi7",
   "libssl1.1",
@@ -398,6 +394,10 @@ kind = "package"
 reason = "One-off install for a task that is done."
 patterns = [
   "btrfs-progs",
+  "gstreamer1.0-*",
+  "libgstreamer*",
+  "freeglut3-dev",
+  "libglu1-mesa-dev",
   "cifs-utils",
   "ipmitool",
   "influxdb-client",
