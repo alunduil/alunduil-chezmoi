@@ -176,7 +176,8 @@ def checkout_residue(
     depth: int = CHECKOUT_DEPTH,
 ) -> list[pathlib.Path] | None:
     """The checkouts under path that recoverable rejects, or None when path
-    holds anything besides checkouts and empty directories."""
+    holds anything besides checkouts and empty directories within depth
+    levels."""
     if (path / ".git").exists():
         return [] if recoverable(path) else [path]
     if path.is_symlink() or not path.is_dir():
