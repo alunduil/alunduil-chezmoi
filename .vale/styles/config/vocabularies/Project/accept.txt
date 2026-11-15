@@ -30,6 +30,9 @@ mise
 Ansible(?:'s)?
 numtide
 containerless
+(?i)devcontainers?
+nixpkgs
+Stackage
 trixie
 (?i)automerges?
 
