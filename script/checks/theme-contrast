@@ -12,6 +12,9 @@ import pathlib
 import re
 import sys
 
+RGB = tuple[int, int, int]
+Blocks = dict[str, dict[str, RGB]]
+
 AAA = 7.0
 THEMES = pathlib.Path("dot_config/zellij/themes")
 KITTY_CONF = pathlib.Path("dot_config/kitty/kitty.conf")
@@ -24,36 +27,38 @@ TERMINAL_SLOTS = [
 ]  # fmt: skip
 
 
-def luminance(rgb):
-    def channel(value):
-        value /= 255
-        return value / 12.92 if value <= 0.03928 else ((value + 0.055) / 1.055) ** 2.4
+def luminance(rgb: RGB) -> float:
+    def channel(value: int) -> float:
+        scaled = value / 255
+        return (
+            scaled / 12.92 if scaled <= 0.03928 else ((scaled + 0.055) / 1.055) ** 2.4
+        )
 
     r, g, b = (channel(v) for v in rgb)
     return 0.2126 * r + 0.7152 * g + 0.0722 * b
 
 
-def contrast(a, b):
+def contrast(a: RGB, b: RGB) -> float:
     high, low = sorted((luminance(a), luminance(b)), reverse=True)
     return (high + 0.05) / (low + 0.05)
 
 
-def parse_theme(text):
+def parse_theme(text: str) -> Blocks:
     """Map each block of a zellij theme file to its {key: (r, g, b)}."""
-    blocks = {}
+    blocks: Blocks = {}
     for name, body in re.findall(r"^\s*(\w+) \{([^{}]*)\}", text, re.M):
         blocks[name] = {
-            key: tuple(map(int, rgb))
-            for key, *rgb in re.findall(r"(\w+) (\d+) (\d+) (\d+)", body)
+            key: (int(r), int(g), int(b))
+            for key, r, g, b in re.findall(r"(\w+) (\d+) (\d+) (\d+)", body)
         }
     return blocks
 
 
-def hue(page):
+def hue(page: RGB) -> str:
     return "dark" if luminance(page) < 0.18 else "light"
 
 
-def ui_failures(blocks):
+def ui_failures(blocks: Blocks) -> list[str]:
     page = blocks["text_unselected"]["background"]
     failures = []
     for name, colors in blocks.items():
@@ -67,44 +72,62 @@ def ui_failures(blocks):
     return failures
 
 
-def terminal_failures(blocks):
+def terminal_failures(blocks: Blocks) -> list[str]:
     page = blocks["text_unselected"]["background"]
     terminal = blocks["terminal_colors"]
     exempt = BACKGROUND_ROLE[hue(page)]
-    failures = [f"terminal_colors lacks {slot}" for slot in TERMINAL_SLOTS if slot not in terminal]
+    failures = [
+        f"terminal_colors lacks {slot}"
+        for slot in TERMINAL_SLOTS
+        if slot not in terminal
+    ]
     for slot, rgb in terminal.items():
         ratio = contrast(rgb, page)
         if slot not in exempt and ratio < AAA:
             failures.append(f"terminal_colors.{slot} is {ratio:.2f}:1")
     distinct = len(set(terminal.values()))
     if distinct < len(TERMINAL_SLOTS):
-        failures.append(f"terminal_colors has {distinct} distinct values, not {len(TERMINAL_SLOTS)}")
+        failures.append(
+            f"terminal_colors has {distinct} distinct values, not {len(TERMINAL_SLOTS)}"
+        )
     return failures
 
 
-def parse_kitty(text):
+def parse_kitty(text: str) -> dict[str, RGB]:
     """Map kitty's foreground, background and color0-15 to (r, g, b)."""
-    colors = {}
-    for key, value in re.findall(r"^(foreground|background|color\d+)\s+#([0-9a-fA-F]{6})", text, re.M):
-        colors[key] = tuple(int(value[i : i + 2], 16) for i in (0, 2, 4))
-    return colors
+    return {
+        key: (int(value[0:2], 16), int(value[2:4], 16), int(value[4:6], 16))
+        for key, value in re.findall(
+            r"^(foreground|background|color\d+)\s+#([0-9a-fA-F]{6})", text, re.M
+        )
+    }
 
 
-def kitty_failures(kitty, blocks):
+def kitty_failures(kitty: dict[str, RGB], blocks: Blocks) -> list[str]:
     expected = {
         "foreground": blocks["text_unselected"]["base"],
         "background": blocks["text_unselected"]["background"],
     }
     for index, slot in enumerate(TERMINAL_SLOTS):
-        expected[f"color{index}"] = blocks["terminal_colors"].get(slot)
-    return [f"kitty {key} differs from {KITTY_THEME}" for key, rgb in expected.items() if kitty.get(key) != rgb]
+        if slot in blocks["terminal_colors"]:
+            expected[f"color{index}"] = blocks["terminal_colors"][slot]
+    return [
+        f"kitty {key} differs from {KITTY_THEME}"
+        for key, rgb in expected.items()
+        if kitty.get(key) != rgb
+    ]
 
 
-def main():
+def main() -> int:
     failures = []
-    themes = {path.stem: parse_theme(path.read_text()) for path in sorted(THEMES.glob("*.kdl"))}
+    themes = {
+        path.stem: parse_theme(path.read_text())
+        for path in sorted(THEMES.glob("*.kdl"))
+    }
     for name, blocks in themes.items():
-        failures += [f"{name}: {f}" for f in ui_failures(blocks) + terminal_failures(blocks)]
+        failures += [
+            f"{name}: {f}" for f in ui_failures(blocks) + terminal_failures(blocks)
+        ]
     failures += kitty_failures(parse_kitty(KITTY_CONF.read_text()), themes[KITTY_THEME])
     for failure in failures:
         print(failure, file=sys.stderr)

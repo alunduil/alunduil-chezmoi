@@ -65,9 +65,11 @@ just check                     # runs every sensor below, reports all failures
 Each runs in its own CI workflow and can be invoked alone:
 
 ```bash
-prek run --all-files           # shellcheck, shfmt, check-json
-bats --recursive dot_local dot_claude etc script  # unit tests
+prek run --all-files           # shellcheck, shfmt, ruff, mypy, check-json
+bats --recursive dot_local dot_claude etc script  # shell unit tests
+just check-python              # python unit tests (pytest via uv)
 script/checks/zellij-config    # zellij KDL validation (needs zellij)
+script/checks/theme-contrast   # theme colors meet WCAG AAA
 script/checks/chezmoi-apply    # apply round-trip (needs chezmoi + age)
 ```
 
