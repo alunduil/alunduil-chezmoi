@@ -57,7 +57,7 @@ class Package:
 @dataclass(frozen=True)
 class Dropped:
     kind: str
-    pattern: str
+    patterns: list[str]
     reason: str
 
 
@@ -154,14 +154,16 @@ def parse_dropped(text: str) -> list[Dropped]:
     entries = [Dropped(**entry) for entry in tomllib.loads(text).get("dropped", [])]
     for entry in entries:
         if entry.kind not in KINDS:
-            raise ValueError(f"{entry.pattern}: unknown kind {entry.kind!r}")
+            raise ValueError(f"{entry.reason}: unknown kind {entry.kind!r}")
+        if not entry.patterns:
+            raise ValueError(f"{entry.reason}: no patterns")
         if not entry.reason.strip():
-            raise ValueError(f"{entry.pattern}: no reason")
+            raise ValueError(f"{entry.patterns}: no reason")
     return entries
 
 
 def undropped(kind: str, items: Iterable[str], dropped: Iterable[Dropped]) -> set[str]:
-    patterns = [d.pattern for d in dropped if d.kind == kind]
+    patterns = [p for d in dropped if d.kind == kind for p in d.patterns]
     return {
         item
         for item in items

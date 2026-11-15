@@ -101,7 +101,7 @@ class UndroppedTest(unittest.TestCase):
         """
         [[dropped]]
         kind = "file"
-        pattern = ".config/*.bak*"
+        patterns = [".config/*.bak*"]
         reason = "backups"
         """
     )
@@ -202,11 +202,17 @@ class RecoverableTest(unittest.TestCase):
         self.assertFalse(ui.is_recoverable(self.repo))
 
 
-def dropped_entry(kind: str = "file", reason: str = "why") -> str:
-    return f'[[dropped]]\nkind = "{kind}"\npattern = "x"\nreason = "{reason}"\n'
+def dropped_entry(
+    kind: str = "file", patterns: str = '["x"]', reason: str = "why"
+) -> str:
+    return f'[[dropped]]\nkind = "{kind}"\npatterns = {patterns}\nreason = "{reason}"\n'
 
 
 class ParseDroppedTest(unittest.TestCase):
+    def test_rejects_an_entry_without_patterns(self) -> None:
+        with self.assertRaisesRegex(ValueError, "no patterns"):
+            ui.parse_dropped(dropped_entry(patterns="[]"))
+
     def test_rejects_an_unknown_kind(self) -> None:
         with self.assertRaisesRegex(ValueError, "unknown kind"):
             ui.parse_dropped(dropped_entry(kind="pacakge"))
