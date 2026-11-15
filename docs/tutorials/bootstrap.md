@@ -18,11 +18,11 @@ $EDITOR ~/.config/chezmoi/key.txt          # paste age key contents
 chmod 600 ~/.config/chezmoi/key.txt
 
 # First apply: installs everything, including 1Password; skips secrets.
-# Runs the chezmoi pinned in the clone's mise.lock.
+# Installs and runs the chezmoi pinned in the clone's mise.lock.
 git clone https://github.com/alunduil/alunduil-chezmoi.git ~/.local/share/chezmoi
-CHEZMOI_NO_1PASSWORD=1 \
-  MISE_GLOBAL_CONFIG_FILE=~/.local/share/chezmoi/dot_config/mise/config.toml \
-  mise exec chezmoi -- chezmoi init --apply
+export MISE_GLOBAL_CONFIG_FILE=~/.local/share/chezmoi/dot_config/mise/config.toml
+mise install chezmoi
+CHEZMOI_NO_1PASSWORD=1 mise exec chezmoi -- chezmoi init --apply
 ```
 
 Open 1Password from the launcher and sign in. In **Settings → Developer**, turn on **Integrate with 1Password CLI**. Open a new terminal, whose login shell puts mise's shims on `PATH`. Then apply again and approve the 1Password prompt:

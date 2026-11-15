@@ -95,8 +95,9 @@ git -C "$SOURCE_DIR" ls-files -z |
 
 log 'first apply'
 as_user '
-  MISE_GLOBAL_CONFIG_FILE=~/.local/share/chezmoi/dot_config/mise/config.toml \
-    mise exec chezmoi -- chezmoi init --apply --exclude=encrypted
+  export MISE_GLOBAL_CONFIG_FILE=~/.local/share/chezmoi/dot_config/mise/config.toml
+  mise install chezmoi
+  mise exec chezmoi -- chezmoi init --apply --exclude=encrypted
 '
 
 docker exec "$host" touch "$marker"
