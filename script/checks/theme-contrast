@@ -16,6 +16,9 @@ RGB = tuple[int, int, int]
 Blocks = dict[str, dict[str, RGB]]
 
 AAA = 7.0
+# A background this luminous contrasts equally with black and white text:
+# darker is a dark theme, lighter a light one.
+EQUAL_CONTRAST_LUMINANCE = 0.179
 THEMES = pathlib.Path("dot_config/zellij/themes")
 KITTY_CONF = pathlib.Path("dot_config/kitty/kitty.conf")
 KITTY_THEME = "chromeos-dark"
@@ -54,26 +57,32 @@ def parse_theme(text: str) -> Blocks:
     return blocks
 
 
+def page_background(blocks: Blocks) -> RGB:
+    return blocks["text_unselected"]["background"]
+
+
 def hue(page: RGB) -> str:
-    return "dark" if luminance(page) < 0.18 else "light"
+    return "dark" if luminance(page) < EQUAL_CONTRAST_LUMINANCE else "light"
 
 
 def ui_failures(blocks: Blocks) -> list[str]:
-    page = blocks["text_unselected"]["background"]
+    page = page_background(blocks)
     failures = []
     for name, colors in blocks.items():
         if name == "terminal_colors":
             continue
         background = colors.get("background", page)
         for key, rgb in colors.items():
+            if key == "background":
+                continue
             ratio = contrast(rgb, background)
-            if key != "background" and ratio < AAA:
+            if ratio < AAA:
                 failures.append(f"{name}.{key} is {ratio:.2f}:1")
     return failures
 
 
 def terminal_failures(blocks: Blocks) -> list[str]:
-    page = blocks["text_unselected"]["background"]
+    page = page_background(blocks)
     terminal = blocks["terminal_colors"]
     exempt = BACKGROUND_ROLE[hue(page)]
     failures = [
@@ -82,8 +91,10 @@ def terminal_failures(blocks: Blocks) -> list[str]:
         if slot not in terminal
     ]
     for slot, rgb in terminal.items():
+        if slot in exempt:
+            continue
         ratio = contrast(rgb, page)
-        if slot not in exempt and ratio < AAA:
+        if ratio < AAA:
             failures.append(f"terminal_colors.{slot} is {ratio:.2f}:1")
     distinct = len(set(terminal.values()))
     if distinct < len(TERMINAL_SLOTS):
@@ -106,7 +117,7 @@ def parse_kitty(text: str) -> dict[str, RGB]:
 def kitty_failures(kitty: dict[str, RGB], blocks: Blocks) -> list[str]:
     expected = {
         "foreground": blocks["text_unselected"]["base"],
-        "background": blocks["text_unselected"]["background"],
+        "background": page_background(blocks),
     }
     for index, slot in enumerate(TERMINAL_SLOTS):
         if slot in blocks["terminal_colors"]:

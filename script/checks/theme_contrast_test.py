@@ -96,12 +96,10 @@ class KittyFailures(unittest.TestCase):
             ["kitty color4 differs from chromeos-dark"],
         )
 
-    def test_parse_kitty_reads_hex(self) -> None:
+
+class ParseKitty(unittest.TestCase):
+    def test_reads_hex(self) -> None:
         self.assertEqual(
             tc.parse_kitty("color4  #9ad3ff\nbackground #493544\n"),
             {"color4": (0x9A, 0xD3, 0xFF), "background": (0x49, 0x35, 0x44)},
         )
-
-
-if __name__ == "__main__":
-    unittest.main()
