@@ -89,3 +89,6 @@ packages:
     - pwgen
     - qpdf
     - zip
+    # alunduil-infrastructure's Terraform authenticates its state bucket and
+    # reads secrets through gcloud.
+    - google-cloud-cli
