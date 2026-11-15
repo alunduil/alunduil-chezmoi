@@ -170,18 +170,6 @@ def undropped(kind: str, items: Iterable[str], dropped: Iterable[Dropped]) -> se
     }
 
 
-def is_empty(path: pathlib.Path) -> bool:
-    """A directory with no files anywhere beneath it."""
-    try:
-        return (
-            path.is_dir()
-            and not path.is_symlink()
-            and all(is_empty(child) for child in path.iterdir())
-        )
-    except OSError:
-        return False
-
-
 def checkout_residue(
     path: pathlib.Path,
     recoverable: Callable[[pathlib.Path], bool],
@@ -191,12 +179,16 @@ def checkout_residue(
     holds anything besides checkouts and empty directories."""
     if (path / ".git").exists():
         return [] if recoverable(path) else [path]
-    if is_empty(path):
-        return []
-    if depth == 0 or path.is_symlink() or not path.is_dir():
+    if path.is_symlink() or not path.is_dir():
+        return None
+    try:
+        children = list(path.iterdir())
+    except OSError:
+        return None
+    if children and depth == 0:
         return None
     residue: list[pathlib.Path] = []
-    for child in path.iterdir():
+    for child in children:
         found = checkout_residue(child, recoverable, depth - 1)
         if found is None:
             return None
