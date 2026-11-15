@@ -203,22 +203,14 @@ def checkout_residue(
     return residue
 
 
-def recoverable(checkout: pathlib.Path) -> bool:
+def is_recoverable(checkout: pathlib.Path) -> bool:
     """A GitHub checkout with nothing uncommitted and HEAD on a remote."""
-
-    def git(*args: str) -> str:
-        return subprocess.run(
-            ("git", "-C", str(checkout), *args),
-            check=True,
-            capture_output=True,
-            text=True,
-        ).stdout
-
+    git = ("git", "-C", str(checkout))
     try:
         return (
-            "github.com" in git("remote", "get-url", "origin")
-            and not git("status", "--porcelain")
-            and not git("rev-list", "HEAD", "--not", "--remotes")
+            "github.com" in run(*git, "remote", "get-url", "origin")
+            and not run(*git, "status", "--porcelain")
+            and not run(*git, "rev-list", "HEAD", "--not", "--remotes")
         )
     except subprocess.CalledProcessError:
         return False
@@ -282,7 +274,9 @@ def main() -> int:
 
     found = {
         "file": unmanaged_files(
-            run("chezmoi", "unmanaged").splitlines(), pathlib.Path.home(), recoverable
+            run("chezmoi", "unmanaged").splitlines(),
+            pathlib.Path.home(),
+            is_recoverable,
         ),
         "package": set(run("apt-mark", "showmanual").split()) - kept,
         "unit": unmanaged_units(enabled, deployed_units(), unit_owners(enabled), kept),

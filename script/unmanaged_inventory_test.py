@@ -183,23 +183,23 @@ class RecoverableTest(unittest.TestCase):
         )
 
     def test_accepts_a_clean_pushed_github_checkout(self) -> None:
-        self.assertTrue(ui.recoverable(self.repo))
+        self.assertTrue(ui.is_recoverable(self.repo))
 
     def test_rejects_untracked_files(self) -> None:
         (self.repo / "new").touch()
-        self.assertFalse(ui.recoverable(self.repo))
+        self.assertFalse(ui.is_recoverable(self.repo))
 
     def test_rejects_a_head_on_no_remote(self) -> None:
         self.git("commit", "--quiet", "--allow-empty", "-m", "local")
-        self.assertFalse(ui.recoverable(self.repo))
+        self.assertFalse(ui.is_recoverable(self.repo))
 
     def test_rejects_an_origin_off_github(self) -> None:
         self.git("remote", "set-url", "origin", "https://example.com/repo.git")
-        self.assertFalse(ui.recoverable(self.repo))
+        self.assertFalse(ui.is_recoverable(self.repo))
 
     def test_rejects_a_checkout_without_origin(self) -> None:
         self.git("remote", "remove", "origin")
-        self.assertFalse(ui.recoverable(self.repo))
+        self.assertFalse(ui.is_recoverable(self.repo))
 
 
 def dropped_entry(kind: str = "file", reason: str = "why") -> str:
