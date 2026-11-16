@@ -45,9 +45,11 @@ restrict_mise_to_global_config() {
 }
 
 # Shims resolve through the deployed ~/.config/mise, so only after-phase
-# passes can call this.
+# passes can call this. A first apply runs with MISE_GLOBAL_CONFIG_FILE naming
+# the source tree's config.
 use_mise_shims() {
   restrict_mise_to_global_config
+  unset MISE_GLOBAL_CONFIG_FILE
   PATH="$HOME/.local/share/mise/shims:$PATH"
 }
 
