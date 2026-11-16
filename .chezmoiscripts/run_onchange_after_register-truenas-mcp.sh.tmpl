@@ -31,7 +31,7 @@ user="$(read_setting "api key user" user)" || exit 0 # rerun-on: user-hash
 
 # The registration outlives this apply's PATH. The shim keeps one path across
 # mise bumps.
-mise_bin="$HOME/.local/share/mise/shims/mise"
+mise_bin="$mise_shims/mise"
 if [ ! -x "$mise_bin" ]; then
   log "truenas-mcp: mise not installed, registration retries on the next apply"
   exit 1

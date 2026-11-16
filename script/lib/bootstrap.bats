@@ -176,11 +176,12 @@ with_user_manager() { systemctl() { printf '%s\n' "$*" >>"$WORK/systemctl.log"; 
 
 @test "the pinned mise comes ahead of any other mise on PATH" {
   local pin="$WORK/installs/github-jdx-mise/1.0.0/bin"
-  mkdir -p "$pin" "$WORK/.local/share/mise/shims" "$WORK/seed"
+  mise_shims="$WORK/shims"
+  mkdir -p "$pin" "$mise_shims" "$WORK/seed"
   printf '#!/bin/sh\n' | tee "$pin/mise" >"$WORK/seed/mise"
   chmod +x "$pin/mise" "$WORK/seed/mise"
-  ln -s "$pin/mise" "$WORK/.local/share/mise/shims/mise"
-  HOME="$WORK" PATH="$WORK/seed:$PATH"
+  ln -s "$pin/mise" "$mise_shims/mise"
+  PATH="$WORK/seed:$PATH"
   use_pinned_mise
   [ "$(command -v mise)" = "$pin/mise" ]
 }

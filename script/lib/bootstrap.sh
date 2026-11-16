@@ -44,13 +44,16 @@ restrict_mise_to_global_config() {
   set +a
 }
 
+mise_shims="$HOME/.local/share/mise/shims"
+
 # Puts the mise that install-mise pinned first on PATH. mise links every shim
 # to the first mise on PATH, and `mise install` relinks them, so a pass that
 # installs runs with the pin there. On a first apply the tutorial's seed is
 # on PATH, and on an older host the apt package is.
 use_pinned_mise() {
   local pin
-  pin="$(readlink -f "$HOME/.local/share/mise/shims/mise")"
+  restrict_mise_to_global_config
+  pin="$(readlink -f "$mise_shims/mise")"
   PATH="${pin%/*}:$PATH"
 }
 
@@ -60,7 +63,7 @@ use_pinned_mise() {
 use_mise_shims() {
   restrict_mise_to_global_config
   unset MISE_GLOBAL_CONFIG_FILE
-  PATH="$HOME/.local/share/mise/shims:$PATH"
+  PATH="$mise_shims:$PATH"
 }
 
 # install-claude-code links claude here. A first apply runs before any shell
