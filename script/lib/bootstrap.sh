@@ -33,9 +33,24 @@ _report_failed_pass() {
 set -E
 trap '_report_failed_pass "$BASH_COMMAND" "$LINENO"' ERR
 
+# chezmoi runs passes from $HOME, where mise reads ~/.config/mise/config.toml
+# as project config, and any ~/.tool-versions or ~/mise.toml besides. In
+# before-phase passes that file still holds the last apply's pins. Loading the
+# host restriction from the source tree makes a pass resolve tools as a login
+# shell does, whether or not the calling shell has sourced it.
+restrict_mise_to_global_config() {
+  set -a
+  # shellcheck source=dot_config/environment.d/mise.conf
+  . "${BASH_SOURCE[0]%/*}/../../dot_config/environment.d/mise.conf"
+  set +a
+}
+
 # Shims resolve through the deployed ~/.config/mise, so only after-phase
 # passes can call this.
-use_mise_shims() { PATH="$HOME/.local/share/mise/shims:$PATH"; }
+use_mise_shims() {
+  restrict_mise_to_global_config
+  PATH="$HOME/.local/share/mise/shims:$PATH"
+}
 
 # install-claude-code links claude here. A first apply runs before any shell
 # sources the deployed ~/.profile that puts it on PATH.
