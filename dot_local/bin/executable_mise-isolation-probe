@@ -24,9 +24,9 @@ TOOL=just
 GENERATOR=/usr/lib/systemd/user-environment-generators/30-systemd-environment-d-generator
 
 # Every file mise reads project config from. Each pins TOOL to its own
-# version, so a takeover names the file that won. .miserc.toml selects
-# the mise.probe.toml environment and turns on auto_env, which loads
-# mise.linux.toml; a checkout's .miserc.toml outranks the global one.
+# version, so the shim's output names the file that won. A checkout's
+# .miserc.toml outranks the global one, so it can turn auto_env on and
+# MISE_AUTO_ENV gets tested whatever mise's default.
 write_checkout() {
     local dir=$1 n=0 f
     mkdir -p "$dir/mise" "$dir/.mise" "$dir/.config/mise/conf.d"
@@ -41,8 +41,8 @@ write_checkout() {
     printf 'env = ["probe"]\nauto_env = true\n' >"$dir/.miserc.toml"
 }
 
-# Only what locates mise's own files survives from the caller, so the
-# variables under test come from ENV_FILE alone.
+# Keeps only what locates mise's files, so the variables under test
+# come from ENV_FILE alone.
 base_env() {
     local var
     printf '%s\n' "HOME=$HOME" "PATH=$PATH"
@@ -61,8 +61,8 @@ context_env() {
         env -i "${base[@]}" sh -c 'set -a; . "$1"; set +a; env' _ "$env_file"
         ;;
     'systemd user unit')
-        # The generator reads $XDG_CONFIG_HOME/environment.d, so a scratch
-        # one holding ENV_FILE yields what a user unit would get from it.
+        # The generator reads $XDG_CONFIG_HOME/environment.d, so pointing
+        # it at a copy of ENV_FILE yields what a user unit gets.
         [[ -x "$GENERATOR" ]] || { printf 'no systemd environment generator at %s\n' "$GENERATOR" >&2; return 1; }
         mkdir -p "$work/xdg/environment.d"
         cp "$env_file" "$work/xdg/environment.d/mise.conf"
@@ -92,14 +92,13 @@ in_checkout() {
     (cd "$work/checkout" && env -i "${base[@]}" "${envs[@]}" "$@" 2>&1)
 }
 
-# probe <context>
+# probe <context>: fail if the hostile checkout changes TOOL in <context>.
 probe() {
     local context=$1 configs output want="$TOOL $expected"
     local -a envs
     output=$(context_env "$context" 2>&1) ||
         fail '%s: could not build the environment:\n%s' "$context" "$output" || return
-    # Only mise's variables: the system's environment.d can set others,
-    # such as a PATH that drops the caller's mise.
+    # The system's environment.d can set a PATH that drops mise.
     mapfile -t envs < <(grep '^MISE_' <<<"$output")
 
     output=$(in_checkout "${envs[@]}" -- mise config ls --json) ||

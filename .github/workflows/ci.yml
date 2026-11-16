@@ -220,7 +220,6 @@ jobs:
       - name: Run each tool
         run: script/checks/pinned-tools
 
-  # Ungated: a mise bump can open a discovery path no file here touches.
   mise-isolation:
     name: Probe host mise isolation
     runs-on: ubuntu-26.04

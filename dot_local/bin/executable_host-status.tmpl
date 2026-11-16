@@ -108,8 +108,8 @@ check_mise_tools() {
     done < <(mise ls --missing --global 2>/dev/null)
 }
 
-# ADR 0011's restriction fails open, so only running a shim from a
-# hostile checkout shows it still holds.
+# ADR 0011's restriction fails open, so only a hostile-checkout run
+# shows it holds.
 check_mise_isolation() {
     mise-isolation-probe >/dev/null 2>&1 ||
         report 'mise: a checkout can change host tools' mise-isolation-probe
