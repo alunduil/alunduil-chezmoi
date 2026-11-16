@@ -66,7 +66,7 @@ systemd manager a unit belongs in and what it runs as.
 | Kind | Declared in | Installed by | Pinned by |
 | ---- | ----------- | ------------ | --------- |
 | apt packages | `.chezmoidata/packages.yaml` | `install-system-packages`, one transaction | the apt repository |
-| mise | `.chezmoidata/packages.yaml` | `install-system-packages`, from mise's apt repo | the apt repository |
+| mise | `dot_config/mise/config.toml` | `install-mise`, through the mise on `PATH` | `dot_config/mise/mise.lock` |
 | Release binaries | `dot_config/mise/config.toml` | `install-binary-tools`, through `mise install` | `dot_config/mise/mise.lock` |
 | Python tools | `install-via-mise-tools` | `uv tool install` | `*_VERSION` in the pass |
 | Node, Haskell, Rust | `install-{node,haskell,rust}-ecosystem` | each ecosystem's own manager | `*_VERSION` in the pass |
@@ -75,6 +75,10 @@ systemd manager a unit belongs in and what it runs as.
 
 Every apt package goes in the one list. Later passes configure what
 `install-system-packages` installed rather than calling apt themselves.
+
+A pass that runs `mise install` calls `use_pinned_mise` first.
+`mise install` links every shim to the first `mise` on `PATH`, which on
+a first apply is the tutorial's seed.
 
 Callers reach mise tools through the shims in
 `~/.local/share/mise/shims`, which keep one path across version bumps.

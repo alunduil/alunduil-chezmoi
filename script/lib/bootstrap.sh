@@ -44,13 +44,24 @@ restrict_mise_to_global_config() {
   set +a
 }
 
+mise_shims="$HOME/.local/share/mise/shims"
+
+# `mise install` links every shim to the first mise on PATH. On a first apply
+# that is the tutorial's seed.
+use_pinned_mise() {
+  local pin
+  restrict_mise_to_global_config
+  pin="$(readlink -f "$mise_shims/mise")"
+  PATH="${pin%/*}:$PATH"
+}
+
 # Shims resolve through the deployed ~/.config/mise, so only after-phase
 # passes can call this. A first apply runs with MISE_GLOBAL_CONFIG_FILE naming
 # the source tree's config.
 use_mise_shims() {
   restrict_mise_to_global_config
   unset MISE_GLOBAL_CONFIG_FILE
-  PATH="$HOME/.local/share/mise/shims:$PATH"
+  PATH="$mise_shims:$PATH"
 }
 
 # install-claude-code links claude here. A first apply runs before any shell

@@ -1,0 +1,20 @@
+#!/usr/bin/env bash
+# The mise on PATH installs the pinned one: the tutorial's seed on a fresh
+# host, otherwise the last apply's pin. mise.lock's checksum stops a tampered
+# download before it runs.
+
+set -euo pipefail
+
+# shellcheck source=script/lib/bootstrap.sh
+. "{{ .chezmoi.sourceDir }}/script/lib/bootstrap.sh"
+restrict_mise_to_global_config
+export MISE_GLOBAL_CONFIG_FILE="{{ .chezmoi.sourceDir }}/dot_config/mise/config.toml"
+
+mise install github:jdx/mise
+pin="$(mise where github:jdx/mise)/bin/mise"
+
+# reshim and prune link each shim to the first mise on PATH, whichever mise
+# runs them. prune keeps the version it runs from, so the pin runs it.
+PATH="${pin%/*}:$PATH"
+mise reshim
+mise prune --tools --yes github:jdx/mise

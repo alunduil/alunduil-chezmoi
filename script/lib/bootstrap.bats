@@ -174,6 +174,18 @@ with_user_manager() { systemctl() { printf '%s\n' "$*" >>"$WORK/systemctl.log"; 
   [ -z "$stderr" ]
 }
 
+@test "the pinned mise comes ahead of any other mise on PATH" {
+  local pin="$WORK/installs/github-jdx-mise/1.0.0/bin"
+  mise_shims="$WORK/shims"
+  mkdir -p "$pin" "$mise_shims" "$WORK/seed"
+  printf '#!/bin/sh\n' | tee "$pin/mise" >"$WORK/seed/mise"
+  chmod +x "$pin/mise" "$WORK/seed/mise"
+  ln -s "$pin/mise" "$mise_shims/mise"
+  PATH="$WORK/seed:$PATH"
+  use_pinned_mise
+  [ "$(command -v mise)" = "$pin/mise" ]
+}
+
 @test "every pass sources bootstrap.sh" {
   run grep -L '^\. "{{ \.chezmoi\.sourceDir }}/script/lib/bootstrap\.sh"$' \
     "$BATS_TEST_DIRNAME"/../../.chezmoiscripts/*

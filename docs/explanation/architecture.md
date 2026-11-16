@@ -54,8 +54,8 @@ fires when only the host changed.
 Convergence makes apply the one operation for both a fresh host and a
 drifted one. Bootstrap is the first apply, and every later apply
 repairs whatever changed since. Pinned tools follow the same rule: a
-pass runs `mise install` on every apply, so a deleted or bumped tool
-comes back at the version and checksum in `mise.lock`
+pass runs `mise install` on every apply, so a deleted or bumped tool,
+mise included, comes back at the version and checksum in `mise.lock`
 ([ADR 0009](../adr/0009-install-pinned-tools-through-mise.md)).
 Host mise skips a checkout's `mise.toml`. That file applies only in the
 checkout's devcontainer or CI

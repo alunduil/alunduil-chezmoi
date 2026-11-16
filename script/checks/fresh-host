@@ -80,10 +80,7 @@ wait_for_user_manager
 
 log 'installing the tutorial prerequisites'
 as_user '
-  sudo apt-get install -y extrepo git curl gpg
-  sudo extrepo enable mise
-  sudo apt-get update
-  sudo apt-get install -y mise
+  sudo apt-get install -y git curl gpg
 '
 
 # Tracked files only, including uncommitted edits, in place of the tutorial's
@@ -96,6 +93,9 @@ git -C "$SOURCE_DIR" ls-files -z |
 log 'first apply'
 as_user '
   export MISE_GLOBAL_CONFIG_FILE=~/.local/share/chezmoi/dot_config/mise/config.toml
+  seed="$(mktemp -d)"
+  curl -fsSL https://mise.run | MISE_INSTALL_PATH="$seed/mise" sh
+  export PATH="$seed:$PATH"
   mise install chezmoi
   mise exec chezmoi -- chezmoi init --apply --exclude=encrypted
 '
@@ -106,6 +106,16 @@ log 'second apply'
 as_user '
   chezmoi apply --exclude=encrypted
   chezmoi verify --exclude=scripts,encrypted
+'
+
+log 'checking every shim runs the pinned mise'
+as_user '
+  pin="$(mise where github:jdx/mise)/bin/mise"
+  stray="$(find ~/.local/share/mise/shims -type l ! -lname "$pin" -printf "  %p -> %l\n")"
+  if [ -n "$stray" ]; then
+    printf "FAIL: these shims bypass the pinned mise at %s:\n%s\n" "$pin" "$stray" >&2
+    exit 1
+  fi
 '
 
 changed="$(changed_since_marker)"

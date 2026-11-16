@@ -115,17 +115,22 @@ if [ ! -f "$debsig_policy" ] || [ ! -f "$debsig_keyring" ]; then
 fi
 
 # ----------------------------------------------------------------------- mise
-# extrepo ships in Debian with the key that signs its repository index, so
-# mise's apt key arrives through Debian's chain of trust. The tutorial runs
-# these steps before chezmoi exists; this block keeps them converged.
-if [ ! -f /etc/apt/sources.list.d/extrepo_mise.sources ]; then
-  if ! is_installed extrepo; then
-    sudo apt-get update
-    sudo apt-get install -y extrepo
-  fi
-  log "mise: enabling apt repository"
-  sudo extrepo enable mise
+# An apt mise would bring releases CI hasn't tested, and extrepo served only
+# its repository. A purge leaves extrepo's source list and key behind.
+apt_mise=()
+for pkg in mise extrepo; do
+  is_installed "$pkg" && apt_mise+=("$pkg")
+done
+if ((${#apt_mise[@]} > 0)); then
+  log "mise: purging ${apt_mise[*]} from apt"
+  sudo apt-get purge -y "${apt_mise[@]}"
 fi
+for leftover in /etc/apt/sources.list.d/extrepo_mise.sources /var/lib/extrepo/keys/mise.asc; do
+  if [ -e "$leftover" ]; then
+    log "mise: removing $leftover"
+    sudo rm -f "$leftover"
+  fi
+done
 
 # -------------------------------------------------------------------- apt pkgs
 read -ra APT_PACKAGES <<<'{{ join " " .packages.apt }}'

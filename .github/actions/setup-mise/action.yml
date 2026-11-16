@@ -18,7 +18,18 @@ runs:
       shell: bash
       run: echo "MISE_GLOBAL_CONFIG_FILE=$GITHUB_WORKSPACE/dot_config/mise/config.toml" >>"$GITHUB_ENV"
 
+    # The host runs this mise, so CI tests the same release before a bump
+    # reaches it.
+    - name: Read the pinned mise version
+      id: mise-version
+      shell: bash
+      run: |
+        version="$(sed -n 's/^"github:jdx\/mise" = "\(.*\)"$/\1/p' "$MISE_GLOBAL_CONFIG_FILE")"
+        [ -n "$version" ] || { echo '::error::no github:jdx/mise pin in config.toml'; exit 1; }
+        echo "version=$version" >>"$GITHUB_OUTPUT"
+
     - uses: jdx/mise-action@d5574b52816a478f9d4e6529a3f6ff17a8a36785 # v5.2.8
       with:
+        version: ${{ steps.mise-version.outputs.version }}
         install_args: ${{ inputs.tools }}
         cache_key: mise-{{platform}}-{{install_args_hash}}-${{ hashFiles('dot_config/mise/mise.lock', 'dot_config/mise/.mise/**') }}
