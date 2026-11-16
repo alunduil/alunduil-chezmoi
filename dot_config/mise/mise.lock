@@ -13,6 +13,12 @@ checksum_source = "mise-versions"
 url = "https://github.com/nektos/act/releases/download/v0.2.97/act_Linux_x86_64.tar.gz"
 url_api = "https://api.github.com/repos/nektos/act/releases/assets/710157441"
 
+[[tools.ansible-core]]
+version = "2.22.0"
+backend = "pypi:ansible-core"
+specifiers = ["2.22.0"]
+uv = { path = ".mise/locks/ansible-core/2.22.0", digest = "sha256:bbdeffd49cded64d2d1efb317e0ca6204f7829eba7c21c5dc7f453a25fe6641d" }
+
 [[tools.chezmoi]]
 version = "2.74.1"
 backend = "aqua:twpayne/chezmoi"
@@ -164,6 +170,16 @@ specifiers = ["0.5.10"]
 checksum = "sha256:5c832a9ccd0855b7c054320d8921d90165a37459d3ac175923bdf121ff1aa9b1"
 url = "https://github.com/j178/prek/releases/download/v0.5.10/prek-x86_64-unknown-linux-gnu.tar.gz"
 url_api = "https://api.github.com/repos/j178/prek/releases/assets/707839458"
+provenance = "github-attestations"
+
+[[tools.python]]
+version = "3.14.10"
+backend = "core:python"
+specifiers = ["3.14.10"]
+
+[tools.python."platforms.linux-x64"]
+checksum = "sha256:c2ff2e97422f5d3896a16e0317fd212ba977bbf2688d93a6f7a03d817506bd30"
+url = "https://github.com/astral-sh/python-build-standalone/releases/download/20261110/cpython-3.14.10+20261110-x86_64-unknown-linux-gnu-install_only_stripped.tar.gz"
 provenance = "github-attestations"
 
 [[tools.release-plz]]
