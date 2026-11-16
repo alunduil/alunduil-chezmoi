@@ -98,7 +98,9 @@ probe() {
     local -a envs
     output=$(context_env "$context" 2>&1) ||
         fail '%s: could not build the environment:\n%s' "$context" "$output" || return
-    mapfile -t envs <<<"$output"
+    # Only mise's variables: the system's environment.d can set others,
+    # such as a PATH that drops the caller's mise.
+    mapfile -t envs < <(grep '^MISE_' <<<"$output")
 
     output=$(in_checkout "${envs[@]}" -- mise config ls --json) ||
         fail '%s: mise config ls failed:\n%s' "$context" "$output" || return
