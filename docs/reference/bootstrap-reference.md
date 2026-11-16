@@ -66,7 +66,7 @@ systemd manager a unit belongs in and what it runs as.
 | Kind | Declared in | Installed by | Pinned by |
 | ---- | ----------- | ------------ | --------- |
 | apt packages | `.chezmoidata/packages.yaml` | `install-system-packages`, one transaction | the apt repository |
-| mise | `.chezmoidata/packages.yaml` | `install-system-packages`, from mise's apt repo | the apt repository |
+| mise | `dot_config/mise/config.toml` | `install-mise`, through the mise on `PATH` | `dot_config/mise/mise.lock` |
 | Release binaries | `dot_config/mise/config.toml` | `install-binary-tools`, through `mise install` | `dot_config/mise/mise.lock` |
 | Python tools | `install-via-mise-tools` | `uv tool install` | `*_VERSION` in the pass |
 | Node, Haskell, Rust | `install-{node,haskell,rust}-ecosystem` | each ecosystem's own manager | `*_VERSION` in the pass |
@@ -94,6 +94,9 @@ env -u MISE_OVERRIDE_CONFIG_FILENAMES -u MISE_OVERRIDE_TOOL_VERSIONS_FILENAMES \
 
 A shim for a version that isn't installed fails, so run `mise install`
 first.
+mise links every shim to the first `mise` on `PATH`, and `mise install`
+links them again. A pass that installs through mise calls `use_pinned_mise`
+first, so the shims follow the pin rather than the tutorial's seed.
 `gh` looks for extensions only in its data directory, so
 `~/.local/share/gh/extensions/gh-poi/gh-poi` links to the gh-poi shim.
 
