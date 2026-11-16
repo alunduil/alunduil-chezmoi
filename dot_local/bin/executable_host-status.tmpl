@@ -7,8 +7,9 @@ usage() {
 Usage: host-status [OPTIONS]
 
   List what this host still needs after chezmoi apply: interactive
-  logins, managed systemd units that are not running, and tools that
-  are not installed. Each line ends with the command that fixes it.
+  logins, managed systemd units that are not running, tools that are
+  not installed, and a checkout that can change a host tool. Each line
+  ends with the command that fixes or explains it.
 
   Prints nothing and exits 0 when nothing is outstanding.
 
@@ -107,6 +108,13 @@ check_mise_tools() {
     done < <(mise ls --missing --global 2>/dev/null)
 }
 
+# ADR 0011's restriction fails open, so only a hostile-checkout run
+# shows it holds.
+check_mise_isolation() {
+    mise-isolation-probe >/dev/null 2>&1 ||
+        report 'mise: a checkout can change host tools' mise-isolation-probe
+}
+
 check_commands() {
     local cmd
     for cmd in "${commands[@]}"; do
@@ -129,6 +137,7 @@ outstanding=$(
     check_units
     check_apt_packages
     check_mise_tools
+    check_mise_isolation
     check_commands
 )
 [[ -n "$outstanding" ]] || exit 0

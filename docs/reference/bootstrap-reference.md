@@ -82,7 +82,10 @@ On the host, a shim reads only `~/.config/mise/config.toml`. It ignores
 a checkout's `mise.toml`, `.tool-versions`, `.miserc.toml`, and
 `mise.<env>.toml`, so a checkout neither pins host tools nor asks for
 trust. The variables in `~/.config/environment.d/mise.conf` set this.
-To use a checkout's config for one command, unset them:
+`mise-isolation-probe`, run by `host-status` and CI, fails if a checkout
+can change a host tool. Add any new file that mise discovers to the
+probe's hostile checkout. To use a checkout's config for one command,
+unset the variables:
 
 ```bash
 env -u MISE_OVERRIDE_CONFIG_FILENAMES -u MISE_OVERRIDE_TOOL_VERSIONS_FILENAMES \
