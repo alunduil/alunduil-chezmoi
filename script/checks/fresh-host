@@ -108,6 +108,16 @@ as_user '
   chezmoi verify --exclude=scripts,encrypted
 '
 
+log 'checking every shim runs the pinned mise'
+as_user '
+  pin="$(mise where github:jdx/mise)/bin/mise"
+  stray="$(find ~/.local/share/mise/shims -type l ! -lname "$pin" -printf "  %p -> %l\n")"
+  if [ -n "$stray" ]; then
+    printf "FAIL: these shims bypass the pinned mise at %s:\n%s\n" "$pin" "$stray" >&2
+    exit 1
+  fi
+'
+
 changed="$(changed_since_marker)"
 if [ -n "$changed" ]; then
   echo 'FAIL: the second apply changed these; the pass that wrote each one does not converge:' >&2
