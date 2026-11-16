@@ -6,7 +6,7 @@ not_found_auto_install = false
 
 [tools]
 act = "0.2.97"
-"github:grafana/alloy" = "v1.21.3"
+"github:grafana/alloy" = "v1.22.0"
 "github:tfausak/cabal-gild" = "1.8.4.2"
 chezmoi = "2.74.1"
 "github:fourmolu/fourmolu" = "0.21.0.0"
