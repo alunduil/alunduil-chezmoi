@@ -2,15 +2,12 @@
 
 Zero to a fully configured host. Requires a Debian/Crostini host, a 1Password account with access to the `chezmoi` vault, and the age key from a password manager.
 
-mise installs every pinned tool, chezmoi included, at the versions and checksums in the repo's `mise.lock`, so it comes first. Debian's `extrepo` package carries the key that signs mise's apt repository. The first bootstrap pass fetches the other repositories' keys with `curl` and `gpg`.
+mise installs every pinned tool, chezmoi included, at the versions and checksums in the repo's `mise.lock`, so it comes first. A throwaway mise from `mise.run` installs chezmoi, and the first apply replaces it with the mise pinned in `mise.lock`. The first bootstrap pass fetches the apt repositories' keys with `curl` and `gpg`.
 
 Apply runs twice. Secrets come from the 1Password desktop app, which the first apply installs, so the first apply skips them.
 
 ```bash
-sudo apt-get install -y extrepo git curl gpg
-sudo extrepo enable mise
-sudo apt-get update
-sudo apt-get install -y mise
+sudo apt-get install -y git curl gpg
 
 # Decrypts the Cloudflare token, the one age-encrypted secret.
 mkdir -p ~/.config/chezmoi
@@ -21,6 +18,9 @@ chmod 600 ~/.config/chezmoi/key.txt
 # Installs and runs the chezmoi pinned in the clone's mise.lock.
 git clone https://github.com/alunduil/alunduil-chezmoi.git ~/.local/share/chezmoi
 export MISE_GLOBAL_CONFIG_FILE=~/.local/share/chezmoi/dot_config/mise/config.toml
+seed="$(mktemp -d)"
+curl -fsSL https://mise.run | MISE_INSTALL_PATH="$seed/mise" sh
+export PATH="$seed:$PATH"
 mise install chezmoi
 CHEZMOI_NO_1PASSWORD=1 mise exec chezmoi -- chezmoi init --apply
 ```

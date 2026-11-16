@@ -80,10 +80,7 @@ wait_for_user_manager
 
 log 'installing the tutorial prerequisites'
 as_user '
-  sudo apt-get install -y extrepo git curl gpg
-  sudo extrepo enable mise
-  sudo apt-get update
-  sudo apt-get install -y mise
+  sudo apt-get install -y git curl gpg
 '
 
 # Tracked files only, including uncommitted edits, in place of the tutorial's
@@ -96,6 +93,9 @@ git -C "$SOURCE_DIR" ls-files -z |
 log 'first apply'
 as_user '
   export MISE_GLOBAL_CONFIG_FILE=~/.local/share/chezmoi/dot_config/mise/config.toml
+  seed="$(mktemp -d)"
+  curl -fsSL https://mise.run | MISE_INSTALL_PATH="$seed/mise" sh
+  export PATH="$seed:$PATH"
   mise install chezmoi
   mise exec chezmoi -- chezmoi init --apply --exclude=encrypted
 '
