@@ -27,6 +27,7 @@ setup() {
   #   show-environment when $NO_USER_MANAGER is set.
   # - dpkg-query reports each package installed except those in $MISSING_PKGS.
   # - mise prints $MISE_MISSING as its missing-tool listing.
+  # - mise-isolation-probe fails when $MISE_LEAKS is set.
   STUB_DIR="$TMPROOT/stubs"
   mkdir -p "$STUB_DIR"
   stub gh '[ -z "${GH_LOGGED_OUT:-}" ]'
@@ -40,6 +41,7 @@ for p; do
   case " $MISSING_PKGS " in *" $p "*) ;; *) printf "%s installed\n" "$p" ;; esac
 done'
   stub mise 'printf "%s" "${MISE_MISSING:-}"'
+  stub mise-isolation-probe 'echo "FAIL: noise"; [ -z "${MISE_LEAKS:-}" ]'
   local cmd
   while read -r cmd; do
     [ -e "$STUB_DIR/$cmd" ] || stub "$cmd" 'exit 0'
@@ -109,6 +111,13 @@ run_host_status() {
   assert_line --regexp '^zellij 0\.45\.1: not installed +chezmoi apply$'
   assert_line --regexp '^beet: not on PATH +chezmoi apply$'
   assert_equal "${#lines[@]}" 3
+}
+
+@test "a failing mise isolation probe reports once and hides its output" {
+  MISE_LEAKS=1 run_host_status
+  assert_failure
+  assert_output --regexp '^mise: a checkout can change host tools +mise-isolation-probe$'
+  assert_equal "${#lines[@]}" 1
 }
 
 @test "an unknown option exits 2" {

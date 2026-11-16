@@ -58,9 +58,10 @@ jobs:
           # bats-action curls api.github.com; auth raises the anonymous rate limit.
           github-token: ${{ secrets.GITHUB_TOKEN }}
 
+      # mise_isolation_probe.bats runs the real just shim.
       - uses: ./.github/actions/setup-mise
         with:
-          tools: npm:bats-support npm:bats-assert
+          tools: npm:bats-support npm:bats-assert just
 
       - uses: ./.github/actions/setup-kcov
 
@@ -218,6 +219,20 @@ jobs:
 
       - name: Run each tool
         run: script/checks/pinned-tools
+
+  # Ungated: a mise bump can open a discovery path no file here touches.
+  mise-isolation:
+    name: Probe host mise isolation
+    runs-on: ubuntu-26.04
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
+      - uses: ./.github/actions/setup-mise
+        with:
+          tools: just
+
+      - name: Run a shim from a hostile checkout
+        run: bash dot_local/bin/executable_mise-isolation-probe --env-file dot_config/environment.d/mise.conf
 
   # Ungated: any deployed file can break a whole-tree apply.
   fresh-host:
