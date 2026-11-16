@@ -33,9 +33,25 @@ _report_failed_pass() {
 set -E
 trap '_report_failed_pass "$BASH_COMMAND" "$LINENO"' ERR
 
+# chezmoi runs passes from $HOME, where unrestricted mise reads
+# ~/.config/mise/config.toml, ~/.tool-versions, and ~/mise.toml as project
+# config. Before deployment, ~/.config/mise/config.toml still holds the last
+# apply's pins. The calling shell may predate the restriction's variables.
+restrict_mise_to_global_config() {
+  set -a
+  # shellcheck source=dot_config/environment.d/mise.conf
+  . "${BASH_SOURCE[0]%/*}/../../dot_config/environment.d/mise.conf"
+  set +a
+}
+
 # Shims resolve through the deployed ~/.config/mise, so only after-phase
-# passes can call this.
-use_mise_shims() { PATH="$HOME/.local/share/mise/shims:$PATH"; }
+# passes can call this. A first apply runs with MISE_GLOBAL_CONFIG_FILE naming
+# the source tree's config.
+use_mise_shims() {
+  restrict_mise_to_global_config
+  unset MISE_GLOBAL_CONFIG_FILE
+  PATH="$HOME/.local/share/mise/shims:$PATH"
+}
 
 # install-claude-code links claude here. A first apply runs before any shell
 # sources the deployed ~/.profile that puts it on PATH.
