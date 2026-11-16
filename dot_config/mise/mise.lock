@@ -56,6 +56,17 @@ checksum_source = "mise-versions"
 url = "https://github.com/grafana/gcx/releases/download/v1.7.1/gcx_1.7.1_linux_amd64.tar.gz"
 url_api = "https://api.github.com/repos/grafana/gcx/releases/assets/662320576"
 
+[[tools."github:jdx/mise"]]
+version = "2026.10.8"
+backend = "github:jdx/mise"
+specifiers = ["2026.10.8"]
+
+[tools."github:jdx/mise"."platforms.linux-x64"]
+checksum = "sha256:8535ff83319ac3cde3122e7a760fac9dfc4bb3a385e5eb2d0954bcb87a4b8ff5"
+url = "https://github.com/jdx/mise/releases/download/v2026.10.8/mise-v2026.10.8-linux-x64.tar.zst"
+url_api = "https://api.github.com/repos/jdx/mise/releases/assets/630389427"
+provenance = "github-attestations"
+
 [[tools."github:lycheeverse/lychee"]]
 version = "0.24.2"
 backend = "github:lycheeverse/lychee"

@@ -16,6 +16,7 @@ chezmoi = "2.74.1"
 hlint = "3.10"
 just = "1.59.0"
 lazygit = "0.66.3"
+"github:jdx/mise" = "2026.10.8"
 # The glibc build needs a newer glibc than Debian bookworm ships.
 "github:lycheeverse/lychee" = { version = "0.24.2", version_prefix = "lychee-v", matching = "musl" }
 "npm:bats-assert" = "2.2.4"
