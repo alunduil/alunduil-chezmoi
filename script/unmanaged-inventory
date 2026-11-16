@@ -30,7 +30,7 @@ APT_PACKAGES = ROOT / ".chezmoidata/packages.yaml"
 UNIT_DIRS = (ROOT / "dot_config/systemd/user", ROOT / "etc/systemd/system")
 
 # Installed by run_before_01-install-system-packages outside the apt list.
-PASS_PACKAGES = frozenset({"code", "extrepo", "tailscale"})
+PASS_PACKAGES = frozenset({"code", "tailscale"})
 BASE_PACKAGES = frozenset({"cros-guest-tools"})
 BASE_PRIORITIES = frozenset({"required", "important"})
 
