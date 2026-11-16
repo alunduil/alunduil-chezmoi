@@ -71,31 +71,44 @@ context_env() {
     esac
 }
 
+# fail <format> <arg...>: print a FAIL line to stderr and return 1.
+fail() {
+    local format=$1
+    shift
+    # shellcheck disable=SC2059 # callers pass the format
+    printf "FAIL: $format\n" "$@" >&2
+    return 1
+}
+
+# in_checkout <envs...> -- <command...>: run <command> in the hostile
+# checkout with only <envs> beyond the base environment.
+in_checkout() {
+    local -a envs=()
+    while [[ "$1" != -- ]]; do
+        envs+=("$1")
+        shift
+    done
+    shift
+    (cd "$work/checkout" && env -i "${base[@]}" "${envs[@]}" "$@" 2>&1)
+}
+
 # probe <context>
 probe() {
-    local context=$1 configs output
+    local context=$1 configs output want="$TOOL $expected"
     local -a envs
-    if ! output=$(context_env "$context" 2>&1); then
-        printf 'FAIL: %s: could not build the environment:\n%s\n' "$context" "$output" >&2
-        return 1
-    fi
+    output=$(context_env "$context" 2>&1) ||
+        fail '%s: could not build the environment:\n%s' "$context" "$output" || return
     mapfile -t envs <<<"$output"
 
-    if ! output=$(cd "$work/checkout" && env -i "${base[@]}" "${envs[@]}" mise config ls --json 2>&1); then
-        printf 'FAIL: %s: mise config ls failed:\n%s\n' "$context" "$output" >&2
-        return 1
-    fi
+    output=$(in_checkout "${envs[@]}" -- mise config ls --json) ||
+        fail '%s: mise config ls failed:\n%s' "$context" "$output" || return
     configs=$(jq -r '.[].path' <<<"$output")
-    if [[ "$configs" != "$global" ]]; then
-        printf 'FAIL: %s: mise loads more than %s:\n%s\n' "$context" "$global" "$configs" >&2
-        return 1
-    fi
+    [[ "$configs" == "$global" ]] ||
+        fail '%s: mise loads more than %s:\n%s' "$context" "$global" "$configs" || return
 
-    output=$(cd "$work/checkout" && env -i "${base[@]}" "${envs[@]}" "$shims/$TOOL" --version 2>&1)
-    if [[ "$output" != "$TOOL $expected" ]]; then
-        printf 'FAIL: %s: %s shim printed, not %s %s:\n%s\n' "$context" "$TOOL" "$TOOL" "$expected" "$output" >&2
-        return 1
-    fi
+    output=$(in_checkout "${envs[@]}" -- "$shims/$TOOL" --version)
+    [[ "$output" == "$want" ]] ||
+        fail '%s: %s shim printed, not %s:\n%s' "$context" "$TOOL" "$want" "$output" || return
     printf 'OK: %s\n' "$context"
 }
 
@@ -111,21 +124,19 @@ while (($#)); do
     *) printf 'mise-isolation-probe: unknown option: %s (try --help)\n' "$1" >&2; exit 2 ;;
     esac
 done
-[[ -r "$env_file" ]] || { printf 'FAIL: cannot read %s\n' "$env_file" >&2; exit 1; }
+[[ -r "$env_file" ]] || fail 'cannot read %s' "$env_file" || exit
 
 global=${MISE_GLOBAL_CONFIG_FILE:-${MISE_CONFIG_DIR:-${XDG_CONFIG_HOME:-$HOME/.config}/mise}/config.toml}
 shims=${MISE_DATA_DIR:-${XDG_DATA_HOME:-$HOME/.local/share}/mise}/shims
-if ! expected=$(mise config get -f "$global" "tools.$TOOL" 2>&1); then
-    printf 'FAIL: %s pins no %s:\n%s\n' "$global" "$TOOL" "$expected" >&2
-    exit 1
-fi
+expected=$(mise config get -f "$global" "tools.$TOOL" 2>&1) ||
+    fail '%s pins no %s:\n%s' "$global" "$TOOL" "$expected" || exit
 
 work=$(mktemp -d)
 trap 'rm -rf "$work"' EXIT
 write_checkout "$work/checkout"
 mapfile -t base < <(base_env)
 
-fail=0
-probe 'login shell' || fail=1
-probe 'systemd user unit' || fail=1
-exit "$fail"
+status=0
+probe 'login shell' || status=1
+probe 'systemd user unit' || status=1
+exit "$status"
