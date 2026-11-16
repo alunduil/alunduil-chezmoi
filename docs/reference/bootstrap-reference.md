@@ -76,6 +76,10 @@ systemd manager a unit belongs in and what it runs as.
 Every apt package goes in the one list. Later passes configure what
 `install-system-packages` installed rather than calling apt themselves.
 
+A pass that runs `mise install` calls `use_pinned_mise` first.
+`mise install` links every shim to the first `mise` on `PATH`, which on
+a first apply is the tutorial's seed.
+
 Callers reach mise tools through the shims in
 `~/.local/share/mise/shims`, which keep one path across version bumps.
 On the host, a shim reads only `~/.config/mise/config.toml`. It ignores
@@ -94,9 +98,6 @@ env -u MISE_OVERRIDE_CONFIG_FILENAMES -u MISE_OVERRIDE_TOOL_VERSIONS_FILENAMES \
 
 A shim for a version that isn't installed fails, so run `mise install`
 first.
-mise links every shim to the first `mise` on `PATH`, and `mise install`
-links them again. A pass that installs through mise calls `use_pinned_mise`
-first, so the shims follow the pin rather than the tutorial's seed.
 `gh` looks for extensions only in its data directory, so
 `~/.local/share/gh/extensions/gh-poi/gh-poi` links to the gh-poi shim.
 

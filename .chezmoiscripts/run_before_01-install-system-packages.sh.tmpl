@@ -115,9 +115,8 @@ if [ ! -f "$debsig_policy" ] || [ ! -f "$debsig_keyring" ]; then
 fi
 
 # ----------------------------------------------------------------------- mise
-# install-mise installs mise from mise.lock. The apt package would reach the
-# host before CI tested its release, and extrepo only enabled its repository.
-# extrepo leaves the key it fetched when purged.
+# An apt mise would bring releases CI hasn't tested, and extrepo served only
+# its repository. A purge leaves extrepo's source list and key behind.
 apt_mise=()
 for pkg in mise extrepo; do
   is_installed "$pkg" && apt_mise+=("$pkg")

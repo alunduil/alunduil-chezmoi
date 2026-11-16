@@ -29,7 +29,7 @@ url="$(read_setting url url)" || exit 0 # rerun-on: url-hash
 key="$(read_setting "api key" api_key)" || exit 0 # rerun-on: key-hash
 user="$(read_setting "api key user" user)" || exit 0 # rerun-on: user-hash
 
-# The registration outlives this apply's PATH. The shim keeps one path across
+# The registration outlives this apply's PATH, and the shim's path outlives
 # mise bumps.
 mise_bin="$mise_shims/mise"
 if [ ! -x "$mise_bin" ]; then

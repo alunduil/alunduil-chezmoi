@@ -1,8 +1,7 @@
 #!/usr/bin/env bash
-# Installs the mise pinned in dot_config/mise/config.toml, with whichever mise
-# is on PATH: the tutorial's seed on a fresh host, or the last apply's pin.
-# mise.lock's checksum fails a tampered download here, before it runs. Later
-# passes reach the pin through use_pinned_mise.
+# The mise on PATH installs the pinned one: the tutorial's seed on a fresh
+# host, otherwise the last apply's pin. mise.lock's checksum stops a tampered
+# download before it runs.
 
 set -euo pipefail
 
@@ -14,9 +13,8 @@ export MISE_GLOBAL_CONFIG_FILE="{{ .chezmoi.sourceDir }}/dot_config/mise/config.
 mise install github:jdx/mise
 pin="$(mise where github:jdx/mise)/bin/mise"
 
-# mise links each shim to the first mise on PATH rather than to the binary
-# running, and prune relinks them too. prune keeps any version a process is
-# running from, so the old mise has to have exited.
+# reshim and prune link each shim to the first mise on PATH, whichever mise
+# runs them. prune keeps the version it runs from, so the pin runs it.
 PATH="${pin%/*}:$PATH"
 mise reshim
 mise prune --tools --yes github:jdx/mise
