@@ -33,11 +33,10 @@ _report_failed_pass() {
 set -E
 trap '_report_failed_pass "$BASH_COMMAND" "$LINENO"' ERR
 
-# chezmoi runs passes from $HOME, where mise reads ~/.config/mise/config.toml
-# as project config, and any ~/.tool-versions or ~/mise.toml besides. In
-# before-phase passes that file still holds the last apply's pins. Loading the
-# host restriction from the source tree makes a pass resolve tools as a login
-# shell does, whether or not the calling shell has sourced it.
+# chezmoi runs passes from $HOME, where unrestricted mise reads
+# ~/.config/mise/config.toml, ~/.tool-versions, and ~/mise.toml as project
+# config. Before deployment, ~/.config/mise/config.toml still holds the last
+# apply's pins. The calling shell may predate the restriction's variables.
 restrict_mise_to_global_config() {
   set -a
   # shellcheck source=dot_config/environment.d/mise.conf
