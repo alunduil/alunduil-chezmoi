@@ -1,0 +1,131 @@
+#!/usr/bin/env bash
+
+set -uo pipefail
+
+usage() {
+    cat <<'EOF'
+Usage: mise-isolation-probe [OPTIONS]
+
+  Run the just shim from a hostile checkout and fail unless mise loads
+  only its global config and the shim prints the global config's
+  version. Runs once with the environment a login shell builds from
+  ENV_FILE and once with the one the systemd user manager builds.
+
+  Needs no network and installs nothing.
+
+Options:
+  --env-file PATH  The mise environment to test.
+                   [default: ~/.config/environment.d/mise.conf]
+  -h, --help       Show this message and exit.
+EOF
+}
+
+TOOL=just
+GENERATOR=/usr/lib/systemd/user-environment-generators/30-systemd-environment-d-generator
+
+# Every file mise reads project config from. Each pins TOOL to its own
+# version, so a takeover names the file that won. .miserc.toml selects
+# the mise.probe.toml environment and turns on auto_env, which loads
+# mise.linux.toml; a checkout's .miserc.toml outranks the global one.
+write_checkout() {
+    local dir=$1 n=0 f
+    mkdir -p "$dir/mise" "$dir/.mise" "$dir/.config/mise/conf.d"
+    for f in mise.toml .mise.toml mise.local.toml .mise.local.toml \
+        mise/config.toml .mise/config.toml .config/mise.toml \
+        .config/mise/config.toml .config/mise/conf.d/probe.toml \
+        mise.probe.toml mise.linux.toml; do
+        n=$((n + 1))
+        printf '[env]\nMISE_PROBE_FILE = "%s"\n\n[tools]\n%s = "1.0.%d"\n' "$f" "$TOOL" "$n" >"$dir/$f"
+    done
+    printf '%s 1.0.0\n' "$TOOL" >"$dir/.tool-versions"
+    printf 'env = ["probe"]\nauto_env = true\n' >"$dir/.miserc.toml"
+}
+
+# Only what locates mise's own files survives from the caller, so the
+# variables under test come from ENV_FILE alone.
+base_env() {
+    local var
+    printf '%s\n' "HOME=$HOME" "PATH=$PATH"
+    for var in XDG_CONFIG_HOME XDG_DATA_HOME XDG_CACHE_HOME XDG_STATE_HOME \
+        MISE_GLOBAL_CONFIG_FILE MISE_CONFIG_DIR MISE_DATA_DIR MISE_CACHE_DIR MISE_STATE_DIR; do
+        [[ -n "${!var:-}" ]] && printf '%s=%s\n' "$var" "${!var}"
+    done
+}
+
+# context_env <context>: the variables ENV_FILE gives <context>.
+context_env() {
+    case $1 in
+    'login shell')
+        # Mirrors ~/.profile.
+        # shellcheck disable=SC2016 # $1 expands in the child shell
+        env -i "${base[@]}" sh -c 'set -a; . "$1"; set +a; env' _ "$env_file"
+        ;;
+    'systemd user unit')
+        # The generator reads $XDG_CONFIG_HOME/environment.d, so a scratch
+        # one holding ENV_FILE yields what a user unit would get from it.
+        [[ -x "$GENERATOR" ]] || { printf 'no systemd environment generator at %s\n' "$GENERATOR" >&2; return 1; }
+        mkdir -p "$work/xdg/environment.d"
+        cp "$env_file" "$work/xdg/environment.d/mise.conf"
+        env -i "${base[@]}" XDG_CONFIG_HOME="$work/xdg" "$GENERATOR"
+        ;;
+    esac
+}
+
+# probe <context>
+probe() {
+    local context=$1 configs output
+    local -a envs
+    if ! output=$(context_env "$context" 2>&1); then
+        printf 'FAIL: %s: could not build the environment:\n%s\n' "$context" "$output" >&2
+        return 1
+    fi
+    mapfile -t envs <<<"$output"
+
+    if ! output=$(cd "$work/checkout" && env -i "${base[@]}" "${envs[@]}" mise config ls --json 2>&1); then
+        printf 'FAIL: %s: mise config ls failed:\n%s\n' "$context" "$output" >&2
+        return 1
+    fi
+    configs=$(jq -r '.[].path' <<<"$output")
+    if [[ "$configs" != "$global" ]]; then
+        printf 'FAIL: %s: mise loads more than %s:\n%s\n' "$context" "$global" "$configs" >&2
+        return 1
+    fi
+
+    output=$(cd "$work/checkout" && env -i "${base[@]}" "${envs[@]}" "$shims/$TOOL" --version 2>&1)
+    if [[ "$output" != "$TOOL $expected" ]]; then
+        printf 'FAIL: %s: %s shim printed, not %s %s:\n%s\n' "$context" "$TOOL" "$TOOL" "$expected" "$output" >&2
+        return 1
+    fi
+    printf 'OK: %s\n' "$context"
+}
+
+env_file="$HOME/.config/environment.d/mise.conf"
+while (($#)); do
+    case "$1" in
+    --env-file)
+        [[ $# -ge 2 ]] || { printf 'mise-isolation-probe: --env-file requires a value\n' >&2; exit 2; }
+        env_file=$2
+        shift 2
+        ;;
+    -h | --help) usage; exit 0 ;;
+    *) printf 'mise-isolation-probe: unknown option: %s (try --help)\n' "$1" >&2; exit 2 ;;
+    esac
+done
+[[ -r "$env_file" ]] || { printf 'FAIL: cannot read %s\n' "$env_file" >&2; exit 1; }
+
+global=${MISE_GLOBAL_CONFIG_FILE:-${MISE_CONFIG_DIR:-${XDG_CONFIG_HOME:-$HOME/.config}/mise}/config.toml}
+shims=${MISE_DATA_DIR:-${XDG_DATA_HOME:-$HOME/.local/share}/mise}/shims
+if ! expected=$(mise config get -f "$global" "tools.$TOOL" 2>&1); then
+    printf 'FAIL: %s pins no %s:\n%s\n' "$global" "$TOOL" "$expected" >&2
+    exit 1
+fi
+
+work=$(mktemp -d)
+trap 'rm -rf "$work"' EXIT
+write_checkout "$work/checkout"
+mapfile -t base < <(base_env)
+
+fail=0
+probe 'login shell' || fail=1
+probe 'systemd user unit' || fail=1
+exit "$fail"
