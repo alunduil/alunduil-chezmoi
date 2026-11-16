@@ -44,6 +44,16 @@ restrict_mise_to_global_config() {
   set +a
 }
 
+# Puts the mise that install-mise pinned first on PATH. mise links every shim
+# to the first mise on PATH, and `mise install` relinks them, so a pass that
+# installs runs with the pin there. On a first apply the tutorial's seed is
+# on PATH, and on an older host the apt package is.
+use_pinned_mise() {
+  local pin
+  pin="$(readlink -f "$HOME/.local/share/mise/shims/mise")"
+  PATH="${pin%/*}:$PATH"
+}
+
 # Shims resolve through the deployed ~/.config/mise, so only after-phase
 # passes can call this. A first apply runs with MISE_GLOBAL_CONFIG_FILE naming
 # the source tree's config.

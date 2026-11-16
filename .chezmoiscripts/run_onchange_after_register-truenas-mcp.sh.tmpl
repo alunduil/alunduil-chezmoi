@@ -29,9 +29,11 @@ url="$(read_setting url url)" || exit 0 # rerun-on: url-hash
 key="$(read_setting "api key" api_key)" || exit 0 # rerun-on: key-hash
 user="$(read_setting "api key user" user)" || exit 0 # rerun-on: user-hash
 
-mise_bin="$(command -v mise || true)"
-if [ -z "$mise_bin" ]; then
-  log "truenas-mcp: mise not on PATH, registration retries on the next apply"
+# The registration outlives this apply's PATH. The shim keeps one path across
+# mise bumps.
+mise_bin="$HOME/.local/share/mise/shims/mise"
+if [ ! -x "$mise_bin" ]; then
+  log "truenas-mcp: mise not installed, registration retries on the next apply"
   exit 1
 fi
 if ! "$mise_bin" -C "$HOME" which truenas-mcp >/dev/null 2>&1; then
