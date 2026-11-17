@@ -78,17 +78,14 @@ so `just check` leaves it to CI.
 
 ## Agent instruction files
 
-This file holds the rules for any coding agent editing this source. A
-tool that reads `AGENTS.md` needs no file of its own. A tool that reads
-only its own path gets a root file that imports or points at this one and
-holds only rules false for every other agent; `CLAUDE.md` is that file
-for Claude Code. A rule that holds for more than one tool goes here.
+Rules that hold for more than one coding agent go in `AGENTS.md`. A tool
+that reads only its own path, as Claude Code reads `CLAUDE.md`, gets a
+root file that imports `AGENTS.md` and holds only rules false for every
+other agent.
 
-A new instruction file needs the `.chezmoiignore` entry every root file
-needs (see Invariants), and a place in the agent-read glob in `.vale.ini`
-so it doesn't lint as human prose.
+Add a new instruction file to `.chezmoiignore` and to the agent-read glob
+in `.vale.ini`. Outside that glob, Vale lints it as human prose.
 
-`dot_claude/` is payload, not guidance for editing this repo.
-`dot_claude/CLAUDE.md` deploys to `~/.claude/CLAUDE.md`, and edits there
-change Claude Code's host-wide behaviour on the next `chezmoi apply`. Keep
-its name: Claude Code loads only that path.
+`dot_claude/` deploys to `~/.claude/`. An edit to `dot_claude/CLAUDE.md`
+changes Claude Code's behaviour in every project on this host from the
+next `chezmoi apply`. Keep its name: Claude Code loads only that path.
