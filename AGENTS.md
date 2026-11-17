@@ -1,15 +1,15 @@
 # alunduil-chezmoi
 
+This repo is the chezmoi source directory. Files deploy to `$HOME` via `chezmoi apply`;
+names follow chezmoi rules (`dot_` → `.`, `executable_` → +x, `.tmpl` →
+Go template, `.chezmoiscripts/run_*_before_NN-…` → ordered convergent bootstrap).
+`docs/tutorials/bootstrap.md` has the bootstrap walkthrough; `docs/explanation/architecture.md` has the human-facing rationale; `docs/reference/bootstrap-reference.md` has the lookup tables.
+
 Rules for any coding agent editing this chezmoi source. A tool that reads
 `AGENTS.md` needs no file of its own. A tool that reads only its own path
 gets a file there that imports or points at this one and holds only rules
 false for every other agent; `CLAUDE.md` is that file for Claude Code. A
 rule that holds for more than one tool goes here.
-
-This repo is the chezmoi source directory. Files deploy to `$HOME` via `chezmoi apply`;
-names follow chezmoi rules (`dot_` → `.`, `executable_` → +x, `.tmpl` →
-Go template, `.chezmoiscripts/run_*_before_NN-…` → ordered convergent bootstrap).
-`docs/tutorials/bootstrap.md` has the bootstrap walkthrough; `docs/explanation/architecture.md` has the human-facing rationale; `docs/reference/bootstrap-reference.md` has the lookup tables.
 
 ## Source vs. apply path
 
