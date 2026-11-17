@@ -47,11 +47,8 @@ effect on `apply` until committed and pulled into the apply clone. Use
 ## Pull request descriptions
 
 This repo squash-merges with `squash_merge_commit_message: PR_BODY`, so
-the description lands in `git log` verbatim and the branch commits go
-with the squash. Write it as a commit message: prose wrapped at 72
-columns, no H1 repeating the title, no `##` section headings, no
-checkbox lists. A trailer that has to persist goes in the description,
-since the ones on branch commits are discarded.
+the description lands in `git log` verbatim and branch commit messages
+are discarded. A trailer that has to persist goes in the description.
 
 ## Sensors
 
