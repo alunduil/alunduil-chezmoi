@@ -5,12 +5,6 @@ names follow chezmoi rules (`dot_` → `.`, `executable_` → +x, `.tmpl` →
 Go template, `.chezmoiscripts/run_*_before_NN-…` → ordered convergent bootstrap).
 `docs/tutorials/bootstrap.md` has the bootstrap walkthrough; `docs/explanation/architecture.md` has the human-facing rationale; `docs/reference/bootstrap-reference.md` has the lookup tables.
 
-Rules for any coding agent editing this chezmoi source. A tool that reads
-`AGENTS.md` needs no file of its own. A tool that reads only its own path
-gets a file there that imports or points at this one and holds only rules
-false for every other agent; `CLAUDE.md` is that file for Claude Code. A
-rule that holds for more than one tool goes here.
-
 ## Source vs. apply path
 
 `chezmoi diff`/`apply` read the *applied* clone at
@@ -82,7 +76,17 @@ script/checks/chezmoi-apply    # apply round-trip (needs chezmoi + age)
 fails on anything a second apply changes. It installs the whole workstation,
 so `just check` leaves it to CI.
 
-## Deployed Claude Code config
+## Agent instruction files
+
+This file holds the rules for any coding agent editing this source. A
+tool that reads `AGENTS.md` needs no file of its own. A tool that reads
+only its own path gets a root file that imports or points at this one and
+holds only rules false for every other agent; `CLAUDE.md` is that file
+for Claude Code. A rule that holds for more than one tool goes here.
+
+A new instruction file needs the `.chezmoiignore` entry every root file
+needs (see Invariants), and a place in the agent-read glob in `.vale.ini`
+so it doesn't lint as human prose.
 
 `dot_claude/` is payload, not guidance for editing this repo.
 `dot_claude/CLAUDE.md` deploys to `~/.claude/CLAUDE.md`, and edits there
