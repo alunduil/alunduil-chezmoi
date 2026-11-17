@@ -275,8 +275,8 @@ jobs:
         run: |
           # Named paths rather than `vale .`, which walks into the vendored
           # styles under .vale/styles/ and dies on frontmatter it can't parse
-          # in dot_claude/. CLAUDE.md is the one root doc that stays out.
-          vale --output=JSON --glob='!CLAUDE.md' ./*.md docs/ > vale.json || true
+          # in dot_claude/.
+          vale --output=JSON ./*.md docs/ > vale.json || true
           # A vale crash yields no JSON; fail here rather than report nothing.
           jq -e . vale.json > /dev/null
           jq -c '

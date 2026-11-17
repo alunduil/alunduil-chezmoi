@@ -57,7 +57,7 @@ repos:
     hooks:
       - id: vale
         args: [--output=line, --minAlertLevel=error]
-        exclude: ^(CLAUDE\.md|dot_claude/|\.claude/|\.vale/styles/)
+        exclude: ^(dot_claude/|\.claude/|\.vale/styles/)
 
   - repo: https://github.com/DavidAnson/markdownlint-cli2
     rev: v0.24.1

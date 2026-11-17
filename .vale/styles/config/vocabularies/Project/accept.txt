@@ -24,6 +24,8 @@ Codecov
 UptimeRobot
 Renovate
 pre-commit
+prek
+shellcheck
 Diátaxis
 ghcup
 mise
@@ -79,6 +81,7 @@ VMs
 (?i)justfile
 (?i)dotfiles?
 (?i)heredoc
+(?i)unrendered
 (?i)keybinds
 (?i)namespaced
 (?i)repos?
