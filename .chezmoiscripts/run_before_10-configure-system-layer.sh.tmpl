@@ -13,5 +13,11 @@ ansible_dir="{{ .chezmoi.sourceDir }}/ansible"
 # chezmoi runs passes from $HOME, where Ansible wouldn't find the config.
 export ANSIBLE_CONFIG="$ansible_dir/ansible.cfg"
 
+# An earlier pass can leave chezmoi's shared stdio non-blocking, and Ansible
+# refuses to run on it.
+mise exec -- python3 -c 'import os
+for fd in 0, 1, 2:
+    os.set_blocking(fd, True)'
+
 mise exec -- ansible-galaxy install -r "$ansible_dir/requirements.yml"
 mise exec -- ansible-playbook "$ansible_dir/site.yml"
