@@ -27,9 +27,9 @@ A `run_` pass checks host state before acting and reaches no `sudo` when
 the host already matches. Local guards: `dpkg-query` status compared to
 `installed`, a pinned `--version`, `cmp` before `sudo install`.
 
-`configure-system-layer` is the exception. It runs the playbook in
-`ansible/` with `become`, so it reaches `sudo` on every apply, and the
-playbook's modules are its guards. A converged host reports `changed=0`.
+`configure-system-layer` reaches `sudo` on every apply, because it runs
+the playbook in `ansible/` with `become`. The playbook's modules are its
+guards: a converged host reports `changed=0`.
 
 A pass writes under `/etc` only through `install_if_changed`, which
 shows the diff and keeps the old file as `<file>.bak` when it replaces

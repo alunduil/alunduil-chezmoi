@@ -3,7 +3,6 @@
   hosts: localhost
   become: true
   tasks:
-    # ansible-core doesn't install it, and check mode fails without it.
     - name: Install python3-debian for deb822_repository
       ansible.builtin.apt:
         name: python3-debian

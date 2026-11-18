@@ -55,16 +55,15 @@ use_pinned_mise() {
   PATH="${pin%/*}:$PATH"
 }
 
-# Before deployment, ~/.config/mise holds the last apply's pins, or nothing on
-# a fresh host, so before-phase passes read the source tree's config, beside
-# mise.lock and its npm sidecars.
+# Until apply deploys it, ~/.config/mise is stale or missing.
 use_source_mise_config() {
   restrict_mise_to_global_config
   export MISE_GLOBAL_CONFIG_FILE="${BASH_SOURCE[0]%/*}/../../dot_config/mise/config.toml"
 }
 
 # Shims resolve through the deployed ~/.config/mise, so only after-phase
-# passes can call this.
+# passes can call this. A first apply runs with MISE_GLOBAL_CONFIG_FILE naming
+# the source tree's config.
 use_mise_shims() {
   restrict_mise_to_global_config
   unset MISE_GLOBAL_CONFIG_FILE

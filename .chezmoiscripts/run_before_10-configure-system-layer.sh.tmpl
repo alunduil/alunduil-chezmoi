@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
-# See docs/adr/0010-configure-the-system-layer-with-ansible.md. The only pass
-# that reaches sudo on a converged host: become runs on every apply.
+# See docs/adr/0010-configure-the-system-layer-with-ansible.md. Reaches sudo
+# on every apply; docs/reference/bootstrap-reference.md records the exception.
 
 set -euo pipefail
 
