@@ -17,7 +17,7 @@ url_api = "https://api.github.com/repos/nektos/act/releases/assets/710157441"
 version = "2.22.0"
 backend = "pypi:ansible-core"
 specifiers = ["2.22.0"]
-uv = { path = ".mise/locks/ansible-core/2.22.0", digest = "sha256:bbdeffd49cded64d2d1efb317e0ca6204f7829eba7c21c5dc7f453a25fe6641d" }
+uv = { path = ".mise/locks/ansible-core/2.22.0", digest = "sha256:0707560bc31e70abc08b951fa435f5df76131edf330c22070431d09c2ce0b1ca" }
 
 [[tools.chezmoi]]
 version = "2.74.1"
@@ -152,7 +152,7 @@ url_api = "https://api.github.com/repos/jesseduffield/lazygit/releases/assets/72
 
 [[tools."npm:bats-assert"]]
 version = "2.2.4"
-aube = { path = ".mise/locks/npm-bats-assert/2.2.4", digest = "sha256:25ad0d3facd48e0d6dca230b424acc1da225dc00736e6a3acca8237996a6882c" }
+aube = { path = ".mise/locks/npm-bats-assert/2.2.4", digest = "sha256:686546cc4eb164873ef73c1631160355fe703443eb6cc1f417b62d78b19cbff8" }
 backend = "npm:bats-assert"
 specifiers = ["2.2.4"]
 
