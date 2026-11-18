@@ -1,0 +1,17 @@
+#!/usr/bin/env bash
+# See docs/adr/0010-configure-the-system-layer-with-ansible.md. The only pass
+# that reaches sudo on a converged host: become runs on every apply.
+
+set -euo pipefail
+
+# shellcheck source=script/lib/bootstrap.sh
+. "{{ .chezmoi.sourceDir }}/script/lib/bootstrap.sh"
+use_pinned_mise
+use_source_mise_config
+
+ansible_dir="{{ .chezmoi.sourceDir }}/ansible"
+# chezmoi runs passes from $HOME, where Ansible wouldn't find the config.
+export ANSIBLE_CONFIG="$ansible_dir/ansible.cfg"
+
+mise exec -- ansible-galaxy install -r "$ansible_dir/requirements.yml"
+mise exec -- ansible-playbook "$ansible_dir/site.yml"

@@ -27,6 +27,10 @@ A `run_` pass checks host state before acting and reaches no `sudo` when
 the host already matches. Local guards: `dpkg-query` status compared to
 `installed`, a pinned `--version`, `cmp` before `sudo install`.
 
+`configure-system-layer` is the exception. It runs the playbook in
+`ansible/` with `become`, so it reaches `sudo` on every apply, and the
+playbook's modules are its guards. A converged host reports `changed=0`.
+
 A pass writes under `/etc` only through `install_if_changed`, which
 shows the diff and keeps the old file as `<file>.bak` when it replaces
 one. Generated content goes to a temporary file first.
@@ -70,6 +74,7 @@ systemd manager a unit belongs in and what it runs as.
 | Release binaries | `dot_config/mise/config.toml` | `install-binary-tools`, through `mise install` | `dot_config/mise/mise.lock` |
 | Python tools | `install-via-mise-tools` | `uv tool install` | `*_VERSION` in the pass |
 | Node, Haskell, Rust | `install-{node,haskell,rust}-ecosystem` | each ecosystem's own manager | `*_VERSION` in the pass |
+| Galaxy roles and collections | `ansible/requirements.yml` | `configure-system-layer`, through `ansible-galaxy` | the version in `requirements.yml` |
 | Claude Code | `install-claude-code` | Anthropic's native installer | nothing: it updates itself |
 | Zellij plugins | `plugins` block of `dot_config/zellij/config.kdl` | Zellij at load | the version in the download address |
 

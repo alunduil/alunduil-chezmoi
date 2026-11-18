@@ -1,0 +1,8 @@
+---
+all:
+  hosts:
+    localhost:
+      ansible_connection: local
+      # A fresh host has no system Python. Modules that need Debian's
+      # bindings respawn under /usr/bin/python3 once apt installs them.
+      ansible_python_interpreter: "{{ ansible_playbook_python }}"
