@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 # See docs/adr/0010-configure-the-system-layer-with-ansible.md. Reaches sudo
-# on every apply; docs/reference/bootstrap-reference.md records the exception.
+# on every apply: the playbook's modules are its guards.
 
 set -euo pipefail
 
@@ -13,8 +13,8 @@ ansible_dir="{{ .chezmoi.sourceDir }}/ansible"
 # chezmoi runs passes from $HOME, where Ansible wouldn't find the config.
 export ANSIBLE_CONFIG="$ansible_dir/ansible.cfg"
 
-# An earlier pass can leave chezmoi's shared stdio non-blocking, and Ansible
-# refuses to run on it.
+# Ansible refuses non-blocking stdio, which an earlier pass can leave on
+# chezmoi's shared descriptors.
 mise exec -- python3 -c 'import os
 for fd in 0, 1, 2:
     os.set_blocking(fd, True)'

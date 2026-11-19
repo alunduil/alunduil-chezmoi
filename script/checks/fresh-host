@@ -52,8 +52,8 @@ as_user() {
     "$host" bash -lc "set -euo pipefail; $1"
 }
 
-# The container goes with the run, so keep its journal in FRESH_HOST_LOGS and
-# name the failed units here.
+# The EXIT trap removes the container, so read its journal and failed units
+# first.
 save_diagnostics() {
   local logs="${FRESH_HOST_LOGS:-$(mktemp -d)}"
   mkdir -p "$logs"
