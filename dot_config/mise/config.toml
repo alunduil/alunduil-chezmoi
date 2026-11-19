@@ -5,7 +5,7 @@ lockfile_platforms = ["linux-x64"]
 not_found_auto_install = false
 
 [tools]
-act = "0.2.97"
+act = "0.2.98"
 ansible-core = "2.22.0"
 "github:grafana/alloy" = "v1.22.0"
 "github:tfausak/cabal-gild" = "1.8.4.2"
