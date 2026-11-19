@@ -41,7 +41,6 @@ docker build --quiet --tag "$image" \
   - <"$SOURCE_DIR/script/checks/fresh-host.Dockerfile" >/dev/null
 
 host="$(docker run --detach --privileged "$image")"
-trap 'docker rm --force "$host" >/dev/null' EXIT
 
 # A login shell, as the tutorial's terminal is. CI has no 1Password vault, so
 # secrets render empty. mise's GitHub backend is rate-limited without
@@ -52,6 +51,28 @@ as_user() {
     --env CHEZMOI_NO_1PASSWORD=1 --env GITHUB_TOKEN \
     "$host" bash -lc "set -euo pipefail; $1"
 }
+
+# The EXIT trap removes the container, so read its journal and failed units
+# first.
+save_diagnostics() {
+  local logs="${FRESH_HOST_LOGS:-$(mktemp -d)}"
+  mkdir -p "$logs"
+  docker exec "$host" journalctl --no-pager -o short-precise >"$logs/journal.txt" || true
+  {
+    echo 'failed system units:'
+    docker exec "$host" systemctl --failed --no-legend || true
+    echo 'failed user units:'
+    as_user 'systemctl --user --failed --no-legend' || true
+  } >&2
+  log "journal saved to $logs/journal.txt"
+}
+
+on_exit() {
+  local status=$?
+  [ "$status" -eq 0 ] || save_diagnostics
+  docker rm --force "$host" >/dev/null
+}
+trap on_exit EXIT
 
 wait_for_user_manager() {
   for _ in {1..60}; do

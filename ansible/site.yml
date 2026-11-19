@@ -1,0 +1,8 @@
+---
+- name: Configure the system layer
+  hosts: localhost
+  become: true
+  tasks:
+    - name: Install python3-debian for deb822_repository
+      ansible.builtin.apt:
+        name: python3-debian

@@ -1,0 +1,23 @@
+#!/usr/bin/env bash
+# See docs/adr/0010-configure-the-system-layer-with-ansible.md. Reaches sudo
+# on every apply: the playbook's modules are its guards.
+
+set -euo pipefail
+
+# shellcheck source=script/lib/bootstrap.sh
+. "{{ .chezmoi.sourceDir }}/script/lib/bootstrap.sh"
+use_pinned_mise
+use_source_mise_config
+
+ansible_dir="{{ .chezmoi.sourceDir }}/ansible"
+# chezmoi runs passes from $HOME, where Ansible wouldn't find the config.
+export ANSIBLE_CONFIG="$ansible_dir/ansible.cfg"
+
+# Ansible refuses non-blocking stdio, which an earlier pass can leave on
+# chezmoi's shared descriptors.
+mise exec -- python3 -c 'import os
+for fd in 0, 1, 2:
+    os.set_blocking(fd, True)'
+
+mise exec -- ansible-galaxy install -r "$ansible_dir/requirements.yml"
+mise exec -- ansible-playbook "$ansible_dir/site.yml"

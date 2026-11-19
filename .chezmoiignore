@@ -1,6 +1,7 @@
 .lycheecache
 **/__pycache__
 AGENTS.md
+ansible
 CLAUDE.md
 docs
 etc
