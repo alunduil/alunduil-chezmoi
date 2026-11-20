@@ -122,10 +122,10 @@ as_user '
 docker exec "$host" touch "$marker"
 
 log 'second apply'
-as_user '
+second_apply="$(as_user '
   chezmoi apply --exclude=encrypted
   chezmoi verify --exclude=scripts,encrypted
-'
+' | tee /dev/stderr)"
 
 log 'checking every shim runs the pinned mise'
 as_user '
@@ -141,5 +141,14 @@ changed="$(changed_since_marker)"
 if [ -n "$changed" ]; then
   echo 'FAIL: the second apply changed these; the pass that wrote each one does not converge:' >&2
   printf '%s\n' "$changed" >&2
+  exit 1
+fi
+
+# An Ansible task can report changed without writing a file. A missing recap
+# means the playbook never ran, so it fails too.
+recap="$(grep -E '^localhost +: ' <<<"$second_apply" || true)"
+if [[ "$recap" != *" changed=0 "* ]]; then
+  echo 'FAIL: the playbook did not report changed=0 on the second apply:' >&2
+  printf '  %s\n' "${recap:-no play recap in the output}" >&2
   exit 1
 fi
