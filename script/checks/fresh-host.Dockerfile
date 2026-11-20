@@ -18,4 +18,8 @@ RUN apt-get update \
   && mkdir -p /var/lib/systemd/linger \
   && touch "/var/lib/systemd/linger/$USER"
 
+# overlay2, which daemon.json sets, can't mount on the image's own overlay
+# filesystem. A volume puts Docker's data on the runner's disk instead.
+VOLUME /var/lib/docker
+
 CMD ["/sbin/init"]

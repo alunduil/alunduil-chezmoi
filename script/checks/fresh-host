@@ -70,7 +70,7 @@ save_diagnostics() {
 on_exit() {
   local status=$?
   [ "$status" -eq 0 ] || save_diagnostics
-  docker rm --force "$host" >/dev/null
+  docker rm --force --volumes "$host" >/dev/null
 }
 trap on_exit EXIT
 
