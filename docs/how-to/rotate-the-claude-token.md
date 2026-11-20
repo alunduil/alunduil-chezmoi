@@ -12,13 +12,5 @@ expires or leaks.
    claude setup-token
    ```
 
-2. Paste the token into that item's **credential** field, replacing the
-   old value, and update its **expires** date.
-
-3. Deploy it:
-
-   ```bash
-   chezmoi apply ~/.config/claude-pair/token
-   ```
-
-`docs/how-to/add-a-secret.md` covers creating the item the first time.
+2. Follow [Rotate a secret](add-a-secret.md#rotate-a-secret) with the
+   new token, and update the item's **expires** date.
