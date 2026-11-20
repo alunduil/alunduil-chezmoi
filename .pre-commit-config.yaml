@@ -64,6 +64,19 @@ repos:
     hooks:
       - id: markdownlint-cli2
 
+  - repo: https://github.com/ansible/ansible-lint
+    rev: v26.11.0
+    hooks:
+      - id: ansible-lint
+        args: [ansible]
+        always_run: false
+        files: ^ansible/
+        # Renovate bumps additional_dependencies only on a hook that
+        # declares its language.
+        language: python
+        # Matches the ansible-core pin in dot_config/mise/config.toml.
+        additional_dependencies: [ansible-core==2.22.0]
+
   - repo: local
     hooks:
       # Renovate bumps additional_dependencies only on hooks that declare a
