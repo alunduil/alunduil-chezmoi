@@ -30,6 +30,7 @@ Diátaxis
 ghcup
 mise
 Ansible(?:'s)?
+Keybase
 numtide
 containerless
 (?i)devcontainers?

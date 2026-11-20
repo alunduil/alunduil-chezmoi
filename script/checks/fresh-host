@@ -99,7 +99,7 @@ wait_for_user_manager
 
 log 'installing the tutorial prerequisites'
 as_user '
-  sudo apt-get install -y git curl gpg
+  sudo apt-get install -y git curl
 '
 
 # Tracked files only, including uncommitted edits, in place of the tutorial's

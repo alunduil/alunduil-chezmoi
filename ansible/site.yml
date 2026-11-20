@@ -97,8 +97,8 @@
         update_cache: true
         cache_valid_time: 3600
 
-    # `tailscale up` (interactive browser auth) is a separate per-machine
-    # manual step; see README.
+    # `tailscale up` stays a manual login on each host; host-status reports
+    # it.
     - name: Enable tailscaled
       ansible.builtin.systemd_service:
         name: tailscaled
