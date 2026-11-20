@@ -1,7 +1,7 @@
 ---
-# Every package apt installs. The .deb tasks in site.yml bootstrap the three
-# whose packages maintain their own apt source; geerlingguy.docker installs
-# Docker's.
+# Every apt package except Docker's, which geerlingguy.docker installs.
+# tasks/apt.yml first installs 1password, code, and keybase from upstream .deb
+# files, so each package can add its own apt source.
 apt_packages:
   - gh
   - git-lfs

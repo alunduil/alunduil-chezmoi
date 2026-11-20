@@ -38,8 +38,8 @@ run_pass() {
     CHEZMOI_SOURCE_FILE=".chezmoiscripts/$1" bash "$2"
 }
 
-# run_failing_pass PASS [CALL]: run CALL, by default use_pinned_mise with no
-# mise installed, as pass PASS.
+# run_failing_pass PASS [CALL]: run CALL as pass PASS. The default CALL,
+# use_pinned_mise, fails because no mise is installed.
 run_failing_pass() {
   cat >"$WORK/pass" <<EOF
 set -euo pipefail

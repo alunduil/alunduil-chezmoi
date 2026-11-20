@@ -1,6 +1,6 @@
 ---
-# Installs etc_files, paths under etc/ that mirror /etc, then enables and
-# starts system_units.
+# Copies each of etc_files from etc/ to the same path under /etc, then enables
+# and starts system_units.
 
 - name: Create parent directories under /etc
   ansible.builtin.file:

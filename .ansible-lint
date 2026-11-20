@@ -1,5 +1,5 @@
 ---
-# ansible-lint doesn't install the Galaxy roles ansible/requirements.yml pins.
-# Mocking them lints this playbook, not theirs.
+# ansible-lint doesn't install the roles ansible/requirements.yml pins, so
+# mocks stand in for them.
 mock_roles:
   - geerlingguy.docker

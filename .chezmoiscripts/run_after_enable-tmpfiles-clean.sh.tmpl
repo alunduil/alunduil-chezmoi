@@ -5,8 +5,8 @@
 # downloads cleaner config: {{ include "dot_config/user-tmpfiles.d/downloads.conf" | sha256sum }}
 # trash cleaner config:     {{ include "dot_config/user-tmpfiles.d/trash.conf" | sha256sum }}
 #
-# The playbook installs the system side's tmp.conf. Its timer is static and
-# already runs daily.
+# ansible/site.yml installs the system cleaner's tmp.conf. The system timer is
+# static and runs daily.
 
 set -euo pipefail
 

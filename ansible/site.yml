@@ -38,11 +38,11 @@
     # that stops every collector sharing the user slice, including the Alloy
     # shipper. See #404.
     #
-    # ENABLED in /etc/default/sysstat is what the package's postinst reads on
-    # each upgrade to enable or disable its units; its config script copies the
-    # value into debconf, overwriting any preseed. etc/default/sysstat matches
-    # the postinst's output for ENABLED="true" byte for byte, so ucf sees no
-    # local change.
+    # On each upgrade, the package's postinst reads ENABLED from
+    # /etc/default/sysstat to enable or disable its units, and its config script
+    # copies the value into debconf over any preseed. etc/default/sysstat
+    # matches the postinst's output for ENABLED="true" byte for byte, so ucf
+    # sees no local change.
     - name: Record system activity with sysstat
       ansible.builtin.include_tasks: tasks/etc.yml
       vars:

@@ -29,7 +29,7 @@ DROPPED = pathlib.Path(__file__).with_name("unmanaged-dropped.toml")
 APT_PACKAGES = ROOT / "ansible/group_vars/all/packages.yml"
 UNIT_DIRS = (ROOT / "dot_config/systemd/user", ROOT / "etc/systemd/system")
 
-# geerlingguy.docker's docker_packages and docker_compose_package.
+# What geerlingguy.docker installs by default.
 ROLE_PACKAGES = frozenset(
     {
         "containerd.io",

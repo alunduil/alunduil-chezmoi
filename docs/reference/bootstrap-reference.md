@@ -75,9 +75,9 @@ systemd manager a unit belongs in and what it runs as.
 | Claude Code | `install-claude-code` | Anthropic's native installer | nothing: it updates itself |
 | Zellij plugins | `plugins` block of `dot_config/zellij/config.kdl` | Zellij at load | the version in the download address |
 
-Every apt package outside Docker goes in the one list. A package whose
-install script maintains its own apt source (1Password, Keybase,
-VS Code) also has an upstream `.deb` in `ansible/site.yml`, which
+Every apt package except Docker's goes in `apt_packages`. A package
+whose install script maintains its own apt source (1Password, Keybase,
+VS Code) also has an upstream `.deb` in `ansible/tasks/apt.yml`, which
 installs it once when it's missing. Every other repository is a deb822
 `.sources` file that the playbook writes.
 
@@ -111,15 +111,15 @@ first.
 `ansible/site.yml` configures apt sources and packages, files under
 `/etc`, and system units.
 
-- Literal files live in `etc/` at their path under `/etc`. A `copy`
-  task installs them with `backup: true`, which keeps a timestamped
-  copy of a replaced file beside it.
-- A file a role renders from variables, such as Docker's
-  `daemon.json`, has no copy in `etc/`.
+- Literal files live in `etc/` at their path under `/etc`. The
+  playbook installs them with `backup: true`, keeping a timestamped
+  copy of any file it replaces.
+- Docker's `daemon.json` has no copy in `etc/`: `geerlingguy.docker`
+  renders it from `docker_daemon_options`.
 - A unit file or drop-in change triggers `daemon-reload` before the
   playbook enables units.
-- The playbook avoids `command` and `shell` tasks, whose changes check
-  mode can't predict.
+- The playbook avoids `command` and `shell` tasks: check mode can't
+  predict what they change.
 
 Preview the system layer from a checkout:
 

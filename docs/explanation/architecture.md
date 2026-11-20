@@ -71,10 +71,8 @@ home layer. One bootstrap pass runs a local Ansible playbook from
 chezmoi's
 [design FAQ](https://www.chezmoi.io/user-guide/frequently-asked-questions/design/#can-i-use-chezmoi-to-manage-files-outside-my-home-directory)
 says it "is explicitly not a full system configuration management
-tool." The bash passes that once wrote `/etc` needed a
-hand-written guard for every file. Ansible's modules describe state
-instead: a module compares the host with the playbook, shows the diff,
-and changes only what differs. A hand edit to a file the playbook owns
+tool." Ansible's modules describe state: a module compares the host
+with the playbook, shows the diff, and changes only what differs. A hand edit to a file the playbook owns
 comes back on the next apply, and the edited copy stays beside it as a
 backup. Handlers restart a service only when its config changed.
 [ADR 0010](../adr/0010-configure-the-system-layer-with-ansible.md)
