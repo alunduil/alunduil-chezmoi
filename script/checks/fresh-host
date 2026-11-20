@@ -144,9 +144,8 @@ if [ -n "$changed" ]; then
   exit 1
 fi
 
-# A task can report changed without writing a file, which the check above
-# misses. Requiring changed=0 also fails a second apply that skipped the
-# playbook.
+# An Ansible task can report changed without writing a file. A missing recap
+# means the playbook never ran, so it fails too.
 recap="$(grep -E '^localhost +: ' <<<"$second_apply" || true)"
 if [[ "$recap" != *" changed=0 "* ]]; then
   echo 'FAIL: the playbook did not report changed=0 on the second apply:' >&2
