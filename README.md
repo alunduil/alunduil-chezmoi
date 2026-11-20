@@ -19,7 +19,7 @@ Organised by [Diátaxis](https://diataxis.fr):
   - [Bootstrap](docs/tutorials/bootstrap.md)—zero to working host.
 - How-to
   - [Adding a secret](docs/how-to/add-a-secret.md): stored in 1Password, including rotation.
-  - [Rotating the Claude token](docs/how-to/rotate-the-claude-token.md): the long-lived token pair-tab devcontainers sign in with.
+  - [Rotating the Claude token](docs/how-to/rotate-the-claude-token.md): when the long-lived sign-in token expires or leaks.
   - [Recovering access](docs/how-to/recover-access.md): the Emergency Kit, and rebuilding without the 1Password account.
 - Reference
   - [Bootstrap rules](docs/reference/bootstrap-reference.md)—script prefixes, phases, install sources, secrets.

@@ -1,10 +1,7 @@
 # Rotating the Claude token
 
-The pair launcher signs Claude in inside a devcontainer with a
-long-lived token. `chezmoi apply` writes it to
-`~/.config/claude-pair/token` from the 1Password item that
-`.chezmoidata/onepassword.yaml` names under `claude`. Rotate it when it
-expires or leaks.
+`~/.config/claude-pair/token` holds a long-lived token that signs
+Claude in without a browser. Rotate it when it expires or leaks.
 
 1. Generate a token:
 
@@ -12,5 +9,6 @@ expires or leaks.
    claude setup-token
    ```
 
-2. Follow [Rotate a secret](add-a-secret.md#rotate-a-secret) with the
-   new token, and update the item's **expires** date.
+2. Follow [Rotate a secret](add-a-secret.md#rotate-a-secret) for the
+   `claude` entry in `.chezmoidata/onepassword.yaml`, then update the
+   item's **expires** date.
