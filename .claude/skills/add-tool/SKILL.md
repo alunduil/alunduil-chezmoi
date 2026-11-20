@@ -37,7 +37,7 @@ to do real work?
 
 ## Missing-tool report
 
-`host-status` derives apt packages from `.chezmoidata/packages.yaml`
+`host-status` derives apt packages from `ansible/group_vars/all/packages.yml`
 and pinned tools from `mise ls --missing`, so those need no entry. A
 tool installed any other way (npm, cargo, uv, ghcup, an upstream
 installer) goes in its `commands` array.
@@ -50,7 +50,7 @@ Pick the canonical installer for the ecosystem:
 
 | Source                | Where                                 | Pattern                        |
 | --------------------- | ------------------------------------- | ------------------------------ |
-| Debian package        | `.chezmoidata/packages.yaml`          | append to `packages.apt`       |
+| Debian package        | `ansible/group_vars/all/packages.yml` | append to `apt_packages`       |
 | Pinned binary release | `dot_config/mise/config.toml`         | mise entry below               |
 | npm package           | `run_before_03`                       | `npm install -g`, `command -v` |
 | Cargo crate           | `run_before_09`                       | `cargo install`, `command -v`  |

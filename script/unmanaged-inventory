@@ -4,8 +4,8 @@
 Two kinds of item, one per output line as "<kind>\\t<item>":
 
 - package: a manually installed apt package nothing declared pulls in. The
-  roots are the bootstrap's apt list, the packages its passes install
-  directly, the Crostini guest tools, and Debian's required and important
+  roots are the playbook's apt list, the packages its roles install, the
+  Crostini guest tools, and Debian's required and important
   priorities. Everything a root depends on or recommends comes back with it.
 - unit: an enabled systemd unit, system or user, whose unit file neither the
   repo deploys nor a package in that closure ships.
@@ -26,11 +26,20 @@ from dataclasses import dataclass
 
 ROOT = pathlib.Path(__file__).resolve().parent.parent
 DROPPED = pathlib.Path(__file__).with_name("unmanaged-dropped.toml")
-APT_PACKAGES = ROOT / ".chezmoidata/packages.yaml"
+APT_PACKAGES = ROOT / "ansible/group_vars/all/packages.yml"
 UNIT_DIRS = (ROOT / "dot_config/systemd/user", ROOT / "etc/systemd/system")
 
-# Installed by run_before_01-install-system-packages outside the apt list.
-PASS_PACKAGES = frozenset({"code", "tailscale"})
+# geerlingguy.docker's docker_packages and docker_compose_package.
+ROLE_PACKAGES = frozenset(
+    {
+        "containerd.io",
+        "docker-buildx-plugin",
+        "docker-ce",
+        "docker-ce-cli",
+        "docker-ce-rootless-extras",
+        "docker-compose-plugin",
+    }
+)
 BASE_PACKAGES = frozenset({"cros-guest-tools"})
 BASE_PRIORITIES = frozenset({"required", "important"})
 
@@ -110,7 +119,7 @@ def closure(roots: Iterable[str], packages: Mapping[str, Package]) -> set[str]:
 def kept_packages(apt: Iterable[str], packages: Mapping[str, Package]) -> set[str]:
     roots = (
         set(apt)
-        | PASS_PACKAGES
+        | ROLE_PACKAGES
         | BASE_PACKAGES
         | {p.name for p in packages.values() if p.priority in BASE_PRIORITIES}
     )
@@ -170,7 +179,7 @@ def run(*args: str, check: bool = True) -> str:
 
 
 def apt_list() -> set[str]:
-    return set(re.findall(r"^\s*-\s*(\S+)", APT_PACKAGES.read_text(), re.MULTILINE))
+    return set(re.findall(r"^\s+-\s+(\S+)", APT_PACKAGES.read_text(), re.MULTILINE))
 
 
 def installed_packages() -> dict[str, Package]:

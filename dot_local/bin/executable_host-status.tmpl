@@ -18,13 +18,13 @@ Options:
 EOF
 }
 
-read -ra apt_packages <<<'{{ join " " .packages.apt }}'
+read -ra apt_packages <<<'{{ (include "ansible/group_vars/all/packages.yml" | fromYaml).apt_packages | join " " }}'
 
-# Installed by bootstrap passes outside apt and mise, so neither package
-# list covers them.
+# Installed outside the apt and mise lists, so neither covers them. Docker's
+# packages come from geerlingguy.docker.
 commands=(
-    beet bobbit cabal cargo cargo-cache claude code devcontainer ghc ghcup
-    node pnpm readwise rustc rustup tailscale uptimerobot
+    beet bobbit cabal cargo cargo-cache claude devcontainer docker ghc ghcup
+    node pnpm readwise rustc rustup uptimerobot
 )
 
 system_units=(

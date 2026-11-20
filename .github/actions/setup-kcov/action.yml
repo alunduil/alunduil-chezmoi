@@ -17,7 +17,7 @@ runs:
         path: ${{ steps.kcov.outputs.dir }}
         key: kcov-${{ steps.kcov.outputs.image }}-${{ runner.arch }}-${{ hashFiles('script/install/kcov') }}
 
-    # Hosts never build kcov, so these stay out of .chezmoidata/packages.yaml.
+    # Hosts never build kcov, so these stay out of the playbook's apt list.
     - name: Build kcov
       if: steps.cache.outputs.cache-hit != 'true'
       shell: bash
