@@ -5,107 +5,13 @@
   vars:
     etc_src: "{{ playbook_dir }}/../etc"
   handlers:
-    - name: Reload systemd
-      ansible.builtin.systemd_service:
-        daemon_reload: true
-  tasks:
-    - name: Install python3-debian for deb822_repository
+    - name: Update apt cache
       ansible.builtin.apt:
-        name: python3-debian
-
-    # ------------------------------------------------------ apt repositories
-    # The bootstrap passes wrote these sources as one-line .list files.
-    # Leaving one beside its .sources replacement fails apt with "Conflicting
-    # values set for option Signed-By".
-    - name: Remove the one-line apt sources the .sources files replace
-      ansible.builtin.file:
-        path: /etc/apt/sources.list.d/{{ item }}.list
-        state: absent
-      loop:
-        - adoptium
-        - github-cli
-        - google-cloud-sdk
-        - hashicorp
-        - signal-xenial
-        - tailscale
-
-    - name: Add apt repositories
-      ansible.builtin.deb822_repository:
-        name: "{{ item.name }}"
-        uris: "{{ item.uri }}"
-        suites: "{{ item.suite }}"
-        components: main
-        architectures: "{{ item.architectures | default(omit) }}"
-        signed_by: "{{ item.key }}"
-      loop:
-        # temurin-21-jdk backs the JVM-based Firebase emulators that genshin's
-        # `pnpm dev` starts when that project is developed on the host rather
-        # than in its devcontainer. Debian ships no openjdk-21 in bookworm, so
-        # Adoptium is where a 21 comes from; it is also what the devcontainers
-        # `java:1` feature installs, keeping both paths on one runtime.
-        - name: adoptium
-          uri: https://packages.adoptium.net/artifactory/deb
-          suite: "{{ ansible_facts.distribution_release }}"
-          key: https://packages.adoptium.net/artifactory/api/gpg/key/public
-        - name: github-cli
-          uri: https://cli.github.com/packages
-          suite: stable
-          key: https://cli.github.com/packages/githubcli-archive-keyring.gpg
-        - name: google-cloud-sdk
-          uri: https://packages.cloud.google.com/apt
-          suite: cloud-sdk
-          key: https://packages.cloud.google.com/apt/doc/apt-key.gpg
-        - name: hashicorp
-          uri: https://apt.releases.hashicorp.com
-          suite: "{{ ansible_facts.distribution_release }}"
-          key: https://apt.releases.hashicorp.com/gpg
-        # Signal publishes amd64 builds only, under the fixed suite xenial.
-        - name: signal-xenial
-          uri: https://updates.signal.org/desktop/apt
-          suite: xenial
-          architectures: amd64
-          key: https://updates.signal.org/desktop/apt/keys.asc
-        - name: tailscale
-          uri: https://pkgs.tailscale.com/stable/debian
-          suite: "{{ ansible_facts.distribution_release }}"
-          key: https://pkgs.tailscale.com/stable/debian/{{ ansible_facts.distribution_release }}.noarmor.gpg
-
-    # ------------------------------------------------------------ apt pkgs
-    - name: Gather installed packages
-      ansible.builtin.package_facts:
-
-    # Each package's postinst writes and maintains its own apt source, so a
-    # second source for the same repository would conflict with it. Installing
-    # the upstream .deb once hands the source to the package.
-    - name: Install packages that maintain their own apt source
-      ansible.builtin.apt:
-        deb: "{{ item.url }}"
-      loop:
-        - name: 1password
-          url: https://downloads.1password.com/linux/debian/amd64/stable/1password-latest.deb
-        - name: code
-          url: https://code.visualstudio.com/sha/download?build=stable&os=linux-deb-x64
-        - name: keybase
-          url: https://prerelease.keybase.io/keybase_amd64.deb
-      loop_control:
-        label: "{{ item.name }}"
-      when: item.name not in ansible_facts.packages
-
-    - name: Install apt packages
-      ansible.builtin.apt:
-        name: "{{ apt_packages }}"
         update_cache: true
-        cache_valid_time: 3600
+  tasks:
+    - name: Install apt repositories and packages
+      ansible.builtin.import_tasks: tasks/apt.yml
 
-    # `tailscale up` stays a manual login on each host; host-status reports
-    # it.
-    - name: Enable tailscaled
-      ansible.builtin.systemd_service:
-        name: tailscaled
-        enabled: true
-        state: started
-
-    # ---------------------------------------------------------------- docker
     - name: Install Docker
       ansible.builtin.import_role:
         name: geerlingguy.docker
@@ -118,8 +24,16 @@
         mode: "0755"
         backup: true
 
-    # ------------------------------------------------------------- /etc files
-    # sysstat: sadc runs as root in system.slice, so it keeps sampling to
+    - name: Prune Docker daily
+      ansible.builtin.include_tasks: tasks/etc.yml
+      vars:
+        etc_files:
+          - systemd/system/docker-prune.service
+          - systemd/system/docker-prune.timer
+        system_units:
+          - docker-prune.timer
+
+    # sadc runs as root in system.slice, so it keeps sampling to
     # /var/log/sysstat through a user-1000.slice pids exhaustion -- the failure
     # that stops every collector sharing the user slice, including the Alloy
     # shipper. See #404.
@@ -129,56 +43,35 @@
     # value into debconf, overwriting any preseed. etc/default/sysstat matches
     # the postinst's output for ENABLED="true" byte for byte, so ucf sees no
     # local change.
-    #
-    # unattended-upgrades applies updates through the apt-daily-upgrade timer.
-    # Results land in /var/log/unattended-upgrades/ and the journal, and
-    # automatic reboot stays off. needrestart's apt hook then restarts the
-    # daemons still mapping a replaced shared library, so a security fix takes
-    # hold without a reboot.
-    - name: Create drop-in directories under /etc
-      ansible.builtin.file:
-        path: /etc/{{ item }}
-        state: directory
-        mode: "0755"
-      loop:
-        - needrestart/conf.d
-        - systemd/system/apt-daily.service.d
-        - systemd/system/sysstat-collect.timer.d
+    - name: Record system activity with sysstat
+      ansible.builtin.include_tasks: tasks/etc.yml
+      vars:
+        etc_files:
+          - default/sysstat
+          - sysstat/sysstat
+          - systemd/system/sysstat-collect.timer.d/interval.conf
+        system_units:
+          - sysstat.service
+          - sysstat-collect.timer
 
-    - name: Install files under /etc
-      ansible.builtin.copy:
-        src: "{{ etc_src }}/{{ item.src }}"
-        dest: /etc/{{ item.dest | default(item.src) }}
-        mode: "0644"
-        backup: true
-      loop:
-        - src: apt/20auto-upgrades
-          dest: apt/apt.conf.d/20auto-upgrades
-        - src: apt/50unattended-upgrades
-          dest: apt/apt.conf.d/50unattended-upgrades
-        - src: default/sysstat
-        - src: needrestart/conf.d/zz-alunduil.conf
-        - src: sysstat/sysstat
-        - src: systemd/system/apt-daily.service.d/timeout.conf
-        - src: systemd/system/docker-prune.service
-        - src: systemd/system/docker-prune.timer
-        - src: systemd/system/sysstat-collect.timer.d/interval.conf
-        - src: tmpfiles.d/tmp.conf
-      loop_control:
-        label: /etc/{{ item.dest | default(item.src) }}
-      notify: Reload systemd
+    # Updates apply through the apt-daily-upgrade timer. Results land in
+    # /var/log/unattended-upgrades/ and the journal, and automatic reboot stays
+    # off. needrestart's apt hook then restarts the daemons still mapping a
+    # replaced shared library, so a security fix takes hold without a reboot.
+    - name: Apply updates unattended
+      ansible.builtin.include_tasks: tasks/etc.yml
+      vars:
+        etc_files:
+          - apt/apt.conf.d/20auto-upgrades
+          - apt/apt.conf.d/50unattended-upgrades
+          - needrestart/conf.d/zz-alunduil.conf
+          - systemd/system/apt-daily.service.d/timeout.conf
+        system_units:
+          - apt-daily.timer
+          - apt-daily-upgrade.timer
 
-    - name: Reload systemd before enabling units
-      ansible.builtin.meta: flush_handlers
-
-    - name: Enable system units
-      ansible.builtin.systemd_service:
-        name: "{{ item }}"
-        enabled: true
-        state: started
-      loop:
-        - apt-daily.timer
-        - apt-daily-upgrade.timer
-        - docker-prune.timer
-        - sysstat.service
-        - sysstat-collect.timer
+    - name: Age /tmp and /var/tmp
+      ansible.builtin.include_tasks: tasks/etc.yml
+      vars:
+        etc_files:
+          - tmpfiles.d/tmp.conf
