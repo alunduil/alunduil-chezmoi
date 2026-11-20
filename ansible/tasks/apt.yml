@@ -3,9 +3,8 @@
   ansible.builtin.apt:
     name: python3-debian
 
-# The bootstrap passes wrote these sources as one-line .list files. Leaving
-# one beside its .sources replacement fails apt with "Conflicting values set
-# for option Signed-By".
+# A one-line .list beside a .sources file for the same repository fails apt
+# with "Conflicting values set for option Signed-By".
 - name: Remove the one-line apt sources the .sources files replace
   ansible.builtin.file:
     path: /etc/apt/sources.list.d/{{ item }}.list
@@ -24,10 +23,6 @@
   loop_control:
     label: "{{ item.name }}"
   notify: Update apt cache
-
-# cache_valid_time below would skip the update a new repository needs.
-- name: Update apt cache for new repositories
-  ansible.builtin.meta: flush_handlers
 
 - name: Gather installed packages
   ansible.builtin.package_facts:
@@ -48,6 +43,11 @@
   loop_control:
     label: "{{ item.name }}"
   when: item.name not in ansible_facts.packages
+  notify: Update apt cache
+
+# cache_valid_time below would skip the update a new apt source needs.
+- name: Update apt cache for new apt sources
+  ansible.builtin.meta: flush_handlers
 
 - name: Install apt packages
   ansible.builtin.apt:
