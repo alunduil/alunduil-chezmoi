@@ -122,10 +122,20 @@ as_user '
 docker exec "$host" touch "$marker"
 
 log 'second apply'
+second_apply="$(mktemp)"
 as_user '
   chezmoi apply --exclude=encrypted
   chezmoi verify --exclude=scripts,encrypted
-'
+' | tee "$second_apply"
+
+# A task can report changed without writing a file, so the file check below
+# misses it. Matching changed=0 also fails a second apply that skipped the
+# playbook.
+if ! grep -Eq '^localhost +: .*changed=0 ' "$second_apply"; then
+  echo 'FAIL: the playbook did not report changed=0 on the second apply:' >&2
+  grep -A1 '^PLAY RECAP' "$second_apply" >&2 || echo '  no PLAY RECAP in the output' >&2
+  exit 1
+fi
 
 log 'checking every shim runs the pinned mise'
 as_user '
