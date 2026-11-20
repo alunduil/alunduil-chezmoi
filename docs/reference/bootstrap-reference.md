@@ -23,18 +23,15 @@ skips the report, so a pass fails by letting a command fail.
 | `run_onchange_` | a pass whose only guard costs a network round-trip or a password prompt, keyed on the content that should re-fire it |
 | `run_once_` | nothing: `script/checks/bootstrap-convergence` fails the build on one |
 
-A `run_` pass checks host state before acting and reaches no `sudo` when
-the host already matches. Local guards: `dpkg-query` status compared to
-`installed`, a pinned `--version`, `cmp` before `sudo install`.
+A `run_` pass checks host state before acting. Local guards: a pinned
+`--version`, a file's presence.
 
 `configure-system-layer` reaches `sudo` on every apply, because it runs
 the playbook in `ansible/` with `become`. The playbook's modules are its
 guards: a converged host reports `changed=0`.
 
-A pass writes under `/etc` only through `install_if_changed`, which
-shows the diff and keeps the old file as `<file>.bak` when it replaces
-one. Generated content goes to a temporary file first.
-`script/checks/bootstrap-convergence` fails on any other write.
+No other pass calls `sudo`. `script/checks/bootstrap-convergence`
+fails on one.
 
 A `run_onchange_` pass that can't do its work exits non-zero. chezmoi
 records the hash on exit 0, so the pass reruns only when hashed content
@@ -57,10 +54,9 @@ on an unmarked `exit 0`.
 - An `after` pass enables user units through `enable_user_units`. With
   no user systemd manager running, it records them for
   `zz-report-skipped-units`.
-- Enabling a service its own package shipped, such as `tailscaled`,
-  stays in the `before` pass that installed it.
 - `host-status` checks only the units in its `system_units` and
-  `user_units` arrays, so a pass that enables a unit adds it there.
+  `user_units` arrays, so a pass or playbook task that enables a unit
+  adds it there.
 
 [ADR 0006](../adr/0006-run-units-at-least-privilege.md) sets which
 systemd manager a unit belongs in and what it runs as.
@@ -69,7 +65,8 @@ systemd manager a unit belongs in and what it runs as.
 
 | Kind | Declared in | Installed by | Pinned by |
 | ---- | ----------- | ------------ | --------- |
-| apt packages | `.chezmoidata/packages.yaml` | `install-system-packages`, one transaction | the apt repository |
+| apt packages | `apt_packages` in `ansible/group_vars/all/packages.yml` | `configure-system-layer`, one transaction | the apt repository |
+| Docker | `geerlingguy.docker` defaults, `ansible/group_vars/all/docker.yml` | `configure-system-layer`, through the role | the apt repository |
 | mise | `dot_config/mise/config.toml` | `install-mise`, through the mise on `PATH` | `dot_config/mise/mise.lock` |
 | Release binaries | `dot_config/mise/config.toml` | `install-binary-tools`, through `mise install` | `dot_config/mise/mise.lock` |
 | Python tools | `install-via-mise-tools` | `uv tool install` | `*_VERSION` in the pass |
@@ -78,8 +75,11 @@ systemd manager a unit belongs in and what it runs as.
 | Claude Code | `install-claude-code` | Anthropic's native installer | nothing: it updates itself |
 | Zellij plugins | `plugins` block of `dot_config/zellij/config.kdl` | Zellij at load | the version in the download address |
 
-Every apt package goes in the one list. Later passes configure what
-`install-system-packages` installed rather than calling apt themselves.
+Every apt package except Docker's goes in `apt_packages`. A package
+whose install script maintains its own apt source (1Password, Keybase,
+VS Code) also has an upstream `.deb` in `ansible/tasks/apt.yml`, which
+installs it once when it's missing. Every other repository is a deb822
+`.sources` file that the playbook writes.
 
 A pass that runs `mise install` calls `use_pinned_mise` first.
 `mise install` links every shim to the first `mise` on `PATH`, which on
@@ -105,6 +105,27 @@ A shim for a version that isn't installed fails, so run `mise install`
 first.
 `gh` looks for extensions only in its data directory, so
 `~/.local/share/gh/extensions/gh-poi/gh-poi` links to the gh-poi shim.
+
+## System layer
+
+`ansible/site.yml` configures apt sources and packages, files under
+`/etc`, and system units.
+
+- Literal files live in `etc/` at their path under `/etc`. The
+  playbook installs them with `backup: true`, keeping a timestamped
+  copy of any file it replaces.
+- Docker's `daemon.json` has no copy in `etc/`: `geerlingguy.docker`
+  renders it from `docker_daemon_options`.
+- A unit file or drop-in change triggers `daemon-reload` before the
+  playbook enables units.
+- The playbook avoids `command` and `shell` tasks: check mode can't
+  predict what they change.
+
+Preview the system layer from a checkout:
+
+```bash
+ANSIBLE_CONFIG=ansible/ansible.cfg ansible-playbook --check --diff ansible/site.yml
+```
 
 ## Secrets
 

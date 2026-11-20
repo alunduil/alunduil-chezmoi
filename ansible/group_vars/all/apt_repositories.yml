@@ -1,0 +1,35 @@
+---
+# Every apt repository besides Docker's, each written to
+# /etc/apt/sources.list.d/<name>.sources.
+apt_repositories:
+  # temurin-21-jdk backs the JVM-based Firebase emulators that genshin's
+  # `pnpm dev` starts when that project is developed on the host rather than in
+  # its devcontainer. Debian ships no openjdk-21 in bookworm, so Adoptium is
+  # where a 21 comes from; it is also what the devcontainers `java:1` feature
+  # installs, keeping both paths on one runtime.
+  - name: adoptium
+    uri: https://packages.adoptium.net/artifactory/deb
+    suite: "{{ ansible_facts.distribution_release }}"
+    key: https://packages.adoptium.net/artifactory/api/gpg/key/public
+  - name: github-cli
+    uri: https://cli.github.com/packages
+    suite: stable
+    key: https://cli.github.com/packages/githubcli-archive-keyring.gpg
+  - name: google-cloud-sdk
+    uri: https://packages.cloud.google.com/apt
+    suite: cloud-sdk
+    key: https://packages.cloud.google.com/apt/doc/apt-key.gpg
+  - name: hashicorp
+    uri: https://apt.releases.hashicorp.com
+    suite: "{{ ansible_facts.distribution_release }}"
+    key: https://apt.releases.hashicorp.com/gpg
+  # Signal publishes amd64 builds only, under the fixed suite xenial.
+  - name: signal-xenial
+    uri: https://updates.signal.org/desktop/apt
+    suite: xenial
+    architectures: amd64
+    key: https://updates.signal.org/desktop/apt/keys.asc
+  - name: tailscale
+    uri: https://pkgs.tailscale.com/stable/debian
+    suite: "{{ ansible_facts.distribution_release }}"
+    key: https://pkgs.tailscale.com/stable/debian/{{ ansible_facts.distribution_release }}.noarmor.gpg

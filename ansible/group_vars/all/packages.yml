@@ -1,0 +1,91 @@
+---
+# Every apt package except Docker's, which geerlingguy.docker installs.
+# tasks/apt.yml first installs 1password, code, and keybase from upstream .deb
+# files, so each package can add its own apt source.
+apt_packages:
+  - gh
+  - git-lfs
+  - zsh
+  - ripgrep
+  - fd-find
+  - fzf
+  - jq
+  - unzip
+  - age
+  - terraform
+  - libnotify-bin
+  - 1password-cli
+  - 1password
+  - build-essential
+  - libffi-dev
+  - libgmp-dev
+  - libncurses-dev
+  - zlib1g-dev
+  - protobuf-compiler
+  - temurin-21-jdk
+  - golang-petname
+  - gource
+  # Music-library toolchain around beets, which uv installs separately.
+  # Package names differ from the binaries they ship: ffmpeg -> ffprobe,
+  # libimage-exiftool-perl -> exiftool, libchromaprint-tools -> fpcalc,
+  # which is the fingerprinter pyacoustid shells out to.
+  - ffmpeg
+  - mediainfo
+  - libimage-exiftool-perl
+  - rsync
+  - libchromaprint-tools
+  - keybase
+  - signal-desktop
+  - calibre
+  - nethack-console
+  # Automatic security updates, configured in site.yml.
+  # powermgmt-base provides on_ac_power, which the OnlyOnACPower gate in
+  # 50unattended-upgrades needs to read the AC line; without it
+  # unattended-upgrades fails open.
+  - unattended-upgrades
+  - powermgmt-base
+  - needrestart
+  # Depends on foot-terminfo, so TERM=foot resolves without listing it too.
+  - foot
+  # Depends on kitty-terminfo, so TERM=xterm-kitty resolves the same way.
+  # foot stays until kitty is confirmed working under sommelier.
+  - kitty
+  # The terminals' font, and the only one here covering U+E0B0 (see
+  # kitty.conf).
+  - fonts-jetbrains-mono
+  # Looks redundant with the Grafana Cloud shipper, and is not. sadc runs as
+  # root in system.slice, so it keeps sampling to local disk through a
+  # user-1000.slice pids exhaustion, which stops every collector living in
+  # that slice, Alloy included. Dropping this leaves no recorder that
+  # survives the incident it exists to record.
+  - sysstat
+  # On-demand fork ancestry during a repro; the kernel carries
+  # CONFIG_CONNECTOR and CONFIG_PROC_EVENTS, which forkstat needs.
+  - forkstat
+  - htop
+  # Backs homeassistant-config.service.
+  - sshfs
+  # Runs the repo's shell tests.
+  - bats
+  # script/diagnose-zellij-freeze captures backtraces and syscalls with these.
+  - gdb
+  - strace
+  # The Secret Service that VS Code, Signal, and other Electron apps store
+  # credentials in.
+  - gnome-keyring
+  - locales
+  - shellcheck
+  - bind9-dnsutils
+  - ipcalc
+  - nmap
+  - lynx
+  - ncdu
+  - tree
+  - pwgen
+  - qpdf
+  - zip
+  # alunduil-infrastructure's Terraform authenticates its state bucket and
+  # reads secrets through gcloud.
+  - google-cloud-cli
+  - code
+  - tailscale

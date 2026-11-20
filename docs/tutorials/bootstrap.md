@@ -2,12 +2,12 @@
 
 Zero to a fully configured host. Requires a Debian/Crostini host, a 1Password account with access to the `chezmoi` vault, and the age key from a password manager.
 
-mise installs every pinned tool, chezmoi included, at the versions and checksums in the repo's `mise.lock`, so it comes first. A throwaway mise from `mise.run` installs chezmoi, and the first apply replaces it with the mise pinned in `mise.lock`. The first bootstrap pass fetches the apt repositories' keys with `curl` and `gpg`.
+mise installs every pinned tool, chezmoi included, at the versions and checksums in the repo's `mise.lock`, so it comes first. A throwaway mise from `mise.run` installs chezmoi, and the first apply replaces it with the mise pinned in `mise.lock`.
 
 Apply runs twice. Secrets come from the 1Password desktop app, which the first apply installs, so the first apply skips them.
 
 ```bash
-sudo apt-get install -y git curl gpg
+sudo apt-get install -y git curl
 
 # Decrypts the Cloudflare token, the one age-encrypted secret.
 mkdir -p ~/.config/chezmoi

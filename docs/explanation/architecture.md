@@ -41,9 +41,7 @@ edit from reaching a live apply.
 `chezmoi apply` does two jobs: it writes files into `$HOME`, and it runs
 bootstrap passes that install and configure what those files expect.
 Both converge on a target state: apply offers to restore a file that
-drifted, and a pass installs a removed package again or rewrites a
-hand-edited file under `/etc`. Before rewriting, the pass prints the diff
-and keeps the edit in `<file>.bak`. On a terminal it asks first.
+drifted, and a pass installs a removed tool again.
 
 Passes run on every apply so they can see drift. [chezmoi's
 package-install
@@ -60,6 +58,32 @@ mise included, comes back at the version and checksum in `mise.lock`
 Host mise skips a checkout's `mise.toml`. That file applies only in the
 checkout's devcontainer or CI
 ([ADR 0011](../adr/0011-restrict-host-mise-to-its-global-config.md)).
+
+## chezmoi owns home, Ansible owns the system
+
+The host has two layers. The home layer is dotfiles, secrets, user
+units, and user-scoped tools. The system layer is apt sources and
+packages, files under `/etc`, and system units. chezmoi configures the
+home layer. One bootstrap pass runs a local Ansible playbook from
+`ansible/`, which configures the system layer. No other pass calls
+`sudo`.
+
+chezmoi's
+[design FAQ](https://www.chezmoi.io/user-guide/frequently-asked-questions/design/#can-i-use-chezmoi-to-manage-files-outside-my-home-directory)
+says it "is explicitly not a full system configuration management
+tool." Ansible's modules describe state: a module compares the host
+with the playbook, shows the diff, and changes only what differs. A hand edit to a file the playbook owns
+comes back on the next apply, and the edited copy stays beside it as a
+backup. Handlers restart a service only when its config changed.
+[ADR 0010](../adr/0010-configure-the-system-layer-with-ansible.md)
+records the options weighed.
+
+The playbook runs before chezmoi writes any file, so the packages that
+dotfiles and user units expect are already installed. Files no role
+owns stay literal under `etc/`, at the path they take under `/etc`.
+
+Convergence holds only for what the playbook names. A package or file
+dropped from it stays on the host until a task removes it.
 
 ## Secrets live in the vault
 

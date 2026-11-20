@@ -1,0 +1,5 @@
+---
+# ansible-lint doesn't install the roles ansible/requirements.yml pins, so
+# mocks stand in for them.
+mock_roles:
+  - geerlingguy.docker

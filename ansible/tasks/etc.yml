@@ -1,0 +1,28 @@
+---
+# Copies each of etc_files from etc/ to the same path under /etc, then enables
+# and starts system_units.
+
+- name: Create parent directories under /etc
+  ansible.builtin.file:
+    path: /etc/{{ item }}
+    state: directory
+    mode: "0755"
+  loop: "{{ etc_files | map('dirname') | unique }}"
+
+- name: Install files under /etc
+  ansible.builtin.copy:
+    src: "{{ etc_src }}/{{ item }}"
+    dest: /etc/{{ item }}
+    mode: "0644"
+    backup: true
+  loop: "{{ etc_files }}"
+  register: etc_installed
+
+# daemon_reload never reports changed, so a converged host stays at changed=0.
+- name: Enable system units
+  ansible.builtin.systemd_service:
+    name: "{{ item }}"
+    enabled: true
+    state: started
+    daemon_reload: "{{ etc_installed is changed }}"
+  loop: "{{ system_units | default([]) }}"

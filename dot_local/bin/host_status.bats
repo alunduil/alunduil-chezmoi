@@ -11,7 +11,7 @@ setup() {
 
   # Render the one template expression with a stand-in package list.
   HOST_STATUS="$TMPROOT/host-status"
-  sed 's|{{ join " " .packages.apt }}|gh gource|' \
+  sed 's|{{ .* }}|gh gource|' \
     "$REPO_ROOT/dot_local/bin/executable_host-status.tmpl" >"$HOST_STATUS"
 
   # A fully set-up host: every credential present, every stub succeeding.
@@ -42,6 +42,7 @@ for p; do
 done'
   stub mise 'printf "%s" "${MISE_MISSING:-}"'
   stub mise-isolation-probe 'echo "FAIL: noise"; [ -z "${MISE_LEAKS:-}" ]'
+  stub tailscale 'exit 0'
   local cmd
   while read -r cmd; do
     [ -e "$STUB_DIR/$cmd" ] || stub "$cmd" 'exit 0'

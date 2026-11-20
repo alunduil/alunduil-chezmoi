@@ -1,0 +1,63 @@
+---
+- name: Install python3-debian for deb822_repository
+  ansible.builtin.apt:
+    name: python3-debian
+
+# A one-line .list beside a .sources file for the same repository fails apt
+# with "Conflicting values set for option Signed-By".
+- name: Remove the one-line apt sources the .sources files replace
+  ansible.builtin.file:
+    path: /etc/apt/sources.list.d/{{ item }}.list
+    state: absent
+  loop: "{{ apt_repositories | map(attribute='name') }}"
+
+- name: Add apt repositories
+  ansible.builtin.deb822_repository:
+    name: "{{ item.name }}"
+    uris: "{{ item.uri }}"
+    suites: "{{ item.suite }}"
+    components: main
+    architectures: "{{ item.architectures | default(omit) }}"
+    signed_by: "{{ item.key }}"
+  loop: "{{ apt_repositories }}"
+  loop_control:
+    label: "{{ item.name }}"
+  notify: Update apt cache
+
+- name: Gather installed packages
+  ansible.builtin.package_facts:
+
+# Each package's postinst writes and maintains its own apt source, so a second
+# source for the same repository would conflict with it. Installing the
+# upstream .deb once hands the source to the package.
+- name: Install packages that maintain their own apt source
+  ansible.builtin.apt:
+    deb: "{{ item.url }}"
+  loop:
+    - name: 1password
+      url: https://downloads.1password.com/linux/debian/amd64/stable/1password-latest.deb
+    - name: code
+      url: https://code.visualstudio.com/sha/download?build=stable&os=linux-deb-x64
+    - name: keybase
+      url: https://prerelease.keybase.io/keybase_amd64.deb
+  loop_control:
+    label: "{{ item.name }}"
+  when: item.name not in ansible_facts.packages
+  notify: Update apt cache
+
+# cache_valid_time below would skip the update a new apt source needs.
+- name: Update apt cache for new apt sources
+  ansible.builtin.meta: flush_handlers
+
+- name: Install apt packages
+  ansible.builtin.apt:
+    name: "{{ apt_packages }}"
+    update_cache: true
+    cache_valid_time: 3600
+
+# `tailscale up` stays a manual login on each host; host-status reports it.
+- name: Enable tailscaled
+  ansible.builtin.systemd_service:
+    name: tailscaled
+    enabled: true
+    state: started

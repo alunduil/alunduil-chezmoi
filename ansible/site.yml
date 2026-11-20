@@ -2,7 +2,76 @@
 - name: Configure the system layer
   hosts: localhost
   become: true
-  tasks:
-    - name: Install python3-debian for deb822_repository
+  vars:
+    etc_src: "{{ playbook_dir }}/../etc"
+  handlers:
+    - name: Update apt cache
       ansible.builtin.apt:
-        name: python3-debian
+        update_cache: true
+  tasks:
+    - name: Install apt repositories and packages
+      ansible.builtin.import_tasks: tasks/apt.yml
+
+    - name: Install Docker
+      ansible.builtin.import_role:
+        name: geerlingguy.docker
+
+    # ADR 0006 explains why the prune is a root system unit.
+    - name: Install the orphaned devcontainer sweep
+      ansible.builtin.copy:
+        src: "{{ etc_src }}/docker/docker-prune-orphans.sh"
+        dest: /usr/local/sbin/docker-prune-orphans
+        mode: "0755"
+        backup: true
+
+    - name: Prune Docker daily
+      ansible.builtin.include_tasks: tasks/etc.yml
+      vars:
+        etc_files:
+          - systemd/system/docker-prune.service
+          - systemd/system/docker-prune.timer
+        system_units:
+          - docker-prune.timer
+
+    # sadc runs as root in system.slice, so it keeps sampling to
+    # /var/log/sysstat through a user-1000.slice pids exhaustion -- the failure
+    # that stops every collector sharing the user slice, including the Alloy
+    # shipper. See #404.
+    #
+    # On each upgrade, the package's postinst reads ENABLED from
+    # /etc/default/sysstat to enable or disable its units, and its config script
+    # copies the value into debconf over any preseed. etc/default/sysstat
+    # matches the postinst's output for ENABLED="true" byte for byte, so ucf
+    # sees no local change.
+    - name: Record system activity with sysstat
+      ansible.builtin.include_tasks: tasks/etc.yml
+      vars:
+        etc_files:
+          - default/sysstat
+          - sysstat/sysstat
+          - systemd/system/sysstat-collect.timer.d/interval.conf
+        system_units:
+          - sysstat.service
+          - sysstat-collect.timer
+
+    # Updates apply through the apt-daily-upgrade timer. Results land in
+    # /var/log/unattended-upgrades/ and the journal, and automatic reboot stays
+    # off. needrestart's apt hook then restarts the daemons still mapping a
+    # replaced shared library, so a security fix takes hold without a reboot.
+    - name: Apply updates unattended
+      ansible.builtin.include_tasks: tasks/etc.yml
+      vars:
+        etc_files:
+          - apt/apt.conf.d/20auto-upgrades
+          - apt/apt.conf.d/50unattended-upgrades
+          - needrestart/conf.d/zz-alunduil.conf
+          - systemd/system/apt-daily.service.d/timeout.conf
+        system_units:
+          - apt-daily.timer
+          - apt-daily-upgrade.timer
+
+    - name: Age /tmp and /var/tmp
+      ansible.builtin.include_tasks: tasks/etc.yml
+      vars:
+        etc_files:
+          - tmpfiles.d/tmp.conf

@@ -1,0 +1,6 @@
+---
+# The `local` log driver rotates each container's log. json-file, the default,
+# grows until the prune removes the container.
+docker_daemon_options:
+  storage-driver: overlay2
+  log-driver: local
