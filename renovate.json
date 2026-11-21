@@ -37,7 +37,7 @@
       "automerge": true
     },
     {
-      "description": "mise never builds ansible-core's dependencies from source, and PyYAML publishes no Python 3.15 wheels, so ansible-core can't install on 3.15 until they ship",
+      "description": "ansible-core can't install on Python 3.15: mise never builds its dependencies from source, and PyYAML publishes no 3.15 wheels",
       "matchManagers": ["mise"],
       "matchDepNames": ["python"],
       "allowedVersions": "<3.15"
