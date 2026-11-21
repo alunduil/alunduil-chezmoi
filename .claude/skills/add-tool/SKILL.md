@@ -39,7 +39,7 @@ to do real work?
 
 `host-status` derives apt packages from `ansible/group_vars/all/packages.yml`
 and pinned tools from `mise ls --missing`, so those need no entry. A
-tool installed any other way (npm, cargo, uv, ghcup, an upstream
+tool installed any other way (npm, uv, ghcup, an upstream
 installer) goes in its `commands` array.
 
 ## Install mechanism
@@ -53,7 +53,7 @@ Pick the canonical installer for the ecosystem:
 | Debian package        | `ansible/group_vars/all/packages.yml` | append to `apt_packages`       |
 | Pinned binary release | `dot_config/mise/config.toml`         | mise entry below               |
 | npm package           | `run_before_03`                       | `npm install -g`, `command -v` |
-| Cargo crate           | `run_before_09`                       | `cargo install`, `command -v`  |
+| Cargo crate           | `dot_config/mise/config.toml`         | `"cargo:<crate>"` entry        |
 | PyPI package          | `run_after_install-via-mise-tools`    | mirror the `beets` block       |
 
 Raise a release binary that mise can't verify against its publisher,

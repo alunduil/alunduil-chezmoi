@@ -1,7 +1,7 @@
 #!/usr/bin/env bats
 bats_require_minimum_version 1.5.0
 
-TOOLS=(act ansible-core lazygit yq ormolu github:fourmolu/fourmolu github:grafana/alloy github:seachicken/gh-poi npm:bats-assert npm:bats-support)
+TOOLS=(act ansible-core cargo:cargo-cache rust lazygit yq ormolu github:fourmolu/fourmolu github:grafana/alloy github:seachicken/gh-poi npm:bats-assert npm:bats-support)
 # Read in a subshell so the script's shell options stay out of bats.
 mapfile -t BINARIES < <(bash -c '
   source "$1"
