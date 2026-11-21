@@ -51,9 +51,8 @@ if (($#)); then
 fi
 
 # systemd --user does not source ~/.bashrc, and each toolchain installs its
-# binaries outside the unit's PATH. Load the same environment ~/.profile and
-# .bashrc would so `command -v` resolves whatever mise, nvm, and ghcup
-# installed. Each guard no-ops when the toolchain is absent, which is also what
+# binaries outside the unit's PATH. Load the environment that ~/.profile and
+# .bashrc set up, so `command -v` finds each toolchain's binaries. Each guard no-ops when the toolchain is absent, which is also what
 # lets the tests run against PATH stubs alone.
 [[ -d "$HOME/.local/share/mise/shims" ]] && PATH="$HOME/.local/share/mise/shims:$PATH"
 export NVM_DIR="${XDG_CONFIG_HOME:-$HOME/.config}/nvm"

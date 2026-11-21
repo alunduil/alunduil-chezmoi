@@ -8,8 +8,8 @@ set -euo pipefail
 . "{{ .chezmoi.sourceDir }}/script/lib/bootstrap.sh"
 use_pinned_mise
 use_source_mise_config
-# install-pinned-tools needs the build tools this pass installs, so it runs
-# later. Only the playbook's own tools install here.
+# Only the playbook's tools. install-pinned-tools compiles cargo crates with
+# the build-essential this playbook installs.
 mise install python uv ansible-core
 
 ansible_dir="{{ .chezmoi.sourceDir }}/ansible"

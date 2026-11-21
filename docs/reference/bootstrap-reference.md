@@ -85,9 +85,9 @@ A pass that runs `mise install` calls `use_pinned_mise` first.
 `mise install` links every shim to the first `mise` on `PATH`, which on
 a first apply is the tutorial's seed.
 
-`install-pinned-tools` runs after `configure-system-layer`, because cargo
-crates build against its `build-essential`. `configure-system-layer`
-installs only the tools its playbook runs on.
+`install-pinned-tools` follows `configure-system-layer`, whose
+`build-essential` compiles the cargo crates. `configure-system-layer`
+installs only the mise tools its playbook needs.
 
 Callers reach mise tools through the shims in
 `~/.local/share/mise/shims`, which keep one path across version bumps.
@@ -108,11 +108,12 @@ env -u MISE_OVERRIDE_CONFIG_FILENAMES -u MISE_OVERRIDE_TOOL_VERSIONS_FILENAMES \
 A shim for a version that isn't installed fails, so run `mise install`
 first.
 
-The Rust shims set `RUSTUP_TOOLCHAIN` to the host's pin, which rustup
-ranks above a checkout's `rust-toolchain.toml`. To build with a
-checkout's toolchain on the host, name it: `cargo +<toolchain> build`.
-A binary that `cargo install` adds to `~/.cargo/bin` reaches `PATH`
-after `mise reshim`.
+To build with a checkout's Rust toolchain on the host, name it:
+`cargo +<toolchain> build`. The host ignores `rust-toolchain.toml`,
+because the Rust shims set `RUSTUP_TOOLCHAIN` to the host's pin and
+rustup ranks that variable higher.
+
+Run `mise reshim` after `cargo install` to put the new binary on `PATH`.
 
 `gh` looks for extensions only in its data directory, so
 `~/.local/share/gh/extensions/gh-poi/gh-poi` links to the gh-poi shim.
