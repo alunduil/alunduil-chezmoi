@@ -37,6 +37,12 @@
       "automerge": true
     },
     {
+      "description": "mise never builds ansible-core's dependencies from source, and PyYAML publishes no Python 3.15 wheels, so ansible-core can't install on 3.15 until they ship",
+      "matchManagers": ["mise"],
+      "matchDepNames": ["python"],
+      "allowedVersions": "<3.15"
+    },
+    {
       "description": "CI never exercises these pins, so green CI shows only that the file parses",
       "matchFileNames": [
         "dot_config/zellij/config.kdl",
