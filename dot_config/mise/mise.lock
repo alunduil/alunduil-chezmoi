@@ -52,15 +52,15 @@ url_api = "https://api.github.com/repos/grafana/alloy/releases/assets/742305288"
 provenance = "github-attestations"
 
 [[tools."github:grafana/gcx"]]
-version = "1.7.1"
+version = "1.8.0"
 backend = "github:grafana/gcx"
-specifiers = ["v1.7.1"]
+specifiers = ["v1.8.0"]
 
 [tools."github:grafana/gcx"."platforms.linux-x64"]
-checksum = "sha256:5f1601feac13d850017064a9b556f11983de6def2986ba0bee402a947659c3e9"
+checksum = "sha256:85e21eeecae4ed2f21a40934bb127f0ec3bc2461f024404a709bf6e448b0e975"
 checksum_source = "mise-versions"
-url = "https://github.com/grafana/gcx/releases/download/v1.7.1/gcx_1.7.1_linux_amd64.tar.gz"
-url_api = "https://api.github.com/repos/grafana/gcx/releases/assets/662320576"
+url = "https://github.com/grafana/gcx/releases/download/v1.8.0/gcx_1.8.0_linux_amd64.tar.gz"
+url_api = "https://api.github.com/repos/grafana/gcx/releases/assets/758418548"
 
 [[tools."github:jdx/mise"]]
 version = "2026.11.9"
