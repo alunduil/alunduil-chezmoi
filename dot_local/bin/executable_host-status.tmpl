@@ -23,8 +23,8 @@ read -ra apt_packages <<<'{{ (include "ansible/group_vars/all/packages.yml" | fr
 # Installed outside the apt and mise lists, so neither covers them. Docker's
 # packages come from geerlingguy.docker.
 commands=(
-    beet bobbit cabal cargo cargo-cache claude devcontainer docker ghc ghcup
-    node pnpm readwise rustc rustup uptimerobot
+    beet bobbit cabal claude devcontainer docker ghc ghcup node pnpm readwise
+    uptimerobot
 )
 
 system_units=(

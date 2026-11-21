@@ -19,6 +19,11 @@ backend = "pypi:ansible-core"
 specifiers = ["2.22.0"]
 uv = { path = ".mise/locks/ansible-core/2.22.0", digest = "sha256:0707560bc31e70abc08b951fa435f5df76131edf330c22070431d09c2ce0b1ca" }
 
+[[tools."cargo:cargo-cache"]]
+version = "0.8.3"
+backend = "cargo:cargo-cache"
+specifiers = ["0.8.3"]
+
 [[tools.chezmoi]]
 version = "2.74.1"
 backend = "aqua:twpayne/chezmoi"
@@ -202,6 +207,11 @@ specifiers = ["0.3.174"]
 checksum = "sha256:411433a5e3bc833140dcab89f4ef482d6390298f72c6c15a958aef4e98003438"
 url = "https://github.com/release-plz/release-plz/releases/download/release-plz-v0.3.174/release-plz-x86_64-unknown-linux-gnu.tar.gz"
 url_api = "https://api.github.com/repos/release-plz/release-plz/releases/assets/661769938"
+
+[[tools.rust]]
+version = "1.100.0"
+backend = "core:rust"
+specifiers = ["1.100.0"]
 
 [[tools.trivy]]
 version = "0.76.2"

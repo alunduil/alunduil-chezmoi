@@ -68,9 +68,9 @@ systemd manager a unit belongs in and what it runs as.
 | apt packages | `apt_packages` in `ansible/group_vars/all/packages.yml` | `configure-system-layer`, one transaction | the apt repository |
 | Docker | `geerlingguy.docker` defaults, `ansible/group_vars/all/docker.yml` | `configure-system-layer`, through the role | the apt repository |
 | mise | `dot_config/mise/config.toml` | `install-mise`, through the mise on `PATH` | `dot_config/mise/mise.lock` |
-| Release binaries | `dot_config/mise/config.toml` | `install-binary-tools`, through `mise install` | `dot_config/mise/mise.lock` |
+| Release binaries, Rust, cargo crates | `dot_config/mise/config.toml` | `install-pinned-tools`, through `mise install` | `dot_config/mise/mise.lock` |
 | Python tools | `install-via-mise-tools` | `uv tool install` | `*_VERSION` in the pass |
-| Node, Haskell, Rust | `install-{node,haskell,rust}-ecosystem` | each ecosystem's own manager | `*_VERSION` in the pass |
+| Node, Haskell | `install-{node,haskell}-ecosystem` | each ecosystem's own manager | `*_VERSION` in the pass |
 | Galaxy roles and collections | `ansible/requirements.yml` | `configure-system-layer`, through `ansible-galaxy` | the version in `requirements.yml` |
 | Claude Code | `install-claude-code` | Anthropic's native installer | nothing: it updates itself |
 | Zellij plugins | `plugins` block of `dot_config/zellij/config.kdl` | Zellij at load | the version in the download address |
@@ -84,6 +84,10 @@ installs it once when it's missing. Every other repository is a deb822
 A pass that runs `mise install` calls `use_pinned_mise` first.
 `mise install` links every shim to the first `mise` on `PATH`, which on
 a first apply is the tutorial's seed.
+
+`install-pinned-tools` follows `configure-system-layer`, whose
+`build-essential` compiles the cargo crates. `configure-system-layer`
+installs only the mise tools its playbook needs.
 
 Callers reach mise tools through the shims in
 `~/.local/share/mise/shims`, which keep one path across version bumps.
@@ -103,6 +107,14 @@ env -u MISE_OVERRIDE_CONFIG_FILENAMES -u MISE_OVERRIDE_TOOL_VERSIONS_FILENAMES \
 
 A shim for a version that isn't installed fails, so run `mise install`
 first.
+
+To build with a checkout's Rust toolchain on the host, name it:
+`cargo +<toolchain> build`. The host ignores `rust-toolchain.toml`,
+because the Rust shims set `RUSTUP_TOOLCHAIN` to the host's pin and
+rustup ranks that variable higher.
+
+Run `mise reshim` after `cargo install` to put the new binary on `PATH`.
+
 `gh` looks for extensions only in its data directory, so
 `~/.local/share/gh/extensions/gh-poi/gh-poi` links to the gh-poi shim.
 
