@@ -13,6 +13,10 @@ ansible_dir="{{ .chezmoi.sourceDir }}/ansible"
 # chezmoi runs passes from $HOME, where Ansible wouldn't find the config.
 export ANSIBLE_CONFIG="$ansible_dir/ansible.cfg"
 
+# install-mise-tools needs the build tools this pass installs, so it runs
+# later. Only the playbook's own tools install here.
+mise install python uv ansible-core
+
 # Ansible refuses non-blocking stdio, which an earlier pass can leave on
 # chezmoi's shared descriptors.
 mise exec -- python3 -c 'import os

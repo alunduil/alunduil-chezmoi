@@ -16,12 +16,14 @@ HASKELL_FIXTURE=script/checks/fixtures/pinned-tools.hs
 declare -A RUN_COMMANDS=(
   [act]='act --list'
   [ansible-core]='ansible-playbook --version'
+  [cargo:cargo-cache]='cargo-cache --version'
   [github:fourmolu/fourmolu]="fourmolu --mode check $HASKELL_FIXTURE"
   [github:seachicken/gh-poi]='gh-poi --help'
   [lazygit]='lazygit -ucf dot_config/lazygit/config.yml'
   [ormolu]="ormolu --mode check $HASKELL_FIXTURE"
   [npm:bats-assert]=''
   [npm:bats-support]=''
+  [rust]='cargo --version'
 )
 
 # Interactive tools need a terminal and never exit on their own. Each runs in a

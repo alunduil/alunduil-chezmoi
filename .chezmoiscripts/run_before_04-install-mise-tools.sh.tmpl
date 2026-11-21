@@ -1,7 +1,8 @@
 #!/usr/bin/env bash
 # See docs/adr/0009-install-pinned-tools-through-mise.md. `mise install`
 # skips every locked version already on disk, so a bump and a deleted tool
-# reconcile the same way.
+# reconcile the same way. Runs after configure-system-layer: cargo tools
+# build from source against its build-essential.
 
 set -euo pipefail
 
