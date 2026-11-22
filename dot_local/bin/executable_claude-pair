@@ -38,8 +38,8 @@ export CLAUDE_CODE_OAUTH_TOKEN
 # the clone's git directory at the same path lets git resolve it.
 git_common_dir="$(git rev-parse --path-format=absolute --git-common-dir)"
 
-# No host fallback: it would hide a broken devcontainer and hand the session
-# the host. Rebuild replaces a container whose mounts predate its config.
+# No host fallback: it would hide a broken devcontainer and give the session
+# host access. Rebuild recreates a container an earlier build left broken.
 rebuild=()
 until devcontainer up --workspace-folder . "${rebuild[@]}" \
     --mount "type=bind,source=$git_common_dir,target=$git_common_dir"; do

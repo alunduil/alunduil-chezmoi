@@ -5,6 +5,8 @@ bats_require_minimum_version 1.5.0
 # pair tab depends on. A stub `claude` echoes its args so we can assert which
 # mode was chosen. A stub `devcontainer` logs each call and, for `exec`,
 # applies --remote-env and runs the command locally in place of the container.
+# STUB_UP_FAIL=always fails every `up`; STUB_UP_FAIL=stale fails until `up`
+# gets --remove-existing-container.
 
 setup() {
   REPO_ROOT="$(cd "$BATS_TEST_DIRNAME/../.." && pwd)"
