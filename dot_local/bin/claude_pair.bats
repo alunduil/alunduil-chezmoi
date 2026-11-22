@@ -27,11 +27,13 @@ STUB
 sub="$1"; shift
 printf '%s token:[%s] %s\n' "$sub" "${CLAUDE_CODE_OAUTH_TOKEN:-}" "$*" >>"$DEVCONTAINER_LOG"
 if [[ "$sub" == up ]]; then
-  if [[ -n "${STUB_UP_FAIL:-}" ]]; then
-    echo "build failed: bad feature" >&2
-    exit 1
-  fi
-  exit 0
+  case "${STUB_UP_FAIL:-}" in
+    always) ;;
+    stale) [[ " $* " == *" --remove-existing-container "* ]] && exit 0 ;;
+    *) exit 0 ;;
+  esac
+  echo "build failed: bad feature" >&2
+  exit 1
 fi
 envs=()
 while [[ "$1" == --* ]]; do
@@ -147,11 +149,37 @@ make_devcontainer_worktree() {
   [[ "$output" == "args:[--continue] author:[Pair Person]" ]]
 }
 
-@test "devcontainer: a failed build exits with its error and skips exec" {
+@test "devcontainer: quitting a failed build exits with its error and skips exec" {
   make_devcontainer_worktree
 
-  STUB_UP_FAIL=1 run_pair
+  STUB_UP_FAIL=always run_pair <<<q
   [ "$status" -ne 0 ]
   [[ "$output" == *"build failed: bad feature"* ]]
   ! grep -q '^exec' "$DEVCONTAINER_LOG"
+}
+
+@test "devcontainer: a failed build with no input quits" {
+  make_devcontainer_worktree
+
+  STUB_UP_FAIL=always run_pair </dev/null
+  [ "$status" -ne 0 ]
+  [ "$(grep -c '^up' "$DEVCONTAINER_LOG")" -eq 1 ]
+}
+
+@test "devcontainer: retry runs up again without rebuilding" {
+  make_devcontainer_worktree
+
+  STUB_UP_FAIL=always run_pair <<<rq
+  [ "$status" -ne 0 ]
+  [ "$(grep -c '^up' "$DEVCONTAINER_LOG")" -eq 2 ]
+  ! grep -q -- '--remove-existing-container' "$DEVCONTAINER_LOG"
+}
+
+@test "devcontainer: rebuild replaces the container and starts claude" {
+  make_devcontainer_worktree
+
+  STUB_UP_FAIL=stale run_pair <<<R
+  [ "$status" -eq 0 ]
+  [[ "$output" == *"args:[] author:[Pair Person]"* ]]
+  grep -q '^up .*--remove-existing-container' "$DEVCONTAINER_LOG"
 }

@@ -38,10 +38,20 @@ export CLAUDE_CODE_OAUTH_TOKEN
 # the clone's git directory at the same path lets git resolve it.
 git_common_dir="$(git rev-parse --path-format=absolute --git-common-dir)"
 
-# No host fallback: it would hide a broken devcontainer. The zellij pane
-# keeps the build error on screen.
-devcontainer up --workspace-folder . \
-    --mount "type=bind,source=$git_common_dir,target=$git_common_dir"
+# No host fallback: it would hide a broken devcontainer and hand the session
+# the host. Rebuild replaces a container whose mounts predate its config.
+rebuild=()
+until devcontainer up --workspace-folder . "${rebuild[@]}" \
+    --mount "type=bind,source=$git_common_dir,target=$git_common_dir"; do
+    printf '\n[r]etry, [R]ebuild, [q]uit? ' >&2
+    read -rn1 choice || choice=q
+    printf '\n' >&2
+    case "$choice" in
+        r) rebuild=() ;;
+        R) rebuild=(--remove-existing-container) ;;
+        *) exit 1 ;;
+    esac
+done
 
 # Identity only: no SSH agent or signing key enters the container, so
 # commits made there are unsigned and pushing happens from the host.
