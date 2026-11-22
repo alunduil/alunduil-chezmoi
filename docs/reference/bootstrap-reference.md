@@ -68,9 +68,9 @@ systemd manager a unit belongs in and what it runs as.
 | apt packages | `apt_packages` in `ansible/group_vars/all/packages.yml` | `configure-system-layer`, one transaction | the apt repository |
 | Docker | `geerlingguy.docker` defaults, `ansible/group_vars/all/docker.yml` | `configure-system-layer`, through the role | the apt repository |
 | mise | `dot_config/mise/config.toml` | `install-mise`, through the mise on `PATH` | `dot_config/mise/mise.lock` |
-| Release binaries, Rust, cargo crates | `dot_config/mise/config.toml` | `install-pinned-tools`, through `mise install` | `dot_config/mise/mise.lock` |
+| Release binaries, Node, Rust, npm packages, cargo crates | `dot_config/mise/config.toml` | `install-pinned-tools`, through `mise install` | `dot_config/mise/mise.lock` |
 | Python tools | `install-via-mise-tools` | `uv tool install` | `*_VERSION` in the pass |
-| Node, Haskell | `install-{node,haskell}-ecosystem` | each ecosystem's own manager | `*_VERSION` in the pass |
+| Haskell | `install-haskell-ecosystem` | ghcup | `*_VERSION` in the pass |
 | Galaxy roles and collections | `ansible/requirements.yml` | `configure-system-layer`, through `ansible-galaxy` | the version in `requirements.yml` |
 | Claude Code | `install-claude-code` | Anthropic's native installer | nothing: it updates itself |
 | Zellij plugins | `plugins` block of `dot_config/zellij/config.kdl` | Zellij at load | the version in the download address |
