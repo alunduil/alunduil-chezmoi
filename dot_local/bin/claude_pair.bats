@@ -137,8 +137,16 @@ make_devcontainer_worktree() {
 
   run_pair
   [ "$status" -eq 0 ]
-  [[ "$output" == "args:[] author:[Pair Person]" ]]
+  [[ "$output" == "args:[--model opus "*"] author:[Pair Person]" ]]
   grep -qF -- "--remote-env GIT_COMMITTER_EMAIL=pair@example.com" "$DEVCONTAINER_LOG"
+}
+
+@test "devcontainer: claude gets the model and the push boundary" {
+  make_devcontainer_worktree
+
+  run_pair
+  [ "$status" -eq 0 ]
+  [[ "$output" == "args:[--model opus --append-system-prompt "*"no GitHub credentials"*"Never edit known_hosts"*"] author:[Pair Person]" ]]
 }
 
 @test "devcontainer: resumes from CLAUDE_CONFIG_DIR" {
@@ -148,7 +156,7 @@ make_devcontainer_worktree() {
 
   run_pair
   [ "$status" -eq 0 ]
-  [[ "$output" == "args:[--continue] author:[Pair Person]" ]]
+  [[ "$output" == "args:[--continue --model opus "*"] author:[Pair Person]" ]]
 }
 
 @test "devcontainer: quitting a failed build exits with its error and skips exec" {
@@ -182,6 +190,6 @@ make_devcontainer_worktree() {
 
   STUB_UP_FAIL=stale run_pair <<<R
   [ "$status" -eq 0 ]
-  [[ "$output" == *"args:[] author:[Pair Person]"* ]]
+  [[ "$output" == *"args:[--model opus "*"] author:[Pair Person]"* ]]
   grep -q '^up .*--remove-existing-container' "$DEVCONTAINER_LOG"
 }
