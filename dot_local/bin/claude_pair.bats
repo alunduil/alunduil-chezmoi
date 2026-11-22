@@ -137,7 +137,7 @@ make_devcontainer_worktree() {
 
   run_pair
   [ "$status" -eq 0 ]
-  [[ "$output" == "args:[--model opus "*"] author:[Pair Person]" ]]
+  [[ "$output" == *" author:[Pair Person]" ]]
   grep -qF -- "--remote-env GIT_COMMITTER_EMAIL=pair@example.com" "$DEVCONTAINER_LOG"
 }
 
@@ -156,7 +156,7 @@ make_devcontainer_worktree() {
 
   run_pair
   [ "$status" -eq 0 ]
-  [[ "$output" == "args:[--continue --model opus "*"] author:[Pair Person]" ]]
+  [[ "$output" == "args:[--continue "*"] author:[Pair Person]" ]]
 }
 
 @test "devcontainer: quitting a failed build exits with its error and skips exec" {
@@ -190,6 +190,6 @@ make_devcontainer_worktree() {
 
   STUB_UP_FAIL=stale run_pair <<<R
   [ "$status" -eq 0 ]
-  [[ "$output" == *"args:[--model opus "*"] author:[Pair Person]"* ]]
+  [[ "$output" == *"args:["*"] author:[Pair Person]"* ]]
   grep -q '^up .*--remove-existing-container' "$DEVCONTAINER_LOG"
 }

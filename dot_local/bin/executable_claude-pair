@@ -53,20 +53,22 @@ until devcontainer up --workspace-folder . "${rebuild[@]}" \
     esac
 done
 
+# The container has none of the host's ~/.claude, so the model and the
+# push boundary arrive as flags. Without the prompt, a session that can't
+# push works around it by trusting host keys or embedding tokens.
+container_claude_flags=(
+    --model opus
+    --append-system-prompt 'This session runs in a devcontainer with no GitHub credentials, SSH keys, or gh, by design. Commit your work, then stop and tell the operator the commit is ready: they push and open the draft pull request from the host. Never edit known_hosts, accept SSH host keys, put tokens in git remote URLs, or create credentials.'
+)
+
 # Identity only: no SSH agent or signing key enters the container, so
 # commits made there are unsigned and pushing happens from the host.
 name="$(git config user.name)"
 email="$(git config user.email)"
-
-# The container has none of the host's ~/.claude, so the model and the
-# push boundary arrive as flags. Without the prompt, a session that can't
-# push works around it by trusting host keys or embedding tokens.
-boundary='This session runs in a devcontainer with no GitHub credentials, SSH keys, or gh, by design. Commit your work, then stop and tell the operator the commit is ready: they push and open the draft pull request from the host. Never edit known_hosts, accept SSH host keys, put tokens in git remote URLs, or create credentials.'
-
 exec devcontainer exec --workspace-folder . \
     --remote-env "GIT_AUTHOR_NAME=$name" \
     --remote-env "GIT_AUTHOR_EMAIL=$email" \
     --remote-env "GIT_COMMITTER_NAME=$name" \
     --remote-env "GIT_COMMITTER_EMAIL=$email" \
     bash -c "$(declare -f resume); resume \"\$@\"" bash \
-    --model opus --append-system-prompt "$boundary" "$@"
+    "${container_claude_flags[@]}" "$@"
