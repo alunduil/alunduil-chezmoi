@@ -48,13 +48,11 @@ All passes live under `.chezmoiscripts/`.
 
 Pick the canonical installer for the ecosystem:
 
-| Source                | Where                                 | Pattern                        |
-| --------------------- | ------------------------------------- | ------------------------------ |
-| Debian package        | `ansible/group_vars/all/packages.yml` | append to `apt_packages`       |
-| Pinned binary release | `dot_config/mise/config.toml`         | mise entry below               |
-| npm package           | `dot_config/mise/config.toml`         | `"npm:<package>"` entry        |
-| Cargo crate           | `dot_config/mise/config.toml`         | `"cargo:<crate>"` entry        |
-| PyPI package          | `run_after_install-via-mise-tools`    | mirror the `beets` block       |
+| Source                                   | Where                                 | Pattern                  |
+| ---------------------------------------- | ------------------------------------- | ------------------------ |
+| Debian package                           | `ansible/group_vars/all/packages.yml` | append to `apt_packages` |
+| Release binary, npm package, cargo crate | `dot_config/mise/config.toml`         | mise entry below         |
+| PyPI package                             | `run_after_install-via-mise-tools`    | mirror the `beets` block |
 
 Raise a release binary that mise can't verify against its publisher,
 such as one signed only with GPG, with the user before adding it.
@@ -78,8 +76,9 @@ A mise tool needs no annotation: Renovate's mise manager reads
 
 Add the tool under `[tools]` in `dot_config/mise/config.toml`, at an
 exact version, sorted by tool name. Use the short name when
-`mise registry <tool>` lists one; otherwise use
-`"github:<owner>/<repo>"`. Then lock it with `just lock-tools`.
+`mise registry <tool>` lists one. Otherwise name the backend:
+`"github:<owner>/<repo>"` for a release binary, `"npm:<package>"`, or
+`"cargo:<crate>"`. Then lock it with `just lock-tools`.
 
 `script/checks/pinned-tools` runs
 `<last segment of the config.toml name> --version` and expects it to
