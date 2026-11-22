@@ -53,6 +53,14 @@ until devcontainer up --workspace-folder . "${rebuild[@]}" \
     esac
 done
 
+# The container's keepalive outlives claude, so stop it when the pane goes.
+# bash runs the EXIT trap on the HUP a closing zellij pane sends, too.
+stop_container() {
+    docker ps -q --filter "label=devcontainer.local_folder=$PWD" |
+        xargs -r docker stop >/dev/null 2>&1 || true
+}
+trap stop_container EXIT
+
 # The container lacks the host's ~/.claude. Without the prompt, a session
 # that can't push trusts host keys or embeds tokens to push anyway.
 container_claude_flags=(
@@ -64,7 +72,7 @@ container_claude_flags=(
 # commits made there are unsigned and pushing happens from the host.
 name="$(git config user.name)"
 email="$(git config user.email)"
-exec devcontainer exec --workspace-folder . \
+devcontainer exec --workspace-folder . \
     --remote-env "GIT_AUTHOR_NAME=$name" \
     --remote-env "GIT_AUTHOR_EMAIL=$email" \
     --remote-env "GIT_COMMITTER_NAME=$name" \

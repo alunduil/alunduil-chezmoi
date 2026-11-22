@@ -46,6 +46,14 @@ exec env "${envs[@]}" "$@"
 STUB
   chmod +x "$STUB_DIR/devcontainer"
 
+  cat >"$STUB_DIR/docker" <<'STUB'
+#!/usr/bin/env bash
+printf 'docker %s\n' "$*" >>"$DEVCONTAINER_LOG"
+[[ "$1" == ps && "$*" == *"label=devcontainer.local_folder=$PWD"* ]] && echo cid-1
+exit 0
+STUB
+  chmod +x "$STUB_DIR/docker"
+
   install -m 0755 "$REPO_ROOT/dot_local/bin/executable_claude-pair" "$WRAPPER_DIR/claude-pair"
 
   export PATH="$WRAPPER_DIR:$STUB_DIR:/usr/bin:/bin"
@@ -157,6 +165,42 @@ make_devcontainer_worktree() {
   run_pair
   [ "$status" -eq 0 ]
   [[ "$output" == "args:[--continue "*"] author:[Pair Person]" ]]
+}
+
+@test "devcontainer: stops the worktree's container after claude exits" {
+  make_devcontainer_worktree
+
+  run_pair
+  [ "$status" -eq 0 ]
+  [ "$(tail -n1 "$DEVCONTAINER_LOG")" == "docker stop cid-1" ]
+}
+
+@test "devcontainer: stops the container when the tab hangs up" {
+  make_devcontainer_worktree
+  cat >"$STUB_DIR/claude" <<'STUB'
+#!/usr/bin/env bash
+pkill -HUP -f "$PAIR_PATH"
+sleep 1
+STUB
+
+  PAIR_PATH="$WRAPPER_DIR/claude-pair" run_pair
+  [ "$status" -eq 129 ]
+  grep -qxF "docker stop cid-1" "$DEVCONTAINER_LOG"
+}
+
+@test "devcontainer: keeps claude's exit status" {
+  make_devcontainer_worktree
+  printf '#!/usr/bin/env bash\nexit 7\n' >"$STUB_DIR/claude"
+
+  run_pair
+  [ "$status" -eq 7 ]
+  grep -qxF "docker stop cid-1" "$DEVCONTAINER_LOG"
+}
+
+@test "host: never calls docker" {
+  run_pair
+  [ "$status" -eq 0 ]
+  [ ! -e "$DEVCONTAINER_LOG" ]
 }
 
 @test "devcontainer: quitting a failed build exits with its error and skips exec" {
