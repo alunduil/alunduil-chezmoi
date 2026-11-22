@@ -49,6 +49,20 @@ else
     "beets==$BEETS_VERSION"
 fi
 
+# Adds a text layer to scanned PDFs. Shells out to tesseract, ghostscript,
+# unpaper, and pngquant from apt.
+# renovate: datasource=pypi depName=ocrmypdf
+OCRMYPDF_VERSION="17.14.2"
+
+if uv tool list --show-version-specifiers 2>/dev/null |
+  grep -qxF "ocrmypdf v$OCRMYPDF_VERSION [required: ==$OCRMYPDF_VERSION]" &&
+  ocrmypdf --version >/dev/null 2>&1; then
+  log "ocrmypdf: $OCRMYPDF_VERSION already installed via uv"
+else
+  log "ocrmypdf: installing $OCRMYPDF_VERSION via uv"
+  uv tool install --force --reinstall "ocrmypdf==$OCRMYPDF_VERSION"
+fi
+
 # gcx ships its skill bundle inside the binary; `agent skills install --all`
 # extracts it to ~/.agents/skills (the cross-harness convention read by Claude
 # Code, Cursor, Copilot). --force re-syncs gcx-managed files on version bumps

@@ -38,6 +38,13 @@ apt_packages:
   - signal-desktop
   - calibre
   - nethack-console
+  # OCR toolchain around ocrmypdf, which uv installs separately.
+  - tesseract-ocr
+  - tesseract-ocr-eng
+  - tesseract-ocr-spa
+  - ghostscript
+  - unpaper
+  - pngquant
   # Automatic security updates, configured in site.yml.
   # powermgmt-base provides on_ac_power, which the OnlyOnACPower gate in
   # 50unattended-upgrades needs to read the AC line; without it
