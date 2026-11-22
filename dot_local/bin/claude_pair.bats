@@ -17,7 +17,7 @@ setup() {
   export HOME="$(mktemp -d)"
   WORKTREE="$(mktemp -d)"
   export STUB_LOG="$STUB_DIR/stub.log"
-  unset CLAUDE_CONFIG_DIR CLAUDE_CODE_OAUTH_TOKEN XDG_CONFIG_HOME
+  unset CLAUDE_CONFIG_DIR CLAUDE_CODE_OAUTH_TOKEN XDG_CONFIG_HOME CLAUDE_PAIR_DEVCONTAINER
 
   cat >"$STUB_DIR/claude" <<'STUB'
 #!/usr/bin/env bash
@@ -82,8 +82,10 @@ run_pair() {
   run bash -c "cd '$WORKTREE' && claude-pair"
 }
 
-# Turn $WORKTREE into a git worktree of a fresh clone with a devcontainer.
+# Turn $WORKTREE into a git worktree of a fresh clone with a devcontainer,
+# and opt in to using it.
 make_devcontainer_worktree() {
+  export CLAUDE_PAIR_DEVCONTAINER=1
   CLONE="$HOME/clone"
   git init -q "$CLONE"
   git -C "$CLONE" -c user.name=t -c user.email=t@example.com commit -q --allow-empty -m init
@@ -127,6 +129,15 @@ assert_container_stopped() {
 @test "host: never calls devcontainer or docker" {
   run_pair
   [ "$status" -eq 0 ]
+  [ ! -e "$STUB_LOG" ]
+}
+
+@test "host: a devcontainer without the opt-in never calls devcontainer or docker" {
+  make_devcontainer_worktree
+
+  CLAUDE_PAIR_DEVCONTAINER=0 run_pair
+  [ "$status" -eq 0 ]
+  [[ "$output" == "args:[] author:[]" ]]
   [ ! -e "$STUB_LOG" ]
 }
 
