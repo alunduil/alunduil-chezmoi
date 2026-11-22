@@ -58,10 +58,11 @@ jobs:
           # bats-action curls api.github.com; auth raises the anonymous rate limit.
           github-token: ${{ secrets.GITHUB_TOKEN }}
 
-      # mise_isolation_probe.bats runs the real just shim.
+      # mise_isolation_probe.bats runs the real just shim. mise refuses to
+      # install an npm package until the configured node is installed.
       - uses: ./.github/actions/setup-mise
         with:
-          tools: npm:bats-support npm:bats-assert just
+          tools: node npm:bats-support npm:bats-assert just
 
       - uses: ./.github/actions/setup-kcov
 

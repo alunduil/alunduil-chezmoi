@@ -27,8 +27,6 @@ churn=(
   /var/log
   "$home/.cache"
   "$home/.config/chezmoi/chezmoistate.boltdb"
-  # npm writes a debug log per invocation.
-  "$home/.npm/_logs"
   # `mise install` regenerates its shims even when nothing is new.
   "$home/.local/share/mise/shims"
 )

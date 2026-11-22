@@ -1,7 +1,11 @@
 #!/usr/bin/env bats
 bats_require_minimum_version 1.5.0
 
-TOOLS=(act ansible-core cargo:cargo-cache rust lazygit yq ormolu github:fourmolu/fourmolu github:grafana/alloy github:seachicken/gh-poi npm:bats-assert npm:bats-support)
+# The mise stand-in pins every RUN_COMMANDS key, since the script rejects a run
+# command for an unpinned tool. yq and alloy exercise the default command.
+mapfile -t TOOLS < <(bash -c 'source "$1"; printf "%s\n" "${!RUN_COMMANDS[@]}"' \
+  _ "$BATS_TEST_DIRNAME/pinned-tools")
+TOOLS+=(yq github:grafana/alloy)
 # Read in a subshell so the script's shell options stay out of bats.
 mapfile -t BINARIES < <(bash -c '
   source "$1"

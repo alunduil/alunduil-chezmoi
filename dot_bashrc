@@ -127,12 +127,6 @@ export FZF_CTRL_T_COMMAND="$FZF_DEFAULT_COMMAND"
 export FZF_ALT_C_COMMAND='fd --type d --hidden --exclude .git'
 [ -f /usr/share/doc/fzf/examples/key-bindings.bash ] && . /usr/share/doc/fzf/examples/key-bindings.bash
 
-# nvm (Node Version Manager): load if installed, no-op otherwise.
-# Follows nvm's own XDG default: $XDG_CONFIG_HOME/nvm, or ~/.nvm without XDG.
-export NVM_DIR="${XDG_CONFIG_HOME:-$HOME/.config}/nvm"
-[ -s "$NVM_DIR/nvm.sh" ] && . "$NVM_DIR/nvm.sh"
-[ -s "$NVM_DIR/bash_completion" ] && . "$NVM_DIR/bash_completion"
-
 # ghcup: add ~/.ghcup/bin (ghc, cabal) to PATH when installed.
 [ -f "$HOME/.ghcup/env" ] && . "$HOME/.ghcup/env"
 
