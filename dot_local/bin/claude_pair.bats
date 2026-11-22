@@ -146,7 +146,7 @@ make_devcontainer_worktree() {
 
   run_pair
   [ "$status" -eq 0 ]
-  [[ "$output" == "args:[--model opus --append-system-prompt "*"no GitHub credentials"*"Never edit known_hosts"*"] author:[Pair Person]" ]]
+  [[ "$output" == "args:[--model opus --append-system-prompt "*"no GitHub credentials"*"Leave SSH host trust and credentials to the operator"*"] author:[Pair Person]" ]]
 }
 
 @test "devcontainer: resumes from CLAUDE_CONFIG_DIR" {

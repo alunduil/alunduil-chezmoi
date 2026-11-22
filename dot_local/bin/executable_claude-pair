@@ -53,12 +53,11 @@ until devcontainer up --workspace-folder . "${rebuild[@]}" \
     esac
 done
 
-# The container has none of the host's ~/.claude, so the model and the
-# push boundary arrive as flags. Without the prompt, a session that can't
-# push works around it by trusting host keys or embedding tokens.
+# The container lacks the host's ~/.claude. Without the prompt, a session
+# that can't push trusts host keys or embeds tokens to push anyway.
 container_claude_flags=(
     --model opus
-    --append-system-prompt 'This session runs in a devcontainer with no GitHub credentials, SSH keys, or gh, by design. Commit your work, then stop and tell the operator the commit is ready: they push and open the draft pull request from the host. Never edit known_hosts, accept SSH host keys, put tokens in git remote URLs, or create credentials.'
+    --append-system-prompt 'This session runs in a devcontainer with no GitHub credentials, SSH keys, or gh, by design. Commit your work, then stop and tell the operator the commit is ready: they push and open the draft pull request from the host. Leave SSH host trust and credentials to the operator.'
 )
 
 # Identity only: no SSH agent or signing key enters the container, so
