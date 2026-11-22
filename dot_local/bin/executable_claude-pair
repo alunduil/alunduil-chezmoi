@@ -53,6 +53,13 @@ until devcontainer up --workspace-folder . "${rebuild[@]}" \
     esac
 done
 
+# The container lacks the host's ~/.claude. Without the prompt, a session
+# that can't push trusts host keys or embeds tokens to push anyway.
+container_claude_flags=(
+    --model opus
+    --append-system-prompt 'This session runs in a devcontainer with no GitHub credentials, SSH keys, or gh, by design. Commit your work, then stop and tell the operator the commit is ready: they push and open the draft pull request from the host. Leave SSH host trust and credentials to the operator.'
+)
+
 # Identity only: no SSH agent or signing key enters the container, so
 # commits made there are unsigned and pushing happens from the host.
 name="$(git config user.name)"
@@ -62,4 +69,5 @@ exec devcontainer exec --workspace-folder . \
     --remote-env "GIT_AUTHOR_EMAIL=$email" \
     --remote-env "GIT_COMMITTER_NAME=$name" \
     --remote-env "GIT_COMMITTER_EMAIL=$email" \
-    bash -c "$(declare -f resume); resume \"\$@\"" bash "$@"
+    bash -c "$(declare -f resume); resume \"\$@\"" bash \
+    "${container_claude_flags[@]}" "$@"
