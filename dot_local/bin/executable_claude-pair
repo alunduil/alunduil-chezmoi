@@ -26,8 +26,8 @@ resume() {
     exec claude "$@"
 }
 
-# Opt-in because the container lacks the host's Claude settings and skills,
-# so a session there cannot push or open a pull request.
+# Opt-in: a container session has neither the host's skills nor gh, so it
+# cannot open a pull request.
 use_devcontainer() {
     [[ "${CLAUDE_PAIR_DEVCONTAINER:-}" == 1 && -f .devcontainer/devcontainer.json ]]
 }
