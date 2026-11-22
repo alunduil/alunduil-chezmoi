@@ -120,9 +120,8 @@ make_devcontainer_worktree() {
 
 @test "host: a devcontainer without the opt-in never calls devcontainer" {
   make_devcontainer_worktree
-  unset CLAUDE_PAIR_DEVCONTAINER
 
-  run_pair
+  CLAUDE_PAIR_DEVCONTAINER=0 run_pair
   [ "$status" -eq 0 ]
   [[ "$output" == "args:[] author:[]" ]]
   [ ! -e "$DEVCONTAINER_LOG" ]
