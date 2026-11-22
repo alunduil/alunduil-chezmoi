@@ -1,22 +1,65 @@
 #!/usr/bin/env bash
 # claude launcher for ~/.config/zellij/layouts/pair.kdl.
 #
-# Resumes the worktree's most recent conversation when one exists, else
-# starts fresh. `claude --continue` cannot do this itself: in interactive
-# mode it errors with "no conversations to continue" when the directory
-# has no history, so a new worktree's pair tab would die on open. (Print
-# mode -p falls back to fresh, which is why #265 missed this.)
+# A worktree with .devcontainer/devcontainer.json gets claude inside that
+# devcontainer; any other worktree gets claude on the host.
 #
-# claude stores history under ~/.claude/projects/<cwd with every
-# non-alphanumeric byte replaced by ->. Presence of a *.jsonl there is
-# the resume signal.
+# Resumes the worktree's most recent conversation when one
+# exists, else starts fresh. `claude --continue` cannot do this itself: in
+# interactive mode it errors with "no conversations to continue" when the
+# directory has no history, so a new worktree's pair tab would die on open.
+#
+# claude stores history under <config dir>/projects/<cwd with every
+# non-alphanumeric byte replaced by ->. Presence of a *.jsonl there is the
+# resume signal. Inside a container both the config dir and the cwd are the
+# container's, so the check runs there.
 
 set -euo pipefail
 
-project_dir="$HOME/.claude/projects/$(pwd | sed 's/[^a-zA-Z0-9]/-/g')"
+resume() {
+    local project_dir
+    project_dir="${CLAUDE_CONFIG_DIR:-$HOME/.claude}/projects/$(pwd | sed 's/[^a-zA-Z0-9]/-/g')"
+    if compgen -G "$project_dir/*.jsonl" >/dev/null; then
+        exec claude --continue "$@"
+    fi
+    exec claude "$@"
+}
 
-if compgen -G "$project_dir/*.jsonl" >/dev/null; then
-    exec claude --continue "$@"
+if [[ ! -f .devcontainer/devcontainer.json ]]; then
+    resume "$@"
 fi
 
-exec claude "$@"
+# Only this process exports the token, so no other host process sees it. The
+# repository's remoteEnv passes it into the container via ${localEnv:...}.
+CLAUDE_CODE_OAUTH_TOKEN="$(<"${XDG_CONFIG_HOME:-$HOME/.config}/claude-pair/token")"
+export CLAUDE_CODE_OAUTH_TOKEN
+
+# A worktree's .git file holds an absolute path into the main clone. Mounting
+# the clone's git directory at the same path lets git resolve it.
+git_common_dir="$(git rev-parse --path-format=absolute --git-common-dir)"
+
+# No host fallback: it would hide a broken devcontainer and give the session
+# host access. Rebuild recreates a container an earlier build left broken.
+rebuild=()
+until devcontainer up --workspace-folder . "${rebuild[@]}" \
+    --mount "type=bind,source=$git_common_dir,target=$git_common_dir"; do
+    printf '\n[r]etry, [R]ebuild, [q]uit? ' >&2
+    read -rn1 choice || choice=q
+    printf '\n' >&2
+    case "$choice" in
+        r) rebuild=() ;;
+        R) rebuild=(--remove-existing-container) ;;
+        *) exit 1 ;;
+    esac
+done
+
+# Identity only: no SSH agent or signing key enters the container, so
+# commits made there are unsigned and pushing happens from the host.
+name="$(git config user.name)"
+email="$(git config user.email)"
+exec devcontainer exec --workspace-folder . \
+    --remote-env "GIT_AUTHOR_NAME=$name" \
+    --remote-env "GIT_AUTHOR_EMAIL=$email" \
+    --remote-env "GIT_COMMITTER_NAME=$name" \
+    --remote-env "GIT_COMMITTER_EMAIL=$email" \
+    bash -c "$(declare -f resume); resume \"\$@\"" bash "$@"
