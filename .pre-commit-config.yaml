@@ -53,7 +53,7 @@ repos:
       - id: mypy
 
   - repo: https://github.com/errata-ai/vale
-    rev: v3.27.0
+    rev: v3.28.1
     hooks:
       - id: vale
         args: [--output=line, --minAlertLevel=error]
