@@ -6,7 +6,8 @@ bats_require_minimum_version 1.5.0
 # mode was chosen. A stub `devcontainer` logs each call and, for `exec`,
 # applies --remote-env and runs the command locally in place of the container.
 # STUB_UP_FAIL=always fails every `up`; STUB_UP_FAIL=stale fails until `up`
-# gets --remove-existing-container.
+# gets --remove-existing-container. A stub `docker` logs each call and answers
+# `ps` for the worktree's container label with cid-1.
 
 setup() {
   REPO_ROOT="$(cd "$BATS_TEST_DIRNAME/../.." && pwd)"
@@ -15,7 +16,7 @@ setup() {
   WRAPPER_DIR="$(mktemp -d)"
   export HOME="$(mktemp -d)"
   WORKTREE="$(mktemp -d)"
-  export DEVCONTAINER_LOG="$STUB_DIR/devcontainer.log"
+  export STUB_LOG="$STUB_DIR/stub.log"
   unset CLAUDE_CONFIG_DIR CLAUDE_CODE_OAUTH_TOKEN XDG_CONFIG_HOME
 
   cat >"$STUB_DIR/claude" <<'STUB'
@@ -27,7 +28,7 @@ STUB
   cat >"$STUB_DIR/devcontainer" <<'STUB'
 #!/usr/bin/env bash
 sub="$1"; shift
-printf '%s token:[%s] %s\n' "$sub" "${CLAUDE_CODE_OAUTH_TOKEN:-}" "$*" >>"$DEVCONTAINER_LOG"
+printf '%s token:[%s] %s\n' "$sub" "${CLAUDE_CODE_OAUTH_TOKEN:-}" "$*" >>"$STUB_LOG"
 if [[ "$sub" == up ]]; then
   case "${STUB_UP_FAIL:-}" in
     always) ;;
@@ -48,7 +49,7 @@ STUB
 
   cat >"$STUB_DIR/docker" <<'STUB'
 #!/usr/bin/env bash
-printf 'docker %s\n' "$*" >>"$DEVCONTAINER_LOG"
+printf 'docker %s\n' "$*" >>"$STUB_LOG"
 [[ "$1" == ps && "$*" == *"label=devcontainer.local_folder=$PWD"* ]] && echo cid-1
 exit 0
 STUB
@@ -96,6 +97,11 @@ make_devcontainer_worktree() {
   echo secret-token >"$HOME/.config/claude-pair/token"
 }
 
+# The launcher's last act is stopping the worktree's container.
+assert_container_stopped() {
+  [ "$(tail -n1 "$STUB_LOG")" == "docker stop cid-1" ]
+}
+
 @test "host: resumes when the worktree has prior conversations" {
   seed_conversation "$HOME/.claude"
 
@@ -118,10 +124,10 @@ make_devcontainer_worktree() {
   [[ "$output" == "args:[] author:[]" ]]
 }
 
-@test "host: never calls devcontainer" {
+@test "host: never calls devcontainer or docker" {
   run_pair
   [ "$status" -eq 0 ]
-  [ ! -e "$DEVCONTAINER_LOG" ]
+  [ ! -e "$STUB_LOG" ]
 }
 
 @test "devcontainer: up mounts the git common dir at its host path" {
@@ -129,7 +135,7 @@ make_devcontainer_worktree() {
 
   run_pair
   [ "$status" -eq 0 ]
-  grep -qxF "up token:[secret-token] --workspace-folder . --mount type=bind,source=$CLONE/.git,target=$CLONE/.git" "$DEVCONTAINER_LOG"
+  grep -qxF "up token:[secret-token] --workspace-folder . --mount type=bind,source=$CLONE/.git,target=$CLONE/.git" "$STUB_LOG"
 }
 
 @test "devcontainer: up and exec both see the token" {
@@ -137,7 +143,7 @@ make_devcontainer_worktree() {
 
   run_pair
   [ "$status" -eq 0 ]
-  [ "$(grep -c 'token:\[secret-token\]' "$DEVCONTAINER_LOG")" -eq 2 ]
+  [ "$(grep -c 'token:\[secret-token\]' "$STUB_LOG")" -eq 2 ]
 }
 
 @test "devcontainer: exec passes the host git identity" {
@@ -146,7 +152,7 @@ make_devcontainer_worktree() {
   run_pair
   [ "$status" -eq 0 ]
   [[ "$output" == *" author:[Pair Person]" ]]
-  grep -qF -- "--remote-env GIT_COMMITTER_EMAIL=pair@example.com" "$DEVCONTAINER_LOG"
+  grep -qF -- "--remote-env GIT_COMMITTER_EMAIL=pair@example.com" "$STUB_LOG"
 }
 
 @test "devcontainer: claude gets the model and the push boundary" {
@@ -172,7 +178,7 @@ make_devcontainer_worktree() {
 
   run_pair
   [ "$status" -eq 0 ]
-  [ "$(tail -n1 "$DEVCONTAINER_LOG")" == "docker stop cid-1" ]
+  assert_container_stopped
 }
 
 @test "devcontainer: stops the container when the tab hangs up" {
@@ -185,7 +191,7 @@ STUB
 
   PAIR_PATH="$WRAPPER_DIR/claude-pair" run_pair
   [ "$status" -eq 129 ]
-  grep -qxF "docker stop cid-1" "$DEVCONTAINER_LOG"
+  assert_container_stopped
 }
 
 @test "devcontainer: keeps claude's exit status" {
@@ -194,13 +200,7 @@ STUB
 
   run_pair
   [ "$status" -eq 7 ]
-  grep -qxF "docker stop cid-1" "$DEVCONTAINER_LOG"
-}
-
-@test "host: never calls docker" {
-  run_pair
-  [ "$status" -eq 0 ]
-  [ ! -e "$DEVCONTAINER_LOG" ]
+  assert_container_stopped
 }
 
 @test "devcontainer: quitting a failed build exits with its error and skips exec" {
@@ -209,7 +209,7 @@ STUB
   STUB_UP_FAIL=always run_pair <<<q
   [ "$status" -ne 0 ]
   [[ "$output" == *"build failed: bad feature"* ]]
-  ! grep -q '^exec' "$DEVCONTAINER_LOG"
+  ! grep -q '^exec' "$STUB_LOG"
 }
 
 @test "devcontainer: a failed build with no input quits" {
@@ -217,7 +217,7 @@ STUB
 
   STUB_UP_FAIL=always run_pair </dev/null
   [ "$status" -ne 0 ]
-  [ "$(grep -c '^up' "$DEVCONTAINER_LOG")" -eq 1 ]
+  [ "$(grep -c '^up' "$STUB_LOG")" -eq 1 ]
 }
 
 @test "devcontainer: retry runs up again without rebuilding" {
@@ -225,8 +225,8 @@ STUB
 
   STUB_UP_FAIL=always run_pair <<<rq
   [ "$status" -ne 0 ]
-  [ "$(grep -c '^up' "$DEVCONTAINER_LOG")" -eq 2 ]
-  ! grep -q -- '--remove-existing-container' "$DEVCONTAINER_LOG"
+  [ "$(grep -c '^up' "$STUB_LOG")" -eq 2 ]
+  ! grep -q -- '--remove-existing-container' "$STUB_LOG"
 }
 
 @test "devcontainer: rebuild replaces the container and starts claude" {
@@ -235,5 +235,5 @@ STUB
   STUB_UP_FAIL=stale run_pair <<<R
   [ "$status" -eq 0 ]
   [[ "$output" == *"args:["*"] author:[Pair Person]"* ]]
-  grep -q '^up .*--remove-existing-container' "$DEVCONTAINER_LOG"
+  grep -q '^up .*--remove-existing-container' "$STUB_LOG"
 }
