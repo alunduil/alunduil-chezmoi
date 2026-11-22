@@ -6,8 +6,8 @@ bats_require_minimum_version 1.5.0
 # mode was chosen. A stub `devcontainer` logs each call and, for `exec`,
 # applies --remote-env and runs the command locally in place of the container.
 # STUB_UP_FAIL=always fails every `up`; STUB_UP_FAIL=stale fails until `up`
-# gets --remove-existing-container. A stub `docker` logs each call and answers
-# `ps` for the worktree's container label with cid-1.
+# gets --remove-existing-container. A stub `docker` logs each call and lists
+# cid-1 as the worktree's container.
 
 setup() {
   REPO_ROOT="$(cd "$BATS_TEST_DIRNAME/../.." && pwd)"
@@ -97,7 +97,7 @@ make_devcontainer_worktree() {
   echo secret-token >"$HOME/.config/claude-pair/token"
 }
 
-# The launcher's last act is stopping the worktree's container.
+# assert_container_stopped: succeeds if the last stub call stopped cid-1.
 assert_container_stopped() {
   [ "$(tail -n1 "$STUB_LOG")" == "docker stop cid-1" ]
 }

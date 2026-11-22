@@ -53,8 +53,8 @@ until devcontainer up --workspace-folder . "${rebuild[@]}" \
     esac
 done
 
-# The container's keepalive outlives claude, so stop it when the pane goes.
-# bash runs the EXIT trap on the HUP a closing zellij pane sends, too.
+# The container's keepalive outlives claude, so stop it when the pane closes.
+# Closing a zellij pane sends HUP, and bash runs EXIT traps on HUP.
 stop_container() {
     docker ps -q --filter "label=devcontainer.local_folder=$PWD" |
         xargs -r docker stop >/dev/null 2>&1 || true
