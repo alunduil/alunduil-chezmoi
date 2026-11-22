@@ -8,6 +8,10 @@ set -euo pipefail
 use_mise_shims
 use_local_bin
 
+# Probing a Python tool imports its modules. Without this, Python writes
+# bytecode into the tool's uv environment and a repeat apply doesn't converge.
+export PYTHONDONTWRITEBYTECODE=1
+
 # Succeeds when uv lists <name> at <version> with exactly these --with extras.
 # The listing comes from package metadata, so it still shows a tool whose
 # module files are gone. Run the tool to confirm it works, and install with
@@ -38,13 +42,13 @@ PYLAST_VERSION="7.2.0"
 BEETS_WITH=("pyacoustid==$PYACOUSTID_VERSION" "pylast==$PYLAST_VERSION")
 
 # beets opens and migrates its library on startup, so the probe runs against
-# a scratch BEETSDIR and writes no bytecode into the environment.
+# a scratch BEETSDIR.
 beets_installed() {
   uv_tool_at_pin beets "$BEETS_VERSION" "${BEETS_WITH[@]}" || return 1
 
   local beetsdir status=0
   beetsdir="$(mktemp -d)"
-  BEETSDIR="$beetsdir" PYTHONDONTWRITEBYTECODE=1 beet version >/dev/null 2>&1 ||
+  BEETSDIR="$beetsdir" beet version >/dev/null 2>&1 ||
     status=$?
   rm -rf "$beetsdir"
   return "$status"
