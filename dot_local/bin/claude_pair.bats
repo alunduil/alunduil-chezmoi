@@ -56,6 +56,19 @@ project_dir_for() {
   printf '%s/projects/%s' "$1" "$(printf '%s' "$2" | sed 's/[^a-zA-Z0-9]/-/g')"
 }
 
+# seed_conversation <config dir> [empty]: give $WORKTREE a project dir under
+# the config dir, holding a conversation unless "empty" is passed.
+seed_conversation() {
+  local dir
+  dir="$(project_dir_for "$1" "$WORKTREE")"
+  mkdir -p "$dir"
+  [[ "${2:-}" == empty ]] || : >"$dir/session.jsonl"
+}
+
+run_pair() {
+  run bash -c "cd '$WORKTREE' && claude-pair"
+}
+
 # Turn $WORKTREE into a git worktree of a fresh clone with a devcontainer.
 make_devcontainer_worktree() {
   CLONE="$HOME/clone"
@@ -72,30 +85,29 @@ make_devcontainer_worktree() {
 }
 
 @test "host: resumes when the worktree has prior conversations" {
-  mkdir -p "$(project_dir_for "$HOME/.claude" "$WORKTREE")"
-  : >"$(project_dir_for "$HOME/.claude" "$WORKTREE")/session.jsonl"
+  seed_conversation "$HOME/.claude"
 
-  run bash -c "cd '$WORKTREE' && claude-pair"
+  run_pair
   [ "$status" -eq 0 ]
   [[ "$output" == "args:[--continue] author:[]" ]]
 }
 
 @test "host: starts fresh when no project dir exists" {
-  run bash -c "cd '$WORKTREE' && claude-pair"
+  run_pair
   [ "$status" -eq 0 ]
   [[ "$output" == "args:[] author:[]" ]]
 }
 
 @test "host: starts fresh when the project dir has no conversations" {
-  mkdir -p "$(project_dir_for "$HOME/.claude" "$WORKTREE")"
+  seed_conversation "$HOME/.claude" empty
 
-  run bash -c "cd '$WORKTREE' && claude-pair"
+  run_pair
   [ "$status" -eq 0 ]
   [[ "$output" == "args:[] author:[]" ]]
 }
 
 @test "host: never calls devcontainer" {
-  run bash -c "cd '$WORKTREE' && claude-pair"
+  run_pair
   [ "$status" -eq 0 ]
   [ ! -e "$DEVCONTAINER_LOG" ]
 }
@@ -103,7 +115,7 @@ make_devcontainer_worktree() {
 @test "devcontainer: up mounts the git common dir at its host path" {
   make_devcontainer_worktree
 
-  run bash -c "cd '$WORKTREE' && claude-pair"
+  run_pair
   [ "$status" -eq 0 ]
   grep -qxF "up token:[secret-token] --workspace-folder . --mount type=bind,source=$CLONE/.git,target=$CLONE/.git" "$DEVCONTAINER_LOG"
 }
@@ -111,7 +123,7 @@ make_devcontainer_worktree() {
 @test "devcontainer: up and exec both see the token" {
   make_devcontainer_worktree
 
-  run bash -c "cd '$WORKTREE' && claude-pair"
+  run_pair
   [ "$status" -eq 0 ]
   [ "$(grep -c 'token:\[secret-token\]' "$DEVCONTAINER_LOG")" -eq 2 ]
 }
@@ -119,7 +131,7 @@ make_devcontainer_worktree() {
 @test "devcontainer: exec passes the host git identity" {
   make_devcontainer_worktree
 
-  run bash -c "cd '$WORKTREE' && claude-pair"
+  run_pair
   [ "$status" -eq 0 ]
   [[ "$output" == "args:[] author:[Pair Person]" ]]
   grep -qF -- "--remote-env GIT_COMMITTER_EMAIL=pair@example.com" "$DEVCONTAINER_LOG"
@@ -128,10 +140,9 @@ make_devcontainer_worktree() {
 @test "devcontainer: resumes from CLAUDE_CONFIG_DIR" {
   make_devcontainer_worktree
   export CLAUDE_CONFIG_DIR="$HOME/container-claude"
-  mkdir -p "$(project_dir_for "$CLAUDE_CONFIG_DIR" "$WORKTREE")"
-  : >"$(project_dir_for "$CLAUDE_CONFIG_DIR" "$WORKTREE")/session.jsonl"
+  seed_conversation "$CLAUDE_CONFIG_DIR"
 
-  run bash -c "cd '$WORKTREE' && claude-pair"
+  run_pair
   [ "$status" -eq 0 ]
   [[ "$output" == "args:[--continue] author:[Pair Person]" ]]
 }
@@ -139,7 +150,7 @@ make_devcontainer_worktree() {
 @test "devcontainer: a failed build exits with its error and skips exec" {
   make_devcontainer_worktree
 
-  STUB_UP_FAIL=1 run bash -c "cd '$WORKTREE' && claude-pair"
+  STUB_UP_FAIL=1 run_pair
   [ "$status" -ne 0 ]
   [[ "$output" == *"build failed: bad feature"* ]]
   ! grep -q '^exec' "$DEVCONTAINER_LOG"

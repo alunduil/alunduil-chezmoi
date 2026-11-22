@@ -16,17 +16,17 @@
 
 set -euo pipefail
 
-# shellcheck disable=SC2016 # expanded by the bash that runs it, not here
-resume='
-project_dir="${CLAUDE_CONFIG_DIR:-$HOME/.claude}/projects/$(pwd | sed "s/[^a-zA-Z0-9]/-/g")"
-if compgen -G "$project_dir/*.jsonl" >/dev/null; then
-    exec claude --continue "$@"
-fi
-exec claude "$@"
-'
+resume() {
+    local project_dir
+    project_dir="${CLAUDE_CONFIG_DIR:-$HOME/.claude}/projects/$(pwd | sed 's/[^a-zA-Z0-9]/-/g')"
+    if compgen -G "$project_dir/*.jsonl" >/dev/null; then
+        exec claude --continue "$@"
+    fi
+    exec claude "$@"
+}
 
 if [[ ! -f .devcontainer/devcontainer.json ]]; then
-    exec bash -c "$resume" bash "$@"
+    resume "$@"
 fi
 
 # Exported here only, so the token reaches the devcontainer CLI (and the
@@ -52,4 +52,4 @@ exec devcontainer exec --workspace-folder . \
     --remote-env "GIT_AUTHOR_EMAIL=$email" \
     --remote-env "GIT_COMMITTER_NAME=$name" \
     --remote-env "GIT_COMMITTER_EMAIL=$email" \
-    bash -c "$resume" bash "$@"
+    bash -c "$(declare -f resume); resume \"\$@\"" bash "$@"
