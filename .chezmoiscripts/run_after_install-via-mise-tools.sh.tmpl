@@ -8,10 +8,10 @@ set -euo pipefail
 use_mise_shims
 use_local_bin
 
-# Whether uv lists <name> at <version> with exactly these --with extras.
-# uv lists tools from package metadata alone, so a tool whose module files
-# are gone still lists: callers also run the tool, and install with
-# --reinstall because its packages still count as present.
+# Succeeds when uv lists <name> at <version> with exactly these --with extras.
+# The listing comes from package metadata, so it still shows a tool whose
+# module files are gone. Run the tool to confirm it works, and install with
+# --reinstall, since uv still counts its packages as present.
 uv_tool_at_pin() {
   local name=$1 version=$2
   shift 2
@@ -37,9 +37,8 @@ PYACOUSTID_VERSION="1.3.1"
 PYLAST_VERSION="7.2.0"
 BEETS_WITH=("pyacoustid==$PYACOUSTID_VERSION" "pylast==$PYLAST_VERSION")
 
-# Bumping any of the three pins reinstalls. beets opens and migrates its
-# library on startup, so the probe runs against a scratch BEETSDIR and writes
-# no bytecode into the environment.
+# beets opens and migrates its library on startup, so the probe runs against
+# a scratch BEETSDIR and writes no bytecode into the environment.
 beets_installed() {
   uv_tool_at_pin beets "$BEETS_VERSION" "${BEETS_WITH[@]}" || return 1
 
