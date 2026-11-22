@@ -1,8 +1,8 @@
 #!/usr/bin/env bats
 bats_require_minimum_version 1.5.0
 
-# The script fails on a run command for an unpinned tool, so the stand-in pins
-# every RUN_COMMANDS key, plus two tools that take the default command.
+# The mise stand-in pins every RUN_COMMANDS key, since the script rejects a run
+# command for an unpinned tool. yq and alloy exercise the default command.
 mapfile -t TOOLS < <(bash -c 'source "$1"; printf "%s\n" "${!RUN_COMMANDS[@]}"' \
   _ "$BATS_TEST_DIRNAME/pinned-tools")
 TOOLS+=(yq github:grafana/alloy)
