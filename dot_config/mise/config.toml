@@ -22,7 +22,7 @@ lazygit = "0.66.3"
 # The glibc build needs a newer glibc than Debian bookworm ships.
 "github:lycheeverse/lychee" = { version = "0.24.2", version_prefix = "lychee-v", matching = "musl" }
 node = "26.13.1"
-"npm:@devcontainers/cli" = "0.90.0"
+"npm:@devcontainers/cli" = "0.91.0"
 "npm:@readwise/cli" = "0.5.11"
 "npm:@uptimerobot/cli" = "1.3.0"
 "npm:bats-assert" = "2.2.4"
