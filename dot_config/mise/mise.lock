@@ -172,7 +172,7 @@ specifiers = ["0.90.0"]
 
 [[tools."npm:@readwise/cli"]]
 version = "0.5.11"
-aube = { path = ".mise/locks/npm-readwise-cli/0.5.11", digest = "sha256:fadff9f7762ee5ac81ac3419a65da21db02b96e693c4822b7125229bec16a619" }
+aube = { path = ".mise/locks/npm-readwise-cli/0.5.11", digest = "sha256:658b02aca110503b7429ff498d71cfdd4cbc6bf0d34fc536df2a41766788a63e" }
 backend = "npm:@readwise/cli"
 specifiers = ["0.5.11"]
 
@@ -196,7 +196,7 @@ specifiers = ["0.3.0"]
 
 [[tools."npm:bobbit"]]
 version = "0.15.1"
-aube = { path = ".mise/locks/npm-bobbit/0.15.1", digest = "sha256:70a9a37c6a97f8c4854a4cc53ab48ca49314df9f39634d958cb0288b5d5805d5" }
+aube = { path = ".mise/locks/npm-bobbit/0.15.1", digest = "sha256:3fe0f8e459b4442f1201acba3c3b8ee3fa0b59dda90c04bbba9b92a96f94aece" }
 backend = "npm:bobbit"
 specifiers = ["0.15.1"]
 
