@@ -211,14 +211,14 @@ url = "https://github.com/tweag/ormolu/releases/download/0.9.0.0/ormolu-x86_64-l
 url_api = "https://api.github.com/repos/tweag/ormolu/releases/assets/602990813"
 
 [[tools.pnpm]]
-version = "12.21.0"
+version = "12.22.0"
 backend = "aqua:pnpm/pnpm"
-specifiers = ["12.21.0"]
+specifiers = ["12.22.0"]
 
 [tools.pnpm."platforms.linux-x64"]
-checksum = "sha256:84c4773bcf4a217f4083cd7b2a91e4cee6103cf42426c1282ef37d308f55a410"
-url = "https://github.com/pnpm/pnpm/releases/download/v12.21.0/pnpm-linux-x64.tar.gz"
-url_api = "https://api.github.com/repos/pnpm/pnpm/releases/assets/744357264"
+checksum = "sha256:07ee196f91af1e21edb0c794401f4152932c74b0dba5d415dc4dbd5783f3c7af"
+url = "https://github.com/pnpm/pnpm/releases/download/v12.22.0/pnpm-linux-x64.tar.gz"
+url_api = "https://api.github.com/repos/pnpm/pnpm/releases/assets/760376184"
 provenance = "github-attestations"
 
 [[tools.prek]]
