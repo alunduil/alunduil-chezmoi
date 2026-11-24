@@ -2,7 +2,7 @@
 # init, as in Crostini's container, and a login user with passwordless sudo.
 # The apt lists stay, as on an installed host. script/checks/fresh-host
 # supplies the user.
-FROM debian:trixie@sha256:9c6e381421d0f48d1b8133e573f33c185ee16cbf505eda9c4a8a4791b25ea8a6
+FROM debian:trixie@sha256:3cda3ca472ce45507a5109c6a3907093e24d9ae67d55954c9a07a45665dafba2
 
 ARG USER
 ARG UID
