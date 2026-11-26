@@ -10,9 +10,7 @@ export MISE_GLOBAL_CONFIG_FILE="${MISE_GLOBAL_CONFIG_FILE:-$ROOT/dot_config/mise
 HASKELL_FIXTURE=script/checks/fixtures/pinned-tools.hs
 
 # Tools that don't run as `<last segment of their mise name> --version`. An
-# empty entry skips the run. npm libraries have no command, every bobbit
-# command starts its server, and every beet command, --help included, migrates
-# the configured library. Commands run from the repository root.
+# empty entry skips the run. Commands run from the repository root.
 # renovate.json automerges 0.x patches for the tools it lists whose command
 # here exercises real use.
 declare -A RUN_COMMANDS=(
@@ -25,9 +23,12 @@ declare -A RUN_COMMANDS=(
   [npm:@devcontainers/cli]='devcontainer --version'
   [npm:@readwise/cli]='readwise --version'
   [npm:@uptimerobot/cli]='uptimerobot --version'
+  # Libraries, with no command.
   [npm:bats-assert]=''
   [npm:bats-support]=''
+  # Every command starts its server.
   [npm:bobbit]=''
+  # Every command, --help included, migrates the configured library.
   [pypi:beets]=''
   [rust]='cargo --version'
 )

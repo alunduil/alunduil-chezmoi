@@ -8,8 +8,8 @@ not_found_auto_install = false
 act = "0.2.98"
 ansible-core = "2.22.0"
 "github:grafana/alloy" = "v1.22.0"
-# chroma and lastgenre carry the libraries for the plugins enabled in
-# dot_config/beets/config.yaml.tmpl. chroma needs fpcalc from apt.
+# The extras install the libraries that the chroma and lastgenre plugins in
+# dot_config/beets/config.yaml.tmpl import. chroma also needs fpcalc from apt.
 "pypi:beets" = { version = "2.14.1", extras = "chroma,lastgenre" }
 "github:tfausak/cabal-gild" = "1.8.4.2"
 "cargo:cargo-cache" = "0.8.3"

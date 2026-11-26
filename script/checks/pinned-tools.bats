@@ -2,8 +2,7 @@
 bats_require_minimum_version 1.5.0
 
 # The mise stand-in pins every RUN_COMMANDS key, since the script rejects a run
-# command for an unpinned tool. yq, alloy, and ocrmypdf exercise the default
-# command.
+# command for an unpinned tool. yq, alloy, and ocrmypdf run the default.
 mapfile -t TOOLS < <(bash -c 'source "$1"; printf "%s\n" "${!RUN_COMMANDS[@]}"' \
   _ "$BATS_TEST_DIRNAME/pinned-tools")
 TOOLS+=(yq github:grafana/alloy pypi:ocrmypdf)
@@ -73,7 +72,7 @@ fake_tool() {
   assert_output --partial 'FAIL: github:grafana/alloy: alloy is not a mise bin'
 }
 
-@test "a backend-prefixed pin runs the binary its name follows" {
+@test "a colon-qualified pin runs the binary its last segment names" {
   rm "$WORK/tools/ocrmypdf"
   run "$BATS_TEST_DIRNAME/pinned-tools"
   assert_failure
