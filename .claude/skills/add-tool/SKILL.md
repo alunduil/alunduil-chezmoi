@@ -10,12 +10,13 @@ independently.
 
 ## Libraries with no console script
 
-`uv tool install` needs an executable, so a PyPI library takes one of
-two shapes:
+mise's `pypi:` backend installs through `uv tool install`, which needs
+an executable, so a PyPI library takes one of two shapes:
 
-1. An installed tool imports it (plugins, optional backends): add it
-   as a pinned `--with` extra on that tool, as `beets` carries
-   `pyacoustid`.
+1. An installed tool imports it (plugins, optional backends): enable
+   the tool's extra that requires it, as `beets` carries `pyacoustid`
+   through `extras = "chroma"`. `just lock-tools` pins it in the
+   tool's `uv.lock` sidecar.
 2. Otherwise, keep it off the host. The caller runs
    `uv run --with <pkg>==<version> <script>` and owns the pin. Stop
    here: no bootstrap change, no `host-status` entry.
@@ -39,7 +40,7 @@ to do real work?
 
 `host-status` derives apt packages from `ansible/group_vars/all/packages.yml`
 and pinned tools from `mise ls --missing`, so those need no entry. A
-tool installed any other way (uv, ghcup, an upstream
+tool installed any other way (ghcup, an upstream
 installer) goes in its `commands` array.
 
 ## Install mechanism
@@ -48,11 +49,10 @@ All passes live under `.chezmoiscripts/`.
 
 Pick the canonical installer for the ecosystem:
 
-| Source                                   | Where                                 | Pattern                  |
-| ---------------------------------------- | ------------------------------------- | ------------------------ |
-| Debian package                           | `ansible/group_vars/all/packages.yml` | append to `apt_packages` |
-| Release binary, npm package, cargo crate | `dot_config/mise/config.toml`         | mise entry below         |
-| PyPI package                             | `run_after_install-via-mise-tools`    | mirror the `beets` block |
+| Source                                                 | Where                                 | Pattern                  |
+| ------------------------------------------------------ | ------------------------------------- | ------------------------ |
+| Debian package                                         | `ansible/group_vars/all/packages.yml` | append to `apt_packages` |
+| Release binary, npm package, cargo crate, PyPI package | `dot_config/mise/config.toml`         | mise entry below         |
 
 Raise a release binary that mise can't verify against its publisher,
 such as one signed only with GPG, with the user before adding it.
@@ -66,9 +66,6 @@ Install a `gh` extension as a mise tool, then link
 
 ## Pin the version
 
-Annotate each PyPI `*_VERSION` pin, `--with` extras included, with
-`# renovate: datasource=pypi depName=<pkg>` on the line above it.
-
 A mise tool needs no annotation: Renovate's mise manager reads
 `config.toml` and updates `mise.lock` in the same PR.
 
@@ -77,8 +74,9 @@ A mise tool needs no annotation: Renovate's mise manager reads
 Add the tool under `[tools]` in `dot_config/mise/config.toml`, at an
 exact version, sorted by tool name. Use the short name when
 `mise registry <tool>` lists one. Otherwise name the backend:
-`"github:<owner>/<repo>"` for a release binary, `"npm:<package>"`, or
-`"cargo:<crate>"`. Then lock it with `just lock-tools`.
+`"github:<owner>/<repo>"` for a release binary, `"npm:<package>"`,
+`"cargo:<crate>"`, or `"pypi:<package>"`. Then lock it with
+`just lock-tools`.
 
 `script/checks/pinned-tools` runs
 `<last segment of the config.toml name> --version` and expects it to

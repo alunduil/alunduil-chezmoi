@@ -8,6 +8,9 @@ not_found_auto_install = false
 act = "0.2.98"
 ansible-core = "2.22.0"
 "github:grafana/alloy" = "v1.22.0"
+# chroma and lastgenre carry the libraries for the plugins enabled in
+# dot_config/beets/config.yaml.tmpl. chroma needs fpcalc from apt.
+"pypi:beets" = { version = "2.14.1", extras = "chroma,lastgenre" }
 "github:tfausak/cabal-gild" = "1.8.4.2"
 "cargo:cargo-cache" = "0.8.3"
 chezmoi = "2.74.2"
@@ -28,6 +31,8 @@ node = "26.13.1"
 "npm:bats-assert" = "2.2.4"
 "npm:bats-support" = "0.3.0"
 "npm:bobbit" = "0.15.1"
+# Shells out to tesseract, ghostscript, unpaper, and pngquant from apt.
+"pypi:ocrmypdf" = "17.14.2"
 ormolu = "0.9.0.0"
 pnpm = "12.23.0"
 prek = "0.5.11"

@@ -25,7 +25,7 @@ apt_packages:
   - temurin-21-jdk
   - golang-petname
   - gource
-  # Music-library toolchain around beets, which uv installs separately.
+  # Music-library toolchain around beets, which mise installs separately.
   # Package names differ from the binaries they ship: ffmpeg -> ffprobe,
   # libimage-exiftool-perl -> exiftool, libchromaprint-tools -> fpcalc,
   # which is the fingerprinter pyacoustid shells out to.
@@ -38,7 +38,7 @@ apt_packages:
   - signal-desktop
   - calibre
   - nethack-console
-  # OCR toolchain around ocrmypdf, which uv installs separately.
+  # OCR toolchain around ocrmypdf, which mise installs separately.
   - tesseract-ocr
   - tesseract-ocr-eng
   - tesseract-ocr-spa
