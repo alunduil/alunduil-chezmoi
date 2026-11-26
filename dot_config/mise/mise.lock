@@ -232,6 +232,21 @@ url = "https://github.com/j178/prek/releases/download/v0.5.11/prek-x86_64-unknow
 url_api = "https://api.github.com/repos/j178/prek/releases/assets/753780154"
 provenance = "github-attestations"
 
+[[tools."pypi:beets"]]
+version = "2.14.1"
+backend = "pypi:beets"
+specifiers = ["2.14.1"]
+uv = { path = ".mise/locks/pypi-beets/2.14.1~80ccb76d", digest = "sha256:ef4c4cb60277ff1935e876b58111f8fcf0f5f3ae22faa25879392d148c216b9a" }
+
+[tools."pypi:beets".options]
+extras = "chroma,lastgenre"
+
+[[tools."pypi:ocrmypdf"]]
+version = "17.14.2"
+backend = "pypi:ocrmypdf"
+specifiers = ["17.14.2"]
+uv = { path = ".mise/locks/pypi-ocrmypdf/17.14.2", digest = "sha256:63c9087aa225eb114317357acd20c74a39d7387b56d2e7ee54ab17bdb7ae7378" }
+
 [[tools.python]]
 version = "3.14.10"
 backend = "core:python"

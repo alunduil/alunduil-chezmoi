@@ -104,13 +104,13 @@ run_host_status() {
 }
 
 @test "missing apt package, mise tool, and command each name chezmoi apply" {
-  rm "$STUB_DIR/beet"
+  rm "$STUB_DIR/ghc"
   MISSING_PKGS=gource MISE_MISSING=$'zellij  0.45.1 (missing)  ~/.config/mise/config.toml  0.45.1\n' \
     run_host_status
   assert_failure
   assert_line --regexp '^gource: not installed +chezmoi apply$'
   assert_line --regexp '^zellij 0\.45\.1: not installed +chezmoi apply$'
-  assert_line --regexp '^beet: not on PATH +chezmoi apply$'
+  assert_line --regexp '^ghc: not on PATH +chezmoi apply$'
   assert_equal "${#lines[@]}" 3
 }
 

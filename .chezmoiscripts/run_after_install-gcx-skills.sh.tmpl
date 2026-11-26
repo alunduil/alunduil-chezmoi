@@ -1,0 +1,14 @@
+#!/usr/bin/env bash
+# gcx shims resolve through ~/.config/mise, which apply deploys.
+
+set -euo pipefail
+
+# shellcheck source=script/lib/bootstrap.sh
+. "{{ .chezmoi.sourceDir }}/script/lib/bootstrap.sh"
+use_mise_shims
+
+# gcx ships its skill bundle inside the binary; `agent skills install --all`
+# extracts it to ~/.agents/skills (the cross-harness convention read by Claude
+# Code, Cursor, Copilot). --force re-syncs gcx-managed files on version bumps
+# without touching anything outside the bundle.
+gcx agent skills install --all --force >/dev/null
