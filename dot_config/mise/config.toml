@@ -10,7 +10,7 @@ ansible-core = "2.22.0"
 "github:grafana/alloy" = "v1.22.0"
 "github:tfausak/cabal-gild" = "1.8.4.2"
 "cargo:cargo-cache" = "0.8.3"
-chezmoi = "2.74.1"
+chezmoi = "2.74.2"
 "github:fourmolu/fourmolu" = "0.21.0.0"
 "github:grafana/gcx" = "v1.8.0"
 # The release asset is a bare binary named linux-amd64, not gh-poi.
