@@ -18,7 +18,6 @@ HASKELL_FIXTURE=script/checks/fixtures/pinned-tools.hs
 declare -A RUN_COMMANDS=(
   [act]='act --list'
   [ansible-core]='ansible-playbook --version'
-  [cargo:cargo-cache]='cargo-cache --version'
   [github:fourmolu/fourmolu]="fourmolu --mode check $HASKELL_FIXTURE"
   [github:seachicken/gh-poi]='gh-poi --help'
   [lazygit]='lazygit -ucf dot_config/lazygit/config.yml'
@@ -30,7 +29,6 @@ declare -A RUN_COMMANDS=(
   [npm:bats-support]=''
   [npm:bobbit]=''
   [pypi:beets]=''
-  [pypi:ocrmypdf]='ocrmypdf --version'
   [rust]='cargo --version'
 )
 
@@ -42,7 +40,7 @@ TUI_SECONDS=3
 TIMEOUT_EXPIRED=124
 
 run_command() {
-  printf '%s\n' "${RUN_COMMANDS[$1]-${1##*/} --version}"
+  printf '%s\n' "${RUN_COMMANDS[$1]-${1##*[:/]} --version}"
 }
 
 run_tui() {
