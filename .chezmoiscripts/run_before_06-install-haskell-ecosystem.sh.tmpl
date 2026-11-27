@@ -1,7 +1,6 @@
 #!/usr/bin/env bash
-# Installs a pinned GHC, cabal-install, and stack through the ghcup that
-# install-pinned-tools put in place. Debian apt ghc/cabal-install are avoided
-# by design (they lag upstream).
+# Installs pinned GHC, cabal-install, and stack through the mise-pinned
+# ghcup. Debian's ghc and cabal-install packages lag upstream.
 
 set -euo pipefail
 
@@ -30,8 +29,8 @@ PATH="$(mise where ghcup):$GHCUP_BIN:$PATH"
 # versions, which the guards below must not do.
 export GHCUP_SKIP_UPDATE_CHECK=1
 
-# A ghcup that get-ghcup.haskell.org left in ~/.ghcup/bin would shadow the
-# mise-pinned one in interactive shells.
+# In non-login shells, ~/.bashrc puts ~/.ghcup/bin ahead of the mise shims,
+# so a ghcup there shadows the pinned one.
 if [ -e "$GHCUP_BIN/ghcup" ]; then
   log "ghcup: removing the unpinned copy in $GHCUP_BIN"
   rm -f "$GHCUP_BIN/ghcup"

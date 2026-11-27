@@ -18,7 +18,7 @@ chezmoi = "2.74.2"
 "github:grafana/gcx" = "v1.8.0"
 # The release asset is a bare binary named linux-amd64, not gh-poi.
 "github:seachicken/gh-poi" = { version = "v0.18.7", bin = "gh-poi" }
-# Installs and pins GHC, cabal, and stack in install-haskell-ecosystem.
+# install-haskell-ecosystem installs GHC, cabal, and stack through it.
 ghcup = "0.2.6.2"
 hlint = "3.10"
 just = "1.59.0"
