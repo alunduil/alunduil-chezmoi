@@ -21,7 +21,7 @@ chezmoi = "2.74.2"
 hlint = "3.10"
 just = "1.59.0"
 lazygit = "0.66.3"
-"github:jdx/mise" = "v2026.11.13"
+"github:jdx/mise" = "v2026.11.14"
 # The glibc build needs a newer glibc than Debian bookworm ships.
 "github:lycheeverse/lychee" = { version = "0.24.2", version_prefix = "lychee-v", matching = "musl" }
 node = "26.13.1"
