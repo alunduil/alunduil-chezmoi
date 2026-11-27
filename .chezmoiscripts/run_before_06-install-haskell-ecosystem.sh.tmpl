@@ -1,12 +1,15 @@
 #!/usr/bin/env bash
-# Installs ghcup, a pinned GHC, and a pinned cabal-install. Canonical
-# installer only: get-ghcup.haskell.org. Debian apt ghc/cabal-install are
-# avoided by design (they lag upstream).
+# Installs a pinned GHC, cabal-install, and stack through the ghcup that
+# install-pinned-tools put in place. Debian apt ghc/cabal-install are avoided
+# by design (they lag upstream).
 
 set -euo pipefail
 
 # shellcheck source=script/lib/bootstrap.sh
 . "{{ .chezmoi.sourceDir }}/script/lib/bootstrap.sh"
+
+use_pinned_mise
+use_source_mise_config
 
 # GHC and cabal tag releases before ghcup can install them, so Renovate reads
 # ghcup's own metadata (custom.ghcup in renovate.json).
@@ -17,31 +20,23 @@ GHC_VERSION="9.14.1"
 # compares component-wise.
 # renovate: datasource=custom.ghcup depName=cabal packageName=Cabal versioning=loose
 CABAL_VERSION="3.18.2.0"
+# renovate: datasource=custom.ghcup depName=stack packageName=Stack
+STACK_VERSION="3.11.1"
 
-# ---------------------------------------------------------- ghcup + ghc + cabal
-# The installer appends to ~/.bashrc, which chezmoi overwrites on apply; the
-# managed dot_bashrc sources ~/.ghcup/env itself. Its first run also creates
-# ~/.cabal, opting cabal out of XDG directories, and seeds the package index,
-# both only when it installs GHC and cabal itself.
-#
 # Only interactive shells put ~/.ghcup/bin on PATH.
 GHCUP_BIN="$HOME/.ghcup/bin"
-if [ ! -x "$GHCUP_BIN/ghcup" ]; then
-  log "ghcup: installing with GHC $GHC_VERSION + cabal $CABAL_VERSION"
-  curl -fsSL https://get-ghcup.haskell.org |
-    BOOTSTRAP_HASKELL_NONINTERACTIVE=1 \
-      BOOTSTRAP_HASKELL_INSTALL_NO_STACK=1 \
-      BOOTSTRAP_HASKELL_GHC_VERSION="$GHC_VERSION" \
-      BOOTSTRAP_HASKELL_CABAL_VERSION="$CABAL_VERSION" \
-      sh
-fi
-
 export PATH="$GHCUP_BIN:$PATH"
 # Every ghcup subcommand otherwise fetches release metadata to check for newer
 # versions, which the guards below must not do.
 export GHCUP_SKIP_UPDATE_CHECK=1
 
-# ---------------------------------------------------------------- ghc + cabal
+# mise pins ghcup itself. A ghcup that get-ghcup.haskell.org left in
+# ~/.ghcup/bin would shadow it on PATH.
+if [ -e "$GHCUP_BIN/ghcup" ]; then
+  log "ghcup: removing the unpinned copy in $GHCUP_BIN"
+  rm -f "$GHCUP_BIN/ghcup"
+fi
+
 # ghcup_pin TOOL VERSION: converge one ghcup-managed tool on its pin.
 #
 # Both guards read disk alone: ghcup lays down a version-suffixed symlink per
@@ -53,12 +48,12 @@ ghcup_pin() {
 
   if [ ! -e "$GHCUP_BIN/$tool-$version" ]; then
     log "$tool: installing $version"
-    ghcup install "$tool" "$version"
+    mise exec -- ghcup install "$tool" "$version"
   fi
 
   if [ "$("$tool" --numeric-version 2>/dev/null || true)" != "$version" ]; then
     log "$tool: setting $version as default"
-    ghcup set "$tool" "$version" >/dev/null
+    mise exec -- ghcup set "$tool" "$version" >/dev/null
   fi
 
   log "$tool: $("$tool" --numeric-version)"
@@ -66,5 +61,6 @@ ghcup_pin() {
 
 ghcup_pin ghc "$GHC_VERSION"
 ghcup_pin cabal "$CABAL_VERSION"
+ghcup_pin stack "$STACK_VERSION"
 
 log "haskell ecosystem complete"

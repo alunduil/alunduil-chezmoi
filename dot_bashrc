@@ -127,8 +127,8 @@ export FZF_CTRL_T_COMMAND="$FZF_DEFAULT_COMMAND"
 export FZF_ALT_C_COMMAND='fd --type d --hidden --exclude .git'
 [ -f /usr/share/doc/fzf/examples/key-bindings.bash ] && . /usr/share/doc/fzf/examples/key-bindings.bash
 
-# ghcup: add ~/.ghcup/bin (ghc, cabal) to PATH when installed.
-[ -f "$HOME/.ghcup/env" ] && . "$HOME/.ghcup/env"
+# ghcup installs ghc, cabal, and stack into ~/.ghcup/bin.
+[ -d "$HOME/.ghcup/bin" ] && PATH="$HOME/.ghcup/bin:$PATH"
 
 # Codecov API token: deployed by chezmoi from 1Password to
 # ~/.config/codecov/token (mode 0600). No-op on hosts that haven't
