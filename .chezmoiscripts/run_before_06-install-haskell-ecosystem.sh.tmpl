@@ -25,13 +25,13 @@ STACK_VERSION="3.11.1"
 
 # Only interactive shells put ~/.ghcup/bin on PATH.
 GHCUP_BIN="$HOME/.ghcup/bin"
-export PATH="$GHCUP_BIN:$PATH"
+PATH="$(mise where ghcup):$GHCUP_BIN:$PATH"
 # Every ghcup subcommand otherwise fetches release metadata to check for newer
 # versions, which the guards below must not do.
 export GHCUP_SKIP_UPDATE_CHECK=1
 
-# mise pins ghcup itself. A ghcup that get-ghcup.haskell.org left in
-# ~/.ghcup/bin would shadow it on PATH.
+# A ghcup that get-ghcup.haskell.org left in ~/.ghcup/bin would shadow the
+# mise-pinned one in interactive shells.
 if [ -e "$GHCUP_BIN/ghcup" ]; then
   log "ghcup: removing the unpinned copy in $GHCUP_BIN"
   rm -f "$GHCUP_BIN/ghcup"
@@ -48,12 +48,12 @@ ghcup_pin() {
 
   if [ ! -e "$GHCUP_BIN/$tool-$version" ]; then
     log "$tool: installing $version"
-    mise exec -- ghcup install "$tool" "$version"
+    ghcup install "$tool" "$version"
   fi
 
   if [ "$("$tool" --numeric-version 2>/dev/null || true)" != "$version" ]; then
     log "$tool: setting $version as default"
-    mise exec -- ghcup set "$tool" "$version" >/dev/null
+    ghcup set "$tool" "$version" >/dev/null
   fi
 
   log "$tool: $("$tool" --numeric-version)"
