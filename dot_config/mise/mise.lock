@@ -68,14 +68,14 @@ url = "https://github.com/grafana/gcx/releases/download/v1.8.0/gcx_1.8.0_linux_a
 url_api = "https://api.github.com/repos/grafana/gcx/releases/assets/758418548"
 
 [[tools."github:jdx/mise"]]
-version = "2026.11.12"
+version = "2026.11.13"
 backend = "github:jdx/mise"
-specifiers = ["v2026.11.12"]
+specifiers = ["v2026.11.13"]
 
 [tools."github:jdx/mise"."platforms.linux-x64"]
-checksum = "sha256:caf6614bba2a52d03de267d1411c3178f1fa2989ed294280e3e297491997f9e1"
-url = "https://github.com/jdx/mise/releases/download/v2026.11.12/mise-v2026.11.12-linux-x64.tar.zst"
-url_api = "https://api.github.com/repos/jdx/mise/releases/assets/775333269"
+checksum = "sha256:feb004a1e2e5b857068f37ccbfc2994cd790336c62563036e6b2542179bf975c"
+url = "https://github.com/jdx/mise/releases/download/v2026.11.13/mise-v2026.11.13-linux-x64.tar.zst"
+url_api = "https://api.github.com/repos/jdx/mise/releases/assets/784903267"
 provenance = "github-attestations"
 
 [[tools."github:lycheeverse/lychee"]]
