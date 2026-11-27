@@ -69,7 +69,7 @@ systemd manager a unit belongs in and what it runs as.
 | Docker | `geerlingguy.docker` defaults, `ansible/group_vars/all/docker.yml` | `configure-system-layer`, through the role | the apt repository |
 | mise | `dot_config/mise/config.toml` | `install-mise`, through the mise on `PATH` | `dot_config/mise/mise.lock` |
 | Pinned tools | `dot_config/mise/config.toml` | `install-pinned-tools`, through `mise install` | `dot_config/mise/mise.lock` |
-| GHC, cabal, stack | `install-haskell-ecosystem` | the mise-pinned ghcup | `*_VERSION` in the pass |
+| Haskell toolchain | `install-haskell-ecosystem` | the mise-pinned ghcup | `*_VERSION` in the pass |
 | Galaxy roles and collections | `ansible/requirements.yml` | `configure-system-layer`, through `ansible-galaxy` | the version in `requirements.yml` |
 | Claude Code | `install-claude-code` | Anthropic's native installer | nothing: it updates itself |
 | Zellij plugins | `plugins` block of `dot_config/zellij/config.kdl` | Zellij at load | the version in the download address |
