@@ -7,7 +7,7 @@
   ],
   "packageRules": [
     {
-      "description": "CI uses these as this repo does, so green CI covers a 0.x patch: pre-commit hooks run lychee, Validate zellij config runs zellij, fresh-host installs through uv, and the shell tests load bats-support",
+      "description": "A required CI job runs each of these the way the host does, so green CI covers a 0.x patch",
       "matchManagers": ["mise"],
       "matchUpdateTypes": ["patch"],
       "matchDepNames": [
