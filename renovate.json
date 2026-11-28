@@ -2,23 +2,17 @@
   "$schema": "https://docs.renovatebot.com/renovate-schema.json",
   "extends": [
     "github>alunduil/renovate-config",
-    ":automergeMinor",
+    "github>alunduil/renovate-config:automerge-minor",
     ":automergeDigest"
   ],
   "packageRules": [
     {
-      "description": "Semver lets a 0.x release break in a minor or a patch, and :automergeMinor merges both",
-      "matchJsonata": ["isBreaking = true"],
-      "automerge": false
-    },
-    {
-      "description": "CI uses these as this repo does, so green CI covers a 0.x patch: pre-commit hooks run prek and lychee, Validate zellij config runs zellij, fresh-host installs through uv, and the shell tests load bats-support",
+      "description": "CI uses these as this repo does, so green CI covers a 0.x patch: pre-commit hooks run lychee, Validate zellij config runs zellij, fresh-host installs through uv, and the shell tests load bats-support",
       "matchManagers": ["mise"],
       "matchUpdateTypes": ["patch"],
       "matchDepNames": [
         "github:lycheeverse/lychee",
         "npm:bats-support",
-        "prek",
         "uv",
         "zellij"
       ],
