@@ -127,7 +127,7 @@ repos:
         files: ^dot_config/mise/
 
   - repo: https://github.com/renovatebot/pre-commit-hooks
-    rev: 44.258.1
+    rev: 44.262.1
     hooks:
       - id: renovate-config-validator
         args: [--strict, --no-global]
