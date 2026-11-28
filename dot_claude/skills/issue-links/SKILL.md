@@ -110,3 +110,5 @@ Just `#123` in the body. No tooling.
    don't silently pick.
 3. Verify it reads back: `Issue.blockedBy` / `Issue.subIssues` for
    graph edges, the PR body for Closes.
+4. A blocked-by edge on an issue in a milestone: place the blocker
+   per the `milestones` skill's *Blockers* section.
