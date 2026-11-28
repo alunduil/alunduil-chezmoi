@@ -186,10 +186,10 @@ backend = "npm:@readwise/cli"
 specifiers = ["0.5.11"]
 
 [[tools."npm:@uptimerobot/cli"]]
-version = "1.3.0"
-aube = { path = ".mise/locks/npm-uptimerobot-cli/1.3.0", digest = "sha256:dd8b522c8bee4e4dd0339232d8bd635866e45109d0ab8d4ac0f962d7c9a8b9c0" }
+version = "1.4.0"
+aube = { path = ".mise/locks/npm-uptimerobot-cli/1.4.0", digest = "sha256:2efd6a6bfaf2c071667850fb25898e58b6600a210fcb04b25fbcf20cf49d26e1" }
 backend = "npm:@uptimerobot/cli"
-specifiers = ["1.3.0"]
+specifiers = ["1.4.0"]
 
 [[tools."npm:bats-assert"]]
 version = "2.2.4"
