@@ -174,10 +174,10 @@ checksum = "sha256:518674de2b621728a5e4486f5fb3b7d2900bb3cc4aa97969edaa463db99f9
 url = "https://nodejs.org/dist/v26.13.1/node-v26.13.1-linux-x64.tar.gz"
 
 [[tools."npm:@devcontainers/cli"]]
-version = "0.90.0"
-aube = { path = ".mise/locks/npm-devcontainers-cli/0.90.0", digest = "sha256:8a8a9e59feed6f3c786e90fcb8b436fec9cf4fa84a33211fc5998570a65501e2" }
+version = "0.91.0"
+aube = { path = ".mise/locks/npm-devcontainers-cli/0.91.0", digest = "sha256:95766e5b4b0ce6661ee04aa534e4a549d82b312723ca778b5e98968d398f0741" }
 backend = "npm:@devcontainers/cli"
-specifiers = ["0.90.0"]
+specifiers = ["0.91.0"]
 
 [[tools."npm:@readwise/cli"]]
 version = "0.5.11"
