@@ -18,6 +18,13 @@ concurrency:
   cancel-in-progress: ${{ github.ref != 'refs/heads/main' }}
 
 jobs:
+  check-renovate-commits:
+    name: Check Renovate branch commits
+    uses: alunduil/renovate-config/.github/workflows/check-renovate-commits.yml@6052341d076d02929cd58ba8a5245d4cf13955af # main
+    permissions:
+      contents: read
+      pull-requests: read
+
   hooks:
     name: Run pre-commit hooks
     runs-on: ubuntu-26.04
