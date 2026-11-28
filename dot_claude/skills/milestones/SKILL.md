@@ -135,7 +135,7 @@ later, or in no milestone, hides the ranked work from the board.
 - **Blocker ranked later under another objective:** move the blocker
   into this objective's milestones, or rank its objective earlier.
 - **Blocker outside the Inbox repositories:** record it in
-  `Exceptions:`. The objective is aspirational.
+  `Exceptions:`.
 
 ## Velocity
 
@@ -198,8 +198,8 @@ the new description when there is none. If they differ, show the
 diff and ask: merge the edits in, overwrite, or stop.
 
 `inbox_milestones` prints title, URL, canonical URL (`-` on a
-canonical milestone), type, and score. The velocity check counts the
-rows with `-` in the third column.
+canonical milestone), type, and score. `inbox_objectives` keeps the
+canonical rows, one per objective.
 
 ```bash
 inbox_repos() {
@@ -212,17 +212,23 @@ inbox_repos() {
 inbox_milestones() {
   inbox_repos | while read -r r; do
     gh api --paginate "repos/$r/milestones?state=$1&per_page=100" | jq -r '
+      def field($re; $default): (capture($re).v) // $default;
       .[] | (.description // "") as $d
       | [.title, .html_url,
-         (($d | capture("^Supports: (?<u>\\S+)").u) // "-"),
-         (($d | capture("Type: (?<t>[a-z]+)").t) // "committed"),
-         (($d | capture("Scored (?<s>[0-9]+(\\.[0-9]+)?)").s) // "-")]
+         ($d | field("^Supports: (?<v>\\S+)"; "-")),
+         ($d | field("Type: (?<v>[a-z]+)"; "committed")),
+         ($d | field("Scored (?<v>[0-9]+(\\.[0-9]+)?)"; "-"))]
       | @tsv'
   done | sort
 }
 
+inbox_objectives() {
+  inbox_milestones "$1" | awk -F'\t' '$3 == "-"'
+}
+
 key_results() {
-  tr -d '\r' | sed -nE 's/^- \[[ x]\] //; T; s/, [0-9]+(\.[0-9]+)?$//; p' | sort
+  jq -r '.description // ""' | tr -d '\r' |
+    sed -nE 's/^- \[[ x]\] //; T; s/, [0-9]+(\.[0-9]+)?$//; p' | sort
 }
 
 milestone_get() {
@@ -231,18 +237,18 @@ milestone_get() {
 
 milestone_drift() {
   inbox_milestones open | awk -F'\t' '$3 != "-"' |
-    while IFS=$'\t' read -r title url canon _; do
-      c=$(milestone_get "$canon")
-      s=$(milestone_get "$url")
-      [[ $title == "$(jq -r .title <<<"$c")" ]] || echo "$url: title differs from $canon"
-      comm -23 <(jq -r '.description // ""' <<<"$s" | key_results) \
-        <(jq -r '.description // ""' <<<"$c" | key_results) |
+    while IFS=$'\t' read -r title url canonical_url _; do
+      canonical=$(milestone_get "$canonical_url")
+      supporting=$(milestone_get "$url")
+      [[ $title == "$(jq -r .title <<<"$canonical")" ]] ||
+        echo "$url: title differs from $canonical_url"
+      comm -23 <(key_results <<<"$supporting") <(key_results <<<"$canonical") |
         sed "s#^#$url: key result not in canonical: #"
     done
 }
 
-inbox_milestones open    # velocity check
-inbox_milestones closed  # past scores
+inbox_objectives open    # velocity check
+inbox_objectives closed  # past scores
 milestone_drift          # supporting milestones out of line
 
 gh api repos/:owner/:repo/milestones \
