@@ -12,15 +12,15 @@ playbook](https://www.whatmatters.com/resources/google-okr-playbook).
 
 The month prefix ranks objectives by priority: an earlier month ranks
 higher. Work goes to the highest-ranked objective with an open,
-unblocked issue. The ranked month's last day is the objective's
-review: it's scored and closed then, whatever work landed.
+unblocked issue. The objective is scored and closed on the ranked
+month's last day.
 
 ## Shape
 
 - **Title:** `YYYY-MM: <objective>` — e.g. `2026-11: Secrets resolve
   from 1Password on every host`. The month prefix ranks and filters;
   the objective reads in issue sidebars.
-- **Due date:** last day of the ranked month, the review date.
+- **Due date:** last day of the ranked month.
 - **Description:**
 
   ```markdown
@@ -35,20 +35,19 @@ review: it's scored and closed then, whatever work landed.
 
   Non-goals: <optional, one line bounding scope>
 
-  Exceptions: <optional, one line per blocker outside the milestones>
+  Exceptions: <optional, `<owner/repo#N>: <reason>` per unplaced blocker>
   ```
 
 ## Objectives across repositories
 
-A milestone is per repository, so an objective with work in several
-repositories has one canonical milestone and a supporting milestone
-in each other repository.
+An objective with work in several repositories has one canonical
+milestone and a supporting milestone in each other repository.
 
 - **Canonical:** in the repository holding most of the work. It
   carries the full description and is the one scored and counted.
-- **Supporting:** same title and due date. Its description names the
-  canonical milestone and repeats, word for word, the key results its
-  repository's issues move:
+- **Supporting:** same title and due date. Its description links the
+  canonical milestone and copies each key result that its
+  repository's issues move, word for word:
 
   ```markdown
   Supports: <canonical milestone URL>
@@ -59,8 +58,8 @@ in each other repository.
   ```
 
 Edit the canonical milestone first, then bring each supporting one
-into line. The drift check in *Operations* lists every supporting
-milestone whose title or key results differ from its canonical one.
+into line. `milestone_drift` lists the supporting milestones that
+differ.
 
 ## Writing the objective
 
@@ -121,17 +120,16 @@ Treat a milestone with no `Type:` line as committed.
 
 ## Blockers
 
-An issue's open blockers sit in its objective's milestones, canonical
-or supporting, or in a milestone ranked earlier. A blocker ranked
-later, or in no milestone, hides the ranked work from the board.
+Keep an issue's open blockers in its objective's milestones or in an
+earlier-ranked one. The board's Blocked column ignores milestones, so
+a blocker outside them hides the ranked work.
 
 - **Filing a blocked-by edge** on an issue in a milestone: assign a
   blocker with no milestone to the objective's milestone in the
   blocker's repository.
 - **Blocker in a repository without the objective:** create a
-  supporting milestone there with the key result the blocker moves.
-  When that isn't worth a milestone, add an `Exceptions:` line to the
-  canonical description: `Exceptions: <owner/repo#N>: <reason>`.
+  supporting milestone there with the key result the blocker moves,
+  or record it in the canonical milestone's `Exceptions:`.
 - **Blocker ranked later under another objective:** move the blocker
   into this objective's milestones, or rank its objective earlier.
 - **Blocker outside the Inbox repositories:** record it in
@@ -185,8 +183,8 @@ Other groupings use other tools:
 5. Apply, in order: update the description, move or unset the open
    issues, close the supporting milestones, close the canonical one.
 
-The score is velocity data. Record it as measured and close on the
-review date whatever it says. When the objective still matters, carry
+The score is velocity data. Record it as measured and close whatever
+it says. When the objective still matters, carry
 it into a later-ranked milestone, restating the key results short of
 1.0.
 
@@ -196,10 +194,6 @@ A PATCH replaces the whole description. Before one, `diff -u` the
 live description against the one Claude last wrote this session, or
 the new description when there is none. If they differ, show the
 diff and ask: merge the edits in, overwrite, or stop.
-
-`inbox_milestones` prints title, URL, canonical URL (`-` on a
-canonical milestone), type, and score. `inbox_objectives` keeps the
-canonical rows, one per objective.
 
 ```bash
 inbox_repos() {
@@ -277,7 +271,7 @@ Its `milestone` param takes the milestone *number*, not the title.
    objective*, *Writing key results*, and *Committed or
    aspirational*, then confirm with the user before creating.
 3. Assign issues that move a key result. Place their open blockers
-   per *Blockers*, creating supporting milestones where needed.
+   per *Blockers*.
 4. During the month, tick a key result as soon as its check passes,
    independent of issue state. Run the drift check after editing a
    canonical milestone.
