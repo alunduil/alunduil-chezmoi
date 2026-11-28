@@ -41,7 +41,7 @@ repos:
   # pre-commit tags an extensionless script by its python3 shebang, so these
   # reach Python scripts without a files pattern.
   - repo: https://github.com/astral-sh/ruff-pre-commit
-    rev: v0.17.5
+    rev: v0.17.6
     hooks:
       - id: ruff-check
         args: [--fix]
